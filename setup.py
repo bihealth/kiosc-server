@@ -11,17 +11,17 @@ with open(os.path.join(os.path.dirname(__file__), 'README.rst')) as readme:
 os.chdir(os.path.normpath(os.path.join(os.path.abspath(__file__), os.pardir)))
 
 setup(
-    name='sodar_django_site',
+    name='kiosc',
     version=versioneer.get_version(),
     cmdclass=versioneer.get_cmdclass(),
     packages=find_packages(),
     include_package_data=True,
     license='',
-    description='Your SODAR Django Site (CHANGE ME)',
+    description='Kiosc is our support for containers',
     long_description=README,
-    url='CHANGE ME',
-    author='CHANGE ME',
-    author_email='CHANGE ME',
+    url='https://github.com/bihealth/kiosc',
+    author='Manuel Holtgrewe',
+    author_email='manuel.holtgrewe@bihealth.de',
     classifiers=[
         'Environment :: Web Environment',
         'Framework :: Django',

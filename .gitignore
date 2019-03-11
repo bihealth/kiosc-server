@@ -1,3 +1,6 @@
+### pip ###
+src/*
+
 ### Documentation ###
 /docs*/build/
 

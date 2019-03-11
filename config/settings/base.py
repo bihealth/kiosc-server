@@ -9,7 +9,7 @@ https://docs.djangoproject.com/en/dev/ref/settings/
 """
 import environ
 
-SITE_PACKAGE = 'sodar_django_site'
+SITE_PACKAGE = 'kiosc'
 
 ROOT_DIR = environ.Path(__file__) - 3
 APPS_DIR = ROOT_DIR.path(SITE_PACKAGE)
@@ -78,7 +78,7 @@ THIRD_PARTY_APPS = [
 # Project apps
 LOCAL_APPS = [
     # Custom users app
-    'sodar_django_site.users.apps.UsersConfig',
+    'kiosc.users.apps.UsersConfig',
     # TODO: Add your local apps here
 ]
 
@@ -98,7 +98,7 @@ MIDDLEWARE = [
 
 # MIGRATIONS CONFIGURATION
 # ------------------------------------------------------------------------------
-MIGRATION_MODULES = {'sites': 'sodar_django_site.contrib.sites.migrations'}
+MIGRATION_MODULES = {'sites': 'kiosc.contrib.sites.migrations'}
 
 # DEBUG
 # ------------------------------------------------------------------------------
@@ -409,10 +409,10 @@ LOGGING = set_logging(DEBUG)
 # General site settings
 # ------------------------------------------------------------------------------
 
-SITE_TITLE = 'SODAR Django Site Template'
+SITE_TITLE = 'KIOSC'
 SITE_SUBTITLE = env.str('SITE_SUBTITLE', 'Beta')
 SITE_INSTANCE_TITLE = env.str(
-    'SITE_INSTANCE_TITLE', 'Your SODAR Django Site Template'
+    'SITE_INSTANCE_TITLE', 'KIOSC'
 )
 
 

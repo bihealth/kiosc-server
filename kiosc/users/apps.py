@@ -2,7 +2,7 @@ from django.apps import AppConfig
 
 
 class UsersConfig(AppConfig):
-    name = 'sodar_django_site.users'
+    name = 'kiosc.users'
     verbose_name = "Users"
 
     def ready(self):

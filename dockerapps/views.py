@@ -1,11 +1,14 @@
 """The views for the dockerapps app."""
 
+import docker
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.db import transaction
 from django.shortcuts import reverse
 from django.views.generic import CreateView, DeleteView, DetailView, ListView, UpdateView
-from projectroles.plugins import get_backend_api
+from django.views.generic.detail import BaseDetailView
+from projectroles.models import Project
 from projectroles.views import LoggedInPermissionMixin, ProjectContextMixin
+from revproxy.views import ProxyView
 
 from kiosc.utils import ProjectPermissionMixin
 
@@ -128,19 +131,52 @@ class DockerAppDeleteView(
         )
 
 
-class DockerAppRunView(
+class DockerProxyView(
     LoginRequiredMixin,
     LoggedInPermissionMixin,
     ProjectPermissionMixin,
     ProjectContextMixin,
-    DetailView,
+    BaseDetailView,
 ):
-    """Display embedded docker app"""
-
-    template_name = "dockerapps/dockerapp_run.html"
-    permission_required = "dockerapps.view_dockerapp"
-
     model = DockerApp
 
     slug_url_kwarg = "dockerapp"
     slug_field = "sodar_uuid"
+
+    @classmethod
+    def as_view(cls, **kwargs):
+        """Override here to get CSRF exemption..."""
+        view = super(BaseDetailView, cls).as_view(**kwargs)
+        view.csrf_exempt = True
+        return view
+
+    def dispatch(self, request, *args, **kwargs):
+        project = Project.objects.get(sodar_uuid=kwargs.pop("project"))
+        # TODO: perform project-based access check
+        upstream = "http://localhost:%d/" % self._get_container_port(kwargs.pop("dockerapp"))
+        # Hand down into ProxyView
+        proxy_view = ProxyView()
+        proxy_view.request = request
+        proxy_view.args = args
+        proxy_view.kwargs = kwargs
+        proxy_view.upstream = upstream
+        proxy_view.rewrite = (
+            (r"^/^(?P<project>[0-9a-f-]+)/dockerapps/(?P<dockerapp>[0-9a-f-]+)/proxy/^", r"/"),
+        )
+        return proxy_view.dispatch(request, *args, **kwargs)
+
+    def _get_container_port(self, dockerapp_sodar_uuid):
+        """Get port for container, start container if necessary.
+
+        TODO: starting will not work properly!
+        """
+        dockerapp = DockerApp.objects.get(sodar_uuid=dockerapp_sodar_uuid)
+        client = docker.from_env()
+        for container in client.containers.list():
+            if container.image.id == dockerapp.image_id:
+                break
+        else:
+            container = docker.containers.run(dockerapp.image_id, detach=True)
+        low_level_client = docker.APIClient(base_url='unix://var/run/docker.sock')
+        port_data = low_level_client.inspect_container(container.id)['NetworkSettings']['Ports']
+        return int(list(port_data.keys())[0].split('/')[0])

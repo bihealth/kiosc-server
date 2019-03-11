@@ -29,9 +29,10 @@ urlpatterns = [
         view=views.DockerAppDeleteView.as_view(),
         name="dockerapp-delete",
     ),
+    # Proxy to embedded Docker / Shiny app.
     url(
-        regex=r"^(?P<project>[0-9a-f-]+)/dockerapps/(?P<dockerapp>[0-9a-f-]+)/run/$",
-        view=views.DockerAppRunView.as_view(),
-        name="dockerapp-run",
+        regex=r"^(?P<project>[0-9a-f-]+)/dockerapps/(?P<dockerapp>[0-9a-f-]+)/proxy/(?P<path>.*)$",
+        view=views.DockerProxyView.as_view(),
+        name='dockerapp-proxy',
     ),
 ]

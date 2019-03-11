@@ -57,7 +57,7 @@ THIRD_PARTY_APPS = [
     "db_file_storage",  # For filesfolders
     "dal",  # For user search combo box
     "dal_select2",
-    # TODO: Add other third party apps here
+    "revproxy",  # Reverse proxy to Docker servers
     # SODAR Projectroles app
     "projectroles.apps.ProjectrolesConfig",
     # SODAR Timeline app

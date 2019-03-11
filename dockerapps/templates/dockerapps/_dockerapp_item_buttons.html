@@ -1,5 +1,5 @@
 <div class="btn-group sodar-list-btn-group pull-right">
-  <a href="{% url 'dockerapps:dockerapp-run' project=project.sodar_uuid dockerapp=item.sodar_uuid %}" class="btn btn-primary sodar-list-dropdown" type="button">
+  <a href="{% url 'dockerapps:dockerapp-proxy' project=project.sodar_uuid dockerapp=item.sodar_uuid path='' %}" class="btn btn-primary sodar-list-dropdown" target="_blank">
     <i class="fa fa-eye"></i>
   </a>
   <button class="btn btn-secondary dropdown-toggle sodar-list-dropdown"

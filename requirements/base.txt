@@ -40,7 +40,10 @@ django-docs==0.3.1
 sphinx-rtd-theme==0.4.2
 
 # Control docker from Python
-docker-py ==1.10.6
+docker ==3.7.0
+
+# Django reverse proxy
+django-revproxy ==0.9.15
 
 #####################
 # SODAR Core imports

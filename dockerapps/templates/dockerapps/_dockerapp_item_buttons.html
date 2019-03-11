@@ -1,0 +1,19 @@
+<div class="btn-group sodar-list-btn-group pull-right">
+  <a href="{% url 'dockerapps:dockerapp-run' project=project.sodar_uuid dockerapp=item.sodar_uuid %}" class="btn btn-primary sodar-list-dropdown" type="button">
+    <i class="fa fa-eye"></i>
+  </a>
+  <button class="btn btn-secondary dropdown-toggle sodar-list-dropdown"
+      type="button" data-toggle="dropdown" aria-expanded="false">
+    <i class="fa fa-cog"></i>
+  </button>
+  <div class="dropdown-menu dropdown-menu-right">
+    <a class="dropdown-item" href="{% url 'dockerapps:dockerapp-update' project=project.sodar_uuid dockerapp=item.sodar_uuid %}">
+      <i class="fa fa-fw fa-pencil"></i>
+      Update
+    </a>
+    <a class="dropdown-item" href="{% url 'dockerapps:dockerapp-delete' project=project.sodar_uuid dockerapp=item.sodar_uuid %}">
+      <i class="fa fa-fw fa-close"></i>
+      Delete
+    </a>
+  </div>
+</div>

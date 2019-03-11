@@ -39,6 +39,9 @@ Sphinx==1.8.3
 django-docs==0.3.1
 sphinx-rtd-theme==0.4.2
 
+# Control docker from Python
+docker-py ==1.10.6
+
 #####################
 # SODAR Core imports
 #####################

@@ -1,0 +1,20 @@
+{% load dockerapps %}
+
+<tr>
+  <td style="width: 0px;" class="text-right text-muted">
+    {{ forloop.counter }}
+  </td>
+  <td class="text-left">
+    {{ item.title }}
+  </td>
+  <td class="text-left">
+    {{ item.image_id }}
+  </td>
+  <td class="text-left">
+    {{ item.description|default:"-" }}
+  </td>
+
+  <td>
+    {% include "dockerapps/_dockerapp_item_buttons.html" %}
+  </td>
+</tr>

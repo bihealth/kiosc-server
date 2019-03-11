@@ -1,0 +1,26 @@
+{% load dockerapps %}
+
+<dl class="row dockerapp-properties">
+  <dt class="col-12 col-md-3 col-xl-2">UUID</dt>
+  <dd class="col-12 col-md-9 col-xl-10">{{ object.sodar_uuid }}</dd>
+
+  <dt class="col-12 col-md-3 col-xl-2">Project</dt>
+  <dd class="col-12 col-md-9 col-xl-10">{{ object.project.title }}</dd>
+
+  <dt class="col-12 col-md-3 col-xl-2">Created</dt>
+  <dd class="col-12 col-md-9 col-xl-10">{{ object.date_created }}</dd>
+
+  <dt class="col-12 col-md-3 col-xl-2">Last Modified</dt>
+  <dd class="col-12 col-md-9 col-xl-10">{{ object.date_modified }}</dd>
+
+  <dt class="col-12 col-md-3 col-xl-2">Title</dt>
+  <dd class="col-12 col-md-9 col-xl-10">{{ object.title }}</dd>
+
+  <dt class="col-12 col-md-3 col-xl-2">Description</dt>
+  <dd class="col-12 col-md-9 col-xl-10">
+    {{ object.description|default:"-" }}
+  </dd>
+
+  <dt class="col-12 col-md-3 col-xl-2">Image ID</dt>
+  <dd class="col-12 col-md-9 col-xl-10">{{ object.image_id }}</dd>
+</dl>

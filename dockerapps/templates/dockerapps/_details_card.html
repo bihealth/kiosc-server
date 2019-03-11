@@ -1,0 +1,19 @@
+{% load dockerapps %}
+
+<table class="table table-striped sodar-card-table">
+  <thead>
+    {% include 'dockerapps/_dockerapp_table_header.html' %}
+  </thead>
+  <tbody>
+    {% get_details_dockerapps project as dockerapps %}
+    {% if dockerapps.count > 0 %}
+      {% for dockerapp in dockerapps %}
+        {% include 'dockerapps/_dockerapp_item.html' with item=dockerapp details_card_mode=True %}
+      {% endfor %}
+    {% else %}
+        <tr>
+          <td class="bg-faded font-italic text-center" colspan="4">No Docker Apps (yet)</td>
+        </tr>
+    {% endif %}
+  </tbody>
+</table>

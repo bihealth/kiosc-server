@@ -1,0 +1,33 @@
+{% extends "projectroles/project_base.html" %}
+
+{% load dockerapps %}
+
+{% block navi_sub_project_extend %}
+  <li class="breadcrumb-item">
+    <a href="{% url 'dockerapps:dockerapp-list' project=project.sodar_uuid %}">Flow Cells</a>
+  </li>
+    <li class="breadcrumb-item active">
+      {{ object.vendor_id }} ({{ object.label }})
+  </li>
+{% endblock %}
+
+{% block projectroles %}
+  <div id="ajax-form-errors"></div>
+
+  <div class="row sodar-pr-content-title pb-2">
+    {# Project menu dropdown, only visible if browser width < X and sidebar is hidden #}
+    {% include 'projectroles/_project_menu_btn.html' %}
+
+    <h2 class="sodar-pr-content-title">
+      Docker App &quot;{{ object.title }}&quot;
+    </h2>
+    {% include "dockerapps/_dockerapp_detail_buttons.html" %}
+  </div>
+
+  <div class="row">
+    <div class="col-12">
+      Detail
+    </div>
+  </div>
+
+{% endblock %}

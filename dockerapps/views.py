@@ -140,21 +140,17 @@ class DockerProxyView(
     ProjectContextMixin,
     BaseDetailView,
 ):
+    permission_required = "dockerapps.view_dockerapp"
+
     model = DockerApp
 
     slug_url_kwarg = "dockerapp"
     slug_field = "sodar_uuid"
 
-    @classmethod
-    def as_view(cls, **kwargs):
-        """Override here to get CSRF exemption..."""
-        view = super(BaseDetailView, cls).as_view(**kwargs)
-        view.csrf_exempt = True
-        return view
-
     def dispatch(self, request, *args, **kwargs):
-        project = Project.objects.get(sodar_uuid=kwargs.pop("project"))
-        # TODO: perform project-based access check
+        if not self.has_permission():
+            return self.handle_no_permission()
+        kwargs.pop("project")
         upstream = "http://localhost:%d/" % self._get_container_port(kwargs.pop("dockerapp"))
         # Hand down into ProxyView
         proxy_view = ProxyView()

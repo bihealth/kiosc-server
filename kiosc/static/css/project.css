@@ -20,3 +20,30 @@
 [hidden][style="display: block;"] {
   display: block !important;
 }
+
+/* Change title bar, sidebar and project navbar colours */
+
+.sodar-base-navbar {
+  background-color: #bc8000 !important;
+}
+
+.sodar-pr-sidebar {
+  background-color: #bc8000 !important;
+}
+
+.sodar-pr-sidebar-nav {
+  background-color: #bc8000 !important;
+}
+
+.sodar-pr-navbar {
+  background-color: #6884cb !important;
+}
+
+/** stacking */
+.fa-sm {
+    font-size:0.63em;
+}
+
+.fa-md {
+    font-size:0.8em;
+}

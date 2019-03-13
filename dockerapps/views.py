@@ -1,5 +1,7 @@
 """The views for the dockerapps app."""
 
+import time
+
 import docker
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.db import transaction
@@ -8,12 +10,12 @@ from django.views.generic import CreateView, DeleteView, DetailView, ListView, U
 from django.views.generic.detail import BaseDetailView
 from projectroles.models import Project
 from projectroles.views import LoggedInPermissionMixin, ProjectContextMixin
-from revproxy.views import ProxyView
 
 from kiosc.utils import ProjectPermissionMixin
 
 from .forms import DockerAppForm
 from .models import DockerApp
+from .views_proxy import ProxyView
 
 
 class DockerAppListView(
@@ -160,6 +162,7 @@ class DockerProxyView(
         proxy_view.args = args
         proxy_view.kwargs = kwargs
         proxy_view.upstream = upstream
+        proxy_view.suppress_empty_body = True
         proxy_view.rewrite = (
             (r"^/^(?P<project>[0-9a-f-]+)/dockerapps/(?P<dockerapp>[0-9a-f-]+)/proxy/^", r"/"),
         )
@@ -167,8 +170,6 @@ class DockerProxyView(
 
     def _get_container_port(self, dockerapp_sodar_uuid):
         """Get port for container, start container if necessary.
-
-        TODO: starting will not work properly!
         """
         dockerapp = DockerApp.objects.get(sodar_uuid=dockerapp_sodar_uuid)
         client = docker.from_env()
@@ -176,7 +177,10 @@ class DockerProxyView(
             if container.image.id == dockerapp.image_id:
                 break
         else:
-            container = docker.containers.run(dockerapp.image_id, detach=True)
-        low_level_client = docker.APIClient(base_url='unix://var/run/docker.sock')
-        port_data = low_level_client.inspect_container(container.id)['NetworkSettings']['Ports']
-        return int(list(port_data.keys())[0].split('/')[0])
+            container = client.containers.run(
+                dockerapp.image_id, detach=True, ports={"3838/tcp": 3838}
+            )
+            time.sleep(5)  # TODO: rather wait for up to 5 seconds for a connection on the port
+        low_level_client = docker.APIClient(base_url="unix://var/run/docker.sock")
+        port_data = low_level_client.inspect_container(container.id)["NetworkSettings"]["Ports"]
+        return int(list(port_data.keys())[0].split("/")[0])

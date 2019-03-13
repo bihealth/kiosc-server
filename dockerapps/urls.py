@@ -33,6 +33,6 @@ urlpatterns = [
     url(
         regex=r"^(?P<project>[0-9a-f-]+)/dockerapps/(?P<dockerapp>[0-9a-f-]+)/proxy/(?P<path>.*)$",
         view=views.DockerProxyView.as_view(),
-        name='dockerapp-proxy',
+        name="dockerapp-proxy",
     ),
 ]

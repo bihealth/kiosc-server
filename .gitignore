@@ -1,3 +1,6 @@
+### Celery ###
+celerybeat-schedule
+
 ### pip ###
 src/*
 

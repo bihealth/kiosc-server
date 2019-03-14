@@ -47,7 +47,7 @@ django-revproxy ==0.9.15
 
 # Celery related
 celery <4.2  # pyup: <4.2  # blocker: https://github.com/celery/celery/issues/4878
-redis==2.10.6  # https://github.com/antirez/r
+redis==3.2.0  # https://github.com/antirez/redis
 
 
 #####################

@@ -1,5 +1,8 @@
+### Examples ###
+examples/*/*.tar
+
 ### Celery ###
-celerybeat-schedule
+celerybeat-schedule*
 
 ### pip ###
 src/*

@@ -10,8 +10,17 @@
   <td class="text-left">
     {{ item.image_id }}
   </td>
+  <td class="text-right">
+    {{ item.internal_port|default:"-" }}
+  </td>
+  <td class="text-right">
+    {{ item.host_port|default:"-" }}
+  </td>
   <td class="text-left">
     {{ item.description|default:"-" }}
+  </td>
+  <td class="text-center">
+    {{ item.state|default:"-" }}
   </td>
 
   <td>

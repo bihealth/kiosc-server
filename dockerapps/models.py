@@ -1,9 +1,29 @@
 import uuid as uuid_object
 
+import docker
 from django.shortcuts import reverse
-from django.db import models
+from django.db import models, transaction
 
 from projectroles.models import Project
+
+#: Token for "idle" state.
+STATE_IDLE = "idle"
+#: Token for "starting" state.
+STATE_STARTING = "starting"
+#: Token for "running" state.
+STATE_RUNNING = "running"
+#: Token for "stopping" state.
+STATE_STOPPING = "stopping"
+#: Token for "failed" state.
+STATE_FAILED = "failed"
+#: Django model field choices.
+STATE_CHOICES = (
+    (STATE_IDLE, STATE_IDLE),
+    (STATE_STARTING, STATE_STARTING),
+    (STATE_RUNNING, STATE_RUNNING),
+    (STATE_STOPPING, STATE_STOPPING),
+    (STATE_FAILED, STATE_FAILED),
+)
 
 
 class DockerApp(models.Model):
@@ -31,8 +51,42 @@ class DockerApp(models.Model):
     #: The internal image ID.
     image_id = models.CharField(max_length=100, help_text="Internal ID of the Docker image")
 
+    #: The internal port used by the app, automatically set.
+    internal_port = models.PositiveIntegerField(
+        help_text="Port used by the Docker image", blank=True, null=True, unique=True
+    )
+
+    #: The host port used by the app, automatically set.
+    host_port = models.PositiveIntegerField(
+        help_text="Port used by the Docker image", blank=True, null=True
+    )
+
+    #: The current state.
+    state = models.CharField(
+        max_length=32,
+        choices=STATE_CHOICES,
+        help_text="The current docker container state",
+        default=STATE_IDLE,
+    )
+
     def get_absolute_url(self):
         return reverse(
             "dockerapps:dockerapp-detail",
             kwargs={"project": self.project.sodar_uuid, "dockerapp": self.sodar_uuid},
         )
+
+
+@transaction.atomic()
+def update_container_states():
+    """Look at all starting and stopping ``DockerApp`` objects, and finalize their state."""
+    print("updating container states...")
+    statuses = {}
+    for container in docker.from_env().containers.list():
+        statuses[container.image.id] = container.status
+    for app in DockerApp.objects.all():
+        if statuses.get(app.image_id) == "running":
+            app.state = "running"
+            app.save()
+        elif statuses.get(app.image_id, "exited") == "exited":
+            app.state = "idle"
+            app.save()

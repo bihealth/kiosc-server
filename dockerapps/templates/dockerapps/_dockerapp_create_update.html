@@ -46,7 +46,7 @@
     </h2>
   </div>
 
-  <form method="post">{% csrf_token %}
+  <form method="post" enctype="multipart/form-data">{% csrf_token %}
     <div class="row py-3">
       <div class="col-9">
         {% if object.pk %}

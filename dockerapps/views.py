@@ -3,9 +3,12 @@
 import time
 
 import docker
+from django.contrib import messages
 from django.contrib.auth.mixins import LoginRequiredMixin
+from django.core.exceptions import ValidationError
 from django.db import transaction
-from django.shortcuts import reverse
+from django.shortcuts import reverse, redirect
+from django.views import View
 from django.views.generic import CreateView, DeleteView, DetailView, ListView, UpdateView
 from django.views.generic.detail import BaseDetailView
 from projectroles.models import Project
@@ -13,9 +16,13 @@ from projectroles.views import LoggedInPermissionMixin, ProjectContextMixin
 
 from kiosc.utils import ProjectPermissionMixin
 
-from .forms import DockerAppForm
+from . import tasks
+from .forms import DockerAppForm, DockerAppChangeStateForm
 from .models import DockerApp
 from .views_proxy import ProxyView
+
+#: Smallest port to use for the Docker image.
+FIRST_PORT = 1025
 
 
 class DockerAppListView(
@@ -72,9 +79,19 @@ class DockerAppCreateView(
     @transaction.atomic
     def form_valid(self, form):
         """Automatically set the project property."""
-        # Create the docker app.
         form.instance.project = self.get_project(self.request, self.kwargs)
-        result = super().form_valid(form)
+        # Find a free port...
+        docker_apps = DockerApp.objects.order_by("-host_port")
+        form.instance.host_port = docker_apps.host_port + 1 if docker_apps else FIRST_PORT
+        # Load the image into Docker
+        images = docker.from_env().images.load(form.cleaned_data["docker_image"])
+        if len(images) != 1:
+            raise ValidationError("The TAR file has to contain exactly one image")
+        form.instance.image_id = images[0].id
+        try:
+            result = super().form_valid(form)
+        except ValidationError:  # Remove image and re-raise
+            docker.from_env().images.remove(images[0].id)
         return result
 
 
@@ -101,6 +118,74 @@ class DockerAppUpdateView(
         # Update docker app record.
         result = super().form_valid(form)
         return result
+
+
+class DockerAppChangeStateView(
+    LoginRequiredMixin,
+    LoggedInPermissionMixin,
+    ProjectPermissionMixin,
+    ProjectContextMixin,
+    UpdateView,
+):
+    """Starting and stopping of docker containers"""
+
+    template_name = "dockerapps/dockerapp_update.html"  # actually not used
+    permission_required = "dockerapps.change_dockerapp"
+
+    model = DockerApp
+    form_class = DockerAppChangeStateForm
+
+    slug_url_kwarg = "dockerapp"
+    slug_field = "sodar_uuid"
+
+    def form_valid(self, form):
+        # Kick off starting/stopping
+        client = docker.from_env()
+
+        with transaction.atomic():
+            if form.cleaned_data["action"] == "start":
+                form.instance.state = "starting"
+                client.containers.run(
+                    form.instance.image_id,
+                    detach=True,
+                    ports={"%d/tcp" % form.instance.internal_port: form.instance.host_port},
+                )
+                messages.info(self.request, "Initiated start of docker container...")
+            elif form.cleaned_data["action"] == "stop":
+                form.instance.state = "stopping"
+                stopped = False
+                for container in client.containers.list():
+                    if container.image.id == form.instance.image_id:
+                        result = container.stop()
+                        stopped = True
+                if stopped:
+                    messages.info(self.request, "Initiated stop of docker container...")
+            # Update docker app record.
+            super().form_valid(form)
+
+        tasks.update_container_states.delay()
+        return redirect(
+            reverse(
+                "dockerapps:dockerapp-list",
+                kwargs={"project": self.get_context_data()["project"].sodar_uuid},
+            )
+        )
+
+
+class DockerAppUpdateStateView(
+    LoginRequiredMixin, LoggedInPermissionMixin, ProjectPermissionMixin, ProjectContextMixin, View
+):
+    """Starting and stopping of docker containers"""
+
+    permission_required = "dockerapps.change_dockerapp"
+
+    def post(self, *args, **kwargs):
+        tasks.update_container_states.delay()
+        messages.info(
+            self.request,
+            "Refreshing container states. You might have to reload the page to see the results",
+        )
+        return redirect(reverse("dockerapps:dockerapp-list", kwargs={"project": kwargs["project"]}))
 
 
 class DockerAppDeleteView(
@@ -151,7 +236,8 @@ class DockerProxyView(
         if not self.has_permission():
             return self.handle_no_permission()
         kwargs.pop("project")
-        upstream = "http://localhost:%d/" % self._get_container_port(kwargs.pop("dockerapp"))
+        kwargs.pop("dockerapp")
+        upstream = "http://localhost:%d/" % self.get_object().host_port
         # Hand down into ProxyView
         proxy_view = ProxyView()
         proxy_view.request = request
@@ -163,20 +249,3 @@ class DockerProxyView(
             (r"^/^(?P<project>[0-9a-f-]+)/dockerapps/(?P<dockerapp>[0-9a-f-]+)/proxy/^", r"/"),
         )
         return proxy_view.dispatch(request, *args, **kwargs)
-
-    def _get_container_port(self, dockerapp_sodar_uuid):
-        """Get port for container, start container if necessary.
-        """
-        dockerapp = DockerApp.objects.get(sodar_uuid=dockerapp_sodar_uuid)
-        client = docker.from_env()
-        for container in client.containers.list():
-            if container.image.id == dockerapp.image_id:
-                break
-        else:
-            container = client.containers.run(
-                dockerapp.image_id, detach=True, ports={"3838/tcp": 3838}
-            )
-            time.sleep(5)  # TODO: rather wait for up to 5 seconds for a connection on the port
-        low_level_client = docker.APIClient(base_url="unix://var/run/docker.sock")
-        port_data = low_level_client.inspect_container(container.id)["NetworkSettings"]["Ports"]
-        return int(list(port_data.keys())[0].split("/")[0])

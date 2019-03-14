@@ -1,12 +1,34 @@
 <div class="btn-group sodar-list-btn-group pull-right">
-  <a href="{% url 'dockerapps:dockerapp-proxy' project=project.sodar_uuid dockerapp=item.sodar_uuid path='' %}" class="btn btn-primary sodar-list-dropdown" target="_blank">
-    <i class="fa fa-eye"></i>
-  </a>
+  {% if item.state == "running" %}
+    <a href="{% url 'dockerapps:dockerapp-proxy' project=project.sodar_uuid dockerapp=item.sodar_uuid path='' %}" class="btn btn-primary sodar-list-dropdown" target="_blank"
+      data-toggle="tooltip" data-placement="top" title="Open app">
+      <i class="fa fa-eye"></i>
+    </a>
+  {% else %}
+    <div class="btn btn-outline-secondary sodar-list-dropdown"
+         data-toggle="tooltip" data-placement="top" title="App not running">
+      <i class="fa fa-eye-slash"></i>
+    </div>
+  {% endif %}
   <button class="btn btn-secondary dropdown-toggle sodar-list-dropdown"
       type="button" data-toggle="dropdown" aria-expanded="false">
     <i class="fa fa-cog"></i>
   </button>
   <div class="dropdown-menu dropdown-menu-right">
+    <form action="{% url 'dockerapps:dockerapp-changestate' project=project.sodar_uuid dockerapp=item.sodar_uuid %}" method="post">{% csrf_token %}
+      {% if item.state == "idle" or item.state == "failed" %}
+        <button type="submit" class="dropdown-item" name="action" value="start">
+          <i class="fa fa-fw fa-play"></i>
+          Start
+        </button>
+      {% elif item.state == "starting" or item.state == "running" or item.state == "stopping" %}
+        <button type="submit" class="dropdown-item" name="action" value="stop">
+          <i class="fa fa-fw fa-stop"></i>
+          Stop
+        </button>
+      {% endif %}
+    </form>
+    <div class="dropdown-divider"></div>
     <a class="dropdown-item" href="{% url 'dockerapps:dockerapp-update' project=project.sodar_uuid dockerapp=item.sodar_uuid %}">
       <i class="fa fa-fw fa-pencil"></i>
       Update

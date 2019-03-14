@@ -16,10 +16,6 @@ dbshell:
 shell:
 	python manage.py shell
 
-
-celery:
-	celery worker -A config.celery_app -l info --concurrency=4 --beat
-
 black:
 	black -l 100 . --exclude src
 

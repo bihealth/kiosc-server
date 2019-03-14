@@ -26,6 +26,16 @@ urlpatterns = [
         name="dockerapp-update",
     ),
     url(
+        regex=r"^(?P<project>[0-9a-f-]+)/dockerapps/(?P<dockerapp>[0-9a-f-]+)/changestate/$",
+        view=views.DockerAppChangeStateView.as_view(),
+        name="dockerapp-changestate",
+    ),
+    url(
+        regex=r"^(?P<project>[0-9a-f-]+)/dockerapps/updatestates/$",
+        view=views.DockerAppUpdateStateView.as_view(),
+        name="dockerapp-updatestates",
+    ),
+    url(
         regex=r"^(?P<project>[0-9a-f-]+)/dockerapps/(?P<dockerapp>[0-9a-f-]+)/delete/$",
         view=views.DockerAppDeleteView.as_view(),
         name="dockerapp-delete",

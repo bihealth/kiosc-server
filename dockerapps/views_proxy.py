@@ -11,13 +11,19 @@ import urllib3
 
 from django.utils.six.moves.urllib.parse import urlparse, urlencode, quote_plus
 
+from django.http import HttpResponse, StreamingHttpResponse
 from django.shortcuts import redirect
 from django.views.generic import View
 from django.utils.decorators import classonlymethod
 
 from revproxy.exceptions import InvalidUpstream
-from revproxy.response import get_django_response
-from revproxy.utils import normalize_request_headers, encode_items
+from revproxy.utils import (
+    normalize_request_headers,
+    encode_items,
+    cookie_from_string,
+    should_stream,
+    set_response_headers,
+)
 
 # Chars that don't need to be quoted. We use same than nginx:
 #   https://github.com/nginx/nginx/blob/nginx-1.9/src/core/ngx_string.c
@@ -29,7 +35,67 @@ ERRORS_MESSAGES = {
     "upstream-no-scheme": ("Upstream URL scheme must be either " "'http' or 'https' (%s).")
 }
 
+
+#: Default number of bytes that are going to be read in a file lecture
+DEFAULT_AMT = 2 ** 16
+
+
+logger = logging.getLogger("revproxy.response")
+
+
 HTTP_POOLS = urllib3.PoolManager()
+
+
+def get_django_response(proxy_response, strict_cookies=False):
+    """This method is used to create an appropriate response based on the
+    Content-Length of the proxy_response. If the content is bigger than
+    MIN_STREAMING_LENGTH, which is found on utils.py,
+    than django.http.StreamingHttpResponse will be created,
+    else a django.http.HTTPResponse will be created instead
+
+    :param proxy_response: An Instance of urllib3.response.HTTPResponse that
+                           will create an appropriate response
+    :param strict_cookies: Whether to only accept RFC-compliant cookies
+    :returns: Returns an appropriate response based on the proxy_response
+              content-length
+    """
+    status = proxy_response.status
+    headers = proxy_response.headers
+
+    logger.debug("Proxy response headers: %s", headers)
+
+    content_type = headers.get("Content-Type")
+
+    logger.debug("Content-Type: %s", content_type)
+
+    if should_stream(proxy_response):
+        logger.info("Content-Length is bigger than %s", DEFAULT_AMT)
+        # The remaining isssue is that read() hangs here now.
+        #  > /bioconda/2018-02/miniconda3/envs/kiosc/lib/python3.6/site-packages/urllib3/response.py(442)read()
+        # Also this would hang here
+        #  > proxy_response._original_response.fp.read()
+        s = proxy_response.stream(DEFAULT_AMT)
+        response = StreamingHttpResponse(s, status=status, content_type=content_type)
+    else:
+        content = proxy_response.data or b""
+        response = HttpResponse(content, status=status, content_type=content_type)
+
+    logger.info("Normalizing response headers")
+    set_response_headers(response, headers)
+
+    logger.debug("Response headers: %s", getattr(response, "_headers"))
+
+    cookies = proxy_response.headers.getlist("set-cookie")
+    logger.info("Checking for invalid cookies")
+    for cookie_string in cookies:
+        cookie_dict = cookie_from_string(cookie_string, strict_cookies=strict_cookies)
+        # if cookie is invalid cookie_dict will be None
+        if cookie_dict:
+            response.set_cookie(**cookie_dict)
+
+    logger.debug("Response cookies: %s", response.cookies)
+
+    return response
 
 
 class ProxyView(View):
@@ -47,6 +113,9 @@ class ProxyView(View):
     #: Do not send any body if it is empty (put ``None`` into the ``urlopen()``
     #: call).  This is required when proxying to Shiny apps, for example.
     suppress_empty_body = False
+    #: Whether or not to rescue the "upgrade" hop-by-hop headers for proxying
+    #: of websocket.
+    rescue_websocket_headers = False
 
     def __init__(self, *args, **kwargs):
         super(ProxyView, self).__init__(*args, **kwargs)
@@ -207,7 +276,16 @@ class ProxyView(View):
         self._replace_host_on_redirect_location(request, proxy_response)
         self._set_content_type(request, proxy_response)
 
+        if "socket" in path:
+            import ipdb
+
+            ipdb.set_trace()
         response = get_django_response(proxy_response, strict_cookies=self.strict_cookies)
+        # Rescue hop-by-hop headers
+        if self.rescue_websocket_headers and "socket" in path:
+            for key, value in proxy_response.headers.items():
+                if "upgrade" in key.lower() or "upgrade" in value.lower():
+                    response[key] = value
 
         self.log.debug("RESPONSE RETURNED: %s", response)
         return response

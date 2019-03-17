@@ -5,7 +5,9 @@
     {{ forloop.counter }}
   </td>
   <td class="text-left">
-    {{ item.title }}
+    <a href="{% url 'dockerapps:dockerapp-detail' project=project.sodar_uuid dockerapp=item.sodar_uuid %}">
+      {{ item.title }}
+    </a>
   </td>
   <td class="text-left">
     {{ item.image_id }}

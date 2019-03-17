@@ -9,7 +9,14 @@ from django.core.exceptions import ValidationError
 from django.db import transaction
 from django.shortcuts import reverse, redirect
 from django.views import View
-from django.views.generic import CreateView, DeleteView, DetailView, ListView, UpdateView
+from django.views.generic import (
+    CreateView,
+    DeleteView,
+    DetailView,
+    ListView,
+    UpdateView,
+    TemplateView,
+)
 from django.views.generic.detail import BaseDetailView
 from projectroles.models import Project
 from projectroles.views import LoggedInPermissionMixin, ProjectContextMixin
@@ -249,3 +256,21 @@ class DockerProxyView(
             (r"^/^(?P<project>[0-9a-f-]+)/dockerapps/(?P<dockerapp>[0-9a-f-]+)/proxy/^", r"/"),
         )
         return proxy_view.dispatch(request, *args, **kwargs)
+
+
+class DockerAppRunView(
+    LoginRequiredMixin,
+    LoggedInPermissionMixin,
+    ProjectPermissionMixin,
+    ProjectContextMixin,
+    DetailView,
+):
+    """Display detail of DockerApp records"""
+
+    template_name = "dockerapps/dockerapp_run.html"
+    permission_required = "dockerapps.view_dockerapp"
+
+    model = DockerApp
+
+    slug_url_kwarg = "dockerapp"
+    slug_field = "sodar_uuid"

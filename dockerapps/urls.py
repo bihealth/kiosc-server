@@ -42,7 +42,12 @@ urlpatterns = [
         view=views.DockerAppDeleteView.as_view(),
         name="dockerapp-delete",
     ),
-    # Proxy to embedded Docker / Shiny app.
+    url(
+        regex=r"^(?P<project>[0-9a-f-]+)/dockerapps/(?P<dockerapp>[0-9a-f-]+)/run/$",
+        view=views.DockerAppRunView.as_view(),
+        name="dockerapp-run",
+    ),
+    # Proxy to embedded Docker / Shiny app.  NB: there is a "partner" websocket_urlpattern through Django Channels.
     url(
         regex=r"^(?P<project>[0-9a-f-]+)/dockerapps/(?P<dockerapp>[0-9a-f-]+)/proxy/(?P<path>.*)$",
         view=csrf_exempt(views.DockerProxyView.as_view()),

@@ -70,10 +70,6 @@ def get_django_response(proxy_response, strict_cookies=False):
 
     if should_stream(proxy_response):
         logger.info("Content-Length is bigger than %s", DEFAULT_AMT)
-        # The remaining isssue is that read() hangs here now.
-        #  > /bioconda/2018-02/miniconda3/envs/kiosc/lib/python3.6/site-packages/urllib3/response.py(442)read()
-        # Also this would hang here
-        #  > proxy_response._original_response.fp.read()
         s = proxy_response.stream(DEFAULT_AMT)
         response = StreamingHttpResponse(s, status=status, content_type=content_type)
     else:

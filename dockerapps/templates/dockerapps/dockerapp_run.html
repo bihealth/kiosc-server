@@ -6,8 +6,11 @@
   <li class="breadcrumb-item">
     <a href="{% url 'dockerapps:dockerapp-list' project=project.sodar_uuid %}">Docker Apps</a>
   </li>
-    <li class="breadcrumb-item active">
-      {{ object.title }}
+  <li class="breadcrumb-item">
+    <a href="{% url 'dockerapps:dockerapp-detail' project=project.sodar_uuid dockerapp=object.sodar_uuid %}">{{ object.title }}</a>
+  </li>
+  <li class="breadcrumb-item active">
+    Run
   </li>
 {% endblock %}
 
@@ -19,14 +22,16 @@
     {% include 'projectroles/_project_menu_btn.html' %}
 
     <h2 class="sodar-pr-content-title">
-      Docker App &quot;{{ object.title }}&quot;
+      Running Docker App &quot;{{ object.title }}&quot;
     </h2>
-    {% include "dockerapps/_dockerapp_detail_buttons.html" %}
   </div>
 
   <div class="row">
-    <div class="col-12">
-      Detail
+    <div class="col-xs-12 col-sm-12 col-md-12">
+        <iframe
+          style="height: 800px; width: 100%;"
+          src="{% url 'dockerapps:dockerapp-proxy' project=project.sodar_uuid dockerapp=object.sodar_uuid path='' %}"></iframe>
+      </div>
     </div>
   </div>
 

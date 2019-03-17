@@ -1,6 +1,6 @@
 <div class="btn-group sodar-list-btn-group pull-right">
   {% if item.state == "running" %}
-    <a href="{% url 'dockerapps:dockerapp-run' project=project.sodar_uuid dockerapp=item.sodar_uuid %}" class="btn btn-primary sodar-list-dropdown" target="_blank"
+    <a href="{% url 'dockerapps:dockerapp-proxy' project=project.sodar_uuid dockerapp=item.sodar_uuid path='' %}" class="btn btn-primary sodar-list-dropdown" target="_blank"
       data-toggle="tooltip" data-placement="top" title="Open app">
       <i class="fa fa-eye"></i>
     </a>

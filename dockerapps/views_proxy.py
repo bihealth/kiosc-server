@@ -276,10 +276,6 @@ class ProxyView(View):
         self._replace_host_on_redirect_location(request, proxy_response)
         self._set_content_type(request, proxy_response)
 
-        if "socket" in path:
-            import ipdb
-
-            ipdb.set_trace()
         response = get_django_response(proxy_response, strict_cookies=self.strict_cookies)
         # Rescue hop-by-hop headers
         if self.rescue_websocket_headers and "socket" in path:

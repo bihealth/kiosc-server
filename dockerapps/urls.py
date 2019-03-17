@@ -1,5 +1,7 @@
 from django.conf.urls import url
 from django.views.decorators.csrf import csrf_exempt
+
+from . import consumers
 from . import views
 
 app_name = "dockerapps"
@@ -46,4 +48,11 @@ urlpatterns = [
         view=csrf_exempt(views.DockerProxyView.as_view()),
         name="dockerapp-proxy",
     ),
+]
+
+websocket_urlpatterns = [
+    url(
+        r"^dockerapps/(?P<project>[0-9a-f-]+)/dockerapps/(?P<dockerapp>[0-9a-f-]+)/proxy/(?P<path>.*)$",
+        consumers.TunnelConsumer,
+    )
 ]

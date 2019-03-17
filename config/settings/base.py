@@ -36,6 +36,8 @@ ALLOWED_HOSTS = env.list("DJANGO_ALLOWED_HOSTS", default=["*"])
 # APP CONFIGURATION
 # ------------------------------------------------------------------------------
 DJANGO_APPS = [
+    # Django Channels
+    "channels",
     # Default Django apps
     "django.contrib.auth",
     "django.contrib.contenttypes",
@@ -210,6 +212,14 @@ MEDIA_URL = "/media/"
 # ------------------------------------------------------------------------------
 ROOT_URLCONF = "config.urls"
 WSGI_APPLICATION = "config.wsgi.application"
+ASGI_APPLICATION = "config.asgi.application"
+
+CHANNEL_LAYERS = {
+    "default": {
+        "BACKEND": "channels_redis.core.RedisChannelLayer",
+        "CONFIG": {"hosts": [("127.0.0.1", 6379)]},
+    }
+}
 
 # PASSWORD STORAGE SETTINGS
 # ------------------------------------------------------------------------------

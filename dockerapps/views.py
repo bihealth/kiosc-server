@@ -245,8 +245,6 @@ class DockerProxyView(
         proxy_view.kwargs = kwargs
         proxy_view.upstream = upstream
         proxy_view.suppress_empty_body = True
-        proxy_view.rescue_websocket_headers = True
-        proxy_view.ignore_response_content_length = True
         proxy_view.rewrite = (
             (r"^/^(?P<project>[0-9a-f-]+)/dockerapps/(?P<dockerapp>[0-9a-f-]+)/proxy/^", r"/"),
         )

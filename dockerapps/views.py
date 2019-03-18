@@ -89,7 +89,7 @@ class DockerAppCreateView(
         form.instance.project = self.get_project(self.request, self.kwargs)
         # Find a free port...
         docker_apps = DockerApp.objects.order_by("-host_port")
-        form.instance.host_port = docker_apps.host_port + 1 if docker_apps else FIRST_PORT
+        form.instance.host_port = docker_apps.first().host_port + 1 if docker_apps else FIRST_PORT
         # Load the image into Docker
         images = docker.from_env().images.load(form.cleaned_data["docker_image"])
         if len(images) != 1:

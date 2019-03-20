@@ -122,9 +122,28 @@ class DockerAppUpdateView(
 
     @transaction.atomic
     def form_valid(self, form):
-        # Update docker app record.
-        result = super().form_valid(form)
+        # Stop any running container.
+        stop_containers(form.instance.image_id)
+        # Load the image into Docker.
+        images = docker.from_env().images.load(form.cleaned_data["docker_image"])
+        if len(images) != 1:
+            raise ValidationError("The TAR file has to contain exactly one image")
+        form.instance.image_id = images[0].id
+        try:
+            result = super().form_valid(form)
+        except ValidationError:  # Remove image and re-raise
+            docker.from_env().images.remove(images[0].id)
         return result
+
+
+def stop_containers(image_id):
+    """Stop containers for ``image_id``."""
+    client = docker.from_env()
+    for container in client.containers.list():
+        if container.image.id == image_id:
+            container.stop()
+            return True
+    return False
 
 
 class DockerAppChangeStateView(
@@ -147,25 +166,29 @@ class DockerAppChangeStateView(
 
     def form_valid(self, form):
         # Kick off starting/stopping
-        client = docker.from_env()
-
         with transaction.atomic():
             if form.cleaned_data["action"] == "start":
                 form.instance.state = "starting"
+                client = docker.from_env()
                 client.containers.run(
                     form.instance.image_id,
                     detach=True,
                     ports={"%d/tcp" % form.instance.internal_port: form.instance.host_port},
+                    environment={
+                        "DASH_REQUESTS_PATHNAME_PREFIX": reverse(
+                            "dockerapps:dockerapp-proxy",
+                            kwargs={
+                                "project": self.get_context_data()["project"].sodar_uuid,
+                                "dockerapp": self.get_context_data()["object"].sodar_uuid,
+                                "path": "",
+                            },
+                        )
+                    },
                 )
                 messages.info(self.request, "Initiated start of docker container...")
             elif form.cleaned_data["action"] == "stop":
                 form.instance.state = "stopping"
-                stopped = False
-                for container in client.containers.list():
-                    if container.image.id == form.instance.image_id:
-                        result = container.stop()
-                        stopped = True
-                if stopped:
+                if stop_containers(form.instance.image_id):
                     messages.info(self.request, "Initiated stop of docker container...")
             # Update docker app record.
             super().form_valid(form)

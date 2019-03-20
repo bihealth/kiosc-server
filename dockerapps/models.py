@@ -53,12 +53,12 @@ class DockerApp(models.Model):
 
     #: The internal port used by the app, automatically set.
     internal_port = models.PositiveIntegerField(
-        help_text="Port used by the Docker image", blank=True, null=True, unique=True
+        help_text="Port used by the Docker image", blank=True, null=True
     )
 
     #: The host port used by the app, automatically set.
     host_port = models.PositiveIntegerField(
-        help_text="Port used by the Docker image", blank=True, null=True
+        help_text="Port used by the Docker image", blank=True, null=True, unique=True
     )
 
     #: The current state.

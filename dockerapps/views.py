@@ -91,14 +91,14 @@ class DockerAppCreateView(
         docker_apps = DockerApp.objects.order_by("-host_port")
         form.instance.host_port = docker_apps.first().host_port + 1 if docker_apps else FIRST_PORT
         # Load the image into Docker
-        images = docker.from_env().images.load(form.cleaned_data["docker_image"])
+        images = docker.from_env(timeout=300).images.load(form.cleaned_data["docker_image"])
         if len(images) != 1:
             raise ValidationError("The TAR file has to contain exactly one image")
         form.instance.image_id = images[0].id
         try:
             result = super().form_valid(form)
         except ValidationError:  # Remove image and re-raise
-            docker.from_env().images.remove(images[0].id)
+            docker.from_env(timeout=300).images.remove(images[0].id)
         return result
 
 
@@ -125,14 +125,14 @@ class DockerAppUpdateView(
         # Stop any running container.
         stop_containers(form.instance.image_id)
         # Load the image into Docker.
-        images = docker.from_env().images.load(form.cleaned_data["docker_image"])
+        images = docker.from_env(timeout=300).images.load(form.cleaned_data["docker_image"])
         if len(images) != 1:
             raise ValidationError("The TAR file has to contain exactly one image")
         form.instance.image_id = images[0].id
         try:
             result = super().form_valid(form)
         except ValidationError:  # Remove image and re-raise
-            docker.from_env().images.remove(images[0].id)
+            docker.from_env(timeout=300).images.remove(images[0].id)
         return result
 
 
@@ -169,7 +169,7 @@ class DockerAppChangeStateView(
         with transaction.atomic():
             if form.cleaned_data["action"] == "start":
                 form.instance.state = "starting"
-                client = docker.from_env()
+                client = docker.from_env(timeout=300)
                 client.containers.run(
                     form.instance.image_id,
                     detach=True,

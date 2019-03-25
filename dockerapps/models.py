@@ -49,7 +49,7 @@ class DockerApp(models.Model):
     description = models.TextField(help_text="Description of the docker app", blank=True, null=True)
 
     #: The internal image ID.
-    image_id = models.CharField(max_length=100, help_text="Internal ID of the Docker image")
+    image_id = models.CharField(max_length=100, help_text="Internal ID of the Docker image", blank=True, null=True)
 
     #: The internal port used by the app, automatically set.
     internal_port = models.PositiveIntegerField(

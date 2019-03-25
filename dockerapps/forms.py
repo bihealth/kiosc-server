@@ -10,7 +10,7 @@ class DockerAppForm(forms.ModelForm):
     """Form for creating and updating ``DockerApp`` records."""
 
     #: Field for Docker image upload.
-    docker_image = forms.FileField(help_text="TAR file of the Docker image")
+    docker_image = forms.FileField(help_text="TAR file of the Docker image", required=False)
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -19,7 +19,7 @@ class DockerAppForm(forms.ModelForm):
 
     class Meta:
         model = DockerApp
-        fields = ("title", "description", "internal_port", "docker_image")
+        fields = ("title", "description", "internal_port", "docker_image", "image_id")
 
 
 class DockerAppChangeStateForm(forms.ModelForm):

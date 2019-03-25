@@ -90,11 +90,12 @@ class DockerAppCreateView(
         # Find a free port...
         docker_apps = DockerApp.objects.order_by("-host_port")
         form.instance.host_port = docker_apps.first().host_port + 1 if docker_apps else FIRST_PORT
-        # Load the image into Docker
-        images = docker.from_env(timeout=300).images.load(form.cleaned_data["docker_image"])
-        if len(images) != 1:
-            raise ValidationError("The TAR file has to contain exactly one image")
-        form.instance.image_id = images[0].id
+        if form.cleaned_data.get("docker_image"):
+            # Load the image into Docker
+            images = docker.from_env(timeout=300).images.load(form.cleaned_data["docker_image"])
+            if len(images) != 1:
+                raise ValidationError("The TAR file has to contain exactly one image")
+            form.instance.image_id = images[0].id
         try:
             result = super().form_valid(form)
         except ValidationError:  # Remove image and re-raise
@@ -124,11 +125,12 @@ class DockerAppUpdateView(
     def form_valid(self, form):
         # Stop any running container.
         stop_containers(form.instance.image_id)
-        # Load the image into Docker.
-        images = docker.from_env(timeout=300).images.load(form.cleaned_data["docker_image"])
-        if len(images) != 1:
-            raise ValidationError("The TAR file has to contain exactly one image")
-        form.instance.image_id = images[0].id
+        if form.cleaned_data.get("docker_image"):
+            # Load the image into Docker
+            images = docker.from_env(timeout=300).images.load(form.cleaned_data["docker_image"])
+            if len(images) != 1:
+                raise ValidationError("The TAR file has to contain exactly one image")
+            form.instance.image_id = images[0].id
         try:
             result = super().form_valid(form)
         except ValidationError:  # Remove image and re-raise

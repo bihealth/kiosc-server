@@ -21,121 +21,150 @@ from django.views.generic.detail import BaseDetailView
 from projectroles.models import Project
 from projectroles.views import LoggedInPermissionMixin, ProjectContextMixin
 
+from dockerapps.tasks import pull_image
 from kiosc.utils import ProjectPermissionMixin
 
 from . import tasks
-from .forms import DockerAppForm, DockerAppChangeStateForm
-from .models import DockerApp
+from .forms import DockerImageForm, DockerProcessJobControlForm
+from .models import DockerImage, DockerProcess, ImageBackgroundJob
 from .views_proxy import ProxyView
 
 #: Smallest port to use for the Docker image.
 FIRST_PORT = 1025
 
 
-class DockerAppListView(
+class DockerImageListView(
     LoginRequiredMixin,
     LoggedInPermissionMixin,
     ProjectPermissionMixin,
     ProjectContextMixin,
     ListView,
 ):
-    """Display list of all DockerApp records"""
+    """Display list of all DockerImage records"""
 
-    template_name = "dockerapps/dockerapp_list.html"
-    permission_required = "dockerapps.view_dockerapp"
+    template_name = "dockerapps/dockerimage_list.html"
+    permission_required = "dockerapps.view_dockerimage"
 
-    model = DockerApp
+    model = DockerImage
 
     def get_queryset(self):
-        return super().get_queryset().filter(project__sodar_uuid=self.kwargs["project"])
+        return (
+            super()
+            .get_queryset()
+            .filter(project__sodar_uuid=self.kwargs["project"])
+        )
 
 
-class DockerAppDetailView(
+class DockerImageDetailView(
     LoginRequiredMixin,
     LoggedInPermissionMixin,
     ProjectPermissionMixin,
     ProjectContextMixin,
     DetailView,
 ):
-    """Display detail of DockerApp records"""
+    """Display detail of DockerImage records"""
 
-    template_name = "dockerapps/dockerapp_detail.html"
-    permission_required = "dockerapps.view_dockerapp"
+    template_name = "dockerapps/dockerimage_detail.html"
+    permission_required = "dockerapps.view_dockerimage"
 
-    model = DockerApp
+    model = DockerImage
 
-    slug_url_kwarg = "dockerapp"
+    slug_url_kwarg = "image"
     slug_field = "sodar_uuid"
 
 
-class DockerAppCreateView(
+# TODO: also add the port etc. fields
+
+class DockerImageCreateView(
     LoginRequiredMixin,
     LoggedInPermissionMixin,
     ProjectPermissionMixin,
     ProjectContextMixin,
     CreateView,
 ):
-    """Display list of all DockerApp records"""
+    """Display list of all DockerImage records"""
 
-    template_name = "dockerapps/dockerapp_create.html"
-    permission_required = "dockerapps.add_dockerapp"
+    template_name = "dockerapps/dockerimage_create.html"
+    permission_required = "dockerapps.add_dockerimage"
 
-    model = DockerApp
-    form_class = DockerAppForm
+    model = DockerImage
+    form_class = DockerImageForm
 
-    @transaction.atomic
-    def form_valid(self, form):
-        """Automatically set the project property."""
-        form.instance.project = self.get_project(self.request, self.kwargs)
-        # Find a free port...
-        docker_apps = DockerApp.objects.order_by("-host_port")
-        form.instance.host_port = docker_apps.first().host_port + 1 if docker_apps else FIRST_PORT
-        if form.cleaned_data.get("docker_image"):
-            # Load the image into Docker
-            images = docker.from_env(timeout=300).images.load(form.cleaned_data["docker_image"])
-            if len(images) != 1:
-                raise ValidationError("The TAR file has to contain exactly one image")
-            form.instance.image_id = images[0].id
-        try:
-            result = super().form_valid(form)
-        except ValidationError:  # Remove image and re-raise
-            docker.from_env(timeout=300).images.remove(images[0].id)
+    def get_form_kwargs(self):
+        """Extend form kwargs with the project."""
+        result = super().get_form_kwargs()
+        result['project'] = self.get_project()
         return result
 
+    def form_valid(self, form):
+        result = super().form_valid(form)
+        bgjob = ImageBackgroundJob.construct(self.object, self.request.user, "pull_image")
+        pull_image.delay(bgjob.pk)
+        return result
 
-class DockerAppUpdateView(
+    # @transaction.atomic
+    # def form_valid(self, form):
+    #     """Automatically set the project property."""
+    #     form.instance.project = self.get_project(self.request, self.kwargs)
+    #     # Find a free port...
+    #     docker_apps = DockerImage.objects.order_by("-host_port")
+    #     form.instance.host_port = docker_apps.first().host_port + 1 if docker_apps else FIRST_PORT
+    #     if form.cleaned_data.get("docker_image"):
+    #         # Load the image into Docker
+    #         images = docker.from_env(timeout=300).images.load(form.cleaned_data["docker_image"])
+    #         if len(images) != 1:
+    #             raise ValidationError("The TAR file has to contain exactly one image")
+    #         form.instance.image_id = images[0].id
+    #     try:
+    #         result = super().form_valid(form)
+    #     except ValidationError:  # Remove image and re-raise
+    #         docker.from_env(timeout=300).images.remove(images[0].id)
+    #     return result
+
+
+class DockerImageUpdateView(
     LoginRequiredMixin,
     LoggedInPermissionMixin,
     ProjectPermissionMixin,
     ProjectContextMixin,
     UpdateView,
 ):
-    """Updating of DockerApp records"""
+    """Updating of DockerImage records"""
 
-    template_name = "dockerapps/dockerapp_update.html"
-    permission_required = "dockerapps.change_dockerapp"
+    template_name = "dockerapps/dockerimage_update.html"
+    permission_required = "dockerapps.change_dockerimage"
 
-    model = DockerApp
-    form_class = DockerAppForm
+    model = DockerImage
+    form_class = DockerImageForm
 
-    slug_url_kwarg = "dockerapp"
+    slug_url_kwarg = "image"
     slug_field = "sodar_uuid"
 
-    @transaction.atomic
-    def form_valid(self, form):
-        # Stop any running container.
-        stop_containers(form.instance.image_id)
-        if form.cleaned_data.get("docker_image"):
-            # Load the image into Docker
-            images = docker.from_env(timeout=300).images.load(form.cleaned_data["docker_image"])
-            if len(images) != 1:
-                raise ValidationError("The TAR file has to contain exactly one image")
-            form.instance.image_id = images[0].id
-        try:
-            result = super().form_valid(form)
-        except ValidationError:  # Remove image and re-raise
-            docker.from_env(timeout=300).images.remove(images[0].id)
+    def get_form_kwargs(self):
+        """Extend form kwargs with the project."""
+        result = super().get_form_kwargs()
+        result['project'] = self.get_project()
         return result
+
+    # @transaction.atomic
+    # def form_valid(self, form):
+    #     # Stop any running container.
+    #     stop_containers(form.instance.image_id)
+    #     if form.cleaned_data.get("docker_image"):
+    #         # Load the image into Docker
+    #         images = docker.from_env(timeout=300).images.load(
+    #             form.cleaned_data["docker_image"]
+    #         )
+    #         if len(images) != 1:
+    #             raise ValidationError(
+    #                 "The TAR file has to contain exactly one image"
+    #             )
+    #         form.instance.image_id = images[0].id
+    #     try:
+    #         result = super().form_valid(form)
+    #     except ValidationError:  # Remove image and re-raise
+    #         docker.from_env(timeout=300).images.remove(images[0].id)
+    #     return result
 
 
 def stop_containers(image_id):
@@ -148,7 +177,7 @@ def stop_containers(image_id):
     return False
 
 
-class DockerAppChangeStateView(
+class DockerImageJobControlView(
     LoginRequiredMixin,
     LoggedInPermissionMixin,
     ProjectPermissionMixin,
@@ -157,11 +186,11 @@ class DockerAppChangeStateView(
 ):
     """Starting and stopping of docker containers"""
 
-    template_name = "dockerapps/dockerapp_update.html"  # actually not used
-    permission_required = "dockerapps.change_dockerapp"
+    template_name = "dockerapps/dockerimage_update.html"  # actually not used
+    permission_required = "dockerapps.change_dockerimage"
 
-    model = DockerApp
-    form_class = DockerAppChangeStateForm
+    model = DockerImage
+    form_class = DockerProcessJobControlForm
 
     slug_url_kwarg = "dockerapp"
     slug_field = "sodar_uuid"
@@ -175,66 +204,63 @@ class DockerAppChangeStateView(
                 client.containers.run(
                     form.instance.image_id,
                     detach=True,
-                    ports={"%d/tcp" % form.instance.internal_port: form.instance.host_port},
+                    ports={
+                        "%d/tcp"
+                        % form.instance.internal_port: form.instance.host_port
+                    },
                     environment={
                         "DASH_REQUESTS_PATHNAME_PREFIX": reverse(
-                            "dockerapps:dockerapp-proxy",
+                            "dockerapps:image-proxy",
                             kwargs={
-                                "project": self.get_context_data()["project"].sodar_uuid,
-                                "dockerapp": self.get_context_data()["object"].sodar_uuid,
+                                "project": self.get_context_data()[
+                                    "project"
+                                ].sodar_uuid,
+                                "dockerapp": self.get_context_data()[
+                                    "object"
+                                ].sodar_uuid,
                                 "path": "",
                             },
                         )
                     },
                 )
-                messages.info(self.request, "Initiated start of docker container...")
+                messages.info(
+                    self.request, "Initiated start of docker container..."
+                )
             elif form.cleaned_data["action"] == "stop":
                 form.instance.state = "stopping"
                 if stop_containers(form.instance.image_id):
-                    messages.info(self.request, "Initiated stop of docker container...")
+                    messages.info(
+                        self.request, "Initiated stop of docker container..."
+                    )
             # Update docker app record.
             super().form_valid(form)
 
         tasks.update_container_states.delay()
         return redirect(
             reverse(
-                "dockerapps:dockerapp-list",
-                kwargs={"project": self.get_context_data()["project"].sodar_uuid},
+                "dockerapps:image-list",
+                kwargs={
+                    "project": self.get_context_data()["project"].sodar_uuid
+                },
             )
         )
 
 
-class DockerAppUpdateStateView(
-    LoginRequiredMixin, LoggedInPermissionMixin, ProjectPermissionMixin, ProjectContextMixin, View
-):
-    """Starting and stopping of docker containers"""
-
-    permission_required = "dockerapps.change_dockerapp"
-
-    def post(self, *args, **kwargs):
-        tasks.update_container_states.delay()
-        messages.info(
-            self.request,
-            "Refreshing container states. You might have to reload the page to see the results",
-        )
-        return redirect(reverse("dockerapps:dockerapp-list", kwargs={"project": kwargs["project"]}))
-
-
-class DockerAppDeleteView(
+class DockerImageDeleteView(
     LoginRequiredMixin,
     LoggedInPermissionMixin,
     ProjectPermissionMixin,
     ProjectContextMixin,
     DeleteView,
 ):
-    """Deletion of DockerApp records"""
+    """Deletion of DockerImage records"""
 
-    template_name = "dockerapps/dockerapp_confirm_delete.html"
-    permission_required = "dockerapps.delete_dockerapp"
+    template_name = "dockerapps/dockerimage_confirm_delete.html"
+    permission_required = "dockerapps.delete_dockerimage"
 
-    model = DockerApp
+    model = DockerImage
 
-    slug_url_kwarg = "dockerapp"
+    slug_url_kwarg = "image"
     slug_field = "sodar_uuid"
 
     @transaction.atomic
@@ -245,8 +271,12 @@ class DockerAppDeleteView(
 
     def get_success_url(self):
         return reverse(
-            "dockerapps:dockerapp-list",
-            kwargs={"project": self.get_project(self.request, self.kwargs).sodar_uuid},
+            "dockerapps:image-list",
+            kwargs={
+                "project": self.get_project(
+                    self.request, self.kwargs
+                ).sodar_uuid
+            },
         )
 
 
@@ -257,18 +287,18 @@ class DockerProxyView(
     ProjectContextMixin,
     BaseDetailView,
 ):
-    permission_required = "dockerapps.view_dockerapp"
+    permission_required = "dockerapps.view_dockerimage"
 
-    model = DockerApp
+    model = DockerProcess
 
-    slug_url_kwarg = "dockerapp"
+    slug_url_kwarg = "process"
     slug_field = "sodar_uuid"
 
     def dispatch(self, request, *args, **kwargs):
         if not self.has_permission():
             return self.handle_no_permission()
         kwargs.pop("project")
-        kwargs.pop("dockerapp")
+        kwargs.pop("container")
         upstream = "http://localhost:%d/" % self.get_object().host_port
         # Hand down into ProxyView
         proxy_view = ProxyView()
@@ -278,24 +308,9 @@ class DockerProxyView(
         proxy_view.upstream = upstream
         proxy_view.suppress_empty_body = True
         proxy_view.rewrite = (
-            (r"^/^(?P<project>[0-9a-f-]+)/dockerapps/(?P<dockerapp>[0-9a-f-]+)/proxy/^", r"/"),
+            (
+                r"^/^(?P<project>[0-9a-f-]+)/dockerapps/(?P<image>[0-9a-f-]+)/proxy/^",
+                r"/",
+            ),
         )
         return proxy_view.dispatch(request, *args, **kwargs)
-
-
-class DockerAppRunView(
-    LoginRequiredMixin,
-    LoggedInPermissionMixin,
-    ProjectPermissionMixin,
-    ProjectContextMixin,
-    DetailView,
-):
-    """Display detail of DockerApp records"""
-
-    template_name = "dockerapps/dockerapp_run.html"
-    permission_required = "dockerapps.view_dockerapp"
-
-    model = DockerApp
-
-    slug_url_kwarg = "dockerapp"
-    slug_field = "sodar_uuid"

@@ -8,56 +8,52 @@ app_name = "dockerapps"
 
 urlpatterns = [
     url(
-        regex=r"^(?P<project>[0-9a-f-]+)/dockerapps/$",
-        view=views.DockerAppListView.as_view(),
-        name="dockerapp-list",
+        regex=r"^(?P<project>[0-9a-f-]+)/dockerapps/image/$",
+        view=views.DockerImageListView.as_view(),
+        name="image-list",
     ),
     url(
-        regex=r"^(?P<project>[0-9a-f-]+)/dockerapps/create$",
-        view=views.DockerAppCreateView.as_view(),
-        name="dockerapp-create",
+        regex=r"^(?P<project>[0-9a-f-]+)/dockerapps/image/create$",
+        view=views.DockerImageCreateView.as_view(),
+        name="image-create",
     ),
     url(
-        regex=r"^(?P<project>[0-9a-f-]+)/dockerapps/(?P<dockerapp>[0-9a-f-]+)/$",
-        view=views.DockerAppDetailView.as_view(),
-        name="dockerapp-detail",
+        regex=r"^(?P<project>[0-9a-f-]+)/dockerapps/image/(?P<image>[0-9a-f-]+)/$",
+        view=views.DockerImageDetailView.as_view(),
+        name="image-detail",
     ),
     url(
-        regex=r"^(?P<project>[0-9a-f-]+)/dockerapps/(?P<dockerapp>[0-9a-f-]+)/update/$",
-        view=views.DockerAppUpdateView.as_view(),
-        name="dockerapp-update",
+        regex=r"^(?P<project>[0-9a-f-]+)/dockerapps/image/(?P<image>[0-9a-f-]+)/update/$",
+        view=views.DockerImageUpdateView.as_view(),
+        name="image-update",
     ),
     url(
-        regex=r"^(?P<project>[0-9a-f-]+)/dockerapps/(?P<dockerapp>[0-9a-f-]+)/changestate/$",
-        view=views.DockerAppChangeStateView.as_view(),
-        name="dockerapp-changestate",
+        regex=r"^(?P<project>[0-9a-f-]+)/dockerapps/image/(?P<image>[0-9a-f-]+)/delete/$",
+        view=views.DockerImageDeleteView.as_view(),
+        name="image-delete",
     ),
     url(
-        regex=r"^(?P<project>[0-9a-f-]+)/dockerapps/updatestates/$",
-        view=views.DockerAppUpdateStateView.as_view(),
-        name="dockerapp-updatestates",
-    ),
-    url(
-        regex=r"^(?P<project>[0-9a-f-]+)/dockerapps/(?P<dockerapp>[0-9a-f-]+)/delete/$",
-        view=views.DockerAppDeleteView.as_view(),
-        name="dockerapp-delete",
-    ),
-    url(
-        regex=r"^(?P<project>[0-9a-f-]+)/dockerapps/(?P<dockerapp>[0-9a-f-]+)/run/$",
-        view=views.DockerAppRunView.as_view(),
-        name="dockerapp-run",
+        regex=r"^(?P<project>[0-9a-f-]+)/dockerapps/image/(?P<image>[0-9a-f-]+)/control/$",
+        view=views.DockerImageJobControlView.as_view(),
+        name="image-control",
     ),
     # Proxy to embedded Docker / Shiny app.  NB: there is a "partner" websocket_urlpattern through Django Channels.
     url(
-        regex=r"^(?P<project>[0-9a-f-]+)/dockerapps/(?P<dockerapp>[0-9a-f-]+)/proxy/(?P<path>.*)$",
+        regex=(
+            r"^(?P<project>[0-9a-f-]+)/dockerapps/(?P<image>[0-9a-f-]+)/proxy/"
+            "(?P<container>[0-9a-f-]+)/(?P<path>.*)$"
+        ),
         view=csrf_exempt(views.DockerProxyView.as_view()),
-        name="dockerapp-proxy",
+        name="container-proxy",
     ),
 ]
 
 websocket_urlpatterns = [
     url(
-        r"^dockerapps/(?P<project>[0-9a-f-]+)/dockerapps/(?P<dockerapp>[0-9a-f-]+)/proxy/(?P<path>.*)$",
+        (
+            r"^dockerapps/(?P<project>[0-9a-f-]+)/dockerapps/(?P<image>[0-9a-f-]+)/proxy/"
+            "(?P<container>[0-9a-f-]+)/(?P<path>.*)$"
+        ),
         consumers.TunnelConsumer,
     )
 ]

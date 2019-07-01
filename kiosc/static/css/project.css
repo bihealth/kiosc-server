@@ -24,19 +24,19 @@
 /* Change title bar, sidebar and project navbar colours */
 
 .sodar-base-navbar {
-  background-color: #895e01 !important;
+  background-color: #6A0846 !important;
 }
 
 .sodar-pr-sidebar {
-  background-color: #895e01 !important;
+  background-color: #6A0846 !important;
 }
 
 .sodar-pr-sidebar-nav {
-  background-color: #895e01 !important;
+  background-color: #6A0846 !important;
 }
 
 .sodar-pr-navbar {
-  background-color: #6884cb !important;
+  background-color: #940963 !important;
 }
 
 /** stacking */

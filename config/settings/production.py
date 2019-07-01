@@ -29,8 +29,12 @@ MIDDLEWARE = WHITENOISE_MIDDLEWARE + MIDDLEWARE
 # set this to 60 seconds and then to 518400 when you can prove it works
 SECURE_HSTS_SECONDS = 60
 
-SECURE_HSTS_INCLUDE_SUBDOMAINS = env.bool("DJANGO_SECURE_HSTS_INCLUDE_SUBDOMAINS", default=True)
-SECURE_CONTENT_TYPE_NOSNIFF = env.bool("DJANGO_SECURE_CONTENT_TYPE_NOSNIFF", default=True)
+SECURE_HSTS_INCLUDE_SUBDOMAINS = env.bool(
+    "DJANGO_SECURE_HSTS_INCLUDE_SUBDOMAINS", default=True
+)
+SECURE_CONTENT_TYPE_NOSNIFF = env.bool(
+    "DJANGO_SECURE_CONTENT_TYPE_NOSNIFF", default=True
+)
 SECURE_BROWSER_XSS_FILTER = True
 SESSION_COOKIE_SECURE = True
 SESSION_COOKIE_HTTPONLY = True
@@ -66,7 +70,9 @@ DATABASES["default"] = env.db("DATABASE_URL")
 
 # CACHING
 # ------------------------------------------------------------------------------
-REDIS_LOCATION = "{0}/{1}".format(env("REDIS_URL", default="redis://127.0.0.1:6379"), 0)
+REDIS_LOCATION = "{0}/{1}".format(
+    env("REDIS_URL", default="redis://127.0.0.1:6379"), 0
+)
 
 # Heroku URL does not pass the DB number, so we parse it in
 # http://niwinz.github.io/django-redis/latest/#_memcached_exceptions_behavior

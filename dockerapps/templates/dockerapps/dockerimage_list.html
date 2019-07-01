@@ -1,15 +1,12 @@
 {% extends "projectroles/project_base.html" %}
 
-{% load dockerapps %}
-
 {% block navi_sub_project_extend %}
-  <li class="breadcrumb-item">
-    <a href="{% url 'dockerapps:dockerapp-list' project=project.sodar_uuid %}">Docker Apps</a>
-  </li>
-    <li class="breadcrumb-item active">
-      {{ object.title }}
-  </li>
+  <li class="breadcrumb-item active">Docker Apps</li>
 {% endblock %}
+
+{% block title %}
+  Docker Apps in {{ project.title }}
+{% endblock title %}
 
 {% block projectroles %}
   <div id="ajax-form-errors"></div>
@@ -19,15 +16,12 @@
     {% include 'projectroles/_project_menu_btn.html' %}
 
     <h2 class="sodar-pr-content-title">
-      Docker App &quot;{{ object.title }}&quot;
+      Docker Apps
     </h2>
-    {% include "dockerapps/_dockerapp_detail_buttons.html" %}
+    {% include "dockerapps/_dockerimage_list_buttons.html" %}
   </div>
 
-  <div class="row">
-    <div class="col-12">
-      Detail
-    </div>
+  <div class="container-fluid sodar-page-container">
+    {% include "dockerapps/_dockerimage_table.html" %}
   </div>
-
 {% endblock %}

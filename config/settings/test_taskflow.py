@@ -14,4 +14,8 @@ TASKFLOW_BACKEND_PORT = env.int("TASKFLOW_BACKEND_PORT", 5005)
 TASKFLOW_TEST_MODE = True  # Important! Make taskflow use a test iRODS server
 
 # Plugin settings
-ENABLED_BACKEND_PLUGINS = ["taskflow", "timeline_backend", "example_backend_app"]
+ENABLED_BACKEND_PLUGINS = [
+    "taskflow",
+    "timeline_backend",
+    "example_backend_app",
+]

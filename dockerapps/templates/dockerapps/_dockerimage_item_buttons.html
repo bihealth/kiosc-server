@@ -1,6 +1,6 @@
 <div class="btn-group sodar-list-btn-group pull-right">
   {% if item.state == "running" %}
-    <a href="{% url 'dockerapps:dockerapp-proxy' project=project.sodar_uuid dockerapp=item.sodar_uuid path='' %}" class="btn btn-primary sodar-list-dropdown" target="_blank"
+    <a href="{% url 'dockerapps:image-proxy' project=project.sodar_uuid image=item.sodar_uuid path='' %}" class="btn btn-primary sodar-list-dropdown" target="_blank"
       data-toggle="tooltip" data-placement="top" title="Open app">
       <i class="fa fa-eye"></i>
     </a>
@@ -15,7 +15,7 @@
     <i class="fa fa-cog"></i>
   </button>
   <div class="dropdown-menu dropdown-menu-right">
-    <form action="{% url 'dockerapps:dockerapp-changestate' project=project.sodar_uuid dockerapp=item.sodar_uuid %}" method="post">{% csrf_token %}
+    <form action="{#% url 'dockerapps:image-changestate' project=project.sodar_uuid image=item.sodar_uuid %#}" method="post">{% csrf_token %}
       {% if item.state == "idle" or item.state == "failed" %}
         <button type="submit" class="dropdown-item" name="action" value="start">
           <i class="fa fa-fw fa-play"></i>
@@ -29,11 +29,11 @@
       {% endif %}
     </form>
     <div class="dropdown-divider"></div>
-    <a class="dropdown-item" href="{% url 'dockerapps:dockerapp-update' project=project.sodar_uuid dockerapp=item.sodar_uuid %}">
+    <a class="dropdown-item" href="{% url 'dockerapps:image-update' project=project.sodar_uuid image=item.sodar_uuid %}">
       <i class="fa fa-fw fa-pencil"></i>
       Update
     </a>
-    <a class="dropdown-item" href="{% url 'dockerapps:dockerapp-delete' project=project.sodar_uuid dockerapp=item.sodar_uuid %}">
+    <a class="dropdown-item" href="{% url 'dockerapps:image-delete' project=project.sodar_uuid image=item.sodar_uuid %}">
       <i class="fa fa-fw fa-close"></i>
       Delete
     </a>

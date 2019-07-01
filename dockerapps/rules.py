@@ -5,7 +5,7 @@ from projectroles import rules as pr_rules
 
 
 rules.add_perm("dockerapps", rules.always_allow)
-for model in ("dockerapp",):
+for model in ("dockerimage", "dockercontainer"):
     rules.add_perm(
         "dockerapps.view_%s" % model,
         pr_rules.is_project_owner

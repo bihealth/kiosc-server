@@ -4,7 +4,7 @@ from channels.generic.websocket import WebsocketConsumer
 import websocket
 import threading
 
-from .models import DockerApp
+from .models import DockerProcess, STATE_RUNNING
 
 
 class TunnelConsumer(WebsocketConsumer):
@@ -19,11 +19,15 @@ class TunnelConsumer(WebsocketConsumer):
 
     def _connect_next(self):
         """Create web socket to the tunnel/proxy target."""
-        # Get UUID of project.
         # TODO: check project permissions for users
-        project = self.scope["url_route"]["kwargs"]["project"]
         # Get DockerApp information for querying the port information.
-        dockerapp = DockerApp.objects.get(sodar_uuid=self.scope["url_route"]["kwargs"]["dockerapp"])
+        dockerapp = DockerProcess.objects.get(
+            sodar_uuid=self.scope["url_route"]["kwargs"]["image"],
+            image__project__sodar_uuid=self.scope["url_route"]["kwargs"][
+                "project"
+            ],
+            state=STATE_RUNNING,
+        )
 
         # Create web socket for writing data from inernal web socket to original client.
         def on_message(ws, message):

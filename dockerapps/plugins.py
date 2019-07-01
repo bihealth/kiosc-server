@@ -1,6 +1,11 @@
 from projectroles.plugins import ProjectAppPluginPoint
+from bgjobs.plugins import BackgroundJobsPluginPoint
 
-from .models import DockerApp
+from .models import (
+    DockerImage,
+    ImageBackgroundJob,
+    ContainerStateControlBackgroundJob,
+)
 from .urls import urlpatterns
 
 
@@ -13,7 +18,7 @@ class ProjectAppPlugin(ProjectAppPluginPoint):
 
     icon = "rocket"
 
-    entry_point_url_id = "dockerapps:dockerapp-list"
+    entry_point_url_id = "dockerapps:image-list"
 
     description = "Management of Docker Apps"
 
@@ -51,13 +56,19 @@ class ProjectAppPlugin(ProjectAppPluginPoint):
         items = []
 
         if not search_type:
-            dockerapps = DockerApp.objects.find(search_term, keywords)
+            dockerapps = DockerImage.objects.find(search_term, keywords)
             items = list(dockerapps)
             items.sort(key=lambda x: x.name.lower())
         elif search_type == "dockerapps":
-            items = DockerApp.objects.find(search_term, keywords)
+            items = DockerImage.objects.find(search_term, keywords)
 
-        return {"all": {"title": "Docker Apps", "search_types": ["dockerapps"], "items": items}}
+        return {
+            "all": {
+                "title": "Docker Apps",
+                "search_types": ["dockerapps"],
+                "items": items,
+            }
+        }
 
     def get_object_link(self, model_str, uuid):
         """
@@ -69,7 +80,22 @@ class ProjectAppPlugin(ProjectAppPluginPoint):
         """
         obj = self.get_object(eval(model_str), uuid)
 
-        if isinstance(obj, DockerApp):
+        if isinstance(obj, DockerImage):
             return {"url": obj.get_absolute_url(), "label": obj.title}
 
         return None
+
+
+class BackgroundJobsPlugin(BackgroundJobsPluginPoint):
+    """Plugin for registering background jobs with ``bgjobs`` app."""
+
+    #: Slug used in URLs and similar places.
+    name = "dockerapps"
+    #: Human-readable title.
+    title = "Dockerapps Background Jobs"
+
+    #: Return name-to-class mapping for background job class specializations.
+    job_specs = {
+        ImageBackgroundJob.spec_name: ImageBackgroundJob,
+        ContainerStateControlBackgroundJob.spec_name: ContainerStateControlBackgroundJob,
+    }

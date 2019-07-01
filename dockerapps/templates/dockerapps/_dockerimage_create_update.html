@@ -5,12 +5,12 @@
 
 {% block navi_sub_project_extend %}
   <li class="breadcrumb-item">
-    <a href="{% url 'dockerapps:dockerapp-list' project=project.sodar_uuid %}">Docker App</a>
+    <a href="{% url 'dockerapps:image-list' project=project.sodar_uuid %}">Docker App</a>
   </li>
   {% if object.pk %}
     <li class="breadcrumb-item">
-      <a href="{% url 'dockerapps:dockerapp-detail' project=project.sodar_uuid dockerapp=object.sodar_uuid %}">
-        {{ object.vendor_id }} ({{ object.label }})
+      <a href="{% url 'dockerapps:image-detail' project=project.sodar_uuid image=object.sodar_uuid %}">
+        {{ object.title }}
       </a>
     </li>
     <li class="breadcrumb-item active">
@@ -86,9 +86,9 @@
           <div class="btn-group" role="group">
             <a role="button" class="btn btn-secondary"
               {% if object.pk %}
-                href="{% url 'dockerapps:dockerapp-detail' project=project.sodar_uuid dockerapp=object.sodar_uuid %}">
+                href="{% url 'dockerapps:image-detail' project=project.sodar_uuid image=object.sodar_uuid %}">
               {% else %}
-                href="{% url 'dockerapps:dockerapp-list' project=project.sodar_uuid %}">
+                href="{% url 'dockerapps:image-list' project=project.sodar_uuid %}">
               {% endif %}
               <i class="fa fa-arrow-circle-left" aria-hidden="true"></i>
               Cancel

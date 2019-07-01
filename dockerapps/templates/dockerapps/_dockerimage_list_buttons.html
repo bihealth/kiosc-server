@@ -10,12 +10,12 @@
     Docker App Operations
   </button>
   <div class="dropdown-menu dropdown-menu-right">
-    <form action="{% url 'dockerapps:dockerapp-updatestates' project=project.sodar_uuid %}" method="post">{% csrf_token %}
+    <form action="{#% url 'dockerapps:image-updatestates' project=project.sodar_uuid %#}{# XXX #}" method="post">{% csrf_token %}
       <button class="dropdown-item">
         <i class="fa fa-fw fa-refresh"></i> Update States
       </button>
     </form>
-    <a class="dropdown-item" href="{% url 'dockerapps:dockerapp-create' project=project.sodar_uuid %}">
+    <a class="dropdown-item" href="{% url 'dockerapps:image-create' project=project.sodar_uuid %}">
       <i class="fa fa-fw fa-plus"></i> Create
     </a>
   </div>

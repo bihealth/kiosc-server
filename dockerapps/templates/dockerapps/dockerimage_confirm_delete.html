@@ -2,10 +2,10 @@
 
 {% block navi_sub_project_extend %}
   <li class="breadcrumb-item">
-    <a href="{% url 'dockerapps:dockerapp-list' project=project.sodar_uuid %}">Docker Apps</a>
+    <a href="{% url 'dockerapps:image-list' project=project.sodar_uuid %}">Docker Apps</a>
   </li>
   <li class="breadcrumb-item">
-    <a href="{% url 'dockerapps:dockerapp-detail' project=project.sodar_uuid dockerapp=object.sodar_uuid %}">
+    <a href="{% url 'dockerapps:image-detail' project=project.sodar_uuid image=object.sodar_uuid %}">
       {{ object.title }}
     </a>
   </li>
@@ -13,7 +13,7 @@
 {% endblock %}
 
 {% block title %}
-  Confirm Removal of Docker App{{ object.get_full_name }}
+  Confirm Removal of Docker App {{ object.title }}
 {% endblock title %}
 
 {% block projectroles %}
@@ -22,13 +22,13 @@
     {% include 'projectroles/_project_menu_btn.html' %}
 
     <h2 class="sodar-pr-content-title">
-      Really Delete Docker App &quot;{{ object.get_full_name }}&quot;?
+      Really Delete Docker App &quot;{{ object.title }}&quot;?
     </h2>
   </div>
 
   <div class="container-fluid sodar-page-container">
 
-    {% include "dockerapps/_dockerapp_properties.html" %}
+    {% include "dockerapps/_dockerimage_properties.html" %}
 
     <form method="post">
       {% csrf_token %}

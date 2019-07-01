@@ -48,7 +48,7 @@
           {% endautoescape %}
         </a>
         /
-        <a href="{% url 'dockerapps:dockerapp-detail' project=item.dockerapp.project.sodar_uuid dockerapp=item.dockerapp.sodar_uuid %}">
+        <a href="{% url 'dockerapps:image-detail' project=item.dockerapp.project.sodar_uuid image=item.dockerapp.sodar_uuid %}">
           {% autoescape off %}
             {# NOTE: No highlight here as project is not searched for here #}
             {{ item.dockerapp.vendor_id }}

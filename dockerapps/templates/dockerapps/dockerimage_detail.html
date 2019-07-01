@@ -1,0 +1,69 @@
+{% extends "projectroles/project_base.html" %}
+
+{% load dockerapps %}
+
+{% block navi_sub_project_extend %}
+  <li class="breadcrumb-item">
+    <a href="{% url 'dockerapps:image-list' project=project.sodar_uuid %}">Docker Apps</a>
+  </li>
+    <li class="breadcrumb-item active">
+      {{ object.title }}
+  </li>
+{% endblock %}
+
+{% block projectroles %}
+  <div id="ajax-form-errors"></div>
+
+  <div class="row sodar-pr-content-title pb-2">
+    {# Project menu dropdown, only visible if browser width < X and sidebar is hidden #}
+    {% include 'projectroles/_project_menu_btn.html' %}
+
+    <h2 class="sodar-pr-content-title">
+      Docker App &quot;{{ object.title }}&quot;
+    </h2>
+    {% include "dockerapps/_dockerimage_detail_buttons.html" %}
+  </div>
+
+  <div class="row">
+    <div class="col-12">
+      {% include "dockerapps/_dockerimage_properties.html" %}
+    </div>
+  </div>
+
+  <div class="row sodar-pr-content-title pb-2">
+    <div class="col-12">
+      <h3>Log Messages</h3>
+
+      <ul>
+        {% for entry in object.log_entries.all %}
+          <li>
+            {{ entry.date_created }}
+            -
+            {{ entry.text }}
+          </li>
+        {% endfor %}
+      </ul>
+    </div>
+  </div>
+
+  <div class="row sodar-pr-content-title pb-2">
+    <div class="col-12">
+      <h3>Background Jobs</h3>
+
+      <ul>
+        {% for job in object.imagebackgroundjob_set.all %}
+          <li>
+            {{ job.date_created }}
+            -
+            {{ job.action }}
+            -
+            {{ job.bg_job.status}}
+            -
+            {{ job.bg_job.name }}
+          </li>
+        {% endfor %}
+      </ul>
+    </div>
+  </div>
+
+{% endblock %}

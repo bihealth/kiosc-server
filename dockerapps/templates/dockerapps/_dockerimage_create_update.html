@@ -46,37 +46,89 @@
     </h2>
   </div>
 
-  <form method="post" enctype="multipart/form-data">{% csrf_token %}
-    <div class="row py-3">
-      <div class="col-9">
-        {% if object.pk %}
-          <div class="form-group row">
-            <label class="form-control-label {{ form.helper.label_class }}">UUID</label>
-            <div class="{{ form.helper.field_class}}">
-              <input type="text" readonly class="form-control-plaintext" value="{{ object.sodar_uuid }}">
-            </div>
-          </div>
-          <div class="form-group row">
-            <label class="form-control-label {{ form.helper.label_class }}">Project</label>
-            <div class="{{ form.helper.field_class}}">
-              <input type="text" readonly class="form-control-plaintext" value="{{ object.project.title }}">
-            </div>
-          </div>
-          <div class="form-group row">
-            <label class="form-control-label {{ form.helper.label_class }}">Created</label>
-            <div class="{{ form.helper.field_class}}">
-              <input type="text" readonly class="form-control-plaintext" value="{{ object.date_created }}">
-            </div>
-          </div>
-          <div class="form-group row">
-            <label class="form-control-label {{ form.helper.label_class }}">Last Update</label>
-            <div class="{{ form.helper.field_class}}">
-              <input type="text" readonly class="form-control-plaintext" value="{{ object.date_modified }}">
-            </div>
-          </div>
-        {% endif %}
+  <div class="pb-3" id="env-input">
+    <div class="row">
+      <div class="col-3 pl-0">
+        <strong>Variable</strong>
+      </div>
+      <div class="col-9 pl-0">
+        <strong>Value</strong>
       </div>
     </div>
+    <div id="env-input-list">
+    </div>
+  </div>
+
+  {% verbatim %}
+  <script id="tpl-env-input-row" type="text/x-jsrender">
+    <div id="env-input-row-{{:uuid}}" class="row">
+      <div class="col-3 pl-0">
+        <input id="env-input-name-{{:uuid}}" type="text" class="form-control env-input-variable" placeholder="variable name" />
+      </div>
+      <div class="col-9 pl-0">
+        <input id="env-input-value-{{:uuid}}" type="text" class="form-control" placeholder="value" />
+        <i id="env-input-erase-{{:uuid}}" class="fa fa-eraser" class="popup" title="remove"></i>
+        <i id="env-input-secret-{{:uuid}}"  class="fa fa-eye-slash" class="popup" title="mark as secret"></i>
+      </div>
+    </div>
+  </script>
+  {% endverbatim %}
+
+  <script type="text/javascript">
+  function uuidv4() {
+    return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(
+        /[xy]/g,
+        function(c) {
+          const r = Math.random() * 16 | 0, v = c == 'x' ? r : (r & 0x3 | 0x8)
+          return v.toString(16)
+        }
+      )
+  }
+
+  function addVariableRow() {
+      const rowTpl = $.templates("#tpl-env-input-row")
+      const row = rowTpl.render({"uuid": uuidv4()})
+      row.find(".env-input-variable").onchange(function (e) {
+          if ($("#tpl-env-input-row").value() !== "") {
+            addVariableRow()
+          }
+      })
+      $("#env-input-list").append(row)
+  }
+
+  $(function () {
+      addVariableRow()
+      $(".popup").tooltip()
+  })
+  </script>
+
+  <form method="post" enctype="multipart/form-data">{% csrf_token %}
+    {% if object.pk %}
+      <div class="form-group row">
+        <label class="form-control-label {{ form.helper.label_class }}">UUID</label>
+        <div class="{{ form.helper.field_class}}">
+          <input type="text" readonly class="form-control-plaintext" value="{{ object.sodar_uuid }}">
+        </div>
+      </div>
+      <div class="form-group row">
+        <label class="form-control-label {{ form.helper.label_class }}">Project</label>
+        <div class="{{ form.helper.field_class}}">
+          <input type="text" readonly class="form-control-plaintext" value="{{ object.project.title }}">
+        </div>
+      </div>
+      <div class="form-group row">
+        <label class="form-control-label {{ form.helper.label_class }}">Created</label>
+        <div class="{{ form.helper.field_class}}">
+          <input type="text" readonly class="form-control-plaintext" value="{{ object.date_created }}">
+        </div>
+      </div>
+      <div class="form-group row">
+        <label class="form-control-label {{ form.helper.label_class }}">Last Update</label>
+        <div class="{{ form.helper.field_class}}">
+          <input type="text" readonly class="form-control-plaintext" value="{{ object.date_modified }}">
+        </div>
+      </div>
+    {% endif %}
 
     {% crispy form form.helper %}
 

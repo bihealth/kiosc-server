@@ -153,6 +153,7 @@ class DockerProcess(models.Model):
 
     #: The port within the Docker container to listen on.
     internal_port = models.IntegerField(
+        default=80,
         help_text="Server port within the container", blank=False, null=False
     )
 
@@ -161,6 +162,7 @@ class DockerProcess(models.Model):
         help_text="The port of the container on the host",
         blank=False,
         null=False,
+        unique=True,
     )
 
     #: Whether or not the container should be running.
@@ -181,8 +183,8 @@ class DockerProcess(models.Model):
         null=False,
     )
 
-    #: Define the environment variables to use, as an array of 2-element arrays.  This guarantees that the order
-    #: of environment variable definitions does not change.
+    #: Define the environment variables to use, as an array of dicts with keys "name" and "value.
+    #: This guarantees that the order of environment variable definitions does not change.
     environment = JSONField(help_text="The environment variables to use.")
 
     def __str__(self):

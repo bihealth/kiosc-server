@@ -19,9 +19,7 @@ class FallbackToAuthBasicMiddleware(MiddlewareMixin):
 
     def process_request(self, request):
         # Authentication middleware must be active.
-        assert hasattr(
-            request, "user"
-        ), "AuthenticationMiddleware must be active"
+        assert hasattr(request, "user"), "AuthenticationMiddleware must be active"
 
         # We are already done if the user is already authenticated.
         if request.user.is_authenticated():
@@ -69,6 +67,4 @@ def cbv_decorator_from_middleware(middleware):
 
 
 #: Decorator for ``FallbackToAuthBasicMiddleware``
-fallback_to_auth_basic = cbv_decorator_from_middleware(
-    FallbackToAuthBasicMiddleware
-)
+fallback_to_auth_basic = cbv_decorator_from_middleware(FallbackToAuthBasicMiddleware)

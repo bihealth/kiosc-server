@@ -47,51 +47,34 @@ class DockerImage(models.Model):
     """Makes a Docker image available in a ``Project``."""
 
     #: DateTime of creation
-    date_created = models.DateTimeField(
-        auto_now_add=True, help_text="DateTime of creation"
-    )
+    date_created = models.DateTimeField(auto_now_add=True, help_text="DateTime of creation")
 
     #: DateTime of last modification
-    date_modified = models.DateTimeField(
-        auto_now=True, help_text="DateTime of last modification"
-    )
+    date_modified = models.DateTimeField(auto_now=True, help_text="DateTime of last modification")
 
     #: UUID used for identification throughout SODAR.
     sodar_uuid = models.UUIDField(
-        default=uuid_object.uuid4,
-        unique=True,
-        help_text="Barcodeset SODAR UUID",
+        default=uuid_object.uuid4, unique=True, help_text="Barcodeset SODAR UUID"
     )
 
     #: The project containing this barcode set.
-    project = models.ForeignKey(
-        Project, help_text="Project in which this objects belongs"
-    )
+    project = models.ForeignKey(Project, help_text="Project in which this objects belongs")
 
     #: The title of the application
-    title = models.CharField(
-        max_length=100, help_text="Title of the docker app"
-    )
+    title = models.CharField(max_length=100, help_text="Title of the docker app")
 
     #: The description of the application
-    description = models.TextField(
-        help_text="Description of the docker app", blank=True, null=True
-    )
+    description = models.TextField(help_text="Description of the docker app", blank=True, null=True)
 
     #: The "repository" of the image, if any.
-    repository = models.CharField(
-        max_length=512, help_text="The repository/name of the image."
-    )
+    repository = models.CharField(max_length=512, help_text="The repository/name of the image.")
 
     #: The tag of the image, if any.
     tag = models.CharField(max_length=128, help_text="The tag of the image")
 
     #: The internal image ID.
     image_id = models.CharField(
-        max_length=100,
-        help_text="Internal ID of the Docker image",
-        blank=True,
-        null=True,
+        max_length=100, help_text="Internal ID of the Docker image", blank=True, null=True
     )
 
     #: The current state.
@@ -106,10 +89,7 @@ class DockerImage(models.Model):
     def get_absolute_url(self):
         return reverse(
             "dockerapps:image-detail",
-            kwargs={
-                "project": self.project.sodar_uuid,
-                "image": self.sodar_uuid,
-            },
+            kwargs={"project": self.project.sodar_uuid, "image": self.sodar_uuid},
         )
 
     def __str__(self):
@@ -128,14 +108,10 @@ class DockerProcess(models.Model):
     """
 
     #: DateTime of creation
-    date_created = models.DateTimeField(
-        auto_now_add=True, help_text="DateTime of creation"
-    )
+    date_created = models.DateTimeField(auto_now_add=True, help_text="DateTime of creation")
 
     #: DateTime of last modification
-    date_modified = models.DateTimeField(
-        auto_now=True, help_text="DateTime of last modification"
-    )
+    date_modified = models.DateTimeField(auto_now=True, help_text="DateTime of last modification")
 
     #: The image that the process is to be based on.
     image = models.ForeignKey(
@@ -147,22 +123,16 @@ class DockerProcess(models.Model):
     )
 
     #: The ID of the Docker container (when running).
-    container_id = models.CharField(
-        max_length=128, help_text="Container ID", blank=True, null=True
-    )
+    container_id = models.CharField(max_length=128, help_text="Container ID", blank=True, null=True)
 
     #: The port within the Docker container to listen on.
     internal_port = models.IntegerField(
-        default=80,
-        help_text="Server port within the container", blank=False, null=False
+        default=80, help_text="Server port within the container", blank=False, null=False
     )
 
     #: The port on the host (to redirect the requests/web socket to).
     host_port = models.IntegerField(
-        help_text="The port of the container on the host",
-        blank=False,
-        null=False,
-        unique=True,
+        help_text="The port of the container on the host", blank=False, null=False, unique=True
     )
 
     #: Whether or not the container should be running.
@@ -200,15 +170,11 @@ class ContainerStateControlBackgroundJob:
     spec_name = "dockerapps.container_jobcontrol"
 
     #: DateTime of creation
-    date_created = models.DateTimeField(
-        auto_now_add=True, help_text="DateTime of creation"
-    )
+    date_created = models.DateTimeField(auto_now_add=True, help_text="DateTime of creation")
 
     #: UUID of the job
     sodar_uuid = models.UUIDField(
-        default=uuid_object.uuid4,
-        unique=True,
-        help_text="Background job specialization SODAR UUID",
+        default=uuid_object.uuid4, unique=True, help_text="Background job specialization SODAR UUID"
     )
 
     #: The Docker process that the job belongs to.
@@ -245,21 +211,17 @@ class ImageBackgroundJob(models.Model):
                 job_type=cls.spec_name,
                 name="Performing action %s on %s:%s (%s)"
                 % (action, image.repository, image.tag, image.title),
-            )
+            ),
         )
 
     spec_name = "dockerapps.image_process"
 
     #: DateTime of creation
-    date_created = models.DateTimeField(
-        auto_now_add=True, help_text="DateTime of creation"
-    )
+    date_created = models.DateTimeField(auto_now_add=True, help_text="DateTime of creation")
 
     #: UUID of the job
     sodar_uuid = models.UUIDField(
-        default=uuid_object.uuid4,
-        unique=True,
-        help_text="Background job specialization SODAR UUID",
+        default=uuid_object.uuid4, unique=True, help_text="Background job specialization SODAR UUID"
     )
 
     #: The action to perform.
@@ -310,9 +272,7 @@ class LogEntry(models.Model):
         abstract = True
 
     #: DateTime of creation
-    date_created = models.DateTimeField(
-        auto_now_add=True, help_text="DateTime of creation"
-    )
+    date_created = models.DateTimeField(auto_now_add=True, help_text="DateTime of creation")
 
     #: The level of the log entry.
     level = models.CharField(
@@ -331,14 +291,10 @@ class LogEntry(models.Model):
 class ImageLogEntry(LogEntry):
 
     #: The ``DockerImage`` that the log entry is for.
-    image = models.ForeignKey(
-        DockerImage, related_name="log_entries", blank=False, null=False
-    )
+    image = models.ForeignKey(DockerImage, related_name="log_entries", blank=False, null=False)
 
 
 class ContainerLogEntry(LogEntry):
 
     #: The ``DockerProcess`` that the log entry is for.
-    process = models.ForeignKey(
-        DockerProcess, related_name="log_entries", blank=False, null=False
-    )
+    process = models.ForeignKey(DockerProcess, related_name="log_entries", blank=False, null=False)

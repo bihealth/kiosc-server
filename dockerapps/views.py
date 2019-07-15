@@ -48,11 +48,7 @@ class DockerImageListView(
     model = DockerImage
 
     def get_queryset(self):
-        return (
-            super()
-            .get_queryset()
-            .filter(project__sodar_uuid=self.kwargs["project"])
-        )
+        return super().get_queryset().filter(project__sodar_uuid=self.kwargs["project"])
 
 
 class DockerImageDetailView(
@@ -75,6 +71,7 @@ class DockerImageDetailView(
 
 # TODO: also add the port etc. fields
 
+
 class DockerImageCreateView(
     LoginRequiredMixin,
     LoggedInPermissionMixin,
@@ -93,7 +90,7 @@ class DockerImageCreateView(
     def get_form_kwargs(self):
         """Extend form kwargs with the project."""
         result = super().get_form_kwargs()
-        result['project'] = self.get_project()
+        result["project"] = self.get_project()
         return result
 
     def form_valid(self, form):
@@ -143,7 +140,7 @@ class DockerImageUpdateView(
     def get_form_kwargs(self):
         """Extend form kwargs with the project."""
         result = super().get_form_kwargs()
-        result['project'] = self.get_project()
+        result["project"] = self.get_project()
         return result
 
     # @transaction.atomic
@@ -204,34 +201,23 @@ class DockerImageJobControlView(
                 client.containers.run(
                     form.instance.image_id,
                     detach=True,
-                    ports={
-                        "%d/tcp"
-                        % form.instance.internal_port: form.instance.host_port
-                    },
+                    ports={"%d/tcp" % form.instance.internal_port: form.instance.host_port},
                     environment={
                         "DASH_REQUESTS_PATHNAME_PREFIX": reverse(
                             "dockerapps:image-proxy",
                             kwargs={
-                                "project": self.get_context_data()[
-                                    "project"
-                                ].sodar_uuid,
-                                "dockerapp": self.get_context_data()[
-                                    "object"
-                                ].sodar_uuid,
+                                "project": self.get_context_data()["project"].sodar_uuid,
+                                "dockerapp": self.get_context_data()["object"].sodar_uuid,
                                 "path": "",
                             },
                         )
                     },
                 )
-                messages.info(
-                    self.request, "Initiated start of docker container..."
-                )
+                messages.info(self.request, "Initiated start of docker container...")
             elif form.cleaned_data["action"] == "stop":
                 form.instance.state = "stopping"
                 if stop_containers(form.instance.image_id):
-                    messages.info(
-                        self.request, "Initiated stop of docker container..."
-                    )
+                    messages.info(self.request, "Initiated stop of docker container...")
             # Update docker app record.
             super().form_valid(form)
 
@@ -239,9 +225,7 @@ class DockerImageJobControlView(
         return redirect(
             reverse(
                 "dockerapps:image-list",
-                kwargs={
-                    "project": self.get_context_data()["project"].sodar_uuid
-                },
+                kwargs={"project": self.get_context_data()["project"].sodar_uuid},
             )
         )
 
@@ -272,11 +256,7 @@ class DockerImageDeleteView(
     def get_success_url(self):
         return reverse(
             "dockerapps:image-list",
-            kwargs={
-                "project": self.get_project(
-                    self.request, self.kwargs
-                ).sodar_uuid
-            },
+            kwargs={"project": self.get_project(self.request, self.kwargs).sodar_uuid},
         )
 
 
@@ -308,9 +288,6 @@ class DockerProxyView(
         proxy_view.upstream = upstream
         proxy_view.suppress_empty_body = True
         proxy_view.rewrite = (
-            (
-                r"^/^(?P<project>[0-9a-f-]+)/dockerapps/(?P<image>[0-9a-f-]+)/proxy/^",
-                r"/",
-            ),
+            (r"^/^(?P<project>[0-9a-f-]+)/dockerapps/(?P<image>[0-9a-f-]+)/proxy/^", r"/"),
         )
         return proxy_view.dispatch(request, *args, **kwargs)

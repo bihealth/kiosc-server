@@ -1,11 +1,7 @@
 from projectroles.plugins import ProjectAppPluginPoint
 from bgjobs.plugins import BackgroundJobsPluginPoint
 
-from .models import (
-    DockerImage,
-    ImageBackgroundJob,
-    ContainerStateControlBackgroundJob,
-)
+from .models import DockerImage, ImageBackgroundJob, ContainerStateControlBackgroundJob
 from .urls import urlpatterns
 
 
@@ -62,13 +58,7 @@ class ProjectAppPlugin(ProjectAppPluginPoint):
         elif search_type == "dockerapps":
             items = DockerImage.objects.find(search_term, keywords)
 
-        return {
-            "all": {
-                "title": "Docker Apps",
-                "search_types": ["dockerapps"],
-                "items": items,
-            }
-        }
+        return {"all": {"title": "Docker Apps", "search_types": ["dockerapps"], "items": items}}
 
     def get_object_link(self, model_str, uuid):
         """

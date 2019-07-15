@@ -23,9 +23,7 @@ class TunnelConsumer(WebsocketConsumer):
         # Get DockerApp information for querying the port information.
         dockerapp = DockerProcess.objects.get(
             sodar_uuid=self.scope["url_route"]["kwargs"]["image"],
-            image__project__sodar_uuid=self.scope["url_route"]["kwargs"][
-                "project"
-            ],
+            image__project__sodar_uuid=self.scope["url_route"]["kwargs"]["project"],
             state=STATE_RUNNING,
         )
 

@@ -1,3 +1,7 @@
+### Python ###
+
+*.egg-info/
+
 ### Dot-env ###
 .env
 

@@ -51,7 +51,6 @@ class DockerImageForm(forms.ModelForm):
         return self.dockerimage_set.first()
 
 
-
 class DockerProcessJobControlForm(forms.ModelForm):
     """Form for updating the state of ``DockerProcess``."""
 

@@ -10,29 +10,89 @@ import uuid
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('bgjobs', '0005_auto_20190128_1210'),
-        ('dockerapps', '0004_auto_20190627_2019'),
+        ("bgjobs", "0005_auto_20190128_1210"),
+        ("dockerapps", "0004_auto_20190627_2019"),
     ]
 
     operations = [
         migrations.CreateModel(
-            name='DeleteImageBackgroundJob',
+            name="DeleteImageBackgroundJob",
             fields=[
-                ('id', models.AutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('date_created', models.DateTimeField(auto_now_add=True, help_text='DateTime of creation')),
-                ('sodar_uuid', models.UUIDField(default=uuid.uuid4, help_text='Background job specialization SODAR UUID', unique=True)),
-                ('bg_job', models.ForeignKey(help_text='Background job for state etc.', on_delete=django.db.models.deletion.CASCADE, related_name='dockerapps_deleteimagebackgroundjob_related', to='bgjobs.BackgroundJob')),
-                ('process', models.ForeignKey(help_text='The docker image that the job belongs to', on_delete=django.db.models.deletion.CASCADE, to='dockerapps.DockerImage')),
+                (
+                    "id",
+                    models.AutoField(
+                        auto_created=True, primary_key=True, serialize=False, verbose_name="ID"
+                    ),
+                ),
+                (
+                    "date_created",
+                    models.DateTimeField(auto_now_add=True, help_text="DateTime of creation"),
+                ),
+                (
+                    "sodar_uuid",
+                    models.UUIDField(
+                        default=uuid.uuid4,
+                        help_text="Background job specialization SODAR UUID",
+                        unique=True,
+                    ),
+                ),
+                (
+                    "bg_job",
+                    models.ForeignKey(
+                        help_text="Background job for state etc.",
+                        on_delete=django.db.models.deletion.CASCADE,
+                        related_name="dockerapps_deleteimagebackgroundjob_related",
+                        to="bgjobs.BackgroundJob",
+                    ),
+                ),
+                (
+                    "process",
+                    models.ForeignKey(
+                        help_text="The docker image that the job belongs to",
+                        on_delete=django.db.models.deletion.CASCADE,
+                        to="dockerapps.DockerImage",
+                    ),
+                ),
             ],
         ),
         migrations.CreateModel(
-            name='PullImageBackgroundJob',
+            name="PullImageBackgroundJob",
             fields=[
-                ('id', models.AutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('date_created', models.DateTimeField(auto_now_add=True, help_text='DateTime of creation')),
-                ('sodar_uuid', models.UUIDField(default=uuid.uuid4, help_text='Background job specialization SODAR UUID', unique=True)),
-                ('bg_job', models.ForeignKey(help_text='Background job for state etc.', on_delete=django.db.models.deletion.CASCADE, related_name='dockerapps_pullimagebackgroundjob_related', to='bgjobs.BackgroundJob')),
-                ('image', models.ForeignKey(help_text='The docker image that the job belongs to', on_delete=django.db.models.deletion.CASCADE, to='dockerapps.DockerImage')),
+                (
+                    "id",
+                    models.AutoField(
+                        auto_created=True, primary_key=True, serialize=False, verbose_name="ID"
+                    ),
+                ),
+                (
+                    "date_created",
+                    models.DateTimeField(auto_now_add=True, help_text="DateTime of creation"),
+                ),
+                (
+                    "sodar_uuid",
+                    models.UUIDField(
+                        default=uuid.uuid4,
+                        help_text="Background job specialization SODAR UUID",
+                        unique=True,
+                    ),
+                ),
+                (
+                    "bg_job",
+                    models.ForeignKey(
+                        help_text="Background job for state etc.",
+                        on_delete=django.db.models.deletion.CASCADE,
+                        related_name="dockerapps_pullimagebackgroundjob_related",
+                        to="bgjobs.BackgroundJob",
+                    ),
+                ),
+                (
+                    "image",
+                    models.ForeignKey(
+                        help_text="The docker image that the job belongs to",
+                        on_delete=django.db.models.deletion.CASCADE,
+                        to="dockerapps.DockerImage",
+                    ),
+                ),
             ],
         ),
     ]

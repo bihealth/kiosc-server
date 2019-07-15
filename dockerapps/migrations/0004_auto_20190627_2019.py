@@ -8,19 +8,25 @@ import django.db.models.deletion
 
 class Migration(migrations.Migration):
 
-    dependencies = [
-        ('dockerapps', '0003_auto_20190627_1943'),
-    ]
+    dependencies = [("dockerapps", "0003_auto_20190627_1943")]
 
     operations = [
         migrations.AlterField(
-            model_name='containerlogentry',
-            name='process',
-            field=models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='log_entries', to='dockerapps.DockerProcess'),
+            model_name="containerlogentry",
+            name="process",
+            field=models.ForeignKey(
+                on_delete=django.db.models.deletion.CASCADE,
+                related_name="log_entries",
+                to="dockerapps.DockerProcess",
+            ),
         ),
         migrations.AlterField(
-            model_name='imagelogentry',
-            name='image',
-            field=models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='log_entries', to='dockerapps.DockerImage'),
+            model_name="imagelogentry",
+            name="image",
+            field=models.ForeignKey(
+                on_delete=django.db.models.deletion.CASCADE,
+                related_name="log_entries",
+                to="dockerapps.DockerImage",
+            ),
         ),
     ]

@@ -8,44 +8,88 @@ import django.db.models.deletion
 
 class Migration(migrations.Migration):
 
-    dependencies = [
-        ('dockerapps', '0002_auto_20190624_1759'),
-    ]
+    dependencies = [("dockerapps", "0002_auto_20190624_1759")]
 
     operations = [
         migrations.CreateModel(
-            name='ContainerLogEntry',
+            name="ContainerLogEntry",
             fields=[
-                ('id', models.AutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('date_created', models.DateTimeField(auto_now_add=True, help_text='DateTime of creation')),
-                ('level', models.CharField(choices=[('info', 'info'), ('warning', 'warning'), ('error', 'error')], default='info', help_text='Level of log entry', max_length=32)),
-                ('text', models.TextField()),
+                (
+                    "id",
+                    models.AutoField(
+                        auto_created=True, primary_key=True, serialize=False, verbose_name="ID"
+                    ),
+                ),
+                (
+                    "date_created",
+                    models.DateTimeField(auto_now_add=True, help_text="DateTime of creation"),
+                ),
+                (
+                    "level",
+                    models.CharField(
+                        choices=[("info", "info"), ("warning", "warning"), ("error", "error")],
+                        default="info",
+                        help_text="Level of log entry",
+                        max_length=32,
+                    ),
+                ),
+                ("text", models.TextField()),
             ],
-            options={
-                'abstract': False,
-            },
+            options={"abstract": False},
         ),
         migrations.CreateModel(
-            name='ImageLogEntry',
+            name="ImageLogEntry",
             fields=[
-                ('id', models.AutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('date_created', models.DateTimeField(auto_now_add=True, help_text='DateTime of creation')),
-                ('level', models.CharField(choices=[('info', 'info'), ('warning', 'warning'), ('error', 'error')], default='info', help_text='Level of log entry', max_length=32)),
-                ('text', models.TextField()),
-                ('image', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, to='dockerapps.DockerImage')),
+                (
+                    "id",
+                    models.AutoField(
+                        auto_created=True, primary_key=True, serialize=False, verbose_name="ID"
+                    ),
+                ),
+                (
+                    "date_created",
+                    models.DateTimeField(auto_now_add=True, help_text="DateTime of creation"),
+                ),
+                (
+                    "level",
+                    models.CharField(
+                        choices=[("info", "info"), ("warning", "warning"), ("error", "error")],
+                        default="info",
+                        help_text="Level of log entry",
+                        max_length=32,
+                    ),
+                ),
+                ("text", models.TextField()),
+                (
+                    "image",
+                    models.ForeignKey(
+                        on_delete=django.db.models.deletion.CASCADE, to="dockerapps.DockerImage"
+                    ),
+                ),
             ],
-            options={
-                'abstract': False,
-            },
+            options={"abstract": False},
         ),
         migrations.AlterField(
-            model_name='dockerprocess',
-            name='state',
-            field=models.CharField(choices=[('idle', 'idle'), ('starting', 'starting'), ('running', 'running'), ('stopping', 'stopping'), ('failed', 'failed')], default='idle', help_text='The state of the container.', max_length=64),
+            model_name="dockerprocess",
+            name="state",
+            field=models.CharField(
+                choices=[
+                    ("idle", "idle"),
+                    ("starting", "starting"),
+                    ("running", "running"),
+                    ("stopping", "stopping"),
+                    ("failed", "failed"),
+                ],
+                default="idle",
+                help_text="The state of the container.",
+                max_length=64,
+            ),
         ),
         migrations.AddField(
-            model_name='containerlogentry',
-            name='process',
-            field=models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, to='dockerapps.DockerProcess'),
+            model_name="containerlogentry",
+            name="process",
+            field=models.ForeignKey(
+                on_delete=django.db.models.deletion.CASCADE, to="dockerapps.DockerProcess"
+            ),
         ),
     ]

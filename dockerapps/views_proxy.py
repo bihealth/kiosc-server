@@ -32,9 +32,7 @@ QUOTE_SAFE = r'<.;>\(}*+|~=-$/_:^@)[{]&\'!,"`'
 
 
 ERRORS_MESSAGES = {
-    "upstream-no-scheme": (
-        "Upstream URL scheme must be either " "'http' or 'https' (%s)."
-    )
+    "upstream-no-scheme": ("Upstream URL scheme must be either " "'http' or 'https' (%s).")
 }
 
 
@@ -73,14 +71,10 @@ def get_django_response(proxy_response, strict_cookies=False):
     if should_stream(proxy_response):
         logger.info("Content-Length is bigger than %s", DEFAULT_AMT)
         s = proxy_response.stream(DEFAULT_AMT)
-        response = StreamingHttpResponse(
-            s, status=status, content_type=content_type
-        )
+        response = StreamingHttpResponse(s, status=status, content_type=content_type)
     else:
         content = proxy_response.data or b""
-        response = HttpResponse(
-            content, status=status, content_type=content_type
-        )
+        response = HttpResponse(content, status=status, content_type=content_type)
 
     logger.info("Normalizing response headers")
     set_response_headers(response, headers)
@@ -90,9 +84,7 @@ def get_django_response(proxy_response, strict_cookies=False):
     cookies = proxy_response.headers.getlist("set-cookie")
     logger.info("Checking for invalid cookies")
     for cookie_string in cookies:
-        cookie_dict = cookie_from_string(
-            cookie_string, strict_cookies=strict_cookies
-        )
+        cookie_dict = cookie_from_string(cookie_string, strict_cookies=strict_cookies)
         # if cookie is invalid cookie_dict will be None
         if cookie_dict:
             response.set_cookie(**cookie_dict)
@@ -150,9 +142,7 @@ class ProxyView(View):
             self._parsed_url = urlparse(upstream)
 
         if self._parsed_url.scheme not in ("http", "https"):
-            raise InvalidUpstream(
-                ERRORS_MESSAGES["upstream-no-scheme"] % upstream
-            )
+            raise InvalidUpstream(ERRORS_MESSAGES["upstream-no-scheme"] % upstream)
 
         if path and upstream[-1] != "/":
             upstream += "/"
@@ -195,11 +185,7 @@ class ProxyView(View):
         """
         request_headers = self.get_proxy_request_headers(self.request)
 
-        if (
-            self.add_remote_user
-            and hasattr(self.request, "user")
-            and self.request.user.is_active
-        ):
+        if self.add_remote_user and hasattr(self.request, "user") and self.request.user.is_active:
             request_headers["REMOTE_USER"] = self.request.user.get_username()
             self.log.info("REMOTE_USER set")
 
@@ -241,9 +227,7 @@ class ProxyView(View):
                 decode_content=False,
                 preload_content=False,
             )
-            self.log.debug(
-                "Proxy response header: %s", proxy_response.getheaders()
-            )
+            self.log.debug("Proxy response header: %s", proxy_response.getheaders())
         except urllib3.exceptions.HTTPError as error:
             self.log.exception(error)
             raise
@@ -265,22 +249,15 @@ class ProxyView(View):
             location = location.replace(upstream_host_http, request_host)
             location = location.replace(upstream_host_https, request_host)
             proxy_response.headers["Location"] = location
-            self.log.debug(
-                "Proxy response LOCATION: %s",
-                proxy_response.headers["Location"],
-            )
+            self.log.debug("Proxy response LOCATION: %s", proxy_response.headers["Location"])
 
     def _set_content_type(self, request, proxy_response):
         content_type = proxy_response.headers.get("Content-Type")
         if not content_type:
-            content_type = (
-                mimetypes.guess_type(request.path)[0]
-                or self.default_content_type
-            )
+            content_type = mimetypes.guess_type(request.path)[0] or self.default_content_type
             proxy_response.headers["Content-Type"] = content_type
             self.log.debug(
-                "Proxy response CONTENT-TYPE: %s",
-                proxy_response.headers["Content-Type"],
+                "Proxy response CONTENT-TYPE: %s", proxy_response.headers["Content-Type"]
             )
 
     def dispatch(self, request, path):
@@ -295,9 +272,7 @@ class ProxyView(View):
         self._replace_host_on_redirect_location(request, proxy_response)
         self._set_content_type(request, proxy_response)
 
-        response = get_django_response(
-            proxy_response, strict_cookies=self.strict_cookies
-        )
+        response = get_django_response(proxy_response, strict_cookies=self.strict_cookies)
         # Rescue hop-by-hop headers
         if self.rescue_websocket_headers and "socket" in path:
             for key, value in proxy_response.headers.items():

@@ -13,9 +13,7 @@ from projectroles.views import ProjectPermissionMixin as _ProjectPermissionMixin
 class HorizontalFormHelper(FormHelper):
     form_class = "form-horizontal"
     template_pack = "bootstrap4"
-    label_class = (
-        "px-0 col-12 col-md-3 col-xl-2 col-form-label font-weight-bold"
-    )
+    label_class = "px-0 col-12 col-md-3 col-xl-2 col-form-label font-weight-bold"
     field_class = "px-0 col-12 col-md-9 col-xl-10"
     # We write our own form tags in the HTML.
     form_tag = False
@@ -25,9 +23,7 @@ def model_to_dict(*args, rename={}, **kwargs):
     """Custom version that knows how to deal with the types used in Django models."""
     result = _model_to_dict(*args, **kwargs)
     # Round-trip through JSON using DjangoJSONEncode to get rid of problematic fields
-    result = json.loads(
-        json.dumps(result, sort_keys=True, indent=1, cls=DjangoJSONEncoder)
-    )
+    result = json.loads(json.dumps(result, sort_keys=True, indent=1, cls=DjangoJSONEncoder))
     # Rename fields if any.
     for from_, to in rename.items():
         result[to] = result[from_]
@@ -90,16 +86,10 @@ class ProjectPermissionMixin(_ProjectPermissionMixin):
         """Override ``get_query_set()`` to filter down to the currently selected object."""
         qs = super().get_queryset(*args, **kwargs)
         if hasattr(qs.model, "project"):
-            return qs.filter(
-                project=self.get_project(self.request, self.kwargs)
-            )
+            return qs.filter(project=self.get_project(self.request, self.kwargs))
         elif hasattr(qs.model, "get_project_filter_key"):
             return qs.filter(
-                **{
-                    qs.model.get_project_filter_key(): self.get_project(
-                        self.request, self.kwargs
-                    )
-                }
+                **{qs.model.get_project_filter_key(): self.get_project(self.request, self.kwargs)}
             )
         else:
             raise AttributeError(

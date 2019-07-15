@@ -7,20 +7,10 @@ from django.db import migrations
 
 class Migration(migrations.Migration):
 
-    dependencies = [
-        ('dockerapps', '0006_auto_20190627_2048'),
-    ]
+    dependencies = [("dockerapps", "0006_auto_20190627_2048")]
 
     operations = [
-        migrations.RemoveField(
-            model_name='deleteimagebackgroundjob',
-            name='bg_job',
-        ),
-        migrations.RemoveField(
-            model_name='deleteimagebackgroundjob',
-            name='process',
-        ),
-        migrations.DeleteModel(
-            name='DeleteImageBackgroundJob',
-        ),
+        migrations.RemoveField(model_name="deleteimagebackgroundjob", name="bg_job"),
+        migrations.RemoveField(model_name="deleteimagebackgroundjob", name="process"),
+        migrations.DeleteModel(name="DeleteImageBackgroundJob"),
     ]

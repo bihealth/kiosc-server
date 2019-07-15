@@ -116,10 +116,7 @@ FIXTURE_DIRS = (str(APPS_DIR.path("fixtures")),)
 
 # EMAIL CONFIGURATION
 # ------------------------------------------------------------------------------
-EMAIL_BACKEND = env(
-    "DJANGO_EMAIL_BACKEND",
-    default="django.core.mail.backends.smtp.EmailBackend",
-)
+EMAIL_BACKEND = env("DJANGO_EMAIL_BACKEND", default="django.core.mail.backends.smtp.EmailBackend")
 EMAIL_SENDER = env("EMAIL_SENDER", default="noreply@example.com")
 EMAIL_SUBJECT_PREFIX = env("EMAIL_SUBJECT_PREFIX", default="")
 
@@ -135,9 +132,7 @@ MANAGERS = ADMINS
 # See: https://docs.djangoproject.com/en/dev/ref/settings/#databases
 # Uses django-environ to accept uri format
 # See: https://django-environ.readthedocs.io/en/latest/#supported-types
-DATABASES = {
-    "default": env.db("DATABASE_URL", default="postgres:///sodar_core")
-}
+DATABASES = {"default": env.db("DATABASE_URL", default="postgres:///sodar_core")}
 DATABASES["default"]["ATOMIC_REQUESTS"] = False
 
 # Set django-db-file-storage as the default storage (for filesfolders)
@@ -241,22 +236,10 @@ PASSWORD_HASHERS = [
 # PASSWORD VALIDATION
 # ------------------------------------------------------------------------------
 AUTH_PASSWORD_VALIDATORS = [
-    {
-        "NAME": "django.contrib.auth.password_validation."
-        "UserAttributeSimilarityValidator"
-    },
-    {
-        "NAME": "django.contrib.auth.password_validation."
-        "MinimumLengthValidator"
-    },
-    {
-        "NAME": "django.contrib.auth.password_validation."
-        "CommonPasswordValidator"
-    },
-    {
-        "NAME": "django.contrib.auth.password_validation."
-        "NumericPasswordValidator"
-    },
+    {"NAME": "django.contrib.auth.password_validation." "UserAttributeSimilarityValidator"},
+    {"NAME": "django.contrib.auth.password_validation." "MinimumLengthValidator"},
+    {"NAME": "django.contrib.auth.password_validation." "CommonPasswordValidator"},
+    {"NAME": "django.contrib.auth.password_validation." "NumericPasswordValidator"},
 ]
 
 # AUTHENTICATION CONFIGURATION
@@ -330,11 +313,7 @@ if ENABLE_LDAP:
     # Default values
     LDAP_DEFAULT_CONN_OPTIONS = {ldap.OPT_REFERRALS: 0}
     LDAP_DEFAULT_FILTERSTR = "(sAMAccountName=%(user)s)"
-    LDAP_DEFAULT_ATTR_MAP = {
-        "first_name": "givenName",
-        "last_name": "sn",
-        "email": "mail",
-    }
+    LDAP_DEFAULT_ATTR_MAP = {"first_name": "givenName", "last_name": "sn", "email": "mail"}
 
     # Primary LDAP server
     AUTH_LDAP_SERVER_URI = env.str("AUTH_LDAP_SERVER_URI", None)
@@ -343,21 +322,14 @@ if ENABLE_LDAP:
     AUTH_LDAP_CONNECTION_OPTIONS = LDAP_DEFAULT_CONN_OPTIONS
 
     AUTH_LDAP_USER_SEARCH = LDAPSearch(
-        env.str("AUTH_LDAP_USER_SEARCH_BASE", None),
-        ldap.SCOPE_SUBTREE,
-        LDAP_DEFAULT_FILTERSTR,
+        env.str("AUTH_LDAP_USER_SEARCH_BASE", None), ldap.SCOPE_SUBTREE, LDAP_DEFAULT_FILTERSTR
     )
     AUTH_LDAP_USER_ATTR_MAP = LDAP_DEFAULT_ATTR_MAP
     AUTH_LDAP_USERNAME_DOMAIN = env.str("AUTH_LDAP_USERNAME_DOMAIN", None)
-    AUTH_LDAP_DOMAIN_PRINTABLE = env.str(
-        "AUTH_LDAP_DOMAIN_PRINTABLE", AUTH_LDAP_USERNAME_DOMAIN
-    )
+    AUTH_LDAP_DOMAIN_PRINTABLE = env.str("AUTH_LDAP_DOMAIN_PRINTABLE", AUTH_LDAP_USERNAME_DOMAIN)
 
     AUTHENTICATION_BACKENDS = tuple(
-        itertools.chain(
-            ("projectroles.auth_backends.PrimaryLDAPBackend",),
-            AUTHENTICATION_BACKENDS,
-        )
+        itertools.chain(("projectroles.auth_backends.PrimaryLDAPBackend",), AUTHENTICATION_BACKENDS)
     )
 
     # Secondary LDAP server (optional)
@@ -368,9 +340,7 @@ if ENABLE_LDAP:
         AUTH_LDAP2_CONNECTION_OPTIONS = LDAP_DEFAULT_CONN_OPTIONS
 
         AUTH_LDAP2_USER_SEARCH = LDAPSearch(
-            env.str("AUTH_LDAP2_USER_SEARCH_BASE", None),
-            ldap.SCOPE_SUBTREE,
-            LDAP_DEFAULT_FILTERSTR,
+            env.str("AUTH_LDAP2_USER_SEARCH_BASE", None), ldap.SCOPE_SUBTREE, LDAP_DEFAULT_FILTERSTR
         )
         AUTH_LDAP2_USER_ATTR_MAP = LDAP_DEFAULT_ATTR_MAP
         AUTH_LDAP2_USERNAME_DOMAIN = env.str("AUTH_LDAP2_USERNAME_DOMAIN")
@@ -380,8 +350,7 @@ if ENABLE_LDAP:
 
         AUTHENTICATION_BACKENDS = tuple(
             itertools.chain(
-                ("projectroles.auth_backends.SecondaryLDAPBackend",),
-                AUTHENTICATION_BACKENDS,
+                ("projectroles.auth_backends.SecondaryLDAPBackend",), AUTHENTICATION_BACKENDS
             )
         )
 
@@ -394,17 +363,9 @@ def set_logging(debug):
     return {
         "version": 1,
         "disable_existing_loggers": False,
-        "formatters": {
-            "simple": {
-                "format": "%(asctime)s [%(levelname)s] %(name)s: %(message)s"
-            }
-        },
+        "formatters": {"simple": {"format": "%(asctime)s [%(levelname)s] %(name)s: %(message)s"}},
         "handlers": {
-            "console": {
-                "level": "DEBUG",
-                "class": "logging.StreamHandler",
-                "formatter": "simple",
-            }
+            "console": {"level": "DEBUG", "class": "logging.StreamHandler", "formatter": "simple"}
         },
         "loggers": {
             "projectroles": {
@@ -446,9 +407,7 @@ ENABLED_BACKEND_PLUGINS = env.list(
 SODAR_API_DEFAULT_VERSION = "0.1"
 SODAR_API_ALLOWED_VERSIONS = [SODAR_API_DEFAULT_VERSION]
 SODAR_API_MEDIA_TYPE = "application/vnd.bihealth.sodar-core+json"
-SODAR_API_DEFAULT_HOST = env.url(
-    "SODAR_API_DEFAULT_HOST", "http://0.0.0.0:8000"
-)
+SODAR_API_DEFAULT_HOST = env.url("SODAR_API_DEFAULT_HOST", "http://0.0.0.0:8000")
 
 DATA_UPLOAD_MAX_MEMORY_SIZE
 # Projectroles app settings
@@ -463,9 +422,7 @@ PROJECTROLES_TARGET_CREATE = env.bool("PROJECTROLES_TARGET_CREATE", True)
 PROJECTROLES_ADMIN_OWNER = env.str("PROJECTROLES_ADMIN_OWNER", "admin")
 
 # General projectroles settings
-PROJECTROLES_DISABLE_CATEGORIES = env.bool(
-    "PROJECTROLES_DISABLE_CATEGORIES", False
-)
+PROJECTROLES_DISABLE_CATEGORIES = env.bool("PROJECTROLES_DISABLE_CATEGORIES", False)
 PROJECTROLES_INVITE_EXPIRY_DAYS = env.int("PROJECTROLES_INVITE_EXPIRY_DAYS", 14)
 PROJECTROLES_SEND_EMAIL = env.bool("PROJECTROLES_SEND_EMAIL", False)
 PROJECTROLES_ENABLE_SEARCH = True
@@ -482,12 +439,8 @@ TIMELINE_PAGINATION = 15
 
 
 # Filesfolders app settings
-FILESFOLDERS_MAX_UPLOAD_SIZE = env.int(
-    "FILESFOLDERS_MAX_UPLOAD_SIZE", 10_485_760
-)
-FILESFOLDERS_MAX_ARCHIVE_SIZE = env.int(
-    "FILESFOLDERS_MAX_ARCHIVE_SIZE", 52_428_800
-)
+FILESFOLDERS_MAX_UPLOAD_SIZE = env.int("FILESFOLDERS_MAX_UPLOAD_SIZE", 10_485_760)
+FILESFOLDERS_MAX_ARCHIVE_SIZE = env.int("FILESFOLDERS_MAX_ARCHIVE_SIZE", 52_428_800)
 FILESFOLDERS_SERVE_AS_ATTACHMENT = False
 FILESFOLDERS_LINK_BAD_REQUEST_MSG = "Invalid request"
 

@@ -46,59 +46,153 @@
     </h2>
   </div>
 
-  <div class="pb-3" id="env-input">
-    <div class="row">
-      <div class="col-3 pl-0">
-        <strong>Variable</strong>
-      </div>
-      <div class="col-9 pl-0">
-        <strong>Value</strong>
-      </div>
-    </div>
-    <div id="env-input-list">
-    </div>
-  </div>
-
   {% verbatim %}
   <script id="tpl-env-input-row" type="text/x-jsrender">
-    <div id="env-input-row-{{:uuid}}" class="row">
+    <div id="env-input-row-{{:uuid}}" data-uuid="{{:uuid}}" class="row pt-2 env-input-row px-0 col-12 col-md-9 col-xl-10">
       <div class="col-3 pl-0">
-        <input id="env-input-name-{{:uuid}}" type="text" class="form-control env-input-variable" placeholder="variable name" />
+        <input id="env-input-name-{{:uuid}}" type="text" class="form-control env-input env-input-name" placeholder="variable name" />
       </div>
-      <div class="col-9 pl-0">
-        <input id="env-input-value-{{:uuid}}" type="text" class="form-control" placeholder="value" />
-        <i id="env-input-erase-{{:uuid}}" class="fa fa-eraser" class="popup" title="remove"></i>
-        <i id="env-input-secret-{{:uuid}}"  class="fa fa-eye-slash" class="popup" title="mark as secret"></i>
+      <div class="col-9 px-0">
+        <div class="row no-gutters">
+          <div class="col">
+            <textarea id="env-input-value-{{:uuid}}" type="text" class="form-control env-input env-input-value" placeholder="value"></textarea>
+          </div>
+          <div class="col-auto pl-1">
+            <button id="env-input-secret-{{:uuid}}" class="btn btn-secondary env-input-secret" data-checked="false">
+              <i class="fa fa-eye" class="popup" title="mark as secret"></i>
+            </button>
+            <button id="env-input-erase-{{:uuid}}" class="btn btn-secondary env-input-erase">
+              <i class="fa fa-eraser" class="popup" title="remove"></i>
+            </button>
+          </div>
+        </div>
       </div>
     </div>
   </script>
   {% endverbatim %}
 
   <script type="text/javascript">
-  function uuidv4() {
-    return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(
-        /[xy]/g,
-        function(c) {
-          const r = Math.random() * 16 | 0, v = c == 'x' ? r : (r & 0x3 | 0x8)
-          return v.toString(16)
-        }
-      )
-  }
-
-  function addVariableRow() {
-      const rowTpl = $.templates("#tpl-env-input-row")
-      const row = rowTpl.render({"uuid": uuidv4()})
-      row.find(".env-input-variable").onchange(function (e) {
-          if ($("#tpl-env-input-row").value() !== "") {
-            addVariableRow()
+  $(() => {
+    function uuidv4() {
+      return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(
+          /[xy]/g,
+          (c) => {
+            const r = Math.random() * 16 | 0, v = c == 'x' ? r : (r & 0x3 | 0x8)
+            return v.toString(16)
           }
-      })
-      $("#env-input-list").append(row)
-  }
+        )
+    }
 
-  $(function () {
-      addVariableRow()
-      $(".popup").tooltip()
+    /** Return whether we need to add a new variable row (last one not empty or no row left).
+     */
+    function needToAddVariableRow() {
+      return (
+        ($(".env-input-row").length === 0) ||
+        ($("#env-input-list .env-input-name:last").val() != "")
+      )
+    }
+
+    /**
+     * Global marker that can block serialization until deserialization is complete.
+     */
+    let doSerialize = true
+
+    /** Deserialize hidden environment variables input to form inputs.
+     */
+    function deserializeEnvironmentVariables() {
+      doSerialize = false
+
+      const environment = JSON.parse($("#id_env_vars").val() || "[]")
+      $(environment)
+        .filter((idx, elem) => elem.name)
+        .each((idx, elem) => {
+          addVariableRow()
+          if (elem.name) {
+            const row = $("#env-input-list .env-input-row:last")
+            $(row).find(".env-input-name").val(elem.name)
+            $(row).find(".env-input-value").val(elem.value)
+            $(row).find(".env-input-secret").attr("data-checked", elem.secret ? "true" : "false")
+          }
+        })
+
+      doSerialize = true
+    }
+
+    /** Synchronize form inputs to hidden environment variables input.
+     */
+    function serializeEnvironmentVariables() {
+      if (!doSerialize) {
+        return  // blocked; early exit
+      }
+
+      const envInput = $("#id_env_vars")
+
+      const environment = $("#env-input-list .env-input-row")
+        .map((idx, elem) => {
+          const uuid = $(elem).attr("data-uuid")
+          return {
+            "name": $("#env-input-name-" + uuid).val(),
+            "value": $("#env-input-value-" + uuid).val(),
+            "secret": $("#env-input-secret-" + uuid).attr("data-checked") === "true",
+          }
+        })
+        .filter((idx, elem) => elem.name)
+        .toArray()
+
+      envInput.val(JSON.stringify(environment))
+    }
+
+    /**
+     * Add a new variable row and setup all necessary event handlers.
+     */
+    function addVariableRow() {
+      const rowTpl = $.templates("#tpl-env-input-row")
+      const row = $(rowTpl.render({"uuid": uuidv4()}))
+
+      $(row).find(".env-input-name").change((event) => {
+        // Add a new row.
+        if (needToAddVariableRow()) {
+          addVariableRow()
+        }
+        serializeEnvironmentVariables()
+      })
+
+      $(row).find("button.env-input-erase").click((event) => {
+        event.preventDefault()
+        // Remove the whole row, add fresh one if required.
+        $("#env-input-row-" + $(event.target).attr("data-uuid")).remove()
+        if (needToAddVariableRow()) {
+          addVariableRow()
+        }
+        serializeEnvironmentVariables()
+      })
+
+      $(row).find("button.env-input-secret").click((event) => {
+        event.preventDefault()
+        // Toggle data and visual "secret" status.
+        const button = $(event.target).closest("button")
+        const checked = button.attr("data-checked") === "true"
+        button.attr("data-checked", checked ? "false" : "true")
+        button.addClass(checked ? "btn-secondary" : "btn-danger")
+        button.removeClass(checked ? "btn-danger" : "btn-secondary")
+        const icon = button.find("i")
+        icon.removeClass(checked ? "fa-eye-slash" : "fa-eye")
+        icon.addClass(checked ? "fa-eye" : "fa-eye-slash")
+        serializeEnvironmentVariables()
+      })
+
+      $(row).find(".env-input").bind("keyup keydown change", (event) => {
+        serializeEnvironmentVariables()
+      })
+
+      $("#env-input-list").append(row)
+
+      serializeEnvironmentVariables()
+    }
+
+    deserializeEnvironmentVariables()
+    addVariableRow()
+    $(".popup").tooltip()
   })
   </script>
 
@@ -131,6 +225,16 @@
     {% endif %}
 
     {% crispy form form.helper %}
+
+    <div class="pb-3" id="env-input">
+      <div class="row no-gutters">
+        <div class="col">
+          <strong>Environment Variables</strong>
+        </div>
+      </div>
+      <div id="env-input-list">
+      </div>
+    </div>
 
     <div class="row">
       <div class="px-0 col-12 col-md-9 col-xl-10">

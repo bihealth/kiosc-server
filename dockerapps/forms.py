@@ -1,5 +1,7 @@
 """Forms for the dockerapps app."""
 
+import json
+
 from django import forms
 from django.db import transaction
 
@@ -10,29 +12,44 @@ from .models import DockerImage, DockerProcess
 class DockerImageForm(forms.ModelForm):
     """Form for creating and updating ``DockerContainer`` records."""
 
-    def __init__(self, project, *args, **kwargs):
+    def __init__(self, project, internal_port, env_vars, *args, **kwargs):
         super().__init__(*args, **kwargs)
         #: The project for the Docker image.
         self.project = project
         #: The crispy-forms helper.
         self.helper = HorizontalFormHelper()
+        # Setup the fields
+        self.fields["internal_port"].initial = internal_port
+        self.fields["env_vars"].initial = json.dumps(env_vars)
 
     def save(self, commit=True):
         with transaction.atomic():
             super().save(commit=False)
             self.instance.project = self.project
-            if not self.instance.dockercontainer_set:
-                self.instance.dockercontainer_set.create()
-            self.instance.dockercontainer.internal_port = self.cleaned_data["internal_port"]
+            self.instance.save()
 
-            try:
-                host_port = DockerImage.objects.order_by(["-host_port"]).first().host_port + 1
-            except DockerImage.DoesNotExist:
+            # Get first free port
+            first_process = DockerProcess.objects.order_by("-host_port").first()
+            if first_process:
+                host_port = first_process.host_port + 1
+            else:
                 host_port = 10001
-            self.instance.dockercontainer.host_port = host_port
+
+            if self.instance.dockerprocess_set.all():
+                process = self.instance.dockerprocess_set.first()
+                process.internal_port = self.cleaned_data["internal_port"]
+                process.host_port = host_port
+                process.environment = json.loads(self.cleaned_data["env_vars"])
+            else:
+                process = self.instance.dockerprocess_set.create(
+                    host_port=host_port,
+                    internal_port=self.cleaned_data["internal_port"],
+                    environment=json.loads(self.cleaned_data["env_vars"]),
+                )
 
             if commit:
                 self.instance.save()
+                process.save()
             return self.instance
 
     class Meta:
@@ -45,6 +62,8 @@ class DockerImageForm(forms.ModelForm):
         required=True,
         initial=80,
     )
+
+    env_vars = forms.CharField(max_length=100_000, widget=forms.HiddenInput(), initial="[]")
 
     @property
     def dockerimage(self):

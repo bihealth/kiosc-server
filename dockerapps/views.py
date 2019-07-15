@@ -99,25 +99,6 @@ class DockerImageCreateView(
         pull_image.delay(bgjob.pk)
         return result
 
-    # @transaction.atomic
-    # def form_valid(self, form):
-    #     """Automatically set the project property."""
-    #     form.instance.project = self.get_project(self.request, self.kwargs)
-    #     # Find a free port...
-    #     docker_apps = DockerImage.objects.order_by("-host_port")
-    #     form.instance.host_port = docker_apps.first().host_port + 1 if docker_apps else FIRST_PORT
-    #     if form.cleaned_data.get("docker_image"):
-    #         # Load the image into Docker
-    #         images = docker.from_env(timeout=300).images.load(form.cleaned_data["docker_image"])
-    #         if len(images) != 1:
-    #             raise ValidationError("The TAR file has to contain exactly one image")
-    #         form.instance.image_id = images[0].id
-    #     try:
-    #         result = super().form_valid(form)
-    #     except ValidationError:  # Remove image and re-raise
-    #         docker.from_env(timeout=300).images.remove(images[0].id)
-    #     return result
-
 
 class DockerImageUpdateView(
     LoginRequiredMixin,
@@ -141,27 +122,9 @@ class DockerImageUpdateView(
         """Extend form kwargs with the project."""
         result = super().get_form_kwargs()
         result["project"] = self.get_project()
+        result["internal_port"] = self.object.dockerprocess_set.first().internal_port
+        result["env_vars"] = self.object.dockerprocess_set.first().environment
         return result
-
-    # @transaction.atomic
-    # def form_valid(self, form):
-    #     # Stop any running container.
-    #     stop_containers(form.instance.image_id)
-    #     if form.cleaned_data.get("docker_image"):
-    #         # Load the image into Docker
-    #         images = docker.from_env(timeout=300).images.load(
-    #             form.cleaned_data["docker_image"]
-    #         )
-    #         if len(images) != 1:
-    #             raise ValidationError(
-    #                 "The TAR file has to contain exactly one image"
-    #             )
-    #         form.instance.image_id = images[0].id
-    #     try:
-    #         result = super().form_valid(form)
-    #     except ValidationError:  # Remove image and re-raise
-    #         docker.from_env(timeout=300).images.remove(images[0].id)
-    #     return result
 
 
 def stop_containers(image_id):

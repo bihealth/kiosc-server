@@ -23,4 +23,19 @@
 
   <dt class="col-12 col-md-3 col-xl-2">Image ID</dt>
   <dd class="col-12 col-md-9 col-xl-10">{{ object.image_id }}</dd>
+
+  <dt class="col-12 col-md-12 col-xl-12 mb-2">Environment Variables</dt>
+  <dd class="col-12">
+    <dl class="row">
+      {% for variable in object.dockerprocess_set.first.environment %}
+        <dt class="col-2 text-nowrap pl-0">
+          <span class="text-muted">#{{ forloop.counter }}</span>
+          <tt>{{ variable.name }}</tt>
+        </dt>
+        <dd class="col-10 pl-1">
+          <textarea class="form-control" style="font-family: monospace" row="4" readonly>{% if variable.secret %}***SECRET***{% else %}{{ variable.value }}{% endif %}</textarea>
+        </dd>
+      {% endfor %}
+    </dl>
+  </dd>
 </dl>

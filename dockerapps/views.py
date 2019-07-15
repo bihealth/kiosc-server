@@ -91,6 +91,8 @@ class DockerImageCreateView(
         """Extend form kwargs with the project."""
         result = super().get_form_kwargs()
         result["project"] = self.get_project()
+        result["internal_port"] = None
+        result["env_vars"] = []
         return result
 
     def form_valid(self, form):

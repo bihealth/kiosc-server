@@ -1,8 +1,7 @@
 """Models for the ``dockerapps`` app."""
-
+import contextlib
 import uuid as uuid_object
 
-import docker
 from django.shortcuts import reverse
 from django.db import models, transaction
 from django.contrib.postgres.fields.jsonb import JSONField
@@ -164,7 +163,21 @@ class DockerProcess(models.Model):
         ordering = ("-date_created",)
 
 
-class ContainerStateControlBackgroundJob:
+class JobModelMessageMixin2(JobModelMessageMixin):
+    @contextlib.contextmanager
+    def marks(self):
+        """Return a context manager that allows to run tasks between start and success/error marks."""
+        self.mark_start()
+        try:
+            yield
+        except:
+            self.mark_error()
+            raise
+        else:
+            self.mark_success()
+
+
+class ContainerStateControlBackgroundJob(JobModelMessageMixin2, models.Model):
     """Background job for controlling container state."""
 
     spec_name = "dockerapps.container_jobcontrol"
@@ -196,7 +209,7 @@ class ContainerStateControlBackgroundJob:
 # TODO: It would probably be nice to have a morge general for "ImageBackgroundJobs".
 
 
-class ImageBackgroundJob(models.Model):
+class ImageBackgroundJob(JobModelMessageMixin2, models.Model):
     """Background job for manipulating ``DockerImage`` records."""
 
     @classmethod

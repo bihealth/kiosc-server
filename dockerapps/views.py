@@ -1,6 +1,5 @@
 """The views for the dockerapps app."""
 
-import docker
 from django.contrib import messages
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.db import transaction
@@ -79,6 +78,7 @@ class DockerImageCreateView(
         result["project"] = self.get_project()
         result["internal_port"] = None
         result["env_vars"] = []
+        result["command"] = None
         return result
 
     def form_valid(self, form):
@@ -112,6 +112,7 @@ class DockerImageUpdateView(
         result["project"] = self.get_project()
         result["internal_port"] = self.object.dockerprocess_set.first().internal_port
         result["env_vars"] = self.object.dockerprocess_set.first().environment
+        result["command"] = self.object.dockerprocess_set.first().command
         return result
 
     def form_valid(self, form):

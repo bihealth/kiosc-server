@@ -40,7 +40,7 @@ CSRF_COOKIE_SECURE = True
 CSRF_COOKIE_HTTPONLY = True
 X_FRAME_OPTIONS = "DENY"
 
-INSTALLED_APPS += ["gunicorn"]
+INSTALLED_APPS += ["daphne"]
 
 # Static Assets
 # ------------------------

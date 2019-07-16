@@ -14,6 +14,7 @@ from .base import *  # noqa
 import socket
 import os
 
+READ_DOT_ENV_FILE = True
 
 # APP CONFIGURATION
 # ------------------------------------------------------------------------------

@@ -16,7 +16,7 @@ FIRST_PORT = 10001
 class DockerImageForm(forms.ModelForm):
     """Form for creating and updating ``DockerContainer`` records."""
 
-    def __init__(self, project, internal_port, env_vars, *args, **kwargs):
+    def __init__(self, project, internal_port, env_vars, command, *args, **kwargs):
         super().__init__(*args, **kwargs)
         #: The project for the Docker image.
         self.project = project
@@ -25,6 +25,7 @@ class DockerImageForm(forms.ModelForm):
         # Setup the fields
         self.fields["internal_port"].initial = internal_port
         self.fields["env_vars"].initial = json.dumps(env_vars)
+        self.fields["command"].initial = command
 
     def save(self, commit=True):
         with transaction.atomic():
@@ -46,6 +47,8 @@ class DockerImageForm(forms.ModelForm):
                 process.command = self.cleaned_data["command"]
                 process.host_port = host_port
                 process.environment = json.loads(self.cleaned_data["env_vars"])
+                if self.cleaned_data["password"]:
+                    process.password = self.cleaned_data["password"]
             else:
                 process = self.instance.dockerprocess_set.create(
                     project=self.project,
@@ -62,7 +65,15 @@ class DockerImageForm(forms.ModelForm):
 
     class Meta:
         model = DockerImage
-        fields = ("title", "description", "repository", "tag")
+        fields = ("title", "description", "repository", "tag", "username")
+
+    password = forms.CharField(
+        label="Password",
+        help_text="Leave blank to keep the previous password",
+        required=False,
+        max_length=1024,
+        widget=forms.PasswordInput(),
+    )
 
     internal_port = forms.IntegerField(
         label="Port inside container",
@@ -71,7 +82,7 @@ class DockerImageForm(forms.ModelForm):
         initial=80,
     )
 
-    env_vars = forms.CharField(max_length=100_000, widget=forms.HiddenInput(), initial="[]")
+    env_vars = forms.CharField(max_length=100_000, widget=forms.HiddenInput())
 
     command = forms.CharField(
         max_length=64000,

@@ -71,6 +71,22 @@ class DockerImage(models.Model):
     #: The "repository" of the image, if any.
     repository = models.CharField(max_length=512, help_text="The repository/name of the image.")
 
+    #: The user account to use for logging into registry; optional.
+    username = models.CharField(
+        max_length=1024,
+        help_text="User name to use for logging into registry; optional",
+        blank=True,
+        null=True,
+    )
+
+    #: The password to use for logging into registry; optional.
+    password = models.CharField(
+        max_length=1024,
+        help_text="Password to use for logging into registry; optional",
+        blank=True,
+        null=True,
+    )
+
     #: The tag of the image, if any.
     tag = models.CharField(max_length=128, help_text="The tag of the image")
 
@@ -88,6 +104,17 @@ class DockerImage(models.Model):
         blank=False,
         null=False,
     )
+
+    @property
+    def registry(self):
+        """Return URL to registry, inflected from repository.
+
+        Returns ``None`` if the registry is Docker Hub.
+        """
+        if not self.repository or "/" not in self.repository:
+            return None
+        else:
+            return "https://%s/v1" % self.repository.split("/", 1)[0]
 
     @property
     def process(self):

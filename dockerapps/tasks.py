@@ -47,6 +47,16 @@ def pull_image(_self, job_id):
 
             job.add_log_entry("Connecting to Docker API...")
             cli = connect_docker()
+            if image.username or image.password:
+                job.add_log_entry(
+                    "Logging into registry %s" % (image.registry or "https://index.docker.io/v1/")
+                )
+                res = cli.login(
+                    username=image.username or None,
+                    password=image.password or None,
+                    registry=image.registry,
+                )
+                job.add_log_entry("Login results: %s" % res)
             job.add_log_entry("Pulling image %s:%s..." % (image.repository, image.tag))
             for line in cli.pull(
                 repository=image.repository, tag=image.tag, stream=True, decode=True
@@ -137,15 +147,6 @@ class ContainerStateControllerHelper:
             else:
                 self.job.add_log_entry("Did not stop on time.")
 
-    #     url(
-    #         regex=(
-    #             r"^(?P<project>[0-9a-f-]+)/dockerapps/(?P<image>[0-9a-f-]+)/proxy/"
-    #             "(?P<process>[0-9a-f-]+)/(?P<path>.*)$"
-    #         ),
-    #         view=csrf_exempt(views.DockerProxyView.as_view()),
-    #         name="docker-proxy",
-    #     ),
-
     def _run_start_start(self):
         """Start the container and wait for it to finish starting"""
         # Get the value of the URL prefix that the app will have to the outside.
@@ -172,6 +173,9 @@ class ContainerStateControllerHelper:
                         environment[entry["name"]] = entry["value"].replace(
                             "__KIOSC_URL_PREFIX__", url_prefix
                         )
+                print(
+                    "COMMAND", shlex.split(self.process.command) if self.process.command else None
+                )
                 # Create and start the Docker container, update database record.
                 container = self.cli.create_container(
                     detach=True,

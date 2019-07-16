@@ -2,8 +2,6 @@
 import contextlib
 import uuid as uuid_object
 
-from django.db.models.signals import post_delete, pre_delete
-from django.dispatch import receiver
 from django.shortcuts import reverse
 from django.db import models, transaction
 from django.contrib.postgres.fields.jsonb import JSONField
@@ -188,9 +186,9 @@ class JobModelMessageMixin2(JobModelMessageMixin):
         self.mark_start()
         try:
             yield
-        except:
-            self.mark_error()
-            raise
+        except Exception as e:
+            self.mark_error("Failure: %s" % e)
+            raise e
         else:
             self.mark_success()
 
@@ -207,6 +205,8 @@ class ContainerStateControlBackgroundJob(JobModelMessageMixin2, models.Model):
     sodar_uuid = models.UUIDField(
         default=uuid_object.uuid4, unique=True, help_text="Background job specialization SODAR UUID"
     )
+    #: The project that the job belongs to.
+    project = models.ForeignKey(Project, help_text="Project in which this objects belongs")
 
     #: The Docker process that the job belongs to.
     process = models.ForeignKey(
@@ -237,6 +237,7 @@ class ImageBackgroundJob(JobModelMessageMixin2, models.Model):
     def construct(cls, image, user, action):
         image.log_entries.create(text="Performing action on image: %s." % action)
         return image.imagebackgroundjob_set.create(
+            project=image.project,
             action=action,
             bg_job=BackgroundJob.objects.create(
                 project=image.project,
@@ -256,6 +257,8 @@ class ImageBackgroundJob(JobModelMessageMixin2, models.Model):
     sodar_uuid = models.UUIDField(
         default=uuid_object.uuid4, unique=True, help_text="Background job specialization SODAR UUID"
     )
+    #: The project that the job belongs to.
+    project = models.ForeignKey(Project, help_text="Project in which this objects belongs")
 
     #: The action to perform.
     action = models.CharField(max_length=32, choices=(("pull", "pull"), ("delete", "delete")))
@@ -277,6 +280,16 @@ class ImageBackgroundJob(JobModelMessageMixin2, models.Model):
         help_text="Background job for state etc.",
         on_delete=models.CASCADE,
     )
+
+    @property
+    def task_desc(self):
+        return "Performing action %s for %s" % (self.action, self.image.title)
+
+    def get_absolute_url(self):
+        return reverse(
+            "dockerapps:image-job-detail",
+            kwargs={"project": self.project.sodar_uuid, "job": self.sodar_uuid},
+        )
 
 
 @transaction.atomic()

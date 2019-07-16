@@ -1,24 +1,12 @@
 """The views for the dockerapps app."""
 
-import time
-
 import docker
 from django.contrib import messages
 from django.contrib.auth.mixins import LoginRequiredMixin
-from django.core.exceptions import ValidationError
 from django.db import transaction
 from django.shortcuts import reverse, redirect
-from django.views import View
-from django.views.generic import (
-    CreateView,
-    DeleteView,
-    DetailView,
-    ListView,
-    UpdateView,
-    TemplateView,
-)
+from django.views.generic import CreateView, DeleteView, DetailView, ListView, UpdateView
 from django.views.generic.detail import BaseDetailView
-from projectroles.models import Project
 from projectroles.views import LoggedInPermissionMixin, ProjectContextMixin
 
 from dockerapps.tasks import pull_image
@@ -128,6 +116,12 @@ class DockerImageUpdateView(
         result["env_vars"] = self.object.dockerprocess_set.first().environment
         return result
 
+    def form_valid(self, form):
+        result = super().form_valid(form)
+        bgjob = ImageBackgroundJob.construct(self.object, self.request.user, "pull_image")
+        pull_image.delay(bgjob.pk)
+        return result
+
 
 def stop_containers(image_id):
     """Stop containers for ``image_id``."""
@@ -223,6 +217,23 @@ class DockerImageDeleteView(
             "dockerapps:image-list",
             kwargs={"project": self.get_project(self.request, self.kwargs).sodar_uuid},
         )
+
+
+class ImageBackgroundJobDetailView(
+    LoginRequiredMixin,
+    LoggedInPermissionMixin,
+    ProjectPermissionMixin,
+    ProjectContextMixin,
+    DetailView,
+):
+    """Display status and further details of the image background job.
+    """
+
+    permission_required = "dockerapps.view_data"
+    template_name = "dockerapps/image_job_detail.html"
+    model = ImageBackgroundJob
+    slug_url_kwarg = "job"
+    slug_field = "sodar_uuid"
 
 
 class DockerProxyView(

@@ -37,6 +37,12 @@ urlpatterns = [
         view=views.DockerImageJobControlView.as_view(),
         name="image-control",
     ),
+    # Background job views
+    url(
+        regex=r"^(?P<project>[0-9a-f-]+)/dockerapps/image-job/(?P<job>[0-9a-f-]+)/$",
+        view=views.ImageBackgroundJobDetailView.as_view(),
+        name="image-job-detail",
+    ),
     # Proxy to embedded Docker / Shiny app.  NB: there is a "partner" websocket_urlpattern through Django Channels.
     url(
         regex=(

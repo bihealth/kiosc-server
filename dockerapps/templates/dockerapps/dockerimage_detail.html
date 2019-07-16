@@ -66,4 +66,15 @@
     </div>
   </div>
 
+  <div class="row sodar-pr-content-title pb-2">
+    <div class="col-12">
+      <h3>Process Logs</h3>
+
+      {% if object.process.processlogchunk_set.all %}
+        {% for job in object.process.processlogchunk_set.all %}<pre>{{ job.content }}</pre>{% endfor %}
+      {% else %}
+        <p class="font-italic">No logs yet.</p>
+      {% endif %}
+    </div>
+  </div>
 {% endblock %}

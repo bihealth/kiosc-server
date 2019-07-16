@@ -13,7 +13,7 @@
 {% endblock %}
 
 {% block title %}
-  Confirm Removal of Docker Image {{ object.title }}
+  Confirm Pull of Docker Image {{ object.title }}
 {% endblock title %}
 
 {% block projectroles %}
@@ -22,7 +22,7 @@
     {% include 'projectroles/_project_menu_btn.html' %}
 
     <h2 class="sodar-pr-content-title">
-      Really Delete Docker App &quot;{{ object.title }}&quot;?
+      Really Pull Docker Image &quot;{{ object.title }}&quot; Again?
     </h2>
   </div>
 
@@ -37,8 +37,8 @@
             href="{{ request.session.real_referer }}">
           <i class="fa fa-arrow-circle-left" aria-hidden="true"></i> Cancel
         </a>
-        <button type="submit" class="btn btn-danger">
-          <i class="fa fa-times" aria-hidden="true"></i> Remove
+        <button type="submit" class="btn btn-primary">
+          <i class="fa fa-cloud-download" aria-hidden="true"></i> Pull
         </button>
       </div>
     </form>

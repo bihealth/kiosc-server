@@ -30,7 +30,7 @@
     <div class="col-xs-12 col-sm-12 col-md-12">
         <iframe
           style="height: 800px; width: 100%;"
-          src="{% url 'dockerapps:image-proxy' project=project.sodar_uuid image=object.sodar_uuid path='' %}"></iframe>
+          src="{% url 'dockerapps:docker-proxy' project=project.sodar_uuid image=item.sodar_uuid process=object.process.sodar_uuid path='' %}"></iframe>
       </div>
     </div>
   </div>

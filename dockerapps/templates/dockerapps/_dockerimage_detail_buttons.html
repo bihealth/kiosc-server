@@ -10,14 +10,42 @@
     Docker App Operations
   </button>
   <div class="dropdown-menu dropdown-menu-right">
-    <a class="dropdown-item" href="{% url 'dockerapps:image-create' project=project.sodar_uuid %}">
-      <i class="fa fa-fw fa-plus"></i> Create New
+    {% if object.process.can_start or object.process.can_restart or object.process.can_stop %}
+      <form action="{% url 'dockerapps:image-control' project=project.sodar_uuid image=object.sodar_uuid %}" method="post">{% csrf_token %}
+        {% if object.process.can_start %}
+          <button type="submit" class="dropdown-item" name="action" value="start">
+            <i class="fa fa-fw fa-play"></i>
+            Start
+          </button>
+        {% endif %}
+        {% if object.process.can_restart %}
+          <button type="submit" class="dropdown-item" name="action" value="restart">
+            <i class="fa fa-fw fa-refresh"></i>
+            Restart
+          </button>
+        {% endif %}
+        {% if object.process.can_stop %}
+          <button type="submit" class="dropdown-item" name="action" value="stop">
+            <i class="fa fa-fw fa-stop"></i>
+            Stop
+          </button>
+        {% endif %}
+      </form>
+      <div class="dropdown-divider"></div>
+    {% endif %}
+    <a class="dropdown-item {% if object.state == "pulling" %}disabled{% endif %}" href="{% url 'dockerapps:image-pull' project=project.sodar_uuid image=object.sodar_uuid %}">
+      <i class="fa fa-fw fa-cloud-download"></i>
+      Pull Image Again
     </a>
     <a class="dropdown-item" href="{% url 'dockerapps:image-update' project=project.sodar_uuid image=object.sodar_uuid %}">
       <i class="fa fa-fw fa-pencil"></i> Update
     </a>
     <a class="dropdown-item" href="{% url 'dockerapps:image-delete' project=project.sodar_uuid image=object.sodar_uuid %}">
       <i class="fa fa-fw fa-times"></i> Delete
+    </a>
+    <div class="dropdown-divider"></div>
+    <a class="dropdown-item" href="{% url 'dockerapps:image-create' project=project.sodar_uuid %}">
+      <i class="fa fa-fw fa-plus"></i> Create New
     </a>
   </div>
 </div>

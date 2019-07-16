@@ -110,7 +110,8 @@ class DockerImage(models.Model):
         for pk in [j.bg_job.pk for j in self.imagebackgroundjob_set.all()]:
             ImageBackgroundJob.objects.get(pk=pk).bg_job.delete()
         for pk in [j.bg_job.pk for j in self.process.containerstatecontrolbackgroundjob_set.all()]:
-            ContainerStateControlBackgroundJob.objects.get(pk=pk).bg_job.delete()
+            for job in ContainerStateControlBackgroundJob.objects.filter(pk=pk):
+                job.bg_job.delete()
         super().delete(*args, **kwargs)
 
 
@@ -128,6 +129,9 @@ class DockerProcess(models.Model):
     #: DateTime of last modification
     date_modified = models.DateTimeField(auto_now=True, help_text="DateTime of last modification")
 
+    #: DateTime of last pulling of logs.
+    date_last_logs = models.DateTimeField(auto_now_add=True, help_text="DateTime of last log pull")
+
     #: The image that the process is to be based on.
     image = models.ForeignKey(
         DockerImage,
@@ -136,6 +140,13 @@ class DockerProcess(models.Model):
         null=False,
         on_delete=models.CASCADE,
     )
+
+    #: UUID of the job
+    sodar_uuid = models.UUIDField(
+        default=uuid_object.uuid4, unique=True, help_text="Process SODAR UUID"
+    )
+    #: The project containing this barcode set.
+    project = models.ForeignKey(Project, help_text="Project in which this objects belongs")
 
     #: The ID of the Docker container (when running).
     container_id = models.CharField(max_length=128, help_text="Container ID", blank=True, null=True)
@@ -172,11 +183,50 @@ class DockerProcess(models.Model):
     #: This guarantees that the order of environment variable definitions does not change.
     environment = JSONField(help_text="The environment variables to use.")
 
+    #: The command to execute.
+    command = models.CharField(
+        max_length=64000, help_text="The command to execute", blank=True, null=True
+    )
+
     def __str__(self):
         return "DockerProcess: %s (%s)" % (self.image.title, self.container_id)
 
+    @property
+    def can_start(self):
+        return self.state in (STATE_IDLE, STATE_FAILED)
+
+    @property
+    def can_restart(self):
+        return self.state not in (STATE_IDLE,)
+
+    @property
+    def can_stop(self):
+        return self.state in (STATE_RUNNING, STATE_STARTING)
+
     class Meta:
         ordering = ("-date_created",)
+
+
+class ProcessLogChunk(models.Model):
+    """A chunk from the docker logs."""
+
+    #: DateTime of creation
+    date_created = models.DateTimeField(auto_now_add=True, help_text="DateTime of creation")
+
+    #: The image that the process is to be based on.
+    process = models.ForeignKey(
+        DockerProcess,
+        help_text="The logs from the Docker process",
+        blank=False,
+        null=False,
+        on_delete=models.CASCADE,
+    )
+
+    #: The log chunk.
+    content = models.TextField(blank=True, null=True)
+
+    class Meta:
+        ordering = ("date_created",)
 
 
 class JobModelMessageMixin2(JobModelMessageMixin):
@@ -195,6 +245,22 @@ class JobModelMessageMixin2(JobModelMessageMixin):
 
 class ContainerStateControlBackgroundJob(JobModelMessageMixin2, models.Model):
     """Background job for controlling container state."""
+
+    @classmethod
+    @transaction.atomic()
+    def construct(cls, process, user, action):
+        process.log_entries.create(text="Performing action on process: %s." % action)
+        return process.containerstatecontrolbackgroundjob_set.create(
+            project=process.image.project,
+            action=action,
+            bg_job=BackgroundJob.objects.create(
+                project=process.image.project,
+                user=user,
+                job_type=cls.spec_name,
+                name="Performing action %s on %s:%s (%s)"
+                % (action, process.image.repository, process.image.tag, process.image.title),
+            ),
+        )
 
     spec_name = "dockerapps.container_jobcontrol"
 
@@ -215,6 +281,11 @@ class ContainerStateControlBackgroundJob(JobModelMessageMixin2, models.Model):
         on_delete=models.CASCADE,
     )
 
+    #: The action to perform.
+    action = models.CharField(
+        max_length=32, choices=(("start", "start"), ("stop", "stop"), ("restart", "restart"))
+    )
+
     #: The background job that is specialized.
     bg_job = models.ForeignKey(
         BackgroundJob,
@@ -225,8 +296,15 @@ class ContainerStateControlBackgroundJob(JobModelMessageMixin2, models.Model):
         on_delete=models.CASCADE,
     )
 
+    @property
+    def task_desc(self):
+        return "Performing action %s for %s" % (self.action, self.process.image.title)
 
-# TODO: It would probably be nice to have a morge general for "ImageBackgroundJobs".
+    def get_absolute_url(self):
+        return reverse(
+            "dockerapps:process-job-detail",
+            kwargs={"project": self.project.sodar_uuid, "job": self.sodar_uuid},
+        )
 
 
 class ImageBackgroundJob(JobModelMessageMixin2, models.Model):
@@ -296,18 +374,6 @@ class ImageBackgroundJob(JobModelMessageMixin2, models.Model):
 def update_container_states():
     """Look at all ``DockerContainer`` objects and synchronize their state with the one from Docker."""
     print("updating container states...")
-
-
-#     statuses = {}
-#     for container in docker.from_env().containers.list():
-#         statuses[container.image.id] = container.status
-#     for app in DockerApp.objects.all():
-#         if statuses.get(app.image_id) == "running":
-#             app.state = "running"
-#             app.save()
-#         elif statuses.get(app.image_id, "exited") == "exited":
-#             app.state = "idle"
-#             app.save()
 
 
 class LogEntry(models.Model):

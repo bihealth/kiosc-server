@@ -44,9 +44,9 @@ CACHES = {"default": {"BACKEND": "django.core.cache.backends.locmem.LocMemCache"
 # Celery
 # ------------------------------------------------------------------------------
 # http://docs.celeryproject.org/en/latest/userguide/configuration.html#task-always-eager
-# CELERY_TASK_ALWAYS_EAGER = True
+CELERY_TASK_ALWAYS_EAGER = True
 # http://docs.celeryproject.org/en/latest/userguide/configuration.html#task-eager-propagates
-# CELERY_TASK_EAGER_PROPAGATES = True
+CELERY_TASK_EAGER_PROPAGATES = True
 
 # django-debug-toolbar
 # ------------------------------------------------------------------------------

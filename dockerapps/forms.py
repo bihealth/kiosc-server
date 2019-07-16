@@ -9,6 +9,10 @@ from kiosc.utils import HorizontalFormHelper
 from .models import DockerImage, DockerProcess
 
 
+#: Smallest port to use for the Docker container.
+FIRST_PORT = 10001
+
+
 class DockerImageForm(forms.ModelForm):
     """Form for creating and updating ``DockerContainer`` records."""
 
@@ -37,11 +41,15 @@ class DockerImageForm(forms.ModelForm):
 
             if self.instance.dockerprocess_set.all():
                 process = self.instance.dockerprocess_set.first()
+                process.project = self.project
                 process.internal_port = self.cleaned_data["internal_port"]
+                process.command = self.cleaned_data["command"]
                 process.host_port = host_port
                 process.environment = json.loads(self.cleaned_data["env_vars"])
             else:
                 process = self.instance.dockerprocess_set.create(
+                    project=self.project,
+                    command=self.cleaned_data["command"],
                     host_port=host_port,
                     internal_port=self.cleaned_data["internal_port"],
                     environment=json.loads(self.cleaned_data["env_vars"]),
@@ -65,6 +73,13 @@ class DockerImageForm(forms.ModelForm):
 
     env_vars = forms.CharField(max_length=100_000, widget=forms.HiddenInput(), initial="[]")
 
+    command = forms.CharField(
+        max_length=64000,
+        widget=forms.Textarea(),
+        help_text="The command to execute. Leave blank to use container default",
+        required=False,
+    )
+
     @property
     def dockerimage(self):
         return self.dockerimage_set.first()
@@ -86,3 +101,7 @@ class DockerProcessJobControlForm(forms.ModelForm):
     class Meta:
         model = DockerProcess
         fields = ("action",)
+
+
+class DockerImagePullForm(forms.Form):
+    """Form for pulling docker image again."""

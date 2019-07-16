@@ -13,19 +13,38 @@
   <dt class="col-12 col-md-3 col-xl-2">Last Modified</dt>
   <dd class="col-12 col-md-9 col-xl-10">{{ object.date_modified }}</dd>
 
-  <dt class="col-12 col-md-3 col-xl-2">State</dt>
+  <dt class="col-12 col-md-3 col-xl-2">Image State</dt>
   <dd class="col-12 col-md-9 col-xl-10">{{ object.state }}</dd>
+
+  <dt class="col-12 col-md-3 col-xl-2">Process State</dt>
+  <dd class="col-12 col-md-9 col-xl-10">{{ object.process.state }}</dd>
 
   <dt class="col-12 col-md-3 col-xl-2">Title</dt>
   <dd class="col-12 col-md-9 col-xl-10">{{ object.title }}</dd>
+
+  <dt class="col-12 col-md-3 col-xl-2">Command</dt>
+  <dd class="col-12 col-md-9 col-xl-10"><tt>{{ object.process.command }}</tt></dd>
+
+  <dt class="col-12 col-md-3 col-xl-2">View App</dt>
+  <dd class="col-12 col-md-9 col-xl-10">
+    {% if object.process.state == "running" %}
+      <a href="{% url 'dockerapps:docker-proxy' project=project.sodar_uuid image=object.sodar_uuid process=object.process.sodar_uuid path='' %}" class="btn btn-primary" target="_blank"
+        data-toggle="tooltip" data-placement="top" title="Open app">
+        <i class="fa fa-eye"></i>
+        View App
+      </a>
+    {% else %}
+      <span class="font-italic">App no running</span>
+    {% endif %}
+  </dd>
 
   <dt class="col-12 col-md-3 col-xl-2">Description</dt>
   <dd class="col-12 col-md-9 col-xl-10">
     {{ object.description|default:"-" }}
   </dd>
 
-  <dt class="col-12 col-md-3 col-xl-2">Image ID</dt>
-  <dd class="col-12 col-md-9 col-xl-10">{{ object.image_id }}</dd>
+  <dt class="col-12 col-md-3 col-xl-2">Container ID</dt>
+  <dd class="col-12 col-md-9 col-xl-10">{{ object.process.container_id }}</dd>
 
   <dt class="col-12 col-md-12 col-xl-12 mb-2">Environment Variables</dt>
   <dd class="col-12">

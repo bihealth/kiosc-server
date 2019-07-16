@@ -4,21 +4,22 @@ import docker
 from django.contrib import messages
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.db import transaction
-from django.shortcuts import reverse, redirect
-from django.views.generic import CreateView, DeleteView, DetailView, ListView, UpdateView
+from django.shortcuts import reverse, redirect, get_object_or_404
+from django.views.generic import CreateView, DeleteView, DetailView, ListView, UpdateView, FormView
 from django.views.generic.detail import BaseDetailView
 from projectroles.views import LoggedInPermissionMixin, ProjectContextMixin
 
-from dockerapps.tasks import pull_image
+from dockerapps.tasks import pull_image, control_container_state
 from kiosc.utils import ProjectPermissionMixin
 
-from . import tasks
-from .forms import DockerImageForm, DockerProcessJobControlForm
-from .models import DockerImage, DockerProcess, ImageBackgroundJob
+from .forms import DockerImageForm, DockerProcessJobControlForm, DockerImagePullForm
+from .models import (
+    DockerImage,
+    DockerProcess,
+    ImageBackgroundJob,
+    ContainerStateControlBackgroundJob,
+)
 from .views_proxy import ProxyView
-
-#: Smallest port to use for the Docker image.
-FIRST_PORT = 1025
 
 
 class DockerImageListView(
@@ -55,9 +56,6 @@ class DockerImageDetailView(
 
     slug_url_kwarg = "image"
     slug_field = "sodar_uuid"
-
-
-# TODO: also add the port etc. fields
 
 
 class DockerImageCreateView(
@@ -123,16 +121,6 @@ class DockerImageUpdateView(
         return result
 
 
-def stop_containers(image_id):
-    """Stop containers for ``image_id``."""
-    client = docker.from_env()
-    for container in client.containers.list():
-        if container.image.id == image_id:
-            container.stop()
-            return True
-    return False
-
-
 class DockerImageJobControlView(
     LoginRequiredMixin,
     LoggedInPermissionMixin,
@@ -148,39 +136,20 @@ class DockerImageJobControlView(
     model = DockerImage
     form_class = DockerProcessJobControlForm
 
-    slug_url_kwarg = "dockerapp"
+    slug_url_kwarg = "image"
     slug_field = "sodar_uuid"
 
     def form_valid(self, form):
         # Kick off starting/stopping
-        with transaction.atomic():
-            if form.cleaned_data["action"] == "start":
-                form.instance.state = "starting"
-                client = docker.from_env(timeout=300)
-                client.containers.run(
-                    form.instance.image_id,
-                    detach=True,
-                    ports={"%d/tcp" % form.instance.internal_port: form.instance.host_port},
-                    environment={
-                        "DASH_REQUESTS_PATHNAME_PREFIX": reverse(
-                            "dockerapps:image-proxy",
-                            kwargs={
-                                "project": self.get_context_data()["project"].sodar_uuid,
-                                "dockerapp": self.get_context_data()["object"].sodar_uuid,
-                                "path": "",
-                            },
-                        )
-                    },
-                )
-                messages.info(self.request, "Initiated start of docker container...")
-            elif form.cleaned_data["action"] == "stop":
-                form.instance.state = "stopping"
-                if stop_containers(form.instance.image_id):
-                    messages.info(self.request, "Initiated stop of docker container...")
-            # Update docker app record.
-            super().form_valid(form)
+        if form.cleaned_data["action"] in ("start", "restart", "stop"):
+            messages.info(self.request, "Initiating %s of container" % form.cleaned_data["action"])
+            job = ContainerStateControlBackgroundJob.construct(
+                self.get_object().process, self.request.user, form.cleaned_data["action"]
+            )
+            control_container_state.delay(job.pk)
+        else:
+            messages.error(self.request, "Invalid action %s" % form.cleaned_data["action"])
 
-        tasks.update_container_states.delay()
         return redirect(
             reverse(
                 "dockerapps:image-list",
@@ -219,6 +188,46 @@ class DockerImageDeleteView(
         )
 
 
+class DockerImagePullView(
+    LoginRequiredMixin,
+    LoggedInPermissionMixin,
+    ProjectPermissionMixin,
+    ProjectContextMixin,
+    FormView,
+):
+    """Pull docker image again"""
+
+    template_name = "dockerapps/dockerimage_confirm_pull.html"
+    permission_required = "dockerapps.update_dockerimage"
+
+    form_class = DockerImagePullForm
+
+    slug_url_kwarg = "image"
+    slug_field = "sodar_uuid"
+
+    def get_context_data(self, *args, **kwargs):
+        result = super().get_context_data(*args, **kwargs)
+        result["object"] = get_object_or_404(
+            DockerImage.objects.filter(project=result["project"]), sodar_uuid=self.kwargs["image"]
+        )
+        return result
+
+    def form_valid(self, form):
+        image = self.get_context_data()["object"]
+        bgjob = ImageBackgroundJob.construct(image, self.request.user, "pull_image")
+        pull_image.delay(bgjob.pk)
+        messages.info(
+            self.request, "Pulling Docker image %s:%s again" % (image.repository, image.tag)
+        )
+        return super().form_valid(form)
+
+    def get_success_url(self):
+        return reverse(
+            "dockerapps:image-list",
+            kwargs={"project": self.get_project(self.request, self.kwargs).sodar_uuid},
+        )
+
+
 class ImageBackgroundJobDetailView(
     LoginRequiredMixin,
     LoggedInPermissionMixin,
@@ -232,6 +241,23 @@ class ImageBackgroundJobDetailView(
     permission_required = "dockerapps.view_data"
     template_name = "dockerapps/image_job_detail.html"
     model = ImageBackgroundJob
+    slug_url_kwarg = "job"
+    slug_field = "sodar_uuid"
+
+
+class ContainerStateControlBackgroundJobDetailView(
+    LoginRequiredMixin,
+    LoggedInPermissionMixin,
+    ProjectPermissionMixin,
+    ProjectContextMixin,
+    DetailView,
+):
+    """Display status and further details of the image background job.
+    """
+
+    permission_required = "dockerapps.view_data"
+    template_name = "dockerapps/container_job_detail.html"
+    model = ContainerStateControlBackgroundJob
     slug_url_kwarg = "job"
     slug_field = "sodar_uuid"
 
@@ -254,7 +280,8 @@ class DockerProxyView(
         if not self.has_permission():
             return self.handle_no_permission()
         kwargs.pop("project")
-        kwargs.pop("container")
+        kwargs.pop("image")
+        kwargs.pop("process")
         upstream = "http://localhost:%d/" % self.get_object().host_port
         # Hand down into ProxyView
         proxy_view = ProxyView()
@@ -264,6 +291,9 @@ class DockerProxyView(
         proxy_view.upstream = upstream
         proxy_view.suppress_empty_body = True
         proxy_view.rewrite = (
-            (r"^/^(?P<project>[0-9a-f-]+)/dockerapps/(?P<image>[0-9a-f-]+)/proxy/^", r"/"),
+            (
+                r"^/^(?P<project>[0-9a-f-]+)/dockerapps/(?P<image>[0-9a-f-]+)/proxy/(?P<process>[0-9a-f-]+)/^",
+                r"/",
+            ),
         )
         return proxy_view.dispatch(request, *args, **kwargs)

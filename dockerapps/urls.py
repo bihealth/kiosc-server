@@ -37,20 +37,30 @@ urlpatterns = [
         view=views.DockerImageJobControlView.as_view(),
         name="image-control",
     ),
+    url(
+        regex=r"^(?P<project>[0-9a-f-]+)/dockerapps/image/(?P<image>[0-9a-f-]+)/pull/$",
+        view=views.DockerImagePullView.as_view(),
+        name="image-pull",
+    ),
     # Background job views
     url(
         regex=r"^(?P<project>[0-9a-f-]+)/dockerapps/image-job/(?P<job>[0-9a-f-]+)/$",
         view=views.ImageBackgroundJobDetailView.as_view(),
         name="image-job-detail",
     ),
+    url(
+        regex=r"^(?P<project>[0-9a-f-]+)/dockerapps/container-job/(?P<job>[0-9a-f-]+)/$",
+        view=views.ContainerStateControlBackgroundJobDetailView.as_view(),
+        name="process-job-detail",
+    ),
     # Proxy to embedded Docker / Shiny app.  NB: there is a "partner" websocket_urlpattern through Django Channels.
     url(
         regex=(
             r"^(?P<project>[0-9a-f-]+)/dockerapps/(?P<image>[0-9a-f-]+)/proxy/"
-            "(?P<container>[0-9a-f-]+)/(?P<path>.*)$"
+            "(?P<process>[0-9a-f-]+)/(?P<path>.*)$"
         ),
         view=csrf_exempt(views.DockerProxyView.as_view()),
-        name="container-proxy",
+        name="docker-proxy",
     ),
 ]
 
@@ -58,7 +68,7 @@ websocket_urlpatterns = [
     url(
         (
             r"^dockerapps/(?P<project>[0-9a-f-]+)/dockerapps/(?P<image>[0-9a-f-]+)/proxy/"
-            "(?P<container>[0-9a-f-]+)/(?P<path>.*)$"
+            "(?P<process>[0-9a-f-]+)/(?P<path>.*)$"
         ),
         consumers.TunnelConsumer,
     )

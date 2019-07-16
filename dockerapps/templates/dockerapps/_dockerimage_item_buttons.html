@@ -1,6 +1,6 @@
 <div class="btn-group sodar-list-btn-group pull-right">
-  {% if item.state == "running" %}
-    <a href="{% url 'dockerapps:image-proxy' project=project.sodar_uuid image=item.sodar_uuid path='' %}" class="btn btn-primary sodar-list-dropdown" target="_blank"
+  {% if item.process.state == "running" %}
+    <a href="{% url 'dockerapps:docker-proxy' project=project.sodar_uuid image=item.sodar_uuid process=item.process.sodar_uuid path='' %}" class="btn btn-primary sodar-list-dropdown" target="_blank"
       data-toggle="tooltip" data-placement="top" title="Open app">
       <i class="fa fa-eye"></i>
     </a>
@@ -15,20 +15,33 @@
     <i class="fa fa-cog"></i>
   </button>
   <div class="dropdown-menu dropdown-menu-right">
-    <form action="{#% url 'dockerapps:image-changestate' project=project.sodar_uuid image=item.sodar_uuid %#}" method="post">{% csrf_token %}
-      {% if item.state == "idle" or item.state == "failed" %}
-        <button type="submit" class="dropdown-item" name="action" value="start">
-          <i class="fa fa-fw fa-play"></i>
-          Start
-        </button>
-      {% elif item.state == "starting" or item.state == "running" or item.state == "stopping" %}
-        <button type="submit" class="dropdown-item" name="action" value="stop">
-          <i class="fa fa-fw fa-stop"></i>
-          Stop
-        </button>
-      {% endif %}
-    </form>
-    <div class="dropdown-divider"></div>
+    {% if item.process.can_start or item.process.can_restart or item.process.can_stop %}
+      <form action="{% url 'dockerapps:image-control' project=project.sodar_uuid image=item.sodar_uuid %}" method="post">{% csrf_token %}
+        {% if item.process.can_start %}
+          <button type="submit" class="dropdown-item" name="action" value="start">
+            <i class="fa fa-fw fa-play"></i>
+            Start
+          </button>
+        {% endif %}
+        {% if item.process.can_restart %}
+          <button type="submit" class="dropdown-item" name="action" value="restart">
+            <i class="fa fa-fw fa-refresh"></i>
+            Restart
+          </button>
+        {% endif %}
+        {% if item.process.can_stop %}
+          <button type="submit" class="dropdown-item" name="action" value="stop">
+            <i class="fa fa-fw fa-stop"></i>
+            Stop
+          </button>
+        {% endif %}
+      </form>
+      <div class="dropdown-divider"></div>
+    {% endif %}
+    <a class="dropdown-item {% if item.state == "pulling" %}disabled{% endif %}" href="{% url 'dockerapps:image-pull' project=project.sodar_uuid image=item.sodar_uuid %}">
+      <i class="fa fa-fw fa-cloud-download"></i>
+      Pull Image Again
+    </a>
     <a class="dropdown-item" href="{% url 'dockerapps:image-update' project=project.sodar_uuid image=item.sodar_uuid %}">
       <i class="fa fa-fw fa-pencil"></i>
       Update

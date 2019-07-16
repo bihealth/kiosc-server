@@ -50,7 +50,7 @@ django-docs==0.3.1
 sphinx-rtd-theme==0.4.2
 
 # Control docker from Python
-docker ==3.7.0
+docker ==4.0.2
 
 # Django reverse proxy
 django-revproxy ==0.9.15

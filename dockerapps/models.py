@@ -2,6 +2,8 @@
 import contextlib
 import uuid as uuid_object
 
+from django.db.models.signals import post_delete, pre_delete
+from django.dispatch import receiver
 from django.shortcuts import reverse
 from django.db import models, transaction
 from django.contrib.postgres.fields.jsonb import JSONField
@@ -9,7 +11,9 @@ from django.contrib.postgres.fields.jsonb import JSONField
 from projectroles.models import Project
 from bgjobs.models import BackgroundJob, JobModelMessageMixin
 
-#: Token for "idle" state of image and container.
+#: Token for "initial" state of container.
+STATE_INITIAL = "initial"
+#: Token for "idle" state of container.
 STATE_IDLE = "idle"
 #: Token for "starting" state of image and container.
 STATE_STARTING = "starting"
@@ -26,8 +30,9 @@ STATE_DELETING = "deleting"
 
 #: Django model field choices for images.
 IMAGE_STATE_CHOICES = (
-    (STATE_IDLE, STATE_IDLE),
+    (STATE_INITIAL, STATE_INITIAL),
     (STATE_PULLING, STATE_PULLING),
+    (STATE_IDLE, STATE_IDLE),
     (STATE_DELETING, STATE_DELETING),
     (STATE_FAILED, STATE_FAILED),
 )
@@ -79,11 +84,16 @@ class DockerImage(models.Model):
     #: The current state.
     state = models.CharField(
         max_length=64,
+        default=STATE_INITIAL,
         help_text="The state of the image.",
         choices=IMAGE_STATE_CHOICES,
         blank=False,
         null=False,
     )
+
+    @property
+    def process(self):
+        return self.dockerprocess_set.first()
 
     def get_absolute_url(self):
         return reverse(
@@ -96,6 +106,14 @@ class DockerImage(models.Model):
 
     class Meta:
         ordering = ("-date_created",)
+
+    def delete(self, *args, **kwargs):
+        """Implementation that also removes all connected background job records."""
+        for pk in [j.bg_job.pk for j in self.imagebackgroundjob_set.all()]:
+            ImageBackgroundJob.objects.get(pk=pk).bg_job.delete()
+        for pk in [j.bg_job.pk for j in self.process.containerstatecontrolbackgroundjob_set.all()]:
+            ContainerStateControlBackgroundJob.objects.get(pk=pk).bg_job.delete()
+        super().delete(*args, **kwargs)
 
 
 class DockerProcess(models.Model):
@@ -192,7 +210,9 @@ class ContainerStateControlBackgroundJob(JobModelMessageMixin2, models.Model):
 
     #: The Docker process that the job belongs to.
     process = models.ForeignKey(
-        DockerProcess, help_text="The docker process that the job belongs to"
+        DockerProcess,
+        help_text="The docker process that the job belongs to",
+        on_delete=models.CASCADE,
     )
 
     #: The background job that is specialized.
@@ -255,11 +275,8 @@ class ImageBackgroundJob(JobModelMessageMixin2, models.Model):
         null=False,
         related_name="%(app_label)s_%(class)s_related",
         help_text="Background job for state etc.",
+        on_delete=models.CASCADE,
     )
-
-    def delete(self, *args, **kwargs):
-        self.bg_job.delete()
-        return super().delete(*args, **kwargs)
 
 
 @transaction.atomic()

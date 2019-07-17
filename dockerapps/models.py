@@ -114,7 +114,7 @@ class DockerImage(models.Model):
         if not self.repository or "/" not in self.repository:
             return None
         else:
-            return "https://%s/v1" % self.repository.split("/", 1)[0]
+            return self.repository.split("/", 1)[0]
 
     @property
     def process(self):

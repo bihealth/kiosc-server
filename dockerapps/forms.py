@@ -30,6 +30,8 @@ class DockerImageForm(forms.ModelForm):
     def save(self, commit=True):
         with transaction.atomic():
             super().save(commit=False)
+            if self.cleaned_data["password"]:
+                self.instance.password = self.cleaned_data["password"]
             self.instance.project = self.project
             self.instance.save()
 
@@ -47,8 +49,6 @@ class DockerImageForm(forms.ModelForm):
                 process.command = self.cleaned_data["command"]
                 process.host_port = host_port
                 process.environment = json.loads(self.cleaned_data["env_vars"])
-                if self.cleaned_data["password"]:
-                    process.password = self.cleaned_data["password"]
             else:
                 process = self.instance.dockerprocess_set.create(
                     project=self.project,

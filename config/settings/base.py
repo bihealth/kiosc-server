@@ -8,11 +8,20 @@ For the full list of settings and their values, see
 https://docs.djangoproject.com/en/dev/ref/settings/
 """
 import environ
+import sys
+
+from dotenv import load_dotenv
 
 SITE_PACKAGE = "kiosc"
 
 ROOT_DIR = environ.Path(__file__) - 3
 APPS_DIR = ROOT_DIR.path(SITE_PACKAGE)
+
+# Check whether we are running tsts (this is important to use models and not materialized views in tests).
+IS_TESTING = len(sys.argv) > 1 and sys.argv[1] == 'test'
+
+# Load environment from .env file if available.
+load_dotenv()
 
 # Load operating system environment variables and then prepare to use them
 env = environ.Env()
@@ -21,11 +30,13 @@ env = environ.Env()
 READ_DOT_ENV_FILE = env.bool("DJANGO_READ_DOT_ENV_FILE", default=False)
 
 if READ_DOT_ENV_FILE:
-    # Operating System Environment variables have precedence over variables
-    # defined in the .env file, that is to say variables from the .env files
-    # will only be used if not defined as environment variables.
+    # Operating System Environment variables have precedence over variables defined in the .env file,
+    # that is to say variables from the .env files will only be used if not defined
+    # as environment variables.
     env_file = str(ROOT_DIR.path(".env"))
+    print("Loading : {}".format(env_file))
     env.read_env(env_file)
+    print("The .env file has been loaded. See base.py for more information")
 
 # SITE CONFIGURATION
 # ------------------------------------------------------------------------------

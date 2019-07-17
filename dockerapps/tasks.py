@@ -69,8 +69,10 @@ def pull_image(_self, job_id):
                     )
                 else:
                     job.add_log_entry("Docker log: {status}".format(**line))
+            image_details = cli.inspect_image("%s:%s" % (image.repository, image.tag))
             with transaction.atomic():
                 image.refresh_from_db()
+                image.image_id = image_details.get('Id')
                 image.state = STATE_IDLE
                 image.save()
                 job.add_log_entry("Pulling image succeeded")
@@ -179,7 +181,7 @@ class ContainerStateControllerHelper:
                 # Create and start the Docker container, update database record.
                 container = self.cli.create_container(
                     detach=True,
-                    image="%s:%s" % (self.image.repository, self.image.tag),
+                    image=self.image.image_id,
                     environment=environment,
                     command=shlex.split(self.process.command) if self.process.command else None,
                     ports=[self.process.internal_port],

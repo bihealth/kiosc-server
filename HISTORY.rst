@@ -11,6 +11,7 @@ End-User Summary
 
 - More complete display of image details.
 - Fix for repository user name / password change.
+- Fix permissions for viewing log results.
 
 Full Change List
 ================
@@ -20,6 +21,7 @@ Full Change List
 - Fixing favicon.
 - Setting default admin user.
 - Properly installing versioneer.
+- Fix ``rules.py`` for users to view background jobs.
 
 ------
 v0.1.0

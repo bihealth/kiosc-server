@@ -132,7 +132,7 @@ class DockerImageJobControlView(
     """Starting and stopping of docker containers"""
 
     template_name = "dockerapps/dockerimage_update.html"  # actually not used
-    permission_required = "dockerapps.change_dockerimage"
+    permission_required = "dockerapps.view_dockerimage"
 
     model = DockerImage
     form_class = DockerProcessJobControlForm
@@ -239,7 +239,7 @@ class ImageBackgroundJobDetailView(
     """Display status and further details of the image background job.
     """
 
-    permission_required = "dockerapps.view_data"
+    permission_required = "dockerapps.view_dockerimage"
     template_name = "dockerapps/image_job_detail.html"
     model = ImageBackgroundJob
     slug_url_kwarg = "job"
@@ -256,7 +256,7 @@ class ContainerStateControlBackgroundJobDetailView(
     """Display status and further details of the image background job.
     """
 
-    permission_required = "dockerapps.view_data"
+    permission_required = "dockerapps.view_dockerimage"
     template_name = "dockerapps/container_job_detail.html"
     model = ContainerStateControlBackgroundJob
     slug_url_kwarg = "job"

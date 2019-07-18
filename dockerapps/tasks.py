@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import datetime, timedelta
 import shlex
 import time
 import sys
@@ -26,8 +26,12 @@ from celery.schedules import crontab
 from . import models
 
 
+# Increase the timeout for communication with Docker daemon.
+DEFAULT_TIMEOUT = 600
+
+
 def connect_docker(base_url="unix:///var/run/docker.sock"):
-    return docker.APIClient(base_url=base_url)
+    return docker.APIClient(base_url=base_url, timeout=DEFAULT_TIMEOUT)
 
 
 @app.task(bind=True)
@@ -315,10 +319,11 @@ def update_docker_logs(_self):
             process.save()
 
 
-@app.on_after_configure.connect
+@app.on_after_finalize.connect
 def setup_periodic_tasks(sender, **_kwargs):
     """Register periodic tasks"""
+    # TODO: need recurring task for looking whether containers are still running
     # Mark starting/stopping tasks as running/stopped if they are so.
     sender.add_periodic_task(schedule=crontab(minute="*/1"), sig=update_container_states.s())
     # Get log from docker container.
-    sender.add_periodic_task(schedule=crontab(minute="*/1"), sig=update_docker_logs.s())
+    sender.add_periodic_task(schedule=timedelta(seconds=5), sig=update_docker_logs.s())

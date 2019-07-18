@@ -23,6 +23,8 @@ Full Change List
 - Properly installing versioneer.
 - Fix ``rules.py`` for users to view background jobs.
 - Fixing problem with environment creation.
+- Hopefully fixing periodic tasks.
+- Bumping Docker timeout.
 
 ------
 v0.1.0

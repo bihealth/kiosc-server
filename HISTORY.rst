@@ -25,6 +25,7 @@ Full Change List
 - Fixing problem with environment creation.
 - Hopefully fixing periodic tasks.
 - Bumping Docker timeout.
+- Fixing websocket proxying.
 
 ------
 v0.1.0

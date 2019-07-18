@@ -101,6 +101,8 @@ class ContainerStateControllerHelper:
     The main purpose is to be structure the job control actions into different functions.
     """
 
+    # TODO: mark containers as starting/stopping
+
     def __init__(self, job_id, timeout=TIMEOUT_STATE_CHANGE, sleep_time=SLEEP_TIME):
         #: The ID of the job to use for getting image (and process) from.
         self.job_id = job_id

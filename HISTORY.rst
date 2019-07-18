@@ -22,6 +22,7 @@ Full Change List
 - Setting default admin user.
 - Properly installing versioneer.
 - Fix ``rules.py`` for users to view background jobs.
+- Fixing problem with environment creation.
 
 ------
 v0.1.0

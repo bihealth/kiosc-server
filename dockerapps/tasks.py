@@ -72,7 +72,7 @@ def pull_image(_self, job_id):
             image_details = cli.inspect_image("%s:%s" % (image.repository, image.tag))
             with transaction.atomic():
                 image.refresh_from_db()
-                image.image_id = image_details.get('Id')
+                image.image_id = image_details.get("Id")
                 image.state = STATE_IDLE
                 image.save()
                 job.add_log_entry("Pulling image succeeded")
@@ -175,9 +175,8 @@ class ContainerStateControllerHelper:
                         environment[entry["name"]] = entry["value"].replace(
                             "__KIOSC_URL_PREFIX__", url_prefix
                         )
-                print(
-                    "COMMAND", shlex.split(self.process.command) if self.process.command else None
-                )
+                    else:
+                        environment[entry["name"]] = entry["value"]
                 # Create and start the Docker container, update database record.
                 container = self.cli.create_container(
                     detach=True,

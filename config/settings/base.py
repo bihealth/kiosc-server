@@ -18,7 +18,7 @@ ROOT_DIR = environ.Path(__file__) - 3
 APPS_DIR = ROOT_DIR.path(SITE_PACKAGE)
 
 # Check whether we are running tsts (this is important to use models and not materialized views in tests).
-IS_TESTING = len(sys.argv) > 1 and sys.argv[1] == 'test'
+IS_TESTING = len(sys.argv) > 1 and sys.argv[1] == "test"
 
 # Load environment from .env file if available.
 load_dotenv()

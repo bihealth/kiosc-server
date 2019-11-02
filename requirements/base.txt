@@ -24,7 +24,7 @@ service_identity ==18.1.0
 websockets ==7.0
 
 # Images
-Pillow==5.4.1
+Pillow==6.2.0
 
 # Password storage
 argon2-cffi==19.1.0

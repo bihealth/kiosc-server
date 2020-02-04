@@ -343,7 +343,7 @@ def update_docker_logs(_self):
                         process.processlogchunk_set.create(content=content)
                         process.date_last_logs = end_logs
                         process.save()
-            except docker.errors.NotFound as e:
+            except docker.errors.DockerException as e:
                 logger.warning("Docker container not found: %e", e)
                 logger.info("Marking process as failed")
                 with transaction.atomic():

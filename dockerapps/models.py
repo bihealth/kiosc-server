@@ -5,6 +5,7 @@ import uuid as uuid_object
 from django.shortcuts import reverse
 from django.db import models, transaction
 from django.contrib.postgres.fields.jsonb import JSONField
+from logzero import logger
 
 from projectroles.models import Project
 from bgjobs.models import BackgroundJob, JobModelMessageMixin
@@ -397,10 +398,89 @@ class ImageBackgroundJob(JobModelMessageMixin2, models.Model):
         )
 
 
-@transaction.atomic()
-def update_container_states():
+def update_container_states(docker_cli):
     """Look at all ``DockerContainer`` objects and synchronize their state with the one from Docker."""
-    print("updating container states...")
+    logger.debug("Starting container state update")
+
+    docker_containers = {c["Id"]: c for c in docker_cli.containers()}
+    db_containers = {p.container_id: p for p in DockerProcess.objects.all() if p.container_id}
+
+    only_docker = docker_containers.keys() - db_containers.keys()
+    if only_docker:
+        logger.warning("Seen containers only in Docker, not in DB: %s", only_docker)
+
+    only_db = db_containers.keys() - docker_containers.keys()
+    for key in only_db:
+        msg = "Seen containers only in DB, not in Docker, marking as failed: %s"
+        args = (key,)
+        logger.warning(msg, *args)
+        with transaction.atomic():
+            ct = db_containers[key]
+            ct.processlogchunk_set.create(content=msg % args)
+            ct.state = STATE_FAILED
+            ct.container_id = None
+            ct.save()
+
+    # container states: created restarting running paused  exited
+    for key in db_containers.keys() & docker_containers.keys():
+        c_docker = docker_containers[key]
+        docker_state = c_docker["State"]
+        c_db = db_containers[key]
+        db_state = c_db.state
+        state_pair = (docker_state, db_state)
+        if docker_state == "paused":
+            msg = "Found Docker container %s in paused state. Don't know how to handle this."
+            args = (key,)
+            c_db.processlogchunk_set.create(content=msg % args)
+            logger.warning(msg % args)
+        elif (
+            state_pair
+            in (
+                ("created", STATE_STARTING),
+                ("restarting", STATE_STARTING),
+                ("running", STATE_RUNNING),
+                ("exited", STATE_IDLE),
+                ("exited", STATE_FAILED),
+            )
+            or db_state == STATE_STOPPING
+        ):
+            logger.info(
+                "Found Docker container %s in state %s and DB state is %s, keeping DB state",
+                key,
+                docker_state,
+                db_state,
+            )
+        else:
+            transitions = {
+                ("created", STATE_IDLE): STATE_STARTING,
+                ("created", STATE_RUNNING): STATE_STARTING,
+                ("created", STATE_STOPPING): STATE_STARTING,
+                ("created", STATE_FAILED): STATE_STARTING,
+                ("restarting", STATE_IDLE): STATE_STARTING,
+                ("restarting", STATE_RUNNING): STATE_STARTING,
+                ("restarting", STATE_STOPPING): STATE_STARTING,
+                ("restarting", STATE_FAILED): STATE_STARTING,
+                ("running", STATE_IDLE): STATE_RUNNING,
+                ("running", STATE_STARTING): STATE_RUNNING,
+                ("running", STATE_STOPPING): STATE_RUNNING,
+                ("running", STATE_FAILED): STATE_RUNNING,
+                ("exited", STATE_STARTING): STATE_IDLE,
+                ("exited", STATE_RUNNING): STATE_IDLE,
+                ("exited", STATE_STOPPING): STATE_IDLE,
+            }
+            dest_state = transitions.get((docker_state, db_state), STATE_FAILED)
+
+            msg = "Found Docker container %s in state %s but DB state is %s, will update DB to %s"
+            args = (key, docker_state, db_state, dest_state)
+            c_db.processlogchunk_set.create(content=msg % args)
+            logger.warning(msg, args)
+
+            logger.info(msg, *args)
+            with transaction.atomic():
+                c_db.state = dest_state
+                c_db.save()
+
+    logger.debug("Done with container state update")
 
 
 class LogEntry(models.Model):

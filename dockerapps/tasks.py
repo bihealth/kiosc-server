@@ -306,7 +306,7 @@ def delete_image(_self, job_id):
 @app.task(bind=True)
 def update_container_states(_self):
     """Trigger container state updating (in database from Docker)."""
-    models.update_container_states()
+    models.update_container_states(connect_docker())
 
 
 @app.task(bind=True)

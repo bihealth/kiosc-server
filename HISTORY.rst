@@ -29,6 +29,7 @@ Full Change List
 - Nightly pruning of unused objects (#6).
 - Updating SODAR Core dependencies.
 - Fixing bug in ulimit setting (#9).
+- Properly handle containers stopping/failing outside of Kiosc control (#5).
 
 ------
 v0.1.0

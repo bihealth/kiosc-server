@@ -26,6 +26,7 @@ Full Change List
 - Hopefully fixing periodic tasks.
 - Bumping Docker timeout.
 - Fixing websocket proxying.
+- Nightly pruning of unused objects (#6).
 
 ------
 v0.1.0

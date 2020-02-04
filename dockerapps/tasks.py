@@ -4,10 +4,12 @@ import time
 import sys
 
 import docker
-from bgjobs.models import LOG_LEVEL_ERROR
+from logzero import logger
 from django.db import transaction
 from django.urls import reverse
 from django.utils import timezone
+
+from bgjobs.models import LOG_LEVEL_ERROR
 
 from dockerapps.models import (
     ImageBackgroundJob,
@@ -298,6 +300,16 @@ def update_container_states(_self):
 
 
 @app.task(bind=True)
+def prune_all(_self):
+    """Trigger pruning of containers, images, volumes, and networks."""
+    cli = connect_docker()
+    for obj_type in ("images", "volumes", "containers", "networks"):
+        logger.info("Start pruning %s", obj_type)
+        getattr(cli, obj_type).prune()
+        logger.info("Done pruning %s", obj_type)
+
+
+@app.task(bind=True)
 def update_docker_logs(_self):
     """Trigger pulling updated docker locks."""
     cli = connect_docker()
@@ -329,3 +341,5 @@ def setup_periodic_tasks(sender, **_kwargs):
     sender.add_periodic_task(schedule=crontab(minute="*/1"), sig=update_container_states.s())
     # Get log from docker container.
     sender.add_periodic_task(schedule=timedelta(seconds=5), sig=update_docker_logs.s())
+    # Prune objects.
+    sender.add_periodic_task(schedule=crontab(hour="*/1"), sig=prune_all.s())

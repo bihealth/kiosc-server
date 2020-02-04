@@ -87,3 +87,6 @@ django-autocomplete-light==3.2.10  # Higher versions are not compatible with dja
 
 # SODAR Core
 -e git://github.com/bihealth/sodar_core.git@v0.6.2#egg=django-sodar-core
+
+# Logging
+logzero ==1.5.0

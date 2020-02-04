@@ -12,6 +12,7 @@ End-User Summary
 - More complete display of image details.
 - Fix for repository user name / password change.
 - Fix permissions for viewing log results.
+- Allowing non-superusers (contributors and above) to pull images (#1).
 
 Full Change List
 ================

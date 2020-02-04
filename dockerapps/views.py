@@ -98,7 +98,7 @@ class DockerImageUpdateView(
     """Updating of DockerImage records"""
 
     template_name = "dockerapps/dockerimage_update.html"
-    permission_required = "dockerapps.change_dockerimage"
+    permission_required = "dockerapps.update_dockerimage"
 
     model = DockerImage
     form_class = DockerImageForm

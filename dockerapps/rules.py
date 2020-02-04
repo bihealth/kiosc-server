@@ -13,7 +13,7 @@ for model in ("dockerimage", "dockercontainer"):
         | pr_rules.is_project_contributor
         | pr_rules.is_project_guest,
     )
-    for action in ("add", "change", "delete"):
+    for action in ("add", "update", "delete"):
         rules.add_perm(
             "dockerapps.%s_%s" % (action, model),
             pr_rules.is_project_owner

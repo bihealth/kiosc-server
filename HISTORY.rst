@@ -13,6 +13,7 @@ End-User Summary
 - Fix for repository user name / password change.
 - Fix permissions for viewing log results.
 - Allowing non-superusers (contributors and above) to pull images (#1).
+- Disabling autocomplete in user/password fields for image (#3).
 
 Full Change List
 ================
@@ -31,6 +32,8 @@ Full Change List
 - Updating SODAR Core dependencies.
 - Fixing bug in ulimit setting (#9).
 - Properly handle containers stopping/failing outside of Kiosc control (#5).
+- Allowing non-superusers (contributors and above) to pull images (#1).
+- Disabling autocomplete in user/password fields for image (#3).
 
 ------
 v0.1.0

@@ -66,13 +66,16 @@ class DockerImageForm(forms.ModelForm):
     class Meta:
         model = DockerImage
         fields = ("title", "description", "repository", "tag", "username")
+        widgets = {
+            "username": forms.TextInput(attrs={"autocomplete": "off"})
+        }
 
     password = forms.CharField(
         label="Password",
         help_text="Leave blank to keep the previous password",
         required=False,
         max_length=1024,
-        widget=forms.PasswordInput(),
+        widget=forms.PasswordInput(attrs={"autocomplete": "off"}),
     )
 
     internal_port = forms.IntegerField(

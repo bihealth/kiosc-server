@@ -90,3 +90,6 @@ django-autocomplete-light==3.2.10  # Higher versions are not compatible with dja
 
 # Logging
 logzero ==1.5.0
+
+# Sentry integration.
+sentry-sdk==0.14.0

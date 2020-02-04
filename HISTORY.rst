@@ -36,6 +36,7 @@ Full Change List
 - Allowing non-superusers (contributors and above) to pull images (#1).
 - Disabling autocomplete in user/password fields for image (#3).
 - Allow clearing of credentials (#4).
+- Adding Sentry support (#11).
 
 ------
 v0.1.0

@@ -472,6 +472,10 @@ TASKFLOW_TEST_MODE = False  # Important! Disallow cleanup() command by default
 # from projectroles.constants import get_sodar_constants
 # SODAR_CONSTANTS = get_sodar_constants(default=True)
 
+# Sentry Integration
+# ------------------------------------------------------------------------------
+
+ENABLE_SENTRY = env.bool('ENABLE_SENTRY', False)
 
 # KIOSC Settings
 # ------------------------------------------------------------------------------

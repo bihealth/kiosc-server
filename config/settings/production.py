@@ -114,6 +114,17 @@ EMAIL_HOST_USER = EMAIL_URL["EMAIL_HOST_USER"]
 EMAIL_HOST_PASSWORD = EMAIL_URL["EMAIL_HOST_PASSWORD"]
 
 
+# Sentry Client
+# ------------------------------------------------------------------------------
+
+if env.bool("ENABLE_SENTRY", False):
+    import sentry_sdk
+    from sentry_sdk.integrations.django import DjangoIntegration
+
+    SENTRY_DSN = "%s?verify_ssl=0" % env.str("SENTRY_DSN")
+    sentry_sdk.init(SENTRY_DSN, integrations=[DjangoIntegration()])
+
+
 # Local App Settings
 # ------------------------------------------------------------------------------
 

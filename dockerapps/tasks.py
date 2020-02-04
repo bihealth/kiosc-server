@@ -4,6 +4,8 @@ import time
 import sys
 
 import docker
+from django.conf import settings
+from docker.types import Ulimit
 from logzero import logger
 from django.db import transaction
 from django.urls import reverse
@@ -186,6 +188,7 @@ class ContainerStateControllerHelper:
                     else:
                         environment[entry["name"]] = entry["value"]
                 # Create and start the Docker container, update database record.
+                host_config = self.cli.create_host_config()
                 container = self.cli.create_container(
                     detach=True,
                     image=self.image.image_id,
@@ -193,7 +196,14 @@ class ContainerStateControllerHelper:
                     command=shlex.split(self.process.command) if self.process.command else None,
                     ports=[self.process.internal_port],
                     host_config=self.cli.create_host_config(
-                        port_bindings={self.process.internal_port: self.process.host_port}
+                        port_bindings={self.process.internal_port: self.process.host_port},
+                        ulimits=[
+                            Ulimit(
+                                name="nofile",
+                                soft=settings.KIOSC_DOCKER_MAX_ULIMIT_NOFILE_SOFT,
+                                hard=settings.KIOSC_DOCKER_MAX_ULIMIT_NOFILE_HARD,
+                            )
+                        ],
                     ),
                 )
                 self.cli.start(container=container.get("Id"))
@@ -305,7 +315,7 @@ def prune_all(_self):
     cli = connect_docker()
     for obj_type in ("images", "volumes", "containers", "networks"):
         logger.info("Start pruning %s", obj_type)
-        getattr(cli, obj_type).prune()
+        getattr(cli, "prune_%s" % obj_type)()
         logger.info("Done pruning %s", obj_type)
 
 
@@ -314,23 +324,32 @@ def update_docker_logs(_self):
     """Trigger pulling updated docker locks."""
     cli = connect_docker()
     for process in DockerProcess.objects.all():
-        print("Updating logs for %s" % process, file=sys.stderr)
-        with transaction.atomic():
+        if process.container_id:
+            logger.debug("Getting logs from %s", process)
             process.refresh_from_db()
             start_logs = process.date_last_logs
             end_logs = timezone.now()
-            if process.container_id:
+            try:
                 content = cli.logs(
                     container=process.container_id,
                     timestamps=True,
                     since=int(datetime.timestamp(start_logs)),
                     until=int(datetime.timestamp(end_logs)),
                 )
-                print("Logs are: %s" % content, file=sys.stderr)
                 if content:
-                    process.processlogchunk_set.create(content=content)
-            process.date_last_logs = end_logs
-            process.save()
+                    logger.debug("Updating logs for %s", process)
+                    logger.debug("Logs are: %s\n", content)
+                    with transaction.atomic():
+                        process.processlogchunk_set.create(content=content)
+                        process.date_last_logs = end_logs
+                        process.save()
+            except docker.errors.NotFound as e:
+                logger.warning("Docker container not found: %e", e)
+                logger.info("Marking process as failed")
+                with transaction.atomic():
+                    process.container_id = None
+                    process.state = STATE_FAILED
+                    process.save()
 
 
 @app.on_after_finalize.connect
@@ -342,4 +361,4 @@ def setup_periodic_tasks(sender, **_kwargs):
     # Get log from docker container.
     sender.add_periodic_task(schedule=timedelta(seconds=5), sig=update_docker_logs.s())
     # Prune objects.
-    sender.add_periodic_task(schedule=crontab(hour="*/1"), sig=prune_all.s())
+    sender.add_periodic_task(schedule=crontab(hour="1"), sig=prune_all.s())

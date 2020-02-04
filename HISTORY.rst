@@ -28,6 +28,7 @@ Full Change List
 - Fixing websocket proxying.
 - Nightly pruning of unused objects (#6).
 - Updating SODAR Core dependencies.
+- Fixing bug in ulimit setting (#9).
 
 ------
 v0.1.0

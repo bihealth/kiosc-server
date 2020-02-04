@@ -30,7 +30,10 @@ class DockerImageForm(forms.ModelForm):
     def save(self, commit=True):
         with transaction.atomic():
             super().save(commit=False)
-            if self.cleaned_data["password"]:
+            if self.cleaned_data.get("clear_credentials"):
+                self.instance.username = None
+                self.instance.password = None
+            elif self.cleaned_data["password"]:
                 self.instance.password = self.cleaned_data["password"]
             self.instance.project = self.project
             self.instance.save()
@@ -66,9 +69,7 @@ class DockerImageForm(forms.ModelForm):
     class Meta:
         model = DockerImage
         fields = ("title", "description", "repository", "tag", "username")
-        widgets = {
-            "username": forms.TextInput(attrs={"autocomplete": "off"})
-        }
+        widgets = {"username": forms.TextInput(attrs={"autocomplete": "off"})}
 
     password = forms.CharField(
         label="Password",
@@ -91,6 +92,13 @@ class DockerImageForm(forms.ModelForm):
         max_length=64000,
         widget=forms.Textarea(),
         help_text="The command to execute. Leave blank to use container default",
+        required=False,
+    )
+
+    clear_credentials = forms.BooleanField(
+        label="Clear credentials",
+        help_text="Check this box to clear the user name and password",
+        initial=False,
         required=False,
     )
 

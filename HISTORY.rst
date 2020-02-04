@@ -14,6 +14,7 @@ End-User Summary
 - Fix permissions for viewing log results.
 - Allowing non-superusers (contributors and above) to pull images (#1).
 - Disabling autocomplete in user/password fields for image (#3).
+- Allow clearing of credentials (#4).
 
 Full Change List
 ================
@@ -34,6 +35,7 @@ Full Change List
 - Properly handle containers stopping/failing outside of Kiosc control (#5).
 - Allowing non-superusers (contributors and above) to pull images (#1).
 - Disabling autocomplete in user/password fields for image (#3).
+- Allow clearing of credentials (#4).
 
 ------
 v0.1.0

@@ -27,6 +27,7 @@ Full Change List
 - Bumping Docker timeout.
 - Fixing websocket proxying.
 - Nightly pruning of unused objects (#6).
+- Updating SODAR Core dependencies.
 
 ------
 v0.1.0

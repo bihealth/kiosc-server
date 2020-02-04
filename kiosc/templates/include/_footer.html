@@ -1,7 +1,7 @@
 {# Site footer #}
 {% load projectroles_common_tags %}
 
-{% get_setting 'SITE_TITLE' as site_title %}
+{% get_django_setting 'SITE_TITLE' as site_title %}
 
 <div class="text-sm-center">
   {{ site_title }} v{% site_version %} / SODAR Core v{% core_version %}

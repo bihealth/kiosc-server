@@ -37,6 +37,7 @@ Full Change List
 - Disabling autocomplete in user/password fields for image (#3).
 - Allow clearing of credentials (#4).
 - Adding Sentry support (#11).
+- Upgrading SODAR-core to v0.8.1.
 
 ------
 v0.1.0

@@ -481,7 +481,7 @@ TASKFLOW_TEST_MODE = False  # Important! Disallow cleanup() command by default
 # Sentry Integration
 # ------------------------------------------------------------------------------
 
-ENABLE_SENTRY = env.bool('ENABLE_SENTRY', False)
+ENABLE_SENTRY = env.bool("ENABLE_SENTRY", False)
 
 # KIOSC Settings
 # ------------------------------------------------------------------------------

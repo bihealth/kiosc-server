@@ -1,0 +1,72 @@
+# Wheel
+wheel==0.34.2
+
+# Conservative Django
+django==1.11.29, <2.0
+
+# Configuration
+django-environ==0.4.5
+
+# Forms
+django-crispy-forms==1.7.2
+
+# Models
+django-model-utils==3.2.0
+
+# Password storage
+argon2-cffi==20.1.0
+
+# Python-PostgreSQL Database Adapter
+psycopg2-binary==2.8.6
+
+# Unicode slugification
+awesome-slugify==1.6.5
+
+# Time zones support
+pytz==2020.5
+
+# Versioning
+versioneer==0.19
+
+# Online documentation via django-docs.
+Sphinx==3.4.3
+django-docs==0.3.1
+sphinx-rtd-theme==0.5.1
+
+#####################
+# SODAR Core imports
+#####################
+
+# Rules for permissions
+rules==2.2
+
+# REST framework
+djangorestframework==3.11.2
+
+# Keyed list addon for DRF
+-e git+https://github.com/mikkonie/drf-keyed-list.git@b03607b866c5706b0e1ea46a7eeaab6527030734#egg=drf-keyed-list
+
+# Token authentication
+django-rest-knox==4.1.0
+
+# Markdown field support
+markdown==3.3.3
+django-markupfield==1.5.1
+django-pagedown==1.0.6
+mistune==0.8.4
+
+# Database file storage for filesfolders
+django-db-file-storage==0.5.5
+
+# Django autocomplete light (DAL)
+django-autocomplete-light==3.2.10  # Higher versions are not compatible with django 1.11
+
+# SAML2 support for SSO
+django-saml2-auth-ai>=2.1.6, <2.2
+
+# Django-plugins (with Django 1.11 support)
+-e git+https://github.com/mikkonie/django-plugins.git@1bc07181e6ab68b0f9ed3a00382eb1f6519e1009#egg=django-plugins
+
+# SODAR Core
+-e git+https://github.com/bihealth/sodar_core.git@v0.9.1#egg=django-sodar-core
+

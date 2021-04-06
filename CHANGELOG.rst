@@ -13,5 +13,7 @@ Added
 
 - **General**
   - Initial commit based on SODAR core v0.9.1 (#16)
-
-
+  - Strings are formatted using double quotes (#17)
+- **Containers**
+  - App itself (#17)
+  - Models ``Container``, ``ContainerBackgroundJob`` and ``ContainerLogEntry`` (#17)

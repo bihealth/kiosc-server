@@ -24,7 +24,7 @@ target_port = 8001
 
 .PHONY: black
 black:
-	black . -l 80 --skip-string-normalization --exclude ".git|.venv|.tox|env|src|docs|migrations|versioneer.py" $(arg)
+	black . -l 80 --exclude ".git|.venv|.tox|env|src|docs|migrations|versioneer.py" $(arg)
 
 
 .PHONY: serve

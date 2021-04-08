@@ -16,4 +16,6 @@ Added
   - Strings are formatted using double quotes (#17)
 - **Containers**
   - App itself (#17)
-  - Models ``Container``, ``ContainerBackgroundJob`` and ``ContainerLogEntry`` (#17)
+  - Models ``Container``, ``ContainerBackgroundJob`` and ``ContainerLogEntry`` (#17, #18)
+  - Views/templates/urls for listing, creating, updating and deleting container objects and viewing its details (#18)
+  - Permission rules for viewing, creating, editing and deleting container objects. (#18)

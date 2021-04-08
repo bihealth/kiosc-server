@@ -1,0 +1,29 @@
+{% load rules %}
+{% load staticfiles %}
+
+{# Projectroles dependency #}
+{% load projectroles_common_tags %}
+
+
+{% has_perm 'containers.view_container' request.user project as can_view_container %}
+
+<table class="table sodar-card-table" id="sodar-ss-details-table">
+  <thead>
+    <tr>
+      <th>Container</th>
+      <th>Port Mapping</th>
+      <th>State</th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for container in project.containers.all %}
+      <tr>
+        <td class="pl-4">
+          <a href="{% url 'containers:container-detail' container=container.sodar_uuid %}">{{ container.get_display_name }}</a>
+        </td>
+        <td>{{ container.host_port }}:{{ container.container_port }}</td>
+        <td>{{ container.state }}</td>
+      </tr>
+    {% endfor %}
+  </tbody>
+</table>

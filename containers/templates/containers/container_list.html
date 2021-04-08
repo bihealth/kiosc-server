@@ -1,0 +1,79 @@
+{# Projectroles dependency #}
+{% extends 'projectroles/project_base.html' %}
+{% load projectroles_common_tags %}
+{% load static %}
+{% load rules %}
+
+{% block title %}
+  Containers for {{ project.title }}
+{% endblock title %}
+
+{% block projectroles_extend %}
+
+<div class="row sodar-subtitle-container">
+  <h3>Containers</h3>
+    <div class="ml-auto">
+      <a href="{% url 'containers:container-create' project=project.sodar_uuid %}"
+         class="btn btn-primary" role="button">
+       <i class="fa fa-plus"></i> Create Container
+      </a>
+    </div>
+</div>
+
+<div class="container-fluid sodar-page-container">
+
+{% if object_list.count > 0 %}
+  <div class="card" id="sodar-container-list">
+    <div class="card-body p-0">
+      <table class="table table-striped sodar-card-table"
+             id="sodar-container-table">
+        <thead>
+          <tr>
+            <th>Repository</th>
+            <th>Date Created</th>
+            <th>Port Mapping</th>
+            <th>State</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for container in object_list %}
+            <tr>
+              <td><a href="{% url 'containers:container-detail' container=container.sodar_uuid %}">{{ container.repository }}</a></td>
+              <td>{{ container.date_created }}</td>
+              <td>{{ container.host_port }}:{{ container.container_port }}</td>
+              <td>{{ container.state }}</td>
+              <td class="text-right">
+                <button class="btn btn-secondary dropdown-toggle sodar-list-dropdown"
+                        type="button" data-toggle="dropdown" aria-expanded="false">
+                  <i class="fa fa-cog"></i>
+                </button>
+                <div class="dropdown-menu dropdown-menu-right">
+                  <a class="dropdown-item"
+                     href="{% url 'containers:container-update' container=container.sodar_uuid %}">
+                    <i class="fa fa-fw fa-edit"></i> Update
+                  </a>
+                  <a class="dropdown-item text-danger"
+                     href="{% url 'containers:container-delete' container=container.sodar_uuid %}">
+                    <i class="fa fa-fw fa-close"></i> Delete
+                  </a>
+                </div>
+              </td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+  {% if is_paginated %}
+    {% include 'projectroles/_pagination.html' with pg_small=False %}
+  {% endif %}
+{% else %}
+  <div class="alert alert-info" id="sodar-container-alert">
+    No containers yet.
+  </div>
+{% endif %}
+</div>
+
+{% endblock projectroles_extend %}
+\

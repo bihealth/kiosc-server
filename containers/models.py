@@ -3,6 +3,8 @@ import uuid
 from bgjobs.models import BackgroundJob
 from django.contrib.postgres.fields.jsonb import JSONField
 from django.db import models
+from django.urls import reverse
+from django.utils.timezone import localtime
 from projectroles.models import Project
 
 
@@ -108,6 +110,14 @@ class Container(models.Model):
         auto_now_add=True, help_text="DateTime of last log pull"
     )
 
+    #: The "repository" of the image.
+    repository = models.CharField(
+        max_length=512,
+        help_text="The repository/name of the image.",
+        blank=False,
+        null=False,
+    )
+
     #: UUID of the container.
     sodar_uuid = models.UUIDField(
         default=uuid.uuid4, unique=True, help_text="Container SODAR UUID"
@@ -115,7 +125,9 @@ class Container(models.Model):
 
     #: The project containing this container.
     project = models.ForeignKey(
-        Project, help_text="Project in which this container belongs"
+        Project,
+        related_name="containers",
+        help_text="Project in which this container belongs",
     )
 
     #: The ID of the Docker container (when running).
@@ -185,16 +197,38 @@ class Container(models.Model):
     #: This guarantees that the order of environment variable definitions does not change.
     environment = JSONField(help_text="The environment variables to use")
 
+    #: List if keys that when defined in ``environment`` are set but no displayed.
+    environment_secret_keys = models.CharField(
+        max_length=512,
+        help_text="Comma-separated list of keys in the environment that are set but not read (use for tokens/keys).",
+        blank=True,
+        null=True,
+    )
+
     #: The command to execute.
     command = models.TextField(
         help_text="The command to execute", blank=True, null=True
     )
 
     def __str__(self):
-        return f"Container [{self.state}] ({self.container_id})"
+        return f"Container: {self.repository} [{self.state.upper()}]"
 
     def __repr__(self):
         return f"Container({self.sodar_uuid})"
+
+    def get_absolute_url(self):
+        return reverse(
+            "containers:container-detail", kwargs={"container": self.sodar_uuid}
+        )
+
+    def get_date_created(self):
+        return localtime(self.date_created).strftime("%Y-%m-%d %H:%M")
+
+    def get_date_modified(self):
+        return localtime(self.date_modified).strftime("%Y-%m-%d %H:%M")
+
+    def get_display_name(self):
+        return f"{self.repository} / {self.get_date_created()}"
 
 
 class ContainerBackgroundJob(models.Model):

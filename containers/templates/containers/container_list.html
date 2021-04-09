@@ -15,7 +15,8 @@
     <div class="ml-auto">
       <a href="{% url 'containers:container-create' project=project.sodar_uuid %}"
          class="btn btn-primary" role="button">
-       <i class="fa fa-plus"></i> Create Container
+        <i class="iconify" data-icon="mdi:plus-circle"></i>
+        Create Container
       </a>
     </div>
 </div>
@@ -23,10 +24,10 @@
 <div class="container-fluid sodar-page-container">
 
 {% if object_list.count > 0 %}
-  <div class="card" id="sodar-container-list">
+  <div class="card" id="kiosc-container-list">
     <div class="card-body p-0">
       <table class="table table-striped sodar-card-table"
-             id="sodar-container-table">
+             id="kiosc-container-table">
         <thead>
           <tr>
             <th>Repository</th>
@@ -46,16 +47,16 @@
               <td class="text-right">
                 <button class="btn btn-secondary dropdown-toggle sodar-list-dropdown"
                         type="button" data-toggle="dropdown" aria-expanded="false">
-                  <i class="fa fa-cog"></i>
+                  <i class="iconify" data-icon="mdi:cog"></i>
                 </button>
                 <div class="dropdown-menu dropdown-menu-right">
                   <a class="dropdown-item"
                      href="{% url 'containers:container-update' container=container.sodar_uuid %}">
-                    <i class="fa fa-fw fa-edit"></i> Update
+                    <i class="iconify" data-icon="mdi:lead-pencil"></i> Update
                   </a>
                   <a class="dropdown-item text-danger"
                      href="{% url 'containers:container-delete' container=container.sodar_uuid %}">
-                    <i class="fa fa-fw fa-close"></i> Delete
+                    <i class="iconify" data-icon="mdi:close-thick"></i> Delete
                   </a>
                 </div>
               </td>
@@ -69,7 +70,7 @@
     {% include 'projectroles/_pagination.html' with pg_small=False %}
   {% endif %}
 {% else %}
-  <div class="alert alert-info" id="sodar-container-alert">
+  <div class="alert alert-info" id="kiosc-container-alert">
     No containers yet.
   </div>
 {% endif %}

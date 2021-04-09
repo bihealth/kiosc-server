@@ -23,8 +23,8 @@
       This can <strong>not</strong> be undone!
     </p>
     <p class="mb-0">
-      The selected delete request was created on
-      <strong>{{ object.date_created | date:'Y-m-d H:i:s' }}</strong>
+      The selected container was created on
+      <strong>{{ object.get_date_created }}</strong>
     </p>
   </div>
 
@@ -34,10 +34,10 @@
       <div class="btn-group ml-auto">
         <a role="button" class="btn btn-secondary"
             href="{{ request.session.real_referer }}">
-          <i class="fa fa-arrow-circle-left"></i> Cancel
+          <i class="iconify" data-icon="mdi:arrow-left-circle"></i> Cancel
         </a>
-        <button type="submit" class="btn btn-danger" id="sodar-ss-btn-confirm-delete">
-          <i class="fa fa-times"></i> Delete
+        <button type="submit" class="btn btn-danger" id="kiosc-container-btn-confirm-delete">
+          <i class="iconify" data-icon="mdi:close-thick"></i> Delete
         </button>
       </div>
     </div>

@@ -7,6 +7,8 @@ https://docs.djangoproject.com/en/dev/topics/settings/
 For the full list of settings and their values, see
 https://docs.djangoproject.com/en/dev/ref/settings/
 """
+import os
+
 import environ
 
 SITE_PACKAGE = "kiosc"
@@ -601,3 +603,5 @@ TASKFLOW_TEST_MODE = False  # Important! Disallow cleanup() command by default
 # SODAR constants (uncomment for modifying)
 # from projectroles.constants import get_sodar_constants
 # SODAR_CONSTANTS = get_sodar_constants(default=True)
+
+ICONIFY_JSON_ROOT = os.path.join(STATIC_ROOT, "iconify")

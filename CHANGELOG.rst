@@ -19,3 +19,10 @@ Added
   - Models ``Container``, ``ContainerBackgroundJob`` and ``ContainerLogEntry`` (#17, #18)
   - Views/templates/urls for listing, creating, updating and deleting container objects and viewing its details (#18)
   - Permission rules for viewing, creating, editing and deleting container objects. (#18)
+
+Changed
+^^^^^^^
+
+- **General**
+  - Upgrade to Django v3.1.7 (#47)
+  - Upgrade to SODAR core v0.10.0 (#47)

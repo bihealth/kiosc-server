@@ -1,7 +1,7 @@
 import uuid
 
 from bgjobs.models import BackgroundJob
-from django.contrib.postgres.fields.jsonb import JSONField
+from django.db.models import JSONField
 from django.db import models
 from django.urls import reverse
 from django.utils.timezone import localtime
@@ -128,6 +128,7 @@ class Container(models.Model):
         Project,
         related_name="containers",
         help_text="Project in which this container belongs",
+        on_delete=models.CASCADE,
     )
 
     #: The ID of the Docker container (when running).
@@ -250,7 +251,9 @@ class ContainerBackgroundJob(models.Model):
 
     #: The project that the job belongs to.
     project = models.ForeignKey(
-        Project, help_text="Project in which this objects belongs"
+        Project,
+        help_text="Project in which this objects belongs",
+        on_delete=models.CASCADE,
     )
 
     #: The ``Container`` that the job belongs to.
@@ -297,5 +300,9 @@ class ContainerLogEntry(models.Model):
 
     #: The ``Container`` that the log entry is for.
     container = models.ForeignKey(
-        Container, related_name="log_entries", blank=False, null=False
+        Container,
+        related_name="log_entries",
+        blank=False,
+        null=False,
+        on_delete=models.CASCADE,
     )

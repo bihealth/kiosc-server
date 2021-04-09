@@ -52,6 +52,7 @@ urlpatterns = [
     url(r"^tokens/", include("tokens.urls")),
     # Containers URLs
     url(r"^containers/", include("containers.urls")),
+    url(r"^icons/", include("dj_iconify.urls")),
     # These are the SAML2 related URLs. You can change "^saml2_auth/" regex to
     # any path you want, like "^sso_auth/", "^sso_login/", etc. (required)
     # url(r'^saml2_auth/', include('django_saml2_auth.urls')),

@@ -1,5 +1,5 @@
 {% load rules %}
-{% load staticfiles %}
+{% load static %}
 
 {# Projectroles dependency #}
 {% load projectroles_common_tags %}
@@ -7,7 +7,7 @@
 
 {% has_perm 'containers.view_container' request.user project as can_view_container %}
 
-<table class="table sodar-card-table" id="sodar-ss-details-table">
+<table class="table sodar-card-table" id="kiosc-container-details-table">
   <thead>
     <tr>
       <th>Container</th>

@@ -11,6 +11,7 @@ define USAGE=
 @echo -e "\tmake test [arg=<test_object>]            -- run all tests or specify module/class/function"
 @echo -e "\tmake test_taskflow [arg=<test_object>]   -- run all tests and taskflow tests or specify module/class/function"
 @echo -e "\tmake sync_taskflow                       -- sync taskflow"
+@echo -e "\tmake celery                              -- start celery"
 @echo -e "\tmake manage_target arg=<target_command>  -- run management command on target site, arg is mandatory"
 @echo -e
 endef
@@ -75,6 +76,11 @@ endif
 .PHONY: sync_taskflow
 sync_taskflow:
 	$(MANAGE) synctaskflow --settings=config.settings.local_taskflow
+
+
+.PHONY: celery
+celery:
+	celery -A config.celery_app worker -l info --concurrency=4 --beat
 
 
 .PHONY: usage

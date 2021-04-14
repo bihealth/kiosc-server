@@ -14,11 +14,15 @@ Added
 - **General**
   - Initial commit based on SODAR core v0.9.1 (#16)
   - Strings are formatted using double quotes (#17)
+  - Docker 5.0.0 dependency (#19)
 - **Containers**
   - App itself (#17)
   - Models ``Container``, ``ContainerBackgroundJob`` and ``ContainerLogEntry`` (#17, #18)
   - Views/templates/urls for listing, creating, updating and deleting container objects and viewing its details (#18)
-  - Permission rules for viewing, creating, editing and deleting container objects. (#18)
+  - Permission rules for viewing, creating, editing and deleting container objects (#18)
+  - Task to pull an image and start and stop a container (#19)
+  - Views to start and stop a container (#19)
+  - Activated Celery support (#19)
 
 Changed
 ^^^^^^^
@@ -26,3 +30,4 @@ Changed
 - **General**
   - Upgrade to Django v3.1.7 (#47)
   - Upgrade to SODAR core v0.10.0 (#47)
+  - Bumped Celery version to 5.0.5 (#19)

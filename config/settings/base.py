@@ -605,3 +605,13 @@ TASKFLOW_TEST_MODE = False  # Important! Disallow cleanup() command by default
 # SODAR_CONSTANTS = get_sodar_constants(default=True)
 
 ICONIFY_JSON_ROOT = os.path.join(STATIC_ROOT, "iconify")
+
+
+#: Maximal soft ulimit for nofiles in Docker.
+KIOSC_DOCKER_MAX_ULIMIT_NOFILE_SOFT = env.str(
+    "KIOSC_DOCKER_MAX_ULIMIT_NOFILE_SOFT", 98304
+)
+#: Maximal hard ulimit for nofiles in Docker.
+KIOSC_DOCKER_MAX_ULIMIT_NOFILE_HARD = env.str(
+    "KIOSC_DOCKER_MAX_ULIMIT_NOFILE_HARD", 98304
+)

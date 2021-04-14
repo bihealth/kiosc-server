@@ -1,6 +1,10 @@
+from bgjobs.models import BackgroundJob
 from django.contrib import messages
 from django.contrib.auth.mixins import LoginRequiredMixin
+from django.db import transaction
+from django.shortcuts import redirect
 from django.urls import reverse
+from django.views import View
 from django.views.generic import (
     DeleteView,
     UpdateView,
@@ -15,7 +19,13 @@ from projectroles.views import (
 )
 
 from containers.forms import ContainerForm
-from containers.models import Container
+from containers.models import (
+    Container,
+    ContainerBackgroundJob,
+    ACTION_START,
+    ACTION_STOP,
+)
+from containers.tasks import container_task
 
 
 class ContainerCreateView(
@@ -111,3 +121,87 @@ class ContainerDetailView(
     model = Container
     slug_url_kwarg = "container"
     slug_field = "sodar_uuid"
+
+
+class ContainerStartView(
+    LoginRequiredMixin,
+    LoggedInPermissionMixin,
+    ProjectPermissionMixin,
+    ProjectContextMixin,
+    View,
+):
+    """View for starting a container."""
+
+    permission_required = "containers.start_container"
+    model = Container
+    slug_url_kwarg = "container"
+    slug_field = "sodar_uuid"
+
+    def get(self, request, *args, **kwargs):
+        with transaction.atomic():
+            project = self.get_project()
+            user = request.user
+            container = Container.objects.get(
+                sodar_uuid=kwargs.get("container")
+            )
+            bg_job = BackgroundJob.objects.create(
+                name="Start container",
+                project=project,
+                job_type=ContainerBackgroundJob.spec_name,
+                user=user,
+            )
+            job = ContainerBackgroundJob.objects.create(
+                action=ACTION_START,
+                project=project,
+                container=container,
+                bg_job=bg_job,
+            )
+            container_task.delay(job_id=job.id)
+        return redirect(
+            reverse(
+                "containers:container-detail",
+                kwargs={"container": kwargs.get("container")},
+            )
+        )
+
+
+class ContainerStopView(
+    LoginRequiredMixin,
+    LoggedInPermissionMixin,
+    ProjectPermissionMixin,
+    ProjectContextMixin,
+    View,
+):
+    """View for stopping a container."""
+
+    permission_required = "containers.stop_container"
+    model = Container
+    slug_url_kwarg = "container"
+    slug_field = "sodar_uuid"
+
+    def get(self, request, *args, **kwargs):
+        with transaction.atomic():
+            project = self.get_project()
+            user = request.user
+            container = Container.objects.get(
+                sodar_uuid=kwargs.get("container")
+            )
+            bg_job = BackgroundJob.objects.create(
+                name="Start container",
+                project=project,
+                job_type=ContainerBackgroundJob.spec_name,
+                user=user,
+            )
+            job = ContainerBackgroundJob.objects.create(
+                action=ACTION_STOP,
+                project=project,
+                container=container,
+                bg_job=bg_job,
+            )
+            container_task.delay(job_id=job.id)
+        return redirect(
+            reverse(
+                "containers:container-detail",
+                kwargs={"container": kwargs.get("container")},
+            )
+        )

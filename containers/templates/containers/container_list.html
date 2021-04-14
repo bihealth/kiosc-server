@@ -50,6 +50,17 @@
                   <i class="iconify" data-icon="mdi:cog"></i>
                 </button>
                 <div class="dropdown-menu dropdown-menu-right">
+                  {% if container.state == "running" %}
+                  <a class="dropdown-item"
+                     href="{% url 'containers:container-stop' container=container.sodar_uuid %}">
+                    <i class="iconify" data-icon="mdi:stop"></i> Stop
+                  </a>
+                  {% else %}
+                  <a class="dropdown-item"
+                     href="{% url 'containers:container-start' container=container.sodar_uuid %}">
+                    <i class="iconify" data-icon="mdi:play"></i> Start
+                  </a>
+                  {% endif %}
                   <a class="dropdown-item"
                      href="{% url 'containers:container-update' container=container.sodar_uuid %}">
                     <i class="iconify" data-icon="mdi:lead-pencil"></i> Update

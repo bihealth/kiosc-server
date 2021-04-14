@@ -65,7 +65,7 @@ mistune>=0.8.4, <0.9
 django-db-file-storage==0.5.5
 
 # Backround Jobs requirements
-celery<4.2  # pyup: <4.2  # blocker: https://github.com/celery/celery/issues/4878
+celery==5.0.5
 
 # Django autocomplete light (DAL)
 django-autocomplete-light>=3.8.2, <3.9
@@ -74,5 +74,7 @@ django-autocomplete-light>=3.8.2, <3.9
 django-saml2-auth-ai>=2.1.6, <2.2
 
 # SODAR Core
--e git+https://github.com/bihealth/sodar_core.git@4ab22cd5d2ef6b231c41d067c7639d03497b7114#egg=django-sodar-core
+-e git+https://github.com/bihealth/sodar_core.git@f5a2f985969c2064d0f84a34f42f451955a3b63e#egg=django-sodar-core
 
+# Docker
+docker==5.0.0

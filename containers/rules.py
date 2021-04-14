@@ -36,3 +36,19 @@ rules.add_perm(
     | pr_rules.is_project_delegate
     | pr_rules.is_project_contributor,
 )
+
+# Allow starting containers
+rules.add_perm(
+    "containers.start_container",
+    pr_rules.is_project_owner
+    | pr_rules.is_project_delegate
+    | pr_rules.is_project_contributor,
+)
+
+# Allow stopping containers
+rules.add_perm(
+    "containers.stop_container",
+    pr_rules.is_project_owner
+    | pr_rules.is_project_delegate
+    | pr_rules.is_project_contributor,
+)

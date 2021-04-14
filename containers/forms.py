@@ -19,6 +19,7 @@ class ContainerForm(forms.ModelForm):
             "command",
             "project",
             "repository",
+            "tag",
         ]
 
     def __init__(self, project=None, *args, **kwargs):

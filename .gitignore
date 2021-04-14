@@ -84,12 +84,15 @@ flamegraph.pl
 
 # Celery
 celerybeat-schedule
+celerybeat-schedule.*
 
 # Vscode
 .vscode/*
 
+# Libraries
 src/
 
+# Icon sets
 */static/iconify/*.json
 */static/iconify/json/*.json
 

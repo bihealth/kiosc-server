@@ -1,6 +1,7 @@
+import contextlib
 import uuid
 
-from bgjobs.models import BackgroundJob
+from bgjobs.models import BackgroundJob, JobModelMessageMixin
 from django.db.models import JSONField
 from django.db import models
 from django.urls import reverse
@@ -35,6 +36,12 @@ STATE_DELETED = "deleted"
 #: Token for 'pulling' state of container (no existing Docker container state).
 STATE_PULLING = "pulling"
 
+#: Token for 'initial' state of container (no existing Docker container state).
+STATE_INITIAL = "initial"
+
+#: Token for 'failed' state of container (no existing Docker container state)
+STATE_FAILED = "failed"
+
 #: List of Docker container states.
 STATE_CHOICES = [
     # Following states are existing Docker container states
@@ -48,6 +55,8 @@ STATE_CHOICES = [
     (STATE_DELETING, STATE_DELETING),
     (STATE_DELETED, STATE_DELETED),
     (STATE_PULLING, STATE_PULLING),
+    (STATE_INITIAL, STATE_INITIAL),
+    (STATE_FAILED, STATE_FAILED),
 ]
 
 #: Background job action for starting a container.
@@ -81,6 +90,24 @@ LOG_LEVEL_CHOICES = [
     (LOG_LEVEL_WARNING, LOG_LEVEL_WARNING),
     (LOG_LEVEL_ERROR, LOG_LEVEL_ERROR),
 ]
+
+
+class JobModelMessageContextManagerMixin(JobModelMessageMixin):
+    @contextlib.contextmanager
+    def marks(self):
+        """Return a context manager that allows to run tasks between start and success/error marks."""
+
+        self.mark_start()
+
+        try:
+            yield
+
+        except Exception as e:
+            self.mark_error("Failure: %s" % e)
+            raise e
+
+        else:
+            self.mark_success()
 
 
 class ContainerTemplate(models.Model):
@@ -118,6 +145,12 @@ class Container(models.Model):
         null=False,
     )
 
+    #: The "tag" of the image.
+    tag = models.CharField(
+        max_length=128,
+        help_text="The tag of the image.",
+    )
+
     #: UUID of the container.
     sodar_uuid = models.UUIDField(
         default=uuid.uuid4, unique=True, help_text="Container SODAR UUID"
@@ -129,6 +162,11 @@ class Container(models.Model):
         related_name="containers",
         help_text="Project in which this container belongs",
         on_delete=models.CASCADE,
+    )
+
+    #: The ID of the image.
+    image_id = models.CharField(
+        max_length=128, help_text="Image ID", blank=True, null=True
     )
 
     #: The ID of the Docker container (when running).
@@ -212,10 +250,10 @@ class Container(models.Model):
     )
 
     def __str__(self):
-        return f"Container: {self.repository} [{self.state.upper()}]"
+        return f"Container: {self.repository}:{self.tag} [{self.state.upper()}]"
 
     def __repr__(self):
-        return f"Container({self.sodar_uuid})"
+        return f"Container({self.repository}:{self.tag})"
 
     def get_absolute_url(self):
         return reverse(
@@ -229,10 +267,12 @@ class Container(models.Model):
         return localtime(self.date_modified).strftime("%Y-%m-%d %H:%M")
 
     def get_display_name(self):
+        if self.tag:
+            return f"{self.repository}:{self.tag} / {self.get_date_created()}"
         return f"{self.repository} / {self.get_date_created()}"
 
 
-class ContainerBackgroundJob(models.Model):
+class ContainerBackgroundJob(JobModelMessageContextManagerMixin, models.Model):
     """Model for container background jobs."""
 
     spec_name = "containers.container_bg_job"
@@ -257,7 +297,7 @@ class ContainerBackgroundJob(models.Model):
     )
 
     #: The ``Container`` that the job belongs to.
-    process = models.ForeignKey(
+    container = models.ForeignKey(
         Container,
         help_text="The container that the job belongs to",
         on_delete=models.CASCADE,

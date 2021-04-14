@@ -32,4 +32,14 @@ urlpatterns = [
         view=views.ContainerDeleteView.as_view(),
         name="container-delete",
     ),
+    url(
+        regex=r"^start/(?P<container>[0-9a-f-]+)$",
+        view=views.ContainerStartView.as_view(),
+        name="container-start",
+    ),
+    url(
+        regex=r"^stop/(?P<container>[0-9a-f-]+)$",
+        view=views.ContainerStopView.as_view(),
+        name="container-stop",
+    ),
 ]

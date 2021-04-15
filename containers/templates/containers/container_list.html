@@ -45,30 +45,43 @@
               <td>{{ container.host_port }}:{{ container.container_port }}</td>
               <td>{{ container.state }}</td>
               <td class="text-right">
-                <button class="btn btn-secondary dropdown-toggle sodar-list-dropdown"
-                        type="button" data-toggle="dropdown" aria-expanded="false">
-                  <i class="iconify" data-icon="mdi:cog"></i>
-                </button>
-                <div class="dropdown-menu dropdown-menu-right">
+                <div class="btn-group sodar-list-btn-group pull-right">
                   {% if container.state == "running" %}
-                  <a class="dropdown-item"
-                     href="{% url 'containers:container-stop' container=container.sodar_uuid %}">
-                    <i class="iconify" data-icon="mdi:stop"></i> Stop
-                  </a>
+                    <a href="{% url 'containers:proxy' container=container.sodar_uuid path=container.path %}" class="btn btn-primary sodar-list-dropdown" target="_blank"
+                      data-toggle="tooltip" data-placement="top" title="Open app">
+                      <i class="iconify" data-icon="mdi:eye"></i>
+                    </a>
                   {% else %}
-                  <a class="dropdown-item"
-                     href="{% url 'containers:container-start' container=container.sodar_uuid %}">
-                    <i class="iconify" data-icon="mdi:play"></i> Start
-                  </a>
+                    <div class="btn btn-outline-secondary sodar-list-dropdown"
+                         data-toggle="tooltip" data-placement="top" title="App not running">
+                      <i class="iconify" data-icon="mdi:eye-off"></i>
+                    </div>
                   {% endif %}
-                  <a class="dropdown-item"
-                     href="{% url 'containers:container-update' container=container.sodar_uuid %}">
-                    <i class="iconify" data-icon="mdi:lead-pencil"></i> Update
-                  </a>
-                  <a class="dropdown-item text-danger"
-                     href="{% url 'containers:container-delete' container=container.sodar_uuid %}">
-                    <i class="iconify" data-icon="mdi:close-thick"></i> Delete
-                  </a>
+                  <button class="btn btn-secondary dropdown-toggle sodar-list-dropdown"
+                          type="button" data-toggle="dropdown" aria-expanded="false">
+                    <i class="iconify" data-icon="mdi:cog"></i>
+                  </button>
+                  <div class="dropdown-menu dropdown-menu-right">
+                    {% if container.state == "running" %}
+                    <a class="dropdown-item"
+                       href="{% url 'containers:container-stop' container=container.sodar_uuid %}">
+                      <i class="iconify" data-icon="mdi:stop"></i> Stop
+                    </a>
+                    {% else %}
+                    <a class="dropdown-item"
+                       href="{% url 'containers:container-start' container=container.sodar_uuid %}">
+                      <i class="iconify" data-icon="mdi:play"></i> Start
+                    </a>
+                    {% endif %}
+                    <a class="dropdown-item"
+                       href="{% url 'containers:container-update' container=container.sodar_uuid %}">
+                      <i class="iconify" data-icon="mdi:lead-pencil"></i> Update
+                    </a>
+                    <a class="dropdown-item text-danger"
+                       href="{% url 'containers:container-delete' container=container.sodar_uuid %}">
+                      <i class="iconify" data-icon="mdi:close-thick"></i> Delete
+                    </a>
+                  </div>
                 </div>
               </td>
             </tr>

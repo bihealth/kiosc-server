@@ -486,11 +486,9 @@ LOGGING = set_logging(DEBUG)
 # General site settings
 # ------------------------------------------------------------------------------
 
-SITE_TITLE = "SODAR Django Site Template"
+SITE_TITLE = "KIOSC"
 SITE_SUBTITLE = env.str("SITE_SUBTITLE", "Beta")
-SITE_INSTANCE_TITLE = env.str(
-    "SITE_INSTANCE_TITLE", "Your SODAR Django Site Template"
-)
+SITE_INSTANCE_TITLE = env.str("SITE_INSTANCE_TITLE", "KIOSC")
 
 
 # Local App Settings

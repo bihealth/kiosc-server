@@ -1,4 +1,5 @@
 from django.conf.urls import url
+from django.views.decorators.csrf import csrf_exempt
 
 from . import views
 
@@ -41,5 +42,10 @@ urlpatterns = [
         regex=r"^stop/(?P<container>[0-9a-f-]+)$",
         view=views.ContainerStopView.as_view(),
         name="container-stop",
+    ),
+    url(
+        regex=r"^proxy/(?P<container>[0-9a-f-]+)/(?P<path>.*)$",
+        view=csrf_exempt(views.ReverseProxyView.as_view()),
+        name="proxy",
     ),
 ]

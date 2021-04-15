@@ -96,16 +96,13 @@ class JobModelMessageContextManagerMixin(JobModelMessageMixin):
     @contextlib.contextmanager
     def marks(self):
         """Return a context manager that allows to run tasks between start and success/error marks."""
-
         self.mark_start()
 
         try:
             yield
-
         except Exception as e:
             self.mark_error("Failure: %s" % e)
             raise e
-
         else:
             self.mark_success()
 

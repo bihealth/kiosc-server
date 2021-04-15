@@ -12,11 +12,13 @@ from django.views.generic import (
     CreateView,
     ListView,
 )
+from django.views.generic.detail import BaseDetailView
 from projectroles.views import (
     LoggedInPermissionMixin,
     ProjectContextMixin,
     ProjectPermissionMixin,
 )
+from revproxy.views import ProxyView
 
 from containers.forms import ContainerForm
 from containers.models import (
@@ -199,9 +201,49 @@ class ContainerStopView(
                 bg_job=bg_job,
             )
             container_task.delay(job_id=job.id)
+
         return redirect(
             reverse(
                 "containers:container-detail",
                 kwargs={"container": kwargs.get("container")},
             )
         )
+
+
+class KioscProxyView(ProxyView):
+    """Inheriting the ProxyView to adjust settings."""
+
+    rewrite = ((r"^/container/proxy/(?P<container>[a-f0-9-]+)/", "/"),)
+
+
+class ReverseProxyView(
+    LoginRequiredMixin,
+    LoggedInPermissionMixin,
+    ProjectPermissionMixin,
+    ProjectContextMixin,
+    BaseDetailView,
+):
+    """View for reverse proxy."""
+
+    permission_required = "containers.proxy"
+    model = Container
+    slug_url_kwarg = "container"
+    slug_field = "sodar_uuid"
+
+    def dispatch(self, request, *args, **kwargs):
+        if not self.has_permission():
+            return self.handle_no_permission()
+
+        container = self.get_object()
+        kwargs.pop("container")
+
+        upstream = f"http://localhost:{container.host_port}"
+
+        proxy_view = KioscProxyView()
+        proxy_view.request = request
+        proxy_view.args = args
+        proxy_view.kwargs = kwargs
+        proxy_view.upstream = upstream
+        proxy_view.suppress_empty_body = True
+
+        return proxy_view.dispatch(request, *args, **kwargs)

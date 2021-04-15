@@ -40,7 +40,6 @@ def connect_docker(base_url="unix:///var/run/docker.sock"):
 @app.task(bind=True)
 def container_task(_self, job_id):
     """Task to change a container state"""
-
     job = ContainerBackgroundJob.objects.get(pk=job_id)
 
     with job.marks():
@@ -80,31 +79,30 @@ def container_task(_self, job_id):
                         container.save()
                         job.add_log_entry("Pulling image succeeded")
 
-                    if not container.container_id:
-                        # Create container
-                        _container = cli.create_container(
-                            detach=True,
-                            image=container.image_id,
-                            environment={},
-                            command=shlex.split(container.command)
-                            if container.command
-                            else None,
-                            ports=[container.container_port],
-                            host_config=cli.create_host_config(
-                                port_bindings={
-                                    container.container_port: container.host_port
-                                },
-                                ulimits=[
-                                    Ulimit(
-                                        name="nofile",
-                                        soft=settings.KIOSC_DOCKER_MAX_ULIMIT_NOFILE_SOFT,
-                                        hard=settings.KIOSC_DOCKER_MAX_ULIMIT_NOFILE_HARD,
-                                    )
-                                ],
-                            ),
-                        )
-                        container.container_id = _container.get("Id")
-                        container.save()
+                    # Create container
+                    _container = cli.create_container(
+                        detach=True,
+                        image=container.image_id,
+                        environment={},
+                        command=shlex.split(container.command)
+                        if container.command
+                        else None,
+                        ports=[container.container_port],
+                        host_config=cli.create_host_config(
+                            port_bindings={
+                                container.container_port: container.host_port
+                            },
+                            ulimits=[
+                                Ulimit(
+                                    name="nofile",
+                                    soft=settings.KIOSC_DOCKER_MAX_ULIMIT_NOFILE_SOFT,
+                                    hard=settings.KIOSC_DOCKER_MAX_ULIMIT_NOFILE_HARD,
+                                )
+                            ],
+                        ),
+                    )
+                    container.container_id = _container.get("Id")
+                    container.save()
 
                     # Starting container
                     cli.start(container=container.container_id)

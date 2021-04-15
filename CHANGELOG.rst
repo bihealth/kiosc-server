@@ -15,6 +15,8 @@ Added
   - Initial commit based on SODAR core v0.9.1 (#16)
   - Strings are formatted using double quotes (#17)
   - Docker 5.0.0 dependency (#19)
+  - Logo and color scheme (#20)
+  - Revproxy 0.10.0 dependency (#20)
 - **Containers**
   - App itself (#17)
   - Models ``Container``, ``ContainerBackgroundJob`` and ``ContainerLogEntry`` (#17, #18)
@@ -23,6 +25,7 @@ Added
   - Task to pull an image and start and stop a container (#19)
   - Views to start and stop a container (#19)
   - Activated Celery support (#19)
+  - Reverse proxy with view and url (#20)
 
 Changed
 ^^^^^^^

@@ -11,3 +11,40 @@
   background-color: #f2dede;
   border-color: #eed3d7;
 }
+
+
+/* Display django-debug-toolbar.
+   See https://github.com/django-debug-toolbar/django-debug-toolbar/issues/742
+   and https://github.com/pydanny/cookiecutter-django/issues/317
+*/
+
+[hidden][style="display: block;"] {
+  display: block !important;
+}
+
+/* Change title bar, sidebar and project navbar colours */
+
+.sodar-base-navbar {
+  background-color: #6A0846 !important;
+}
+
+.sodar-pr-sidebar {
+  background-color: #6A0846 !important;
+}
+
+.sodar-pr-sidebar-nav {
+  background-color: #6A0846 !important;
+}
+
+.sodar-pr-navbar {
+  background-color: #940963 !important;
+}
+
+/** stacking */
+.fa-sm {
+    font-size:0.63em;
+}
+
+.fa-md {
+    font-size:0.8em;
+}

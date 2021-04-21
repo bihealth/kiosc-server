@@ -17,6 +17,7 @@ Added
   - Tests for views (#21)
   - Tests for permissions (#21)
   - Tests f0r forms (#21)
+  - Tests for models (#23)
 
 
 v0.1.0 (2021-04-15)

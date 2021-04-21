@@ -250,7 +250,9 @@ class Container(models.Model):
         return f"Container: {self.repository}:{self.tag} [{self.state.upper()}]"
 
     def __repr__(self):
-        return f"Container({self.repository}:{self.tag})"
+        return (
+            f"Container({self.repository}:{self.tag}/{self.get_date_created()})"
+        )
 
     def get_absolute_url(self):
         return reverse(

@@ -183,8 +183,8 @@ class Container(models.Model):
     container_path = models.CharField(
         max_length=512,
         help_text="Path segment of the container URL",
-        blank=False,
-        null=False,
+        blank=True,
+        null=True,
     )
 
     #: Heartbeat URL to check if server in Docker container is alive.
@@ -224,7 +224,7 @@ class Container(models.Model):
         max_length=32,
         help_text="The state of the container.",
         choices=STATE_CHOICES,
-        default=STATE_PULLING,
+        default=STATE_INITIAL,
         blank=False,
         null=False,
     )

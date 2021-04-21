@@ -52,3 +52,11 @@ rules.add_perm(
     | pr_rules.is_project_delegate
     | pr_rules.is_project_contributor,
 )
+
+# Allow using the proxy
+rules.add_perm(
+    "containers.proxy",
+    pr_rules.is_project_owner
+    | pr_rules.is_project_delegate
+    | pr_rules.is_project_contributor,
+)

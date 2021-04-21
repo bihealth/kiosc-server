@@ -22,14 +22,38 @@ class ContainerForm(forms.ModelForm):
             "tag",
         ]
 
-    def __init__(self, project=None, *args, **kwargs):
+    def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-
-        instance = kwargs.get("instance")
-
-        if instance:
-            self.initial["project"] = instance.project
-        elif project:
-            self.initial["project"] = project
-
+        # Hide project field
         self.fields["project"].widget = forms.HiddenInput()
+
+    def clean(self):
+        """Override to check for secret keys in the environment."""
+        cleaned_data = super().clean()
+        environment = cleaned_data.get("environment")
+        secret_keys = cleaned_data.get("environment_secret_keys")
+
+        # This error is already caught
+        if not environment:
+            return
+
+        # Environment must be a dict
+        if not isinstance(environment, dict):
+            self.add_error("environment", "Environment must be a dictionary!")
+            return
+
+        # Check if secret keys are keys of the environment
+        if secret_keys:
+            secret_keys = [key.strip() for key in secret_keys.split(",")]
+
+            for key in secret_keys:
+                if key not in environment.keys():
+                    self.add_error(
+                        "environment_secret_keys",
+                        f'Secret key "{key}" is not in environment!',
+                    )
+                    return
+
+            cleaned_data["environment_secret_keys"] = ",".join(secret_keys)
+
+        return cleaned_data

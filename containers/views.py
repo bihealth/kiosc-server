@@ -2,7 +2,7 @@ from bgjobs.models import BackgroundJob
 from django.contrib import messages
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.db import transaction
-from django.shortcuts import redirect
+from django.shortcuts import redirect, get_object_or_404
 from django.urls import reverse
 from django.views import View
 from django.views.generic import (
@@ -43,11 +43,11 @@ class ContainerCreateView(
     template_name = "containers/container_form.html"
     form_class = ContainerForm
 
-    def get_form_kwargs(self):
-        """Pass current user and URL kwargs to form"""
-        kwargs = super().get_form_kwargs()
-        kwargs["project"] = self.get_project()
-        return kwargs
+    def get_initial(self):
+        """Set hidden project field."""
+        initial = super().get_initial()
+        initial["project"] = self.get_project()
+        return initial
 
 
 class ContainerDeleteView(
@@ -143,8 +143,8 @@ class ContainerStartView(
         with transaction.atomic():
             project = self.get_project()
             user = request.user
-            container = Container.objects.get(
-                sodar_uuid=kwargs.get("container")
+            container = get_object_or_404(
+                Container, sodar_uuid=kwargs.get("container")
             )
             bg_job = BackgroundJob.objects.create(
                 name="Start container",
@@ -185,8 +185,8 @@ class ContainerStopView(
         with transaction.atomic():
             project = self.get_project()
             user = request.user
-            container = Container.objects.get(
-                sodar_uuid=kwargs.get("container")
+            container = get_object_or_404(
+                Container, sodar_uuid=kwargs.get("container")
             )
             bg_job = BackgroundJob.objects.create(
                 name="Start container",

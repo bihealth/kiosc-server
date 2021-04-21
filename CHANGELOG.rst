@@ -5,6 +5,20 @@ Changelog for the **Kiosc** Django app package.
 Loosely follows the `Keep a Changelog <http://keepachangelog.com/en/1.0.0/>`_ guidelines.
 
 
+HEAD (unreleased)
+=================
+
+Added
+-----
+
+- **General**
+  - urllib3-mock 0.3.3 dependency (#21)
+- **Container**
+  - Tests for views (#21)
+  - Tests for permissions (#21)
+  - Tests f0r forms (#21)
+
+
 v0.1.0 (2021-04-15)
 ===================
 

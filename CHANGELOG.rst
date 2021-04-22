@@ -18,6 +18,7 @@ Added
   - Tests for permissions (#21)
   - Tests f0r forms (#21)
   - Tests for models (#23)
+  - Tests for tasks (#22)
 
 
 v0.1.0 (2021-04-15)

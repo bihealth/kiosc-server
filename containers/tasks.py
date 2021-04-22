@@ -21,15 +21,12 @@ from containers.models import (
     STATE_RUNNING,
 )
 
-APP_NAME = "containers"
 
 User = auth.get_user_model()
-
-
 app_settings = AppSettingAPI()
 
-
 # Increase the timeout for communication with Docker daemon.
+APP_NAME = "containers"
 DEFAULT_TIMEOUT = 600
 
 

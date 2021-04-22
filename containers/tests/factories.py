@@ -1,10 +1,16 @@
 """Factories for container tests."""
 
 import factory
+from bgjobs.tests.factories import BackgroundJobFactory
 from projectroles.constants import SODAR_CONSTANTS
 from projectroles.models import Project
 
-from containers.models import Container, STATE_INITIAL
+from containers.models import (
+    Container,
+    STATE_INITIAL,
+    ContainerBackgroundJob,
+    ACTION_START,
+)
 
 
 class ProjectFactory(factory.django.DjangoModelFactory):
@@ -40,3 +46,24 @@ class ContainerFactory(factory.django.DjangoModelFactory):
     environment = "{}"
     environment_secret_keys = ""
     command = ""
+
+
+class ContainerBackgroundJobFactory(factory.django.DjangoModelFactory):
+    """Factory for ``ContainerBackgroundJob`` model."""
+
+    class Meta:
+        model = ContainerBackgroundJob
+        exclude = ["user"]
+
+    # Dummy argument ``user`` to pass to subfactory ``BackgroundJobFactory``
+    user = None
+    project = factory.SubFactory(ProjectFactory)
+    container = factory.SubFactory(
+        ContainerFactory, project=factory.SelfAttribute("..project")
+    )
+    action = ACTION_START
+    bg_job = factory.SubFactory(
+        BackgroundJobFactory,
+        project=factory.SelfAttribute("..project"),
+        user=factory.SelfAttribute("..user"),
+    )

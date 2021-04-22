@@ -57,6 +57,11 @@ test: collectstatic
 	$(MANAGE) test -v 2 --parallel --settings=config.settings.test $(arg)
 
 
+.PHONY: test-no-docker
+test-no-docker: collectstatic
+	$(MANAGE) test -v 2 --parallel --settings=config.settings.test --exclude-tag=docker-server
+
+
 .PHONY: test_taskflow
 test_taskflow: test
 	$(MANAGE) test -v 2 --tag=Taskflow --settings=config.settings.test_taskflow $(arg)

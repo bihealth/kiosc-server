@@ -247,12 +247,14 @@ class Container(models.Model):
     )
 
     def __str__(self):
-        return f"Container: {self.repository}:{self.tag} [{self.state.upper()}]"
+        tag = f":{self.tag}" if self.tag else ""
+        return (
+            f"Container: {self.repository}{tag}:{self.host_port} [{self.state}]"
+        )
 
     def __repr__(self):
-        return (
-            f"Container({self.repository}:{self.tag}/{self.get_date_created()})"
-        )
+        tag = f":{self.tag}" if self.tag else ""
+        return f"Container({self.repository}{tag}:{self.host_port})"
 
     def get_absolute_url(self):
         return reverse(
@@ -266,9 +268,8 @@ class Container(models.Model):
         return localtime(self.date_modified).strftime("%Y-%m-%d %H:%M")
 
     def get_display_name(self):
-        if self.tag:
-            return f"{self.repository}:{self.tag} / {self.get_date_created()}"
-        return f"{self.repository} / {self.get_date_created()}"
+        tag = f":{self.tag}" if self.tag else ""
+        return f"{self.repository}{tag}:{self.host_port}"
 
 
 class ContainerBackgroundJob(JobModelMessageContextManagerMixin, models.Model):

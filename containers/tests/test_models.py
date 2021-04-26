@@ -46,30 +46,44 @@ class TestContainerModel(TestBase):
     def test___str__(self):
         self.assertEqual(
             str(self.container1),
-            "Container: {}:{} [{}]".format(
+            "Container: {}:{}:{} [{}]".format(
                 self.container1.repository,
                 self.container1.tag,
-                self.container1.state.upper(),
+                self.container1.host_port,
+                self.container1.state,
             ),
         )
 
-    def test___repr__(self):
+    def test___str___no_tag(self):
+        self.container1.tag = ""
+        self.container1.save()
+        self.assertEqual(
+            str(self.container1),
+            "Container: {}:{} [{}]".format(
+                self.container1.repository,
+                self.container1.host_port,
+                self.container1.state,
+            ),
+        )
+
+    def test___repr___no_tag(self):
+        self.container1.tag = ""
+        self.container1.save()
         self.assertEqual(
             repr(self.container1),
-            "Container({}:{}/{})".format(
+            "Container({}:{})".format(
                 self.container1.repository,
-                self.container1.tag,
-                self.container1.get_date_created(),
+                self.container1.host_port,
             ),
         )
 
     def test_get_display_name(self):
         self.assertEqual(
             self.container1.get_display_name(),
-            "{}:{} / {}".format(
+            "{}:{}:{}".format(
                 self.container1.repository,
                 self.container1.tag,
-                self.container1.get_date_created(),
+                self.container1.host_port,
             ),
         )
 
@@ -78,9 +92,9 @@ class TestContainerModel(TestBase):
         self.container1.save()
         self.assertEqual(
             self.container1.get_display_name(),
-            "{} / {}".format(
+            "{}:{}".format(
                 self.container1.repository,
-                self.container1.get_date_created(),
+                self.container1.host_port,
             ),
         )
 

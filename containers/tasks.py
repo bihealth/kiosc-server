@@ -4,6 +4,7 @@ import docker
 from django.conf import settings
 from django.db import transaction
 from docker.types import Ulimit
+from projectroles.plugins import get_backend_api
 
 from config.celery import app
 from django.contrib import auth
@@ -38,6 +39,27 @@ def connect_docker(base_url="unix:///var/run/docker.sock"):
 def container_task(_self, job_id):
     """Task to change a container state"""
     job = ContainerBackgroundJob.objects.get(pk=job_id)
+    timeline = get_backend_api("timeline_backend")
+    tl_event = None
+
+    if timeline:
+        tl_event = timeline.add_event(
+            project=job.project,
+            app_name=APP_NAME,
+            user=job.bg_job.user,
+            event_name="container_task",
+            description="{action} container {container}",
+        )
+        tl_event.add_object(
+            obj=job.container,
+            label="container",
+            name=job.container.get_display_name(),
+        )
+        tl_event.add_object(
+            obj=job,
+            label="action",
+            name=job.action,
+        )
 
     with job.marks():
         try:
@@ -105,6 +127,7 @@ def container_task(_self, job_id):
                     cli.start(container=container.container_id)
                     container.state = STATE_RUNNING
                     container.save()
+
                 elif job.action == ACTION_STOP:
                     # Stopping container
                     cli.stop(container=container.container_id)
@@ -112,7 +135,12 @@ def container_task(_self, job_id):
                     container.save()
 
                 else:
+                    if timeline:
+                        tl_event.set_status("FAILED", "action failed")
                     raise RuntimeError(f"Unknown action: {job.action}")
+
+                if timeline:
+                    tl_event.set_status("OK", "action succeeded")
 
         except Exception:
             job.add_log_entry(

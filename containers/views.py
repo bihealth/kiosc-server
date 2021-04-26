@@ -13,6 +13,7 @@ from django.views.generic import (
     ListView,
 )
 from django.views.generic.detail import BaseDetailView
+from projectroles.plugins import get_backend_api
 from projectroles.views import (
     LoggedInPermissionMixin,
     ProjectContextMixin,
@@ -28,6 +29,9 @@ from containers.models import (
     ACTION_STOP,
 )
 from containers.tasks import container_task
+
+
+APP_NAME = "containers"
 
 
 class ContainerCreateView(
@@ -48,6 +52,27 @@ class ContainerCreateView(
         initial = super().get_initial()
         initial["project"] = self.get_project()
         return initial
+
+    def form_valid(self, form):
+        response = super().form_valid(form)
+        timeline = get_backend_api("timeline_backend")
+
+        if timeline:
+            tl_event = timeline.add_event(
+                project=self.get_project(),
+                app_name=APP_NAME,
+                user=self.request.user,
+                event_name="create_container",
+                description="created {container}",
+                status_type="OK",
+            )
+            tl_event.add_object(
+                obj=self.object,
+                label="container",
+                name=self.object.get_display_name(),
+            )
+
+        return response
 
 
 class ContainerDeleteView(
@@ -75,6 +100,23 @@ class ContainerDeleteView(
             kwargs={"project": self.object.project.sodar_uuid},
         )
 
+    def delete(self, request, *args, **kwargs):
+        timeline = get_backend_api("timeline_backend")
+        obj = self.get_object()
+        project = self.get_project()
+
+        if timeline:
+            timeline.add_event(
+                project=project,
+                app_name=APP_NAME,
+                user=request.user,
+                event_name="delete_container",
+                description=f"deleted {obj.get_display_name()}",
+                status_type="OK",
+            )
+
+        return super().delete(request, *args, **kwargs)
+
 
 class ContainerUpdateView(
     LoginRequiredMixin,
@@ -91,6 +133,27 @@ class ContainerUpdateView(
     model = Container
     slug_url_kwarg = "container"
     slug_field = "sodar_uuid"
+
+    def form_valid(self, form):
+        response = super().form_valid(form)
+        timeline = get_backend_api("timeline_backend")
+
+        if timeline:
+            tl_event = timeline.add_event(
+                project=self.get_project(),
+                app_name=APP_NAME,
+                user=self.request.user,
+                event_name="update_container",
+                description="updated {container}",
+                status_type="OK",
+            )
+            tl_event.add_object(
+                obj=self.object,
+                label="container",
+                name=self.object.get_display_name(),
+            )
+
+        return response
 
 
 class ContainerListView(

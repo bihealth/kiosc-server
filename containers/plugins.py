@@ -1,7 +1,9 @@
 # Projectroles dependency
+from django.urls import reverse
 from projectroles.models import SODAR_CONSTANTS
 from projectroles.plugins import ProjectAppPluginPoint
 
+from containers.models import Container
 from containers.urls import urlpatterns
 
 PROJECT_TYPE_PROJECT = SODAR_CONSTANTS["PROJECT_TYPE_PROJECT"]
@@ -149,3 +151,29 @@ class ProjectAppPlugin(ProjectAppPluginPoint):
         #         'align': 'center',
         #     },
     }
+
+    def get_object_link(self, model_str, uuid):
+        """
+        Return the URL for referring to a object used by the app, along with a
+        label to be shown to the user for linking.
+
+        :param model_str: Object class (string)
+        :param uuid: sodar_uuid of the referred object
+        :return: Dict or None if not found
+        """
+        obj = self.get_object(eval(model_str), uuid)
+
+        if not obj:
+            return None
+
+        elif obj.__class__ == Container:
+            return {
+                "url": reverse(
+                    "containers:container-detail",
+                    kwargs={"container": obj.sodar_uuid},
+                ),
+                "label": obj.get_display_name(),
+                "blank": True,
+            }
+
+        return None

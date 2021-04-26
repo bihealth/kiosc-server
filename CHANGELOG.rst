@@ -5,6 +5,20 @@ Changelog for the **Kiosc** Django app package.
 Loosely follows the `Keep a Changelog <http://keepachangelog.com/en/1.0.0/>`_ guidelines.
 
 
+HEAD (unreleased)
+=================
+
+Added
+-----
+
+- **Container**
+  - Logging with timeline for views and tasks (#24)
+
+Changed
+-------
+
+
+
 v0.1.1 (2021-04-23)
 ===================
 

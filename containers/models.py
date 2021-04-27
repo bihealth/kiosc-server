@@ -2,12 +2,16 @@ import contextlib
 import uuid
 
 from bgjobs.models import BackgroundJob, JobModelMessageMixin
+from django.conf import settings
 from django.db.models import JSONField
 from django.db import models
 from django.urls import reverse
 from django.utils.timezone import localtime
 from projectroles.models import Project
 
+
+#: Django user model.
+AUTH_USER_MODEL = getattr(settings, "AUTH_USER_MODEL", "auth.User")
 
 #: Token for 'created' state of container.
 STATE_CREATED = "created"
@@ -346,3 +350,23 @@ class ContainerLogEntry(models.Model):
         null=False,
         on_delete=models.CASCADE,
     )
+
+    #: The ``user`` causing the log entry.
+    user = models.ForeignKey(
+        AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        blank=True,
+        null=True,
+        related_name="container_log_entries",
+        help_text="User who caused the log entry",
+    )
+
+    def get_date_created(self):
+        return localtime(self.date_created).strftime("%Y-%m-%d %H:%M:%S")
+
+    def __str__(self):
+        username = self.user.username if self.user else "anonymous"
+        return f"[{self.get_date_created()} {self.level.upper()} {username}] {self.text}"
+
+    def __repr__(self):
+        return f"ContainerLogEntry({self.container.get_display_name()},{self.get_date_created()})"

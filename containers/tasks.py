@@ -41,12 +41,13 @@ def container_task(_self, job_id):
     job = ContainerBackgroundJob.objects.get(pk=job_id)
     timeline = get_backend_api("timeline_backend")
     tl_event = None
+    user = job.bg_job.user
 
     if timeline:
         tl_event = timeline.add_event(
             project=job.project,
             app_name=APP_NAME,
-            user=job.bg_job.user,
+            user=user,
             event_name="container_task",
             description="{action} container {container}",
         )
@@ -75,28 +76,38 @@ def container_task(_self, job_id):
                         job.add_log_entry(
                             f"Pulling image {container.repository}:{container.tag} ..."
                         )
+                        container.log_entries.create(
+                            text="(Task) Pulling image ...", user=user
+                        )
                         for line in cli.pull(
                             repository=container.repository,
                             tag=container.tag,
                             stream=True,
                             decode=True,
                         ):
+                            docker_log_line = "(Task|Docker Log) "
+
                             if line.get("progressDetail"):
-                                job.add_log_entry(
-                                    "Docker log: {status} ({progressDetail[current]}/{progressDetail[total]})".format(
-                                        **line
-                                    )
+                                docker_log_line += "{status} ({progressDetail[current]}/{progressDetail[total]})".format(
+                                    **line
                                 )
                             else:
-                                job.add_log_entry(
-                                    f"Docker log: {line['status']}"
-                                )
+                                docker_log_line += line["status"]
+
+                            container.log_entries.create(
+                                text=docker_log_line, user=user
+                            )
+                            job.add_log_entry(docker_log_line)
+
                         image_details = cli.inspect_image(
                             f"{container.repository}:{container.tag}"
                         )
                         container.image_id = image_details.get("Id")
                         container.save()
                         job.add_log_entry("Pulling image succeeded")
+                        container.log_entries.create(
+                            text="(Task) Pulling image succeeded", user=user
+                        )
 
                     # Create container
                     _container = cli.create_container(
@@ -124,19 +135,38 @@ def container_task(_self, job_id):
                     container.save()
 
                     # Starting container
+                    container.log_entries.create(
+                        text="(Task) Starting ...", user=user
+                    )
+                    job.add_log_entry("Starting container")
                     cli.start(container=container.container_id)
                     container.state = STATE_RUNNING
                     container.save()
+                    job.add_log_entry("Starting container succeeded")
+                    container.log_entries.create(
+                        text="(Task) Starting succeeded", user=user
+                    )
 
                 elif job.action == ACTION_STOP:
                     # Stopping container
+                    container.log_entries.create(
+                        text="(Task) Stopping ...", user=user
+                    )
+                    job.add_log_entry("Stopping container")
                     cli.stop(container=container.container_id)
                     container.state = STATE_EXITED
                     container.save()
+                    container.log_entries.create(
+                        text="(Task) Stopping succeeded", user=user
+                    )
+                    job.add_log_entry("Stopping container succeeded")
 
                 else:
                     if timeline:
                         tl_event.set_status("FAILED", "action failed")
+                    container.log_entries.create(
+                        text=f"(Task) Unknown action: {job.action}", user=user
+                    )
                     raise RuntimeError(f"Unknown action: {job.action}")
 
                 if timeline:
@@ -145,6 +175,11 @@ def container_task(_self, job_id):
         except Exception:
             job.add_log_entry(
                 f"Action failed: {job.action}", level=LOG_LEVEL_ERROR
+            )
+            container.log_entries.create(
+                text="(Task) Action failed: {job.action}",
+                user=user,
+                level=LOG_LEVEL_ERROR,
             )
             with transaction.atomic():
                 container.refresh_from_db()

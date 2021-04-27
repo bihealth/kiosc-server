@@ -10,6 +10,8 @@ from containers.models import (
     STATE_INITIAL,
     ContainerBackgroundJob,
     ACTION_START,
+    ContainerLogEntry,
+    LOG_LEVEL_INFO,
 )
 
 
@@ -67,3 +69,15 @@ class ContainerBackgroundJobFactory(factory.django.DjangoModelFactory):
         project=factory.SelfAttribute("..project"),
         user=factory.SelfAttribute("..user"),
     )
+
+
+class ContainerLogEntryFactory(factory.django.DjangoModelFactory):
+    """Factory for ``ContainerLogEntry`` model."""
+
+    class Meta:
+        model = ContainerLogEntry
+
+    level = LOG_LEVEL_INFO
+    text = factory.Sequence(lambda n: "Log entry %d" % n)
+    container = factory.SubFactory(ContainerFactory)
+    user = None

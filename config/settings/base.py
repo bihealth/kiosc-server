@@ -142,6 +142,8 @@ MANAGERS = ADMINS
 DATABASES = {"default": env.db("DATABASE_URL", default="postgres:///kiosc")}
 DATABASES["default"]["ATOMIC_REQUESTS"] = False
 
+DEFAULT_AUTO_FIELD = "django.db.models.AutoField"
+
 # Set django-db-file-storage as the default storage (for filesfolders)
 DEFAULT_FILE_STORAGE = "db_file_storage.storage.DatabaseFileStorage"
 

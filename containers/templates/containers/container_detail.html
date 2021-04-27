@@ -23,7 +23,7 @@
 
 <div class="container-fluid sodar-page-container">
   <div class="card">
-    <div class="card-header"><h4>Container Details</h4></div>
+    <div class="card-header"><h4>Details</h4></div>
     <div class="card-body">
       <p class="card-text">
         <dl class="row">
@@ -64,10 +64,13 @@
     </div>
   </div>
   <div class="card">
-    <div class="card-header"><h4>Container Logs</h4></div>
-    <div class="card-body">
-      <p class="card-text">
-      </p>
+    <div class="card-header"><h4>Logs</h4></div>
+    <div class="card-body m-2 overflow-auto bg-dark text-light border border-dark rounded-lg" style="height: 400px">
+      <samp>
+        {% for entry in object.log_entries.all %}
+          {{ entry }}<br/>
+        {% endfor %}
+      </samp>
     </div>
   </div>
 </div>

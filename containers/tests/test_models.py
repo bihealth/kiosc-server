@@ -5,7 +5,13 @@ from django.forms import model_to_dict
 from django.urls import reverse
 from django.utils.timezone import localtime
 
-from containers.models import Container, STATE_INITIAL
+from containers.models import (
+    Container,
+    STATE_INITIAL,
+    LOG_LEVEL_INFO,
+    ContainerLogEntry,
+)
+from containers.tests.factories import ContainerLogEntryFactory
 from containers.tests.helpers import TestBase
 
 
@@ -116,5 +122,64 @@ class TestContainerModel(TestBase):
             reverse(
                 "containers:container-detail",
                 kwargs={"container": self.container1.sodar_uuid},
+            ),
+        )
+
+
+class TestContainerLogEntry(TestBase):
+    """Tests for the ``ContainerLogEntry`` model."""
+
+    def setUp(self):
+        super().setUp()
+        self.create_one_container()
+        self.log_entry = ContainerLogEntryFactory(
+            container=self.container1, user=self.superuser
+        )
+        self.log_entry_no_user = ContainerLogEntryFactory(
+            container=self.container1
+        )
+        self.data = {
+            "level": LOG_LEVEL_INFO,
+            "text": "Log entry",
+            "user": self.superuser,
+            "container": self.container1,
+        }
+
+    def test_initialization(self):
+        log_entry = ContainerLogEntry.objects.create(**self.data)
+        expected = {
+            **self.data,
+            "user": self.superuser.pk,
+            "container": self.container1.pk,
+            "id": log_entry.pk,
+        }
+        self.assertEqual(model_to_dict(log_entry), expected)
+
+    def test_get_date_created(self):
+        self.assertEqual(
+            self.log_entry.get_date_created(),
+            localtime(self.log_entry.date_created).strftime(
+                "%Y-%m-%d %H:%M:%S"
+            ),
+        )
+
+    def test___str__(self):
+        self.assertEqual(
+            str(self.log_entry),
+            "[{} {} {}] {}".format(
+                self.log_entry.get_date_created(),
+                self.log_entry.level.upper(),
+                self.log_entry.user.username,
+                self.log_entry.text,
+            ),
+        )
+
+    def test___str___no_user(self):
+        self.assertEqual(
+            str(self.log_entry_no_user),
+            "[{} {} anonymous] {}".format(
+                self.log_entry_no_user.get_date_created(),
+                self.log_entry_no_user.level.upper(),
+                self.log_entry_no_user.text,
             ),
         )

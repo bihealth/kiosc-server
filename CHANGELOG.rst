@@ -13,10 +13,7 @@ Added
 
 - **Container**
   - Logging with timeline for views and tasks (#24)
-
-Changed
--------
-
+  - Container-centric logging (#25)
 
 
 v0.1.1 (2021-04-23)
@@ -62,5 +59,5 @@ Changed
 
 - **General**
   - Upgrade to Django v3.1.7 (#47)
-  - Upgrade to SODAR core v0.10.0 (#47)
+  - Upgrade to SODAR core pre-v0.10.0 (#47)
   - Bumped Celery version to 5.0.5 (#19)

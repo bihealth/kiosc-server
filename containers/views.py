@@ -57,6 +57,7 @@ class ContainerCreateView(
         response = super().form_valid(form)
         timeline = get_backend_api("timeline_backend")
 
+        # Add timeline event
         if timeline:
             tl_event = timeline.add_event(
                 project=self.get_project(),
@@ -71,6 +72,12 @@ class ContainerCreateView(
                 label="container",
                 name=self.object.get_display_name(),
             )
+
+        # Add container log entry
+        self.object.log_entries.create(
+            text="Created",
+            user=self.request.user,
+        )
 
         return response
 
@@ -105,6 +112,7 @@ class ContainerDeleteView(
         obj = self.get_object()
         project = self.get_project()
 
+        # Add timeline event
         if timeline:
             timeline.add_event(
                 project=project,
@@ -152,6 +160,12 @@ class ContainerUpdateView(
                 label="container",
                 name=self.object.get_display_name(),
             )
+
+        # Add container log entry
+        self.object.log_entries.create(
+            text="Updated",
+            user=self.request.user,
+        )
 
         return response
 
@@ -221,7 +235,16 @@ class ContainerStartView(
                 container=container,
                 bg_job=bg_job,
             )
+
+            # Add container log entry
+            container.log_entries.create(
+                text="Schedule start task",
+                user=self.request.user,
+            )
+
+            # Schedule task
             container_task.delay(job_id=job.id)
+
         return redirect(
             reverse(
                 "containers:container-detail",
@@ -263,6 +286,14 @@ class ContainerStopView(
                 container=container,
                 bg_job=bg_job,
             )
+
+            # Add container log entry
+            container.log_entries.create(
+                text="Schedule stop task",
+                user=self.request.user,
+            )
+
+            # Schedule task
             container_task.delay(job_id=job.id)
 
         return redirect(
@@ -308,5 +339,11 @@ class ReverseProxyView(
         proxy_view.kwargs = kwargs
         proxy_view.upstream = upstream
         proxy_view.suppress_empty_body = True
+
+        # Add container log entry
+        container.log_entries.create(
+            text=f"Access via reverse proxy ({upstream})",
+            user=request.user,
+        )
 
         return proxy_view.dispatch(request, *args, **kwargs)

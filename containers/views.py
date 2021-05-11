@@ -27,6 +27,9 @@ from containers.models import (
     ContainerBackgroundJob,
     ACTION_START,
     ACTION_STOP,
+    PROCESS_OBJECT,
+    PROCESS_ACTION,
+    PROCESS_PROXY,
 )
 from containers.tasks import container_task
 
@@ -76,6 +79,7 @@ class ContainerCreateView(
         # Add container log entry
         self.object.log_entries.create(
             text="Created",
+            process=PROCESS_OBJECT,
             user=self.request.user,
         )
 
@@ -164,6 +168,7 @@ class ContainerUpdateView(
         # Add container log entry
         self.object.log_entries.create(
             text="Updated",
+            process=PROCESS_OBJECT,
             user=self.request.user,
         )
 
@@ -238,7 +243,8 @@ class ContainerStartView(
 
             # Add container log entry
             container.log_entries.create(
-                text="Schedule start task",
+                text="Starting",
+                process=PROCESS_ACTION,
                 user=self.request.user,
             )
 
@@ -289,7 +295,8 @@ class ContainerStopView(
 
             # Add container log entry
             container.log_entries.create(
-                text="Schedule stop task",
+                text="Stop",
+                process=PROCESS_ACTION,
                 user=self.request.user,
             )
 
@@ -342,7 +349,8 @@ class ReverseProxyView(
 
         # Add container log entry
         container.log_entries.create(
-            text=f"Access via reverse proxy ({upstream})",
+            text=f"Accessing {upstream}",
+            process=PROCESS_PROXY,
             user=request.user,
         )
 

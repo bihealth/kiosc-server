@@ -12,6 +12,7 @@ from containers.models import (
     ACTION_START,
     ContainerLogEntry,
     LOG_LEVEL_INFO,
+    PROCESS_OBJECT,
 )
 
 
@@ -80,4 +81,6 @@ class ContainerLogEntryFactory(factory.django.DjangoModelFactory):
     level = LOG_LEVEL_INFO
     text = factory.Sequence(lambda n: "Log entry %d" % n)
     container = factory.SubFactory(ContainerFactory)
+    process = PROCESS_OBJECT
+    date_docker_log = None
     user = None

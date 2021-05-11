@@ -10,6 +10,7 @@
 
 {% block projectroles_extend %}
 
+{% has_perm "containers.view_logs" request.user project as can_view_logs %}
 
 <div class="row sodar-subtitle-container">
   <h3>Container <small class="text-muted">{{ object.sodar_uuid }}</small></h3>
@@ -21,6 +22,7 @@
   </div>
 </div>
 
+{% with action=object.containerbackgroundjob.last.action date_last_docker_log=object.log_entries.get_date_last_docker_log %}
 <div class="container-fluid sodar-page-container">
   <div class="card">
     <div class="card-header"><h4>Details</h4></div>
@@ -58,21 +60,53 @@
         </dl>
         <dl class="row">
           <dt class="col-sm-3">State</dt>
-          <dd class="col-sm-9">{{ object.state }}</dd>
+          <dd class="col-sm-9">
+            {{ object.state }}
+            {% if object.state == "running" or object.state == "pulling" %}
+              {% if action != "start" %}
+                <i class="iconify" data-icon="mdi:bell" data-toggle="tooltip" title="Should be running or pulling"></i>
+              {% endif %}
+            {% elif object.state == "exited" %}
+              {% if action != "stop" %}
+                <i class="iconify" data-icon="mdi:bell" data-toggle="tooltip" title="Should be exited"></i>
+              {% endif %}
+            {% endif %}
+          </dd>
+        </dl>
+        <dl class="row">
+          <dt class="col-sm-3">Last action</dt>
+          <dd class="col-sm-9">{{ action }}</dd>
+        </dl>
+        <dl class="row">
+          <dt class="col-sm-3">Date of lastest Docker log</dt>
+          <dd class="col-sm-9">{{ date_last_docker_log }}</dd>
         </dl>
       </p>
     </div>
   </div>
+  {% if can_view_logs %}
   <div class="card">
     <div class="card-header"><h4>Logs</h4></div>
-    <div class="card-body m-2 overflow-auto bg-dark text-light border border-dark rounded-lg" style="height: 400px">
+    <div id="logs" class="card-body m-2 overflow-auto bg-dark text-light border border-dark rounded-lg" style="height: 400px">
       <samp>
-        {% for entry in object.log_entries.all %}
+        {% for entry in object.log_entries.merge_order %}
           {{ entry }}<br/>
         {% endfor %}
       </samp>
     </div>
   </div>
+  {% endif %}
 </div>
+{% endwith %}
 
 {% endblock projectroles_extend %}
+
+{% block javascript %}
+    {{ block.super }}
+    <script>
+        $(document).ready(function () {
+            var logs = $("#logs")
+            logs.animate({scrollTop: logs.prop("scrollHeight")}, 1000)
+        });
+    </script>
+{% endblock javascript %}

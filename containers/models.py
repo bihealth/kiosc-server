@@ -95,6 +95,30 @@ LOG_LEVEL_CHOICES = [
     (LOG_LEVEL_ERROR, LOG_LEVEL_ERROR),
 ]
 
+#: Process ``object`` reporting the log entry.
+PROCESS_OBJECT = "object"
+
+#: Process ``task`` reporting the log entry.
+PROCESS_TASK = "task"
+
+#: Process ``proxy`` reporting the log entry.
+PROCESS_PROXY = "proxy"
+
+#: Process ``docker`` reporting the log entry.
+PROCESS_DOCKER = "docker"
+
+#: Process ``action`` reporting the log entry.
+PROCESS_ACTION = "action"
+
+#: Process choices.
+PROCESS_CHOICES = [
+    (PROCESS_OBJECT, PROCESS_OBJECT),
+    (PROCESS_TASK, PROCESS_TASK),
+    (PROCESS_PROXY, PROCESS_PROXY),
+    (PROCESS_DOCKER, PROCESS_DOCKER),
+    (PROCESS_ACTION, PROCESS_ACTION),
+]
+
 
 class JobModelMessageContextManagerMixin(JobModelMessageMixin):
     @contextlib.contextmanager
@@ -131,11 +155,6 @@ class Container(models.Model):
     #: DateTime of last container modification.
     date_modified = models.DateTimeField(
         auto_now=True, help_text="DateTime of last container modification"
-    )
-
-    #: DateTime of last pulling of logs.
-    date_last_logs = models.DateTimeField(
-        auto_now_add=True, help_text="DateTime of last log pull"
     )
 
     #: The "repository" of the image.
@@ -304,6 +323,7 @@ class ContainerBackgroundJob(JobModelMessageContextManagerMixin, models.Model):
     container = models.ForeignKey(
         Container,
         help_text="The container that the job belongs to",
+        related_name="containerbackgroundjob",
         on_delete=models.CASCADE,
     )
 
@@ -321,12 +341,44 @@ class ContainerBackgroundJob(JobModelMessageContextManagerMixin, models.Model):
     )
 
 
+class ContainerLogEntryManager(models.Manager):
+    def merge_order(self, *args, **kwargs):
+        qs = self.get_queryset().filter(*args, **kwargs)
+        return sorted(
+            qs,
+            key=lambda a: a.date_docker_log
+            if a.date_docker_log
+            else a.date_created,
+        )
+
+    def get_date_last_docker_log(self, *args, **kwargs):
+        obj = (
+            self.get_queryset()
+            .filter(*args, *kwargs)
+            .filter(process=PROCESS_DOCKER)
+            .last()
+        )
+
+        if not obj:
+            return None
+
+        return obj.get_date_docker_log()
+
+
 class ContainerLogEntry(models.Model):
     """Model for container log entries."""
+
+    #: Custom manager for sorting
+    objects = ContainerLogEntryManager()
 
     #: DateTime of creation
     date_created = models.DateTimeField(
         auto_now_add=True, help_text="DateTime of creation"
+    )
+
+    #: DateTime of Docker log entry
+    date_docker_log = models.DateTimeField(
+        blank=True, null=True, help_text="DateTime of Docker log entry"
     )
 
     #: The level of the log entry.
@@ -357,16 +409,36 @@ class ContainerLogEntry(models.Model):
         on_delete=models.SET_NULL,
         blank=True,
         null=True,
-        related_name="container_log_entries",
+        related_name="log_entries",
         help_text="User who caused the log entry",
+    )
+
+    #: The process reporting the log entry.
+    process = models.CharField(
+        max_length=32,
+        blank=False,
+        null=False,
+        choices=PROCESS_CHOICES,
+        default=PROCESS_OBJECT,
+        help_text="Process that reports the entry",
     )
 
     def get_date_created(self):
         return localtime(self.date_created).strftime("%Y-%m-%d %H:%M:%S")
 
+    def get_date_docker_log(self):
+        return (
+            localtime(self.date_docker_log).strftime("%Y-%m-%d %H:%M:%S")
+            if self.date_docker_log
+            else ""
+        )
+
+    def get_date_order_by(self):
+        return self.get_date_docker_log() or self.get_date_created()
+
     def __str__(self):
         username = self.user.username if self.user else "anonymous"
-        return f"[{self.get_date_created()} {self.level.upper()} {username}] {self.text}"
+        return f"[{self.get_date_order_by()} {self.level.upper()} {username}] ({self.process.capitalize()}) {self.text}"
 
     def __repr__(self):
         return f"ContainerLogEntry({self.container.get_display_name()},{self.get_date_created()})"

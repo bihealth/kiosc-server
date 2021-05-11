@@ -9,14 +9,30 @@ from containers.models import (
     STATE_EXITED,
     STATE_RUNNING,
     Container,
+    ContainerLogEntry,
+    STATE_INITIAL,
+    PROCESS_DOCKER,
 )
-from containers.tasks import container_task, connect_docker
-from containers.tests.factories import ContainerBackgroundJobFactory
-from containers.tests.helpers import TestBase, DockerMock
+from containers.tasks import (
+    container_task,
+    connect_docker,
+    poll_docker_status_and_logs,
+)
+from containers.tests.factories import (
+    ContainerBackgroundJobFactory,
+    ContainerLogEntryFactory,
+)
+from containers.tests.helpers import (
+    TestBase,
+    DockerMock,
+    log_entry1,
+    log_entry2,
+    log_entry3,
+)
 
 
 class TestContainerTask(TestBase):
-    """Tests for container tasks."""
+    """Tests for ``container_task``."""
 
     def setUp(self):
         super().setUp()
@@ -48,6 +64,10 @@ class TestContainerTask(TestBase):
         "docker.api.client.APIClient.create_host_config",
         DockerMock.create_host_config,
     )
+    @patch(
+        "docker.api.client.APIClient.inspect_container",
+        DockerMock.inspect_container_started,
+    )
     @patch("docker.api.client.APIClient.stop")
     @patch("docker.api.client.APIClient.start")
     @patch("docker.api.client.APIClient.pull")
@@ -60,7 +80,6 @@ class TestContainerTask(TestBase):
             stream=True,
             decode=True,
         )
-        start.assert_called_once_with(container=self.container1.container_id)
         start.assert_called_once_with(container=self.container1.container_id)
         stop.assert_not_called()
         self.assertEqual(self.container1.state, STATE_RUNNING)
@@ -76,14 +95,20 @@ class TestContainerTask(TestBase):
         "docker.api.client.APIClient.create_host_config",
         DockerMock.create_host_config,
     )
+    @patch(
+        "docker.api.client.APIClient.inspect_container",
+        DockerMock.inspect_container_stopped,
+    )
     @patch("docker.api.client.APIClient.stop")
     @patch("docker.api.client.APIClient.start")
     @patch("docker.api.client.APIClient.pull")
     def test_stop_container_task_mocked(self, pull, start, stop):
         self.bg_job.action = ACTION_STOP
         self.bg_job.save()
-        self.container1.image_id = "1"
-        self.container1.container_id = "1"
+        self.container1.image_id = DockerMock.inspect_image(None).get("Id")
+        self.container1.container_id = DockerMock.create_container(
+            None, None, None, None, None, None
+        ).get("Id")
         self.container1.state = STATE_RUNNING
         self.container1.save()
         container_task(job_id=self.bg_job.pk)
@@ -119,3 +144,115 @@ class TestContainerTask(TestBase):
             STATE_EXITED,
         )
         self.assertEqual(self.container1.state, STATE_EXITED)
+
+
+class TestPollDockerStatusAndLogsTask(TestBase):
+    """Tests for ``poll_docker_status_and_logs_task``."""
+
+    def setUp(self):
+        super().setUp()
+        self.cli = connect_docker()
+        self.create_one_container()
+        self.container1.container_id = DockerMock.create_container(
+            None, None, None, None, None, None
+        ).get("Id")
+        self.container1.image_id = DockerMock.inspect_image(None).get("Id")
+        self.container1.save()
+        self.bg_job = ContainerBackgroundJobFactory(
+            project=self.project, user=self.superuser, container=self.container1
+        )
+
+    @tag("docker-server")
+    def tearDown(self):
+        for container in Container.objects.all():
+            if container.image_id and container.container_id:
+                try:
+                    self.cli.stop(container=container.container_id)
+                except docker.errors.NotFound:
+                    pass
+        self.cli.prune_containers()
+        self.cli.prune_images()
+
+    @patch(
+        "docker.api.client.APIClient.inspect_container",
+        DockerMock.inspect_container_started,
+    )
+    @patch(
+        "docker.api.client.APIClient.logs",
+        DockerMock.logs,
+    )
+    def test_poll_docker_status_and_logs_tasks(self):
+        self.assertEqual(self.container1.state, STATE_INITIAL)
+        poll_docker_status_and_logs()
+        self.container1.refresh_from_db()
+        # Check updated status
+        self.assertEqual(self.container1.state, STATE_RUNNING)
+        # Check logs
+        self.assertEqual(
+            ContainerLogEntry.objects.filter(container=self.container1).count(),
+            3,
+        )
+        logs = [
+            entry.text
+            for entry in ContainerLogEntry.objects.filter(
+                container=self.container1
+            )
+        ]
+        self.assertEqual(
+            logs,
+            [
+                log_entry1()[1][51:],
+                log_entry2()[1][51:],
+                log_entry3()[1][51:],
+            ],
+        )
+
+    @patch(
+        "docker.api.client.APIClient.inspect_container",
+        DockerMock.inspect_container_started,
+    )
+    @patch(
+        "docker.api.client.APIClient.logs",
+        DockerMock.logs_since,
+    )
+    def test_poll_docker_status_and_logs_tasks_since(self):
+        self.assertEqual(self.container1.state, STATE_INITIAL)
+        dt1, entry1 = log_entry1()
+        dt2, entry2 = log_entry2()
+        ContainerLogEntryFactory(
+            text=entry1[51:],
+            container=self.container1,
+            process=PROCESS_DOCKER,
+            date_docker_log=dt1,
+            user=None,
+        )
+        ContainerLogEntryFactory(
+            text=entry2[51:],
+            container=self.container1,
+            process=PROCESS_DOCKER,
+            date_docker_log=dt2,
+            user=None,
+        )
+        poll_docker_status_and_logs()
+        self.container1.refresh_from_db()
+        # Check updated status
+        self.assertEqual(self.container1.state, STATE_RUNNING)
+        # Check logs
+        self.assertEqual(
+            ContainerLogEntry.objects.filter(container=self.container1).count(),
+            3,
+        )
+        logs = [
+            entry.text
+            for entry in ContainerLogEntry.objects.filter(
+                container=self.container1
+            )
+        ]
+        self.assertEqual(
+            logs,
+            [
+                log_entry1()[1][51:],
+                log_entry2()[1][51:],
+                log_entry3()[1][51:],
+            ],
+        )

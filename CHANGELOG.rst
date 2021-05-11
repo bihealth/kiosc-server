@@ -5,6 +5,24 @@ Changelog for the **Kiosc** Django app package.
 Loosely follows the `Keep a Changelog <http://keepachangelog.com/en/1.0.0/>`_ guidelines.
 
 
+HEAD (unreleased)
+=================
+
+Added
+-----
+
+- **Container**
+  - ``process`` field to ``ContainerLogEntry`` to reflect which process writes to the logs (#26)
+  - ``date_docker_log`` field to ``ContainerLogEntry`` to represent the time of the Docker log entry (#26)
+  - ``ContainerLogEntryManager`` to allow ordering by date of log or date of Docker log (#26)
+  - Permission to view logs (#26)
+  - Task to pull docker logs and the current status (#26)
+  - Periodic task pulling docker log and status (#26)
+
+Changed
+-------
+
+
 v0.1.2 (2021-04-27)
 ===================
 

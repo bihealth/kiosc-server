@@ -60,3 +60,11 @@ rules.add_perm(
     | pr_rules.is_project_delegate
     | pr_rules.is_project_contributor,
 )
+
+# Allow viewing container logs
+rules.add_perm(
+    "containers.view_logs",
+    pr_rules.is_project_owner
+    | pr_rules.is_project_delegate
+    | pr_rules.is_project_contributor,
+)

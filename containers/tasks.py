@@ -1,8 +1,12 @@
 import shlex
 
 import docker
+import docker.errors
+import dateutil.parser
+
 from django.conf import settings
 from django.db import transaction
+from django.utils import timezone
 from docker.types import Ulimit
 from projectroles.plugins import get_backend_api
 
@@ -13,13 +17,15 @@ from django.contrib import auth
 from projectroles.app_settings import AppSettingAPI
 
 from containers.models import (
+    Container,
     ContainerBackgroundJob,
     LOG_LEVEL_ERROR,
-    STATE_FAILED,
     ACTION_START,
     ACTION_STOP,
-    STATE_EXITED,
-    STATE_RUNNING,
+    STATE_PULLING,
+    STATE_FAILED,
+    PROCESS_TASK,
+    PROCESS_DOCKER,
 )
 
 
@@ -77,25 +83,31 @@ def container_task(_self, job_id):
                             f"Pulling image {container.repository}:{container.tag} ..."
                         )
                         container.log_entries.create(
-                            text="(Task) Pulling image ...", user=user
+                            text="Pulling image ...",
+                            process=PROCESS_TASK,
+                            user=user,
                         )
+                        container.state = STATE_PULLING
+                        container.save()
+
                         for line in cli.pull(
                             repository=container.repository,
                             tag=container.tag,
                             stream=True,
                             decode=True,
                         ):
-                            docker_log_line = "(Task|Docker Log) "
-
                             if line.get("progressDetail"):
-                                docker_log_line += "{status} ({progressDetail[current]}/{progressDetail[total]})".format(
+                                docker_log_line = "{status} ({progressDetail[current]}/{progressDetail[total]})".format(
                                     **line
                                 )
                             else:
-                                docker_log_line += line["status"]
+                                docker_log_line = line["status"]
 
                             container.log_entries.create(
-                                text=docker_log_line, user=user
+                                text=docker_log_line,
+                                process=PROCESS_DOCKER,
+                                date_docker_log=timezone.now(),
+                                user=user,
                             )
                             job.add_log_entry(docker_log_line)
 
@@ -106,7 +118,9 @@ def container_task(_self, job_id):
                         container.save()
                         job.add_log_entry("Pulling image succeeded")
                         container.log_entries.create(
-                            text="(Task) Pulling image succeeded", user=user
+                            text="Pulling image succeeded",
+                            process=PROCESS_TASK,
+                            user=user,
                         )
 
                     # Create container
@@ -132,32 +146,41 @@ def container_task(_self, job_id):
                         ),
                     )
                     container.container_id = _container.get("Id")
-                    container.save()
+
+                    if _container.get("State"):
+                        container.state = _container.get("State").get("Status")
+                        container.save()
 
                     # Starting container
                     container.log_entries.create(
-                        text="(Task) Starting ...", user=user
+                        text="Starting ...", process=PROCESS_TASK, user=user
                     )
                     job.add_log_entry("Starting container")
                     cli.start(container=container.container_id)
-                    container.state = STATE_RUNNING
+                    _container = cli.inspect_container(container.container_id)
+                    container.state = _container.get("State", {}).get("Status")
                     container.save()
                     job.add_log_entry("Starting container succeeded")
                     container.log_entries.create(
-                        text="(Task) Starting succeeded", user=user
+                        text="Starting succeeded",
+                        process=PROCESS_TASK,
+                        user=user,
                     )
 
                 elif job.action == ACTION_STOP:
                     # Stopping container
                     container.log_entries.create(
-                        text="(Task) Stopping ...", user=user
+                        text="Stopping ...", process=PROCESS_TASK, user=user
                     )
                     job.add_log_entry("Stopping container")
                     cli.stop(container=container.container_id)
-                    container.state = STATE_EXITED
+                    _container = cli.inspect_container(container.container_id)
+                    container.state = _container.get("State", {}).get("Status")
                     container.save()
                     container.log_entries.create(
-                        text="(Task) Stopping succeeded", user=user
+                        text="Stopping succeeded",
+                        process=PROCESS_TASK,
+                        user=user,
                     )
                     job.add_log_entry("Stopping container succeeded")
 
@@ -165,19 +188,54 @@ def container_task(_self, job_id):
                     if timeline:
                         tl_event.set_status("FAILED", "action failed")
                     container.log_entries.create(
-                        text=f"(Task) Unknown action: {job.action}", user=user
+                        text=f"Unknown action: {job.action}",
+                        process=PROCESS_TASK,
+                        user=user,
                     )
                     raise RuntimeError(f"Unknown action: {job.action}")
 
                 if timeline:
                     tl_event.set_status("OK", "action succeeded")
 
-        except Exception:
+        except docker.errors.NotFound as e:
             job.add_log_entry(
                 f"Action failed: {job.action}", level=LOG_LEVEL_ERROR
             )
             container.log_entries.create(
-                text="(Task) Action failed: {job.action}",
+                text=f"Action failed: {job.action}",
+                process=PROCESS_TASK,
+                user=user,
+                level=LOG_LEVEL_ERROR,
+            )
+            container.log_entries.create(
+                text=e,
+                process=PROCESS_DOCKER,
+                date_docker_log=timezone.now(),
+                user=user,
+                level=LOG_LEVEL_ERROR,
+            )
+            with transaction.atomic():
+                container.refresh_from_db()
+                container.container_id = ""
+                container.image_id = ""
+                container.state = STATE_FAILED
+                container.save()
+
+        except docker.errors.DockerException as e:
+            # Catch Docker-speficif exceptions
+            job.add_log_entry(
+                f"Action failed: {job.action}", level=LOG_LEVEL_ERROR
+            )
+            container.log_entries.create(
+                text=f"Action failed: {job.action}",
+                process=PROCESS_TASK,
+                user=user,
+                level=LOG_LEVEL_ERROR,
+            )
+            container.log_entries.create(
+                text=e,
+                process=PROCESS_DOCKER,
+                date_docker_log=timezone.now(),
                 user=user,
                 level=LOG_LEVEL_ERROR,
             )
@@ -185,4 +243,86 @@ def container_task(_self, job_id):
                 container.refresh_from_db()
                 container.state = STATE_FAILED
                 container.save(force_update=True)
-            raise  # re-raise
+
+        except Exception:
+            # Catch all exceptions that are not coming from Docker
+            job.add_log_entry(
+                f"Action failed: {job.action}", level=LOG_LEVEL_ERROR
+            )
+            container.log_entries.create(
+                text=f"Action failed: {job.action}",
+                process=PROCESS_TASK,
+                user=user,
+                level=LOG_LEVEL_ERROR,
+            )
+            with transaction.atomic():
+                container.refresh_from_db()
+                container.state = STATE_FAILED
+                container.save(force_update=True)
+
+
+@app.task(bind=True)
+def poll_docker_status_and_logs(_self):
+    cli = connect_docker()
+
+    for container in Container.objects.all():
+        if not container.container_id:
+            continue
+
+        try:
+            data = cli.inspect_container(container.container_id)
+
+        except docker.errors.NotFound:
+            container.container_id = ""
+            container.save()
+
+        else:
+            state = data.get("State", {}).get("Status")
+            last_log = container.log_entries.filter(
+                process=PROCESS_DOCKER
+            ).last()
+            fetch_logs_parameters = {"timestamps": True}
+            date_last_logs = None
+
+            if last_log:
+                date_last_logs = last_log.date_docker_log
+                fetch_logs_parameters["since"] = date_last_logs.replace(
+                    tzinfo=None
+                )
+
+            # Get most recent logs. ``since`` does not consider milliseconds,
+            # so we need to post-filter to avoid duplicates.
+            try:
+                logs = (
+                    cli.logs(container.container_id, **fetch_logs_parameters)
+                    .decode("utf-8")
+                    .strip()
+                    .split("\n")
+                )
+
+            except docker.errors.DockerException as e:
+                # Log somewhere?
+                raise e
+
+            if state:
+                container.state = state
+                container.save()
+
+            for line in logs:
+                text = line[51:]
+                log_date = dateutil.parser.parse(line[:30])
+
+                # Filter out duplicates
+                if date_last_logs and log_date <= date_last_logs:
+                    continue
+
+                # Write new log entry
+                container.log_entries.create(
+                    date_docker_log=log_date, text=text, process=PROCESS_DOCKER
+                )
+
+
+@app.on_after_finalize.connect
+def setup_periodic_tasks(sender, **_kwargs):
+    """Register periodic tasks"""
+    sender.add_periodic_task(60, sig=poll_docker_status_and_logs.s())

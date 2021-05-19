@@ -81,3 +81,6 @@ docker==5.0.0
 
 # Django reverse proxy
 django-revproxy==0.10.0
+
+# State machine
+python-statemachine==0.8.0

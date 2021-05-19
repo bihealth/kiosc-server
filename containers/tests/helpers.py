@@ -11,6 +11,7 @@ from containers.models import (
     STATE_CREATED,
     STATE_RUNNING,
     STATE_EXITED,
+    STATE_PAUSED,
 )
 from containers.tests.factories import ProjectFactory, ContainerFactory
 
@@ -96,6 +97,18 @@ class DockerMock:
         return {"State": {"Status": STATE_RUNNING}}
 
     @classmethod
+    def inspect_container_restarted(cls, container):
+        return {"State": {"Status": STATE_RUNNING}}
+
+    @classmethod
+    def inspect_container_paused(cls, container):
+        return {"State": {"Status": STATE_PAUSED}}
+
+    @classmethod
+    def inspect_container_unpaused(cls, container):
+        return {"State": {"Status": STATE_RUNNING}}
+
+    @classmethod
     def inspect_container_stopped(cls, container):
         return {"State": {"Status": STATE_EXITED}}
 
@@ -107,14 +120,6 @@ class DockerMock:
 
     @classmethod
     def create_host_config(cls, port_bindings, ulimits):
-        return
-
-    @classmethod
-    def start(cls, container):
-        return
-
-    @classmethod
-    def stop(cls, container):
         return
 
     @classmethod

@@ -18,6 +18,10 @@ Added
   - Permission to view logs (#26)
   - Task to pull docker logs and the current status (#26)
   - Periodic task pulling docker log and status (#26)
+  - ``restart``, ``pause`` and ``unpause`` action (#27)
+  - python-statemachine v0.8.0 dependency (#27)
+  - Statemachine for controlling flow of a container (#27)
+  - Switch class for coordinating actions with the statemachine (#27)
 
 Changed
 -------

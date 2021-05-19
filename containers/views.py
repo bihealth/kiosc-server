@@ -30,6 +30,9 @@ from containers.models import (
     PROCESS_OBJECT,
     PROCESS_ACTION,
     PROCESS_PROXY,
+    ACTION_PAUSE,
+    ACTION_UNPAUSE,
+    ACTION_RESTART,
 )
 from containers.tasks import container_task
 
@@ -296,6 +299,162 @@ class ContainerStopView(
             # Add container log entry
             container.log_entries.create(
                 text="Stop",
+                process=PROCESS_ACTION,
+                user=self.request.user,
+            )
+
+            # Schedule task
+            container_task.delay(job_id=job.id)
+
+        return redirect(
+            reverse(
+                "containers:container-detail",
+                kwargs={"container": kwargs.get("container")},
+            )
+        )
+
+
+class ContainerPauseView(
+    LoginRequiredMixin,
+    LoggedInPermissionMixin,
+    ProjectPermissionMixin,
+    ProjectContextMixin,
+    View,
+):
+    """View for pausing a container."""
+
+    permission_required = "containers.pause_container"
+    model = Container
+    slug_url_kwarg = "container"
+    slug_field = "sodar_uuid"
+
+    def get(self, request, *args, **kwargs):
+        with transaction.atomic():
+            project = self.get_project()
+            user = request.user
+            container = get_object_or_404(
+                Container, sodar_uuid=kwargs.get("container")
+            )
+            bg_job = BackgroundJob.objects.create(
+                name="Pause container",
+                project=project,
+                job_type=ContainerBackgroundJob.spec_name,
+                user=user,
+            )
+            job = ContainerBackgroundJob.objects.create(
+                action=ACTION_PAUSE,
+                project=project,
+                container=container,
+                bg_job=bg_job,
+            )
+
+            # Add container log entry
+            container.log_entries.create(
+                text="Pause",
+                process=PROCESS_ACTION,
+                user=self.request.user,
+            )
+
+            # Schedule task
+            container_task.delay(job_id=job.id)
+
+        return redirect(
+            reverse(
+                "containers:container-detail",
+                kwargs={"container": kwargs.get("container")},
+            )
+        )
+
+
+class ContainerUnpauseView(
+    LoginRequiredMixin,
+    LoggedInPermissionMixin,
+    ProjectPermissionMixin,
+    ProjectContextMixin,
+    View,
+):
+    """View for unpausing a container."""
+
+    permission_required = "containers.unpause_container"
+    model = Container
+    slug_url_kwarg = "container"
+    slug_field = "sodar_uuid"
+
+    def get(self, request, *args, **kwargs):
+        with transaction.atomic():
+            project = self.get_project()
+            user = request.user
+            container = get_object_or_404(
+                Container, sodar_uuid=kwargs.get("container")
+            )
+            bg_job = BackgroundJob.objects.create(
+                name="Unpause container",
+                project=project,
+                job_type=ContainerBackgroundJob.spec_name,
+                user=user,
+            )
+            job = ContainerBackgroundJob.objects.create(
+                action=ACTION_UNPAUSE,
+                project=project,
+                container=container,
+                bg_job=bg_job,
+            )
+
+            # Add container log entry
+            container.log_entries.create(
+                text="Unpause",
+                process=PROCESS_ACTION,
+                user=self.request.user,
+            )
+
+            # Schedule task
+            container_task.delay(job_id=job.id)
+
+        return redirect(
+            reverse(
+                "containers:container-detail",
+                kwargs={"container": kwargs.get("container")},
+            )
+        )
+
+
+class ContainerRestartView(
+    LoginRequiredMixin,
+    LoggedInPermissionMixin,
+    ProjectPermissionMixin,
+    ProjectContextMixin,
+    View,
+):
+    """View for restarting a container."""
+
+    permission_required = "containers.start_container"
+    model = Container
+    slug_url_kwarg = "container"
+    slug_field = "sodar_uuid"
+
+    def get(self, request, *args, **kwargs):
+        with transaction.atomic():
+            project = self.get_project()
+            user = request.user
+            container = get_object_or_404(
+                Container, sodar_uuid=kwargs.get("container")
+            )
+            bg_job = BackgroundJob.objects.create(
+                name="Restart container",
+                project=project,
+                job_type=ContainerBackgroundJob.spec_name,
+                user=user,
+            )
+            job = ContainerBackgroundJob.objects.create(
+                action=ACTION_RESTART,
+                project=project,
+                container=container,
+                bg_job=bg_job,
+            )
+
+            # Add container log entry
+            container.log_entries.create(
+                text="Restart",
                 process=PROCESS_ACTION,
                 user=self.request.user,
             )

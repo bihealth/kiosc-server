@@ -1,13 +1,10 @@
-import shlex
-
 import docker
 import docker.errors
 import dateutil.parser
+import statemachine.exceptions
 
-from django.conf import settings
 from django.db import transaction
 from django.utils import timezone
-from docker.types import Ulimit
 from projectroles.plugins import get_backend_api
 
 from config.celery import app
@@ -20,14 +17,15 @@ from containers.models import (
     Container,
     ContainerBackgroundJob,
     LOG_LEVEL_ERROR,
-    ACTION_START,
-    ACTION_STOP,
-    STATE_PULLING,
     STATE_FAILED,
     PROCESS_TASK,
     PROCESS_DOCKER,
 )
-
+from containers.statemachines import (
+    ContainerMachine,
+    connect_docker,
+    ActionSwitch,
+)
 
 User = auth.get_user_model()
 app_settings = AppSettingAPI()
@@ -37,8 +35,9 @@ APP_NAME = "containers"
 DEFAULT_TIMEOUT = 600
 
 
-def connect_docker(base_url="unix:///var/run/docker.sock"):
-    return docker.APIClient(base_url=base_url, timeout=DEFAULT_TIMEOUT)
+class State:
+    def __init__(self, state):
+        self.state = state
 
 
 @app.task(bind=True)
@@ -46,8 +45,10 @@ def container_task(_self, job_id):
     """Task to change a container state"""
     job = ContainerBackgroundJob.objects.get(pk=job_id)
     timeline = get_backend_api("timeline_backend")
-    tl_event = None
+    container = job.container
     user = job.bg_job.user
+    tl_event = None
+    cm = ContainerMachine(State(container.state), job=job)
 
     if timeline:
         tl_event = timeline.add_event(
@@ -68,146 +69,23 @@ def container_task(_self, job_id):
             name=job.action,
         )
 
+    acs = ActionSwitch(cm, job, tl_event)
+
     with job.marks():
         try:
-            # Get image, check state, update to pulling.
-            with transaction.atomic():
-                container = job.container
-                job.add_log_entry("Connecting to Docker API...")
-                cli = connect_docker()
-
-                if job.action == ACTION_START:
-                    if not container.image_id:
-                        # Pulling image
-                        job.add_log_entry(
-                            f"Pulling image {container.repository}:{container.tag} ..."
-                        )
-                        container.log_entries.create(
-                            text="Pulling image ...",
-                            process=PROCESS_TASK,
-                            user=user,
-                        )
-                        container.state = STATE_PULLING
-                        container.save()
-
-                        for line in cli.pull(
-                            repository=container.repository,
-                            tag=container.tag,
-                            stream=True,
-                            decode=True,
-                        ):
-                            if line.get("progressDetail"):
-                                docker_log_line = "{status} ({progressDetail[current]}/{progressDetail[total]})".format(
-                                    **line
-                                )
-                            else:
-                                docker_log_line = line["status"]
-
-                            container.log_entries.create(
-                                text=docker_log_line,
-                                process=PROCESS_DOCKER,
-                                date_docker_log=timezone.now(),
-                                user=user,
-                            )
-                            job.add_log_entry(docker_log_line)
-
-                        image_details = cli.inspect_image(
-                            f"{container.repository}:{container.tag}"
-                        )
-                        container.image_id = image_details.get("Id")
-                        container.save()
-                        job.add_log_entry("Pulling image succeeded")
-                        container.log_entries.create(
-                            text="Pulling image succeeded",
-                            process=PROCESS_TASK,
-                            user=user,
-                        )
-
-                    # Create container
-                    _container = cli.create_container(
-                        detach=True,
-                        image=container.image_id,
-                        environment={},
-                        command=shlex.split(container.command)
-                        if container.command
-                        else None,
-                        ports=[container.container_port],
-                        host_config=cli.create_host_config(
-                            port_bindings={
-                                container.container_port: container.host_port
-                            },
-                            ulimits=[
-                                Ulimit(
-                                    name="nofile",
-                                    soft=settings.KIOSC_DOCKER_MAX_ULIMIT_NOFILE_SOFT,
-                                    hard=settings.KIOSC_DOCKER_MAX_ULIMIT_NOFILE_HARD,
-                                )
-                            ],
-                        ),
-                    )
-                    container.container_id = _container.get("Id")
-
-                    if _container.get("State"):
-                        container.state = _container.get("State").get("Status")
-                        container.save()
-
-                    # Starting container
-                    container.log_entries.create(
-                        text="Starting ...", process=PROCESS_TASK, user=user
-                    )
-                    job.add_log_entry("Starting container")
-                    cli.start(container=container.container_id)
-                    _container = cli.inspect_container(container.container_id)
-                    container.state = _container.get("State", {}).get("Status")
-                    container.save()
-                    job.add_log_entry("Starting container succeeded")
-                    container.log_entries.create(
-                        text="Starting succeeded",
-                        process=PROCESS_TASK,
-                        user=user,
-                    )
-
-                elif job.action == ACTION_STOP:
-                    # Stopping container
-                    container.log_entries.create(
-                        text="Stopping ...", process=PROCESS_TASK, user=user
-                    )
-                    job.add_log_entry("Stopping container")
-                    cli.stop(container=container.container_id)
-                    _container = cli.inspect_container(container.container_id)
-                    container.state = _container.get("State", {}).get("Status")
-                    container.save()
-                    container.log_entries.create(
-                        text="Stopping succeeded",
-                        process=PROCESS_TASK,
-                        user=user,
-                    )
-                    job.add_log_entry("Stopping container succeeded")
-
-                else:
-                    if timeline:
-                        tl_event.set_status("FAILED", "action failed")
-                    container.log_entries.create(
-                        text=f"Unknown action: {job.action}",
-                        process=PROCESS_TASK,
-                        user=user,
-                    )
-                    raise RuntimeError(f"Unknown action: {job.action}")
-
-                if timeline:
-                    tl_event.set_status("OK", "action succeeded")
+            acs.do(job.action, job.container.state)
 
         except docker.errors.NotFound as e:
             job.add_log_entry(
                 f"Action failed: {job.action}", level=LOG_LEVEL_ERROR
             )
-            container.log_entries.create(
+            job.container.log_entries.create(
                 text=f"Action failed: {job.action}",
                 process=PROCESS_TASK,
                 user=user,
                 level=LOG_LEVEL_ERROR,
             )
-            container.log_entries.create(
+            job.container.log_entries.create(
                 text=e,
                 process=PROCESS_DOCKER,
                 date_docker_log=timezone.now(),
@@ -215,14 +93,14 @@ def container_task(_self, job_id):
                 level=LOG_LEVEL_ERROR,
             )
             with transaction.atomic():
-                container.refresh_from_db()
-                container.container_id = ""
-                container.image_id = ""
-                container.state = STATE_FAILED
-                container.save()
+                job.container.refresh_from_db()
+                job.container.container_id = ""
+                job.container.image_id = ""
+                job.container.state = STATE_FAILED
+                job.container.save()
 
         except docker.errors.DockerException as e:
-            # Catch Docker-speficif exceptions
+            # Catch Docker-specific exceptions
             job.add_log_entry(
                 f"Action failed: {job.action}", level=LOG_LEVEL_ERROR
             )
@@ -244,13 +122,24 @@ def container_task(_self, job_id):
                 container.state = STATE_FAILED
                 container.save(force_update=True)
 
-        except Exception:
+        except statemachine.exceptions.StateMachineError as e:
+            job.add_log_entry(
+                f"Action failed: {job.action}", level=LOG_LEVEL_ERROR
+            )
+            container.log_entries.create(
+                text=f"Action failed: {job.action} ({e})",
+                process=PROCESS_TASK,
+                user=user,
+                level=LOG_LEVEL_ERROR,
+            )
+
+        except Exception as e:
             # Catch all exceptions that are not coming from Docker
             job.add_log_entry(
                 f"Action failed: {job.action}", level=LOG_LEVEL_ERROR
             )
             container.log_entries.create(
-                text=f"Action failed: {job.action}",
+                text=f"Action failed: {job.action} ({e})",
                 process=PROCESS_TASK,
                 user=user,
                 level=LOG_LEVEL_ERROR,

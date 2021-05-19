@@ -53,6 +53,22 @@ rules.add_perm(
     | pr_rules.is_project_contributor,
 )
 
+# Allow pausing containers
+rules.add_perm(
+    "containers.pause_container",
+    pr_rules.is_project_owner
+    | pr_rules.is_project_delegate
+    | pr_rules.is_project_contributor,
+)
+
+# Allow unpausing containers
+rules.add_perm(
+    "containers.unpause_container",
+    pr_rules.is_project_owner
+    | pr_rules.is_project_delegate
+    | pr_rules.is_project_contributor,
+)
+
 # Allow using the proxy
 rules.add_perm(
     "containers.proxy",

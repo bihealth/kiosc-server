@@ -63,7 +63,7 @@
           <dd class="col-sm-9">
             {{ object.state }}
             {% if object.state == "running" or object.state == "pulling" %}
-              {% if action != "start" %}
+              {% if action != "start" and action != "unpause" and action != "restart" %}
                 <i class="iconify" data-icon="mdi:bell" data-toggle="tooltip" title="Should be running or pulling"></i>
               {% endif %}
             {% elif object.state == "exited" %}

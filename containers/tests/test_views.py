@@ -12,6 +12,9 @@ from containers.models import (
     ContainerBackgroundJob,
     ACTION_START,
     ACTION_STOP,
+    ACTION_RESTART,
+    ACTION_PAUSE,
+    ACTION_UNPAUSE,
 )
 from containers.tests.helpers import TestBase
 
@@ -436,6 +439,141 @@ class TestContainerStopView(TestBase):
             response = self.client.get(
                 reverse(
                     "containers:container-stop",
+                    kwargs={"container": self.fake_uuid},
+                )
+            )
+
+            self.assertEqual(response.status_code, 404)
+
+
+class TestContainerRestartView(TestBase):
+    """Tests for ``ContainerRestartView``."""
+
+    def setUp(self):
+        super().setUp()
+        self.create_one_container()
+        self.create_fake_uuid()
+
+    @patch("containers.tasks.container_task.delay")
+    def test_get_success(self, mock):
+        with self.login(self.superuser):
+            response = self.client.get(
+                reverse(
+                    "containers:container-restart",
+                    kwargs={"container": self.container1.sodar_uuid},
+                )
+            )
+
+            self.assertEqual(ContainerBackgroundJob.objects.count(), 1)
+
+            job = ContainerBackgroundJob.objects.first()
+
+            self.assertRedirects(
+                response,
+                reverse(
+                    "containers:container-detail",
+                    kwargs={"container": self.container1.sodar_uuid},
+                ),
+            )
+            self.assertEqual(job.action, ACTION_RESTART)
+            self.assertEqual(job.container, self.container1)
+            mock.assert_called_with(job_id=job.pk)
+
+    def test_get_non_existent(self):
+        with self.login(self.superuser):
+            response = self.client.get(
+                reverse(
+                    "containers:container-restart",
+                    kwargs={"container": self.fake_uuid},
+                )
+            )
+
+            self.assertEqual(response.status_code, 404)
+
+
+class TestContainerPauseView(TestBase):
+    """Tests for ``ContainerPauseView``."""
+
+    def setUp(self):
+        super().setUp()
+        self.create_one_container()
+        self.create_fake_uuid()
+
+    @patch("containers.tasks.container_task.delay")
+    def test_get_success(self, mock):
+        with self.login(self.superuser):
+            response = self.client.get(
+                reverse(
+                    "containers:container-pause",
+                    kwargs={"container": self.container1.sodar_uuid},
+                )
+            )
+
+            self.assertEqual(ContainerBackgroundJob.objects.count(), 1)
+
+            job = ContainerBackgroundJob.objects.first()
+
+            self.assertRedirects(
+                response,
+                reverse(
+                    "containers:container-detail",
+                    kwargs={"container": self.container1.sodar_uuid},
+                ),
+            )
+            self.assertEqual(job.action, ACTION_PAUSE)
+            self.assertEqual(job.container, self.container1)
+            mock.assert_called_with(job_id=job.pk)
+
+    def test_get_non_existent(self):
+        with self.login(self.superuser):
+            response = self.client.get(
+                reverse(
+                    "containers:container-pause",
+                    kwargs={"container": self.fake_uuid},
+                )
+            )
+
+            self.assertEqual(response.status_code, 404)
+
+
+class TestContainerUnpauseView(TestBase):
+    """Tests for ``ContainerUnpauseView``."""
+
+    def setUp(self):
+        super().setUp()
+        self.create_one_container()
+        self.create_fake_uuid()
+
+    @patch("containers.tasks.container_task.delay")
+    def test_get_success(self, mock):
+        with self.login(self.superuser):
+            response = self.client.get(
+                reverse(
+                    "containers:container-unpause",
+                    kwargs={"container": self.container1.sodar_uuid},
+                )
+            )
+
+            self.assertEqual(ContainerBackgroundJob.objects.count(), 1)
+
+            job = ContainerBackgroundJob.objects.first()
+
+            self.assertRedirects(
+                response,
+                reverse(
+                    "containers:container-detail",
+                    kwargs={"container": self.container1.sodar_uuid},
+                ),
+            )
+            self.assertEqual(job.action, ACTION_UNPAUSE)
+            self.assertEqual(job.container, self.container1)
+            mock.assert_called_with(job_id=job.pk)
+
+    def test_get_non_existent(self):
+        with self.login(self.superuser):
+            response = self.client.get(
+                reverse(
+                    "containers:container-unpause",
                     kwargs={"container": self.fake_uuid},
                 )
             )

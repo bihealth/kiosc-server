@@ -150,6 +150,81 @@ class TestContainerPermissions(TestProjectPermissionBase):
         )
         self.assert_response(url, bad_users, 302)
 
+    @patch("containers.tasks.container_task.delay")
+    def test_container_restart(self, mock):
+        """Test permissions for the ``container-restart`` view."""
+        url = reverse(
+            "containers:container-restart",
+            kwargs={"container": self.container.sodar_uuid},
+        )
+        good_users = [
+            self.superuser,
+            self.owner_as.user,
+            self.delegate_as.user,
+            self.contributor_as.user,
+        ]
+        bad_users = [self.guest_as.user, self.user_no_roles, self.anonymous]
+        self.assert_response(
+            url,
+            good_users,
+            302,
+            redirect_user=reverse(
+                "containers:container-detail",
+                kwargs={"container": self.container.sodar_uuid},
+            ),
+        )
+        self.assert_response(url, bad_users, 302)
+
+    @patch("containers.tasks.container_task.delay")
+    def test_container_pause(self, mock):
+        """Test permissions for the ``container-pause`` view."""
+        url = reverse(
+            "containers:container-pause",
+            kwargs={"container": self.container.sodar_uuid},
+        )
+        good_users = [
+            self.superuser,
+            self.owner_as.user,
+            self.delegate_as.user,
+            self.contributor_as.user,
+        ]
+        bad_users = [self.guest_as.user, self.user_no_roles, self.anonymous]
+        self.assert_response(
+            url,
+            good_users,
+            302,
+            redirect_user=reverse(
+                "containers:container-detail",
+                kwargs={"container": self.container.sodar_uuid},
+            ),
+        )
+        self.assert_response(url, bad_users, 302)
+
+    @patch("containers.tasks.container_task.delay")
+    def test_container_unpause(self, mock):
+        """Test permissions for the ``container-unpause`` view."""
+        url = reverse(
+            "containers:container-unpause",
+            kwargs={"container": self.container.sodar_uuid},
+        )
+        good_users = [
+            self.superuser,
+            self.owner_as.user,
+            self.delegate_as.user,
+            self.contributor_as.user,
+        ]
+        bad_users = [self.guest_as.user, self.user_no_roles, self.anonymous]
+        self.assert_response(
+            url,
+            good_users,
+            302,
+            redirect_user=reverse(
+                "containers:container-detail",
+                kwargs={"container": self.container.sodar_uuid},
+            ),
+        )
+        self.assert_response(url, bad_users, 302)
+
     @responses.activate
     def test_proxy(self):
         """Test permissions for the ``proxy`` view."""

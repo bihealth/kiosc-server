@@ -72,11 +72,19 @@ ACTION_RESTART = "restart"
 #: Background job action for stopping a container.
 ACTION_STOP = "stop"
 
+#: Background job action for pausing a container.
+ACTION_PAUSE = "pause"
+
+#: Background job action for unpausing a container.
+ACTION_UNPAUSE = "unpause"
+
 #: Background job action choices.
 ACTION_CHOICES = [
     (ACTION_START, ACTION_START),
     (ACTION_RESTART, ACTION_RESTART),
     (ACTION_STOP, ACTION_STOP),
+    (ACTION_PAUSE, ACTION_PAUSE),
+    (ACTION_UNPAUSE, ACTION_UNPAUSE),
 ]
 
 #: Log level info.

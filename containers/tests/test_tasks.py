@@ -1,4 +1,5 @@
 """Test container tasks."""
+import time
 from unittest.mock import patch
 
 import docker.errors
@@ -12,6 +13,10 @@ from containers.models import (
     ContainerLogEntry,
     STATE_INITIAL,
     PROCESS_DOCKER,
+    ACTION_RESTART,
+    ACTION_PAUSE,
+    STATE_PAUSED,
+    ACTION_UNPAUSE,
 )
 from containers.tasks import (
     container_task,
@@ -50,6 +55,8 @@ class TestContainerTask(TestBase):
                     self.cli.stop(container=container.container_id)
                 except docker.errors.NotFound:
                     pass
+
+        time.sleep(1)
         self.cli.prune_containers()
         self.cli.prune_images()
 
@@ -68,10 +75,15 @@ class TestContainerTask(TestBase):
         "docker.api.client.APIClient.inspect_container",
         DockerMock.inspect_container_started,
     )
+    @patch("docker.api.client.APIClient.unpause")
+    @patch("docker.api.client.APIClient.pause")
+    @patch("docker.api.client.APIClient.restart")
     @patch("docker.api.client.APIClient.stop")
     @patch("docker.api.client.APIClient.start")
     @patch("docker.api.client.APIClient.pull")
-    def test_start_container_task_mocked(self, pull, start, stop):
+    def test_start_container_task_mocked(
+        self, pull, start, stop, restart, pause, unpause
+    ):
         container_task(job_id=self.bg_job.pk)
         self.container1.refresh_from_db()
         pull.assert_called_once_with(
@@ -82,6 +94,9 @@ class TestContainerTask(TestBase):
         )
         start.assert_called_once_with(container=self.container1.container_id)
         stop.assert_not_called()
+        restart.assert_not_called()
+        pause.assert_not_called()
+        unpause.assert_not_called()
         self.assertEqual(self.container1.state, STATE_RUNNING)
 
     @patch(
@@ -99,10 +114,15 @@ class TestContainerTask(TestBase):
         "docker.api.client.APIClient.inspect_container",
         DockerMock.inspect_container_stopped,
     )
+    @patch("docker.api.client.APIClient.unpause")
+    @patch("docker.api.client.APIClient.pause")
+    @patch("docker.api.client.APIClient.restart")
     @patch("docker.api.client.APIClient.stop")
     @patch("docker.api.client.APIClient.start")
     @patch("docker.api.client.APIClient.pull")
-    def test_stop_container_task_mocked(self, pull, start, stop):
+    def test_stop_container_task_mocked(
+        self, pull, start, stop, restart, pause, unpause
+    ):
         self.bg_job.action = ACTION_STOP
         self.bg_job.save()
         self.container1.image_id = DockerMock.inspect_image(None).get("Id")
@@ -116,7 +136,136 @@ class TestContainerTask(TestBase):
         pull.assert_not_called()
         start.assert_not_called()
         stop.assert_called_once_with(container=self.container1.container_id)
+        restart.assert_not_called()
+        pause.assert_not_called()
+        unpause.assert_not_called()
         self.assertEqual(self.container1.state, STATE_EXITED)
+
+    @patch(
+        "docker.api.client.APIClient.inspect_image", DockerMock.inspect_image
+    )
+    @patch(
+        "docker.api.client.APIClient.create_container",
+        DockerMock.create_container,
+    )
+    @patch(
+        "docker.api.client.APIClient.create_host_config",
+        DockerMock.create_host_config,
+    )
+    @patch(
+        "docker.api.client.APIClient.inspect_container",
+        DockerMock.inspect_container_restarted,
+    )
+    @patch("docker.api.client.APIClient.unpause")
+    @patch("docker.api.client.APIClient.pause")
+    @patch("docker.api.client.APIClient.restart")
+    @patch("docker.api.client.APIClient.stop")
+    @patch("docker.api.client.APIClient.start")
+    @patch("docker.api.client.APIClient.pull")
+    def test_restart_container_task_mocked(
+        self, pull, start, stop, restart, pause, unpause
+    ):
+        self.bg_job.action = ACTION_RESTART
+        self.bg_job.save()
+        self.container1.image_id = DockerMock.inspect_image(None).get("Id")
+        self.container1.container_id = DockerMock.create_container(
+            None, None, None, None, None, None
+        ).get("Id")
+        self.container1.state = STATE_RUNNING
+        self.container1.save()
+        container_task(job_id=self.bg_job.pk)
+        self.container1.refresh_from_db()
+        pull.assert_not_called()
+        start.assert_not_called()
+        stop.assert_not_called()
+        restart.assert_called_once_with(container=self.container1.container_id)
+        pause.assert_not_called()
+        unpause.assert_not_called()
+        self.assertEqual(self.container1.state, STATE_RUNNING)
+
+    @patch(
+        "docker.api.client.APIClient.inspect_image", DockerMock.inspect_image
+    )
+    @patch(
+        "docker.api.client.APIClient.create_container",
+        DockerMock.create_container,
+    )
+    @patch(
+        "docker.api.client.APIClient.create_host_config",
+        DockerMock.create_host_config,
+    )
+    @patch(
+        "docker.api.client.APIClient.inspect_container",
+        DockerMock.inspect_container_paused,
+    )
+    @patch("docker.api.client.APIClient.unpause")
+    @patch("docker.api.client.APIClient.pause")
+    @patch("docker.api.client.APIClient.restart")
+    @patch("docker.api.client.APIClient.stop")
+    @patch("docker.api.client.APIClient.start")
+    @patch("docker.api.client.APIClient.pull")
+    def test_pause_container_task_mocked(
+        self, pull, start, stop, restart, pause, unpause
+    ):
+        self.bg_job.action = ACTION_PAUSE
+        self.bg_job.save()
+        self.container1.image_id = DockerMock.inspect_image(None).get("Id")
+        self.container1.container_id = DockerMock.create_container(
+            None, None, None, None, None, None
+        ).get("Id")
+        self.container1.state = STATE_RUNNING
+        self.container1.save()
+        container_task(job_id=self.bg_job.pk)
+        self.container1.refresh_from_db()
+        pull.assert_not_called()
+        start.assert_not_called()
+        stop.assert_not_called()
+        restart.assert_not_called()
+        pause.assert_called_once_with(container=self.container1.container_id)
+        unpause.assert_not_called()
+        self.assertEqual(self.container1.state, STATE_PAUSED)
+
+    @patch(
+        "docker.api.client.APIClient.inspect_image", DockerMock.inspect_image
+    )
+    @patch(
+        "docker.api.client.APIClient.create_container",
+        DockerMock.create_container,
+    )
+    @patch(
+        "docker.api.client.APIClient.create_host_config",
+        DockerMock.create_host_config,
+    )
+    @patch(
+        "docker.api.client.APIClient.inspect_container",
+        DockerMock.inspect_container_unpaused,
+    )
+    @patch("docker.api.client.APIClient.unpause")
+    @patch("docker.api.client.APIClient.pause")
+    @patch("docker.api.client.APIClient.restart")
+    @patch("docker.api.client.APIClient.stop")
+    @patch("docker.api.client.APIClient.start")
+    @patch("docker.api.client.APIClient.pull")
+    def test_unpause_container_task_mocked(
+        self, pull, start, stop, restart, pause, unpause
+    ):
+        self.bg_job.action = ACTION_UNPAUSE
+        self.bg_job.save()
+        self.container1.image_id = DockerMock.inspect_image(None).get("Id")
+        self.container1.container_id = DockerMock.create_container(
+            None, None, None, None, None, None
+        ).get("Id")
+        self.container1.state = STATE_PAUSED
+        self.container1.save()
+        container_task(job_id=self.bg_job.pk)
+        self.container1.refresh_from_db()
+        pull.assert_not_called()
+        start.assert_not_called()
+        stop.assert_not_called()
+        restart.assert_not_called()
+        pause.assert_not_called()
+        unpause.assert_called_once_with(container=self.container1.container_id)
+        self.assertEqual(self.container1.state, STATE_RUNNING)
 
     @tag("docker-server")
     def test_start_stop_container_task(self):
@@ -124,6 +273,8 @@ class TestContainerTask(TestBase):
         self.container1.tag = "latest"
         self.container1.host_port = "8888"
         self.container1.save()
+
+        # Start
         container_task(job_id=self.bg_job.pk)
         self.container1.refresh_from_db()
         self.assertEqual(
@@ -133,6 +284,8 @@ class TestContainerTask(TestBase):
             STATE_RUNNING,
         )
         self.assertEqual(self.container1.state, STATE_RUNNING)
+
+        # Stop
         self.bg_job.action = ACTION_STOP
         self.bg_job.save()
         container_task(job_id=self.bg_job.pk)
@@ -144,6 +297,81 @@ class TestContainerTask(TestBase):
             STATE_EXITED,
         )
         self.assertEqual(self.container1.state, STATE_EXITED)
+
+    @tag("docker-server")
+    def test_start_pause_unpause_container_task(self):
+        self.container1.repository = "brndnmtthws/nginx-echo-headers"
+        self.container1.tag = "latest"
+        self.container1.host_port = "8888"
+        self.container1.save()
+
+        # Start
+        container_task(job_id=self.bg_job.pk)
+        self.container1.refresh_from_db()
+        self.assertEqual(
+            self.cli.inspect_container(self.container1.container_id)
+            .get("State")
+            .get("Status"),
+            STATE_RUNNING,
+        )
+        self.assertEqual(self.container1.state, STATE_RUNNING)
+
+        # Pause
+        self.bg_job.action = ACTION_PAUSE
+        self.bg_job.save()
+        container_task(job_id=self.bg_job.pk)
+        self.container1.refresh_from_db()
+        self.assertEqual(
+            self.cli.inspect_container(self.container1.container_id)
+            .get("State")
+            .get("Status"),
+            STATE_PAUSED,
+        )
+        self.assertEqual(self.container1.state, STATE_PAUSED)
+
+        # Unpause
+        self.bg_job.action = ACTION_UNPAUSE
+        self.bg_job.save()
+        container_task(job_id=self.bg_job.pk)
+        self.container1.refresh_from_db()
+        self.assertEqual(
+            self.cli.inspect_container(self.container1.container_id)
+            .get("State")
+            .get("Status"),
+            STATE_RUNNING,
+        )
+        self.assertEqual(self.container1.state, STATE_RUNNING)
+
+    @tag("docker-server")
+    def test_start_restart_container_task(self):
+        self.container1.repository = "brndnmtthws/nginx-echo-headers"
+        self.container1.tag = "latest"
+        self.container1.host_port = "8888"
+        self.container1.save()
+
+        # Start
+        container_task(job_id=self.bg_job.pk)
+        self.container1.refresh_from_db()
+        self.assertEqual(
+            self.cli.inspect_container(self.container1.container_id)
+            .get("State")
+            .get("Status"),
+            STATE_RUNNING,
+        )
+        self.assertEqual(self.container1.state, STATE_RUNNING)
+
+        # Restart
+        self.bg_job.action = ACTION_RESTART
+        self.bg_job.save()
+        container_task(job_id=self.bg_job.pk)
+        self.container1.refresh_from_db()
+        self.assertEqual(
+            self.cli.inspect_container(self.container1.container_id)
+            .get("State")
+            .get("Status"),
+            STATE_RUNNING,
+        )
+        self.assertEqual(self.container1.state, STATE_RUNNING)
 
 
 class TestPollDockerStatusAndLogsTask(TestBase):

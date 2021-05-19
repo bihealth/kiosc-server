@@ -44,6 +44,21 @@ urlpatterns = [
         name="container-stop",
     ),
     url(
+        regex=r"^pause/(?P<container>[0-9a-f-]+)$",
+        view=views.ContainerPauseView.as_view(),
+        name="container-pause",
+    ),
+    url(
+        regex=r"^unpause/(?P<container>[0-9a-f-]+)$",
+        view=views.ContainerUnpauseView.as_view(),
+        name="container-unpause",
+    ),
+    url(
+        regex=r"^restart/(?P<container>[0-9a-f-]+)$",
+        view=views.ContainerRestartView.as_view(),
+        name="container-restart",
+    ),
+    url(
         regex=r"^proxy/(?P<container>[0-9a-f-]+)/(?P<path>.*)$",
         view=csrf_exempt(views.ReverseProxyView.as_view()),
         name="proxy",

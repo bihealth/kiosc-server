@@ -79,55 +79,22 @@ def log_entry3():
 class DockerMock:
     """Class to mock calls to Docker API."""
 
-    @classmethod
-    def pull(cls, repository, tag, stream, decode):
-        return [
-            {
-                "progressDetail": {"total": "total", "current": "current"},
-                "status": "status",
-            }
-        ]
-
-    @classmethod
-    def inspect_image(cls, image):
-        return {"Id": "1"}
-
-    @classmethod
-    def inspect_container_started(cls, container):
-        return {"State": {"Status": STATE_RUNNING}}
-
-    @classmethod
-    def inspect_container_restarted(cls, container):
-        return {"State": {"Status": STATE_RUNNING}}
-
-    @classmethod
-    def inspect_container_paused(cls, container):
-        return {"State": {"Status": STATE_PAUSED}}
-
-    @classmethod
-    def inspect_container_unpaused(cls, container):
-        return {"State": {"Status": STATE_RUNNING}}
-
-    @classmethod
-    def inspect_container_stopped(cls, container):
-        return {"State": {"Status": STATE_EXITED}}
-
-    @classmethod
-    def create_container(
-        cls, detach, image, environment, command, ports, host_config
-    ):
-        return {"Id": "9", "State": {"Status": STATE_CREATED}}
-
-    @classmethod
-    def create_host_config(cls, port_bindings, ulimits):
-        return
-
-    @classmethod
-    def logs(cls, container, timestamps):
-        return "\n".join(
-            [log_entry1()[1], log_entry2()[1], log_entry3()[1]]
-        ).encode("utf-8")
-
-    @classmethod
-    def logs_since(cls, container, timestamps, since):
-        return "\n".join([log_entry2()[1], log_entry3()[1]]).encode("utf-8")
+    pull = [
+        {
+            "progressDetail": {"total": "total", "current": "current"},
+            "status": "status",
+        }
+    ]
+    inspect_image = {"Id": "1"}
+    inspect_container_started = {"State": {"Status": STATE_RUNNING}}
+    inspect_container_restarted = {"State": {"Status": STATE_RUNNING}}
+    inspect_container_paused = {"State": {"Status": STATE_PAUSED}}
+    inspect_container_unpaused = {"State": {"Status": STATE_RUNNING}}
+    inspect_container_stopped = {"State": {"Status": STATE_EXITED}}
+    inspect_container_no_info = {}
+    create_container = {"Id": "9", "State": {"Status": STATE_CREATED}}
+    create_host_config = None
+    logs = "\n".join(
+        [log_entry1()[1], log_entry2()[1], log_entry3()[1]]
+    ).encode("utf-8")
+    logs_since = "\n".join([log_entry2()[1], log_entry3()[1]]).encode("utf-8")

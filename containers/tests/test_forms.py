@@ -17,6 +17,7 @@ class TestContainerForm(TestBase):
             "container_port": 80,
             "timeout": 60,
             "project": self.project,
+            "max_retries": 10,
         }
         self.form_data_all = {
             **self.form_data_min,

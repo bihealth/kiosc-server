@@ -165,6 +165,11 @@ class Container(models.Model):
         auto_now=True, help_text="DateTime of last container modification"
     )
 
+    #: DateTime of last status update.
+    date_last_status_update = models.DateTimeField(
+        blank=True, null=True, help_text="DateTime of last status update"
+    )
+
     #: The "repository" of the image.
     repository = models.CharField(
         max_length=512,
@@ -234,18 +239,10 @@ class Container(models.Model):
         unique=True,
     )
 
-    #: The time interval in seconds permitted for a container to remain in start up state.
+    #: The time interval in seconds permitted for any Docker action to be performed.
     timeout = models.IntegerField(
-        help_text="Interval in seconds for a container remain in start up state.",
+        help_text="Interval in seconds for any Docker action to be performed.",
         default=60,
-        blank=False,
-        null=False,
-    )
-
-    #: Flag whether container timed out during last start up.
-    timeout_exceeded = models.BooleanField(
-        default=False,
-        help_text="Whether or not the container has timed out during start up",
         blank=False,
         null=False,
     )
@@ -277,15 +274,23 @@ class Container(models.Model):
         help_text="The command to execute", blank=True, null=True
     )
 
+    #: Max number of retries for an action in case of failure.
+    max_retries = models.IntegerField(
+        help_text="Maximal number of retries for an action in case of failure",
+        blank=False,
+        null=False,
+        default=5,
+    )
+
     def __str__(self):
-        tag = f":{self.tag}" if self.tag else ""
-        return (
-            f"Container: {self.repository}{tag}:{self.host_port} [{self.state}]"
-        )
+        return f"Container: {self.get_repos_full()}:{self.host_port} [{self.state}]"
 
     def __repr__(self):
+        return f"Container({self.get_repos_full()}:{self.host_port})"
+
+    def get_repos_full(self):
         tag = f":{self.tag}" if self.tag else ""
-        return f"Container({self.repository}{tag}:{self.host_port})"
+        return f"{self.repository}{tag}"
 
     def get_absolute_url(self):
         return reverse(
@@ -337,6 +342,12 @@ class ContainerBackgroundJob(JobModelMessageContextManagerMixin, models.Model):
 
     #: The action to perform.
     action = models.CharField(max_length=32, choices=ACTION_CHOICES)
+
+    #: Retry count
+    retries = models.IntegerField(
+        help_text="Number of retries for the action.",
+        default=0,
+    )
 
     #: The background job that is specialized.
     bg_job = models.ForeignKey(

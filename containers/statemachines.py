@@ -31,11 +31,23 @@ from containers.models import (
 
 # Increase the timeout for communication with Docker daemon.
 APP_NAME = "containers"
-DEFAULT_TIMEOUT = 600
+DEFAULT_TIMEOUT_DOCKER_ACTION = 60
 
 
-def connect_docker(base_url="unix:///var/run/docker.sock"):
-    return docker.APIClient(base_url=base_url, timeout=DEFAULT_TIMEOUT)
+ACTION_TO_EXPECTED_STATE = {
+    ACTION_START: STATE_RUNNING,
+    ACTION_RESTART: STATE_RUNNING,
+    ACTION_STOP: STATE_EXITED,
+    ACTION_PAUSE: STATE_PAUSED,
+    ACTION_UNPAUSE: STATE_RUNNING,
+}
+
+
+def connect_docker(
+    base_url="unix:///var/run/docker.sock",
+    timeout=DEFAULT_TIMEOUT_DOCKER_ACTION,
+):
+    return docker.APIClient(base_url=base_url, timeout=timeout)
 
 
 class ActionSwitch:
@@ -100,6 +112,12 @@ class ActionSwitch:
     def _restart(self, state):
         if state == STATE_RUNNING:
             self.cm.restart_stop()
+
+        elif state == STATE_EXITED:
+            self.cm.restart_exited()
+
+        elif state == STATE_PAUSED:
+            self.cm.restart_paused()
 
         else:
             raise RuntimeError(f"Action restart not allowed in state {state}")
@@ -194,6 +212,12 @@ class ContainerMachine(StateMachine):
     #: Transition to running when in restarting state (no action).
     restart_start = restarting.to(running)
 
+    #: Transition when restarting a stopped container (action: restart).
+    restart_exited = exited.to(restarting)
+
+    #: Transition when restarting a paused container (action: restart).
+    restart_paused = paused.to(restarting)
+
     #: Transition when stopping a running container (action: stop).
     stop_running = running.to(exited)
 
@@ -250,7 +274,7 @@ class ContainerMachine(StateMachine):
 
         # Connect to Docker
         self.job.add_log_entry("Connecting to Docker API...")
-        self.cli = connect_docker()
+        self.cli = connect_docker(timeout=self.container.timeout)
 
     def _update_status(self, container_info=None):
         if not container_info:
@@ -266,7 +290,7 @@ class ContainerMachine(StateMachine):
         if not self.container.image_id:
             # Pulling image
             self.job.add_log_entry(
-                f"Pulling image {self.container.repository}:{self.container.tag} ..."
+                f"Pulling image {self.container.get_repos_full()} ..."
             )
             self.container.log_entries.create(
                 text="Pulling image ...",
@@ -298,7 +322,7 @@ class ContainerMachine(StateMachine):
                 self.job.add_log_entry(docker_log_line)
 
             image_details = self.cli.inspect_image(
-                f"{self.container.repository}:{self.container.tag}"
+                self.container.get_repos_full()
             )
             self.container.image_id = image_details.get("Id")
             self.container.save()
@@ -347,7 +371,7 @@ class ContainerMachine(StateMachine):
             text="Starting ...", process=PROCESS_TASK, user=self.user
         )
         self.job.add_log_entry("Starting container")
-        self.cli.start(container=self.container.container_id)
+        self.cli.start(self.container.container_id)
         self._update_status()
         self.job.add_log_entry("Starting container succeeded")
         self.container.log_entries.create(
@@ -367,7 +391,7 @@ class ContainerMachine(StateMachine):
             text="Pausing ...", process=PROCESS_TASK, user=self.user
         )
         self.job.add_log_entry("Pausing container")
-        self.cli.pause(container=self.container.container_id)
+        self.cli.pause(self.container.container_id)
         self._update_status()
         self.job.add_log_entry("Pausing container succeeded")
         self.container.log_entries.create(
@@ -381,7 +405,7 @@ class ContainerMachine(StateMachine):
             text="Unpausing ...", process=PROCESS_TASK, user=self.user
         )
         self.job.add_log_entry("Unpausing container")
-        self.cli.unpause(container=self.container.container_id)
+        self.cli.unpause(self.container.container_id)
         self._update_status()
         self.job.add_log_entry("Unpausing container succeeded")
         self.container.log_entries.create(
@@ -395,7 +419,7 @@ class ContainerMachine(StateMachine):
             text="Restarting ...", process=PROCESS_TASK, user=self.user
         )
         self.job.add_log_entry("Restarting container")
-        self.cli.restart(container=self.container.container_id)
+        self.cli.restart(self.container.container_id)
         self._update_status()
         self.job.add_log_entry("Restarting container succeeded")
         self.container.log_entries.create(
@@ -407,13 +431,16 @@ class ContainerMachine(StateMachine):
     def on_restart_start(self):
         pass
 
+    def on_restart_exited(self):
+        self.on_restart_stop()
+
     def on_stop_running(self):
         # Stopping container
         self.container.log_entries.create(
             text="Stopping ...", process=PROCESS_TASK, user=self.user
         )
         self.job.add_log_entry("Stopping container")
-        self.cli.stop(container=self.container.container_id)
+        self.cli.stop(self.container.container_id)
         self._update_status()
         self.container.log_entries.create(
             text="Stopping succeeded",

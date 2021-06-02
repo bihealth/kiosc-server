@@ -46,45 +46,48 @@ class TestContainerModel(TestBase):
             "heartbeat_url": None,
             "environment_secret_keys": None,
             "image_id": None,
-            "timeout_exceeded": False,
+            "date_last_status_update": None,
             "project": self.project.pk,
             "id": container.id,
             "sodar_uuid": container.sodar_uuid,
+            "max_retries": container.max_retries,
         }
         self.assertEqual(model_to_dict(container), expected)
 
     def test___str__(self):
         self.assertEqual(
             str(self.container1),
-            "Container: {}:{}:{} [{}]".format(
-                self.container1.repository,
-                self.container1.tag,
-                self.container1.host_port,
-                self.container1.state,
-            ),
-        )
-
-    def test___str___no_tag(self):
-        self.container1.tag = ""
-        self.container1.save()
-        self.assertEqual(
-            str(self.container1),
             "Container: {}:{} [{}]".format(
-                self.container1.repository,
+                self.container1.get_repos_full(),
                 self.container1.host_port,
                 self.container1.state,
             ),
         )
 
-    def test___repr___no_tag(self):
-        self.container1.tag = ""
-        self.container1.save()
+    def test___repr__(self):
         self.assertEqual(
             repr(self.container1),
             "Container({}:{})".format(
-                self.container1.repository,
+                self.container1.get_repos_full(),
                 self.container1.host_port,
             ),
+        )
+
+    def test_get_repos_full(self):
+        self.assertEqual(
+            self.container1.get_repos_full(),
+            "{}:{}".format(
+                self.container1.repository,
+                self.container1.tag,
+            ),
+        )
+
+    def test_get_repos_full_no_tag(self):
+        self.container1.tag = ""
+        self.container1.save()
+        self.assertEqual(
+            self.container1.get_repos_full(),
+            self.container1.repository,
         )
 
     def test_get_display_name(self):

@@ -22,10 +22,25 @@ Added
   - python-statemachine v0.8.0 dependency (#27)
   - Statemachine for controlling flow of a container (#27)
   - Switch class for coordinating actions with the statemachine (#27)
+  - ``date_last_status_update`` field to ``Container`` model to store the date of the last status update (#59)
+  - ``max_retries`` field to ``Container`` model to set number of maximum retries to match the expected Docker container state (#59)
+  - ``get_repos_full()`` method to ``Container`` model (#59)
+  - ``retries`` field to ``ContainerBackgroundJob`` model to count retries of matching the expected Docker container state (#59)
+  - ``sync_container_state_with_last_user_action`` task, running periodically (#59)
 
 Changed
+^^^^^^^
+
+- **Container**
+  - Purpose of ``timeout`` field in ``Container`` model (#59)
+  - Output of ``__str__`` and ``__repr`` of ``Container`` model (#59)
+  - Refined mocking of Docker API (#59)
+
+Removed
 -------
 
+- **Container**
+  - ``timeout_exceeded`` field in ``Container`` model (#59)
 
 v0.1.2 (2021-04-27)
 ===================

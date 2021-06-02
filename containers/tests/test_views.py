@@ -98,6 +98,7 @@ class TestContainerCreateView(TestBase):
             "container_port": 80,
             "timeout": 60,
             "project": self.project.pk,
+            "max_retries": 10,
         }
 
         with self.login(self.superuser):
@@ -140,6 +141,7 @@ class TestContainerCreateView(TestBase):
             "heartbeat_url": "https://heartbeat.url",
             "environment_secret_keys": "test",
             "command": "some command",
+            "max_retries": 10,
         }
 
         with self.login(self.superuser):
@@ -273,6 +275,7 @@ class TestContainerUpdateView(TestBase):
             "container_port": self.container1.container_port + 100,
             "timeout": self.container1.timeout + 60,
             "project": self.project.pk,
+            "max_retries": 12,
         }
 
         with self.login(self.superuser):
@@ -310,6 +313,7 @@ class TestContainerUpdateView(TestBase):
             "container_port": 443,
             "timeout": 99,
             "project": self.project.pk,
+            "max_retries": 10,
         }
 
         with self.login(self.superuser):

@@ -44,7 +44,6 @@ class ContainerFactory(factory.django.DjangoModelFactory):
     heartbeat_url = ""
     host_port = factory.Sequence(lambda n: 8000 + n)
     timeout = 60
-    timeout_exceeded = True
     state = STATE_INITIAL
     environment = "{}"
     environment_secret_keys = ""

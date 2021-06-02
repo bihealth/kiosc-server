@@ -1,3 +1,5 @@
+from datetime import timedelta
+
 import docker
 import docker.errors
 import dateutil.parser
@@ -25,6 +27,7 @@ from containers.statemachines import (
     ContainerMachine,
     connect_docker,
     ActionSwitch,
+    ACTION_TO_EXPECTED_STATE,
 )
 
 User = auth.get_user_model()
@@ -32,7 +35,7 @@ app_settings = AppSettingAPI()
 
 # Increase the timeout for communication with Docker daemon.
 APP_NAME = "containers"
-DEFAULT_TIMEOUT = 600
+DEFAULT_GRACE_PERIOD_CONTAINER_STATUS = 180
 
 
 class State:
@@ -193,7 +196,8 @@ def poll_docker_status_and_logs(_self):
                 # Log somewhere?
                 raise e
 
-            if state:
+            if state and not container.state == state:
+                container.date_last_status_update = timezone.now()
                 container.state = state
                 container.save()
 
@@ -211,7 +215,58 @@ def poll_docker_status_and_logs(_self):
                 )
 
 
+@app.task(bind=True)
+def sync_container_state_with_last_user_action(_self):
+    cli = connect_docker()
+
+    for container in Container.objects.all():
+        if not container.container_id:
+            continue
+
+        try:
+            data = cli.inspect_container(container.container_id)
+
+        except docker.errors.NotFound:
+            continue
+
+        else:
+            state = data.get("State", {}).get("Status")
+            job = container.containerbackgroundjob.last()
+
+            if not (state and job and container.date_last_status_update):
+                continue
+
+            # Do nothing, Docker state needs to be synced first
+            if not container.state == state:
+                continue
+
+            # Reset counter when action and state are in harmony
+            if ACTION_TO_EXPECTED_STATE[job.action] == state:
+                job.retries = 0
+                job.save()
+                continue
+
+            if (
+                container.date_last_status_update
+                <= timezone.now()
+                - timedelta(seconds=DEFAULT_GRACE_PERIOD_CONTAINER_STATUS)
+                and job.retries < container.max_retries
+            ):
+                container.log_entries.create(
+                    text=f"Syncing last registered container state ({container.state}) with current Docker state ({state})",
+                    process=PROCESS_TASK,
+                )
+
+                # No async task
+                container_task(job.id)
+                job.retries += 1
+                job.save()
+
+
 @app.on_after_finalize.connect
 def setup_periodic_tasks(sender, **_kwargs):
     """Register periodic tasks"""
     sender.add_periodic_task(60, sig=poll_docker_status_and_logs.s())
+    sender.add_periodic_task(
+        300, sig=sync_container_state_with_last_user_action.s()
+    )

@@ -20,6 +20,7 @@ class ContainerForm(forms.ModelForm):
             "project",
             "repository",
             "tag",
+            "max_retries",
         ]
 
     def __init__(self, *args, **kwargs):

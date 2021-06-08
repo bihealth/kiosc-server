@@ -27,20 +27,26 @@ Added
   - ``get_repos_full()`` method to ``Container`` model (#59)
   - ``retries`` field to ``ContainerBackgroundJob`` model to count retries of matching the expected Docker container state (#59)
   - ``sync_container_state_with_last_user_action`` task, running periodically (#59)
+  - ``is_project_guest`` permission to proxy rule (#28)
+  - ``ContainerProxyLobbyView`` called when viewing a container not in state ``running`` (#28)
 
 Changed
 ^^^^^^^
 
+- **General**
+  - Bumped github workflow Ubuntu version to 20.04 (#28)
 - **Container**
   - Purpose of ``timeout`` field in ``Container`` model (#59)
   - Output of ``__str__`` and ``__repr`` of ``Container`` model (#59)
   - Refined mocking of Docker API (#59)
+  - Updating a container triggers a restart if in state ``running`` or ``paused`` (#28)
 
 Removed
 -------
 
 - **Container**
   - ``timeout_exceeded`` field in ``Container`` model (#59)
+
 
 v0.1.2 (2021-04-27)
 ===================

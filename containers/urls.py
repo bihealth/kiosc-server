@@ -63,4 +63,9 @@ urlpatterns = [
         view=csrf_exempt(views.ReverseProxyView.as_view()),
         name="proxy",
     ),
+    url(
+        regex=r"^proxy/lobby/(?P<container>[0-9a-f-]+)/(?P<path>.*)$",
+        view=views.ContainerProxyLobbyView.as_view(),
+        name="proxy-lobby",
+    ),
 ]

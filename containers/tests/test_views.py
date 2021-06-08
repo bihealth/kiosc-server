@@ -15,6 +15,9 @@ from containers.models import (
     ACTION_RESTART,
     ACTION_PAUSE,
     ACTION_UNPAUSE,
+    STATE_RUNNING,
+    STATE_PAUSED,
+    STATE_EXITED,
 )
 from containers.tests.helpers import TestBase
 
@@ -266,7 +269,7 @@ class TestContainerUpdateView(TestBase):
 
             self.assertEqual(response.status_code, 404)
 
-    def test_post_success_updated(self):
+    def test_post_success_updated_initial(self):
         post_data = {
             "host_port": self.container1.host_port + 1000,
             "environment": '{"updated": 1234}',
@@ -303,6 +306,110 @@ class TestContainerUpdateView(TestBase):
 
             # Assert updated properties
             self.assertDictEqual(result, post_data)
+
+    @patch("containers.tasks.container_task.delay")
+    def test_post_success_updated_running(self, mock):
+        self.container1.state = STATE_RUNNING
+        self.container1.save()
+
+        post_data = {
+            "host_port": self.container1.host_port + 1000,
+            "environment": '{"updated": 1234}',
+            "repository": "another_repository",
+            "tag": "another_tag",
+            "container_port": self.container1.container_port + 100,
+            "timeout": self.container1.timeout + 60,
+            "project": self.project.pk,
+            "max_retries": 12,
+        }
+
+        with self.login(self.superuser):
+            response = self.client.post(
+                reverse(
+                    "containers:container-update",
+                    kwargs={"container": self.container1.sodar_uuid},
+                ),
+                post_data,
+            )
+
+            # Get updated object
+            self.container1.refresh_from_db()
+
+            self.assertRedirects(
+                response,
+                reverse(
+                    "containers:container-restart",
+                    kwargs={"container": self.container1.sodar_uuid},
+                ),
+                status_code=302,
+                target_status_code=302,
+            )
+
+            post_data["environment"] = json.loads(post_data["environment"])
+            result = model_to_dict(self.container1, fields=post_data.keys())
+
+            # Assert updated properties
+            self.assertDictEqual(result, post_data)
+
+            # Assert job call
+            mock.assert_called()
+
+            # Assert background job
+            self.assertEqual(ContainerBackgroundJob.objects.count(), 1)
+            bg_job = ContainerBackgroundJob.objects.first()
+            self.assertEqual(bg_job.action, ACTION_RESTART)
+
+    @patch("containers.tasks.container_task.delay")
+    def test_post_success_updated_paused(self, mock):
+        self.container1.state = STATE_PAUSED
+        self.container1.save()
+
+        post_data = {
+            "host_port": self.container1.host_port + 1000,
+            "environment": '{"updated": 1234}',
+            "repository": "another_repository",
+            "tag": "another_tag",
+            "container_port": self.container1.container_port + 100,
+            "timeout": self.container1.timeout + 60,
+            "project": self.project.pk,
+            "max_retries": 12,
+        }
+
+        with self.login(self.superuser):
+            response = self.client.post(
+                reverse(
+                    "containers:container-update",
+                    kwargs={"container": self.container1.sodar_uuid},
+                ),
+                post_data,
+            )
+
+            # Get updated object
+            self.container1.refresh_from_db()
+
+            self.assertRedirects(
+                response,
+                reverse(
+                    "containers:container-restart",
+                    kwargs={"container": self.container1.sodar_uuid},
+                ),
+                status_code=302,
+                target_status_code=302,
+            )
+
+            post_data["environment"] = json.loads(post_data["environment"])
+            result = model_to_dict(self.container1, fields=post_data.keys())
+
+            # Assert updated properties
+            self.assertDictEqual(result, post_data)
+
+            # Assert job call
+            mock.assert_called()
+
+            # Assert background job
+            self.assertEqual(ContainerBackgroundJob.objects.count(), 1)
+            bg_job = ContainerBackgroundJob.objects.first()
+            self.assertEqual(bg_job.action, ACTION_RESTART)
 
     def test_post_non_existent(self):
         post_data = {
@@ -658,6 +765,191 @@ class TestReverseProxyView(TestBase):
             response = self.client.get(
                 reverse(
                     "containers:proxy",
+                    kwargs={
+                        "container": self.fake_uuid,
+                        "path": "",
+                    },
+                )
+            )
+
+            self.assertEqual(response.status_code, 404)
+
+
+class TestContainerProxyLobbyView(TestBase):
+    """Tests for ``ContainerProxyLobbyView``."""
+
+    def setUp(self):
+        super().setUp()
+        self.create_one_container()
+        self.create_fake_uuid()
+
+    @responses.activate
+    def test_get_success_running(self):
+        self.container1.state = STATE_RUNNING
+        self.container1.save()
+
+        with self.login(self.superuser):
+            response = self.client.get(
+                reverse(
+                    "containers:proxy-lobby",
+                    kwargs={
+                        "container": self.container1.sodar_uuid,
+                        "path": self.container1.container_path,
+                    },
+                ),
+            )
+
+            def request_callback(request):
+                return 200, {}, "abc".encode("utf-8")
+
+            container_url = f"/{self.container1.container_path}"
+            responses.add_callback(
+                "GET", container_url, callback=request_callback
+            )
+
+            self.assertRedirects(
+                response,
+                reverse(
+                    "containers:proxy",
+                    kwargs={
+                        "container": self.container1.sodar_uuid,
+                        "path": self.container1.container_path,
+                    },
+                ),
+                status_code=302,
+                target_status_code=200,
+            )
+
+    #    @patch("containers.tasks.container_task.delay")
+    @responses.activate
+    def test_get_success_running_with_path(self):
+        with self.login(self.superuser):
+            self.container1.state = STATE_RUNNING
+            self.container1.container_path = "this/is/some/path"
+            self.container1.save()
+
+            def request_callback(request):
+                return 200, {}, "abc".encode("utf-8")
+
+            container_url = f"/{self.container1.container_path}"
+            responses.add_callback(
+                "GET", container_url, callback=request_callback
+            )
+
+            response = self.client.get(
+                reverse(
+                    "containers:proxy-lobby",
+                    kwargs={
+                        "container": self.container1.sodar_uuid,
+                        "path": self.container1.container_path,
+                    },
+                )
+            )
+
+            self.assertRedirects(
+                response,
+                reverse(
+                    "containers:proxy",
+                    kwargs={
+                        "container": self.container1.sodar_uuid,
+                        "path": self.container1.container_path,
+                    },
+                ),
+                status_code=302,
+                target_status_code=200,
+            )
+
+    @patch("containers.tasks.container_task.delay")
+    @responses.activate
+    def test_get_success_paused_with_path(self, mock):
+        with self.login(self.superuser):
+            self.container1.state = STATE_PAUSED
+            self.container1.save()
+
+            def request_callback(request):
+                return 200, {}, "abc".encode("utf-8")
+
+            container_url = f"/{self.container1.container_path}"
+            responses.add_callback(
+                "GET", container_url, callback=request_callback
+            )
+
+            response = self.client.get(
+                reverse(
+                    "containers:proxy-lobby",
+                    kwargs={
+                        "container": self.container1.sodar_uuid,
+                        "path": self.container1.container_path,
+                    },
+                )
+            )
+
+            self.assertRedirects(
+                response,
+                reverse(
+                    "containers:proxy",
+                    kwargs={
+                        "container": self.container1.sodar_uuid,
+                        "path": self.container1.container_path,
+                    },
+                ),
+                status_code=302,
+                target_status_code=200,
+            )
+
+            self.assertEqual(ContainerBackgroundJob.objects.count(), 1)
+            bg_job = ContainerBackgroundJob.objects.first()
+            self.assertEqual(bg_job.action, ACTION_UNPAUSE)
+            mock.assert_called_once_with(job_id=bg_job.id)
+
+    @patch("containers.tasks.container_task.delay")
+    @responses.activate
+    def test_get_success_stopped_with_path(self, mock):
+        with self.login(self.superuser):
+            self.container1.state = STATE_EXITED
+            self.container1.save()
+
+            def request_callback(request):
+                return 200, {}, "abc".encode("utf-8")
+
+            container_url = f"/{self.container1.container_path}"
+            responses.add_callback(
+                "GET", container_url, callback=request_callback
+            )
+
+            response = self.client.get(
+                reverse(
+                    "containers:proxy-lobby",
+                    kwargs={
+                        "container": self.container1.sodar_uuid,
+                        "path": self.container1.container_path,
+                    },
+                )
+            )
+
+            self.assertRedirects(
+                response,
+                reverse(
+                    "containers:proxy",
+                    kwargs={
+                        "container": self.container1.sodar_uuid,
+                        "path": self.container1.container_path,
+                    },
+                ),
+                status_code=302,
+                target_status_code=200,
+            )
+
+            self.assertEqual(ContainerBackgroundJob.objects.count(), 1)
+            bg_job = ContainerBackgroundJob.objects.first()
+            self.assertEqual(bg_job.action, ACTION_START)
+            mock.assert_called_once_with(job_id=bg_job.id)
+
+    def test_get_non_existent(self):
+        with self.login(self.superuser):
+            response = self.client.get(
+                reverse(
+                    "containers:proxy-lobby",
                     kwargs={
                         "container": self.fake_uuid,
                         "path": "",

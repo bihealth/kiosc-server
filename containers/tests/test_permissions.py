@@ -249,7 +249,49 @@ class TestContainerPermissions(TestProjectPermissionBase):
             self.owner_as.user,
             self.delegate_as.user,
             self.contributor_as.user,
+            self.guest_as.user,
         ]
-        bad_users = [self.guest_as.user, self.user_no_roles, self.anonymous]
+        bad_users = [self.user_no_roles, self.anonymous]
         self.assert_response(url, good_users, 200)
+        self.assert_response(url, bad_users, 302)
+
+    @patch("containers.tasks.container_task.delay")
+    def test_proxy_lobby(self, mock):
+        """Test permissions for the ``proxy-lobby`` view."""
+
+        def request_callback(request):
+            return 200, {}, "abc".encode("utf-8")
+
+        responses.add_callback(
+            "GET",
+            f"/{self.container.container_path}",
+            callback=request_callback,
+        )
+        url = reverse(
+            "containers:proxy-lobby",
+            kwargs={
+                "container": self.container.sodar_uuid,
+                "path": self.container.container_path,
+            },
+        )
+        good_users = [
+            self.superuser,
+            self.owner_as.user,
+            self.delegate_as.user,
+            self.contributor_as.user,
+            self.guest_as.user,
+        ]
+        bad_users = [self.user_no_roles, self.anonymous]
+        self.assert_response(
+            url,
+            good_users,
+            302,
+            redirect_user=reverse(
+                "containers:proxy",
+                kwargs={
+                    "container": self.container.sodar_uuid,
+                    "path": self.container.container_path,
+                },
+            ),
+        )
         self.assert_response(url, bad_users, 302)

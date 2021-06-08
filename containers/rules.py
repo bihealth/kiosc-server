@@ -74,7 +74,8 @@ rules.add_perm(
     "containers.proxy",
     pr_rules.is_project_owner
     | pr_rules.is_project_delegate
-    | pr_rules.is_project_contributor,
+    | pr_rules.is_project_contributor
+    | pr_rules.is_project_guest,
 )
 
 # Allow viewing container logs

@@ -33,6 +33,8 @@ from containers.models import (
     ACTION_PAUSE,
     ACTION_UNPAUSE,
     ACTION_RESTART,
+    STATE_PAUSED,
+    STATE_RUNNING,
 )
 from containers.tasks import container_task
 
@@ -148,6 +150,21 @@ class ContainerUpdateView(
     model = Container
     slug_url_kwarg = "container"
     slug_field = "sodar_uuid"
+
+    def get_success_url(self):
+        if self.object.state not in (STATE_RUNNING, STATE_PAUSED):
+            return super().get_success_url()
+
+        messages.success(
+            self.request,
+            "Container updated and restarted.",
+        )
+        return reverse(
+            "containers:container-restart",
+            kwargs={
+                "container": self.object.sodar_uuid,
+            },
+        )
 
     def form_valid(self, form):
         response = super().form_valid(form)
@@ -468,6 +485,74 @@ class ContainerRestartView(
                 kwargs={"container": kwargs.get("container")},
             )
         )
+
+
+class ContainerProxyLobbyView(
+    LoginRequiredMixin,
+    LoggedInPermissionMixin,
+    ProjectPermissionMixin,
+    ProjectContextMixin,
+    View,
+):
+    """View for proxy lobby."""
+
+    permission_required = "containers.proxy"
+    model = Container
+    slug_url_kwarg = "container"
+    slug_field = "sodar_uuid"
+
+    def get(self, request, *args, **kwargs):
+        _redirect = redirect(
+            reverse(
+                "containers:proxy",
+                kwargs={
+                    "container": kwargs.get("container"),
+                    "path": kwargs.get("path"),
+                },
+            )
+        )
+
+        with transaction.atomic():
+            project = self.get_project()
+            user = request.user
+            container = get_object_or_404(
+                Container, sodar_uuid=kwargs.get("container")
+            )
+
+            if container.state == STATE_RUNNING:
+                return _redirect
+
+            elif container.state == STATE_PAUSED:
+                action = ACTION_UNPAUSE
+
+            else:
+                action = ACTION_START
+
+            bg_job = BackgroundJob.objects.create(
+                name="Proxy lobby",
+                project=project,
+                job_type=ContainerBackgroundJob.spec_name,
+                user=user,
+            )
+
+            job = ContainerBackgroundJob.objects.create(
+                action=action,
+                project=project,
+                container=container,
+                bg_job=bg_job,
+            )
+
+            # Add container log entry
+            container.log_entries.create(
+                text="Proxy lobby",
+                process=PROCESS_ACTION,
+                user=self.request.user,
+            )
+
+            # Schedule task
+            container_task.delay(job_id=job.id)
+
+        return _redirect
 
 
 class KioscProxyView(ProxyView):

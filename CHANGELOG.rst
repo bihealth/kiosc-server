@@ -5,8 +5,8 @@ Changelog for the **Kiosc** Django app package.
 Loosely follows the `Keep a Changelog <http://keepachangelog.com/en/1.0.0/>`_ guidelines.
 
 
-HEAD (unreleased)
-=================
+v0.1.3 (2021-06-09)
+===================
 
 Added
 -----

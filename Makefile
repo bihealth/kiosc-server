@@ -78,11 +78,6 @@ else
 endif
 
 
-.PHONY: sync_taskflow
-sync_taskflow:
-	$(MANAGE) synctaskflow --settings=config.settings.local_taskflow
-
-
 .PHONY: celery
 celery:
 	celery -A config.celery_app worker -l info --concurrency=4 --beat

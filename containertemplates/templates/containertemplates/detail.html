@@ -1,0 +1,53 @@
+{# Projectroles dependency #}
+{% extends 'projectroles/project_base.html' %}
+{% load rules %}
+{% load projectroles_common_tags %}
+{% load crispy_forms_filters %}
+
+{% block title %}
+  Container Template {{ object.sodar_uuid }}
+{% endblock title %}
+
+{% block projectroles_extend %}
+
+<div class="row sodar-subtitle-container">
+  <h3>Container <small class="text-muted">{{ object.sodar_uuid }}</small></h3>
+  <div class="ml-auto">
+    <a role="button" class="btn btn-secondary"
+      href="{% url "containertemplates:list" project=object.project.sodar_uuid %}">
+      <i class="iconify" data-icon="mdi:arrow-left-circle"></i> Container Template List
+    </a>
+  </div>
+</div>
+
+<div class="container-fluid sodar-page-container">
+  <div class="card">
+    <div class="card-header"><h4>Details</h4></div>
+    <div class="card-body">
+      <p class="card-text">
+        <dl class="row">
+          <dt class="col-sm-3">Date Created</dt>
+          <dd class="col-sm-9">{{ object.get_date_created }}</dd>
+        </dl>
+        <dl class="row">
+          <dt class="col-sm-3">Date Modified</dt>
+          <dd class="col-sm-9">{{ object.get_date_modified }}</dd>
+        </dl>
+        <dl class="row">
+          <dt class="col-sm-3">Repository</dt>
+          <dd class="col-sm-9">{{ object.repository }}</dd>
+        </dl>
+        <dl class="row">
+          <dt class="col-sm-3">Container Port</dt>
+          <dd class="col-sm-9">{{ object.container_port }}</dd>
+        </dl>
+        <dl class="row">
+          <dt class="col-sm-3">Container Path</dt>
+          <dd class="col-sm-9">{{ object.container_path }}</dd>
+        </dl>
+      </p>
+    </div>
+  </div>
+</div>
+
+{% endblock projectroles_extend %}

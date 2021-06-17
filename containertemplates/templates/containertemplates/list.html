@@ -1,0 +1,92 @@
+{# Projectroles dependency #}
+{% extends 'projectroles/project_base.html' %}
+{% load projectroles_common_tags %}
+{% load static %}
+{% load rules %}
+
+{% block title %}
+  Container Templates for {{ project.title }}
+{% endblock title %}
+
+{% block projectroles_extend %}
+
+{% has_perm "containertemplates.create" request.user project as can_create_containertemplate %}
+{% has_perm "containertemplates.edit" request.user project as can_edit_containertemplate %}
+{% has_perm "containertemplates.delete" request.user project as can_delete_containertemplate %}
+
+<div class="row sodar-subtitle-container">
+  <h3>Container Templates</h3>
+    <div class="ml-auto">
+      {% if can_create_containertemplate %}
+      <a href="{% url 'containertemplates:create' project=project.sodar_uuid %}"
+         class="btn btn-primary" role="button">
+        <i class="iconify" data-icon="mdi:plus-circle"></i>
+        Create Container Template
+      </a>
+      {% endif %}
+    </div>
+</div>
+
+<div class="container-fluid sodar-page-container">
+
+{% if object_list.count > 0 %}
+  <div class="card" id="kiosc-containertemplate-list">
+    <div class="card-body p-0">
+      <table class="table table-striped sodar-card-table"
+             id="kiosc-containertemplate-table">
+        <thead>
+          <tr>
+            <th>Name</th>
+            <th>Repository</th>
+            <th>Date Created</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for obj in object_list %}
+            <tr>
+              <td><a href="{% url 'containertemplates:detail' containertemplate=obj.sodar_uuid %}">{{ obj.get_display_name }}</a></td>
+              <td>{{ obj.repository }}</td>
+              <td>{{ obj.date_created }}</td>
+              <td class="text-right">
+                <div class="btn-group sodar-list-btn-group pull-right">
+                  {% if can_edit_containertemplate or can_delete_containertemplate %}
+                    <button class="btn btn-secondary dropdown-toggle sodar-list-dropdown"
+                            type="button" data-toggle="dropdown" aria-expanded="false">
+                      <i class="iconify" data-icon="mdi:cog"></i>
+                    </button>
+                    <div class="dropdown-menu dropdown-menu-right">
+                      {% if can_edit_containertemplate %}
+                        <a class="dropdown-item"
+                           href="{% url 'containertemplates:update' containertemplate=obj.sodar_uuid %}">
+                          <i class="iconify" data-icon="mdi:lead-pencil"></i> Update
+                        </a>
+                      {% endif %}
+                      {% if can_delete_containertemplate %}
+                        <a class="dropdown-item text-danger"
+                           href="{% url 'containertemplates:delete' containertemplate=obj.sodar_uuid %}">
+                          <i class="iconify" data-icon="mdi:close-thick"></i> Delete
+                        </a>
+                      {% endif %}
+                    </div>
+                  {% endif %}
+                </div>
+              </td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+  {% if is_paginated %}
+    {% include 'projectroles/_pagination.html' with pg_small=False %}
+  {% endif %}
+{% else %}
+  <div class="alert alert-info" id="kiosc-containertemplate-alert">
+    No container templates yet.
+  </div>
+{% endif %}
+</div>
+
+{% endblock projectroles_extend %}
+\

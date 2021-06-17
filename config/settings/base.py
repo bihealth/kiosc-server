@@ -91,6 +91,7 @@ LOCAL_APPS = [
     # Custom users app
     "kiosc.users.apps.UsersConfig",
     "containers.apps.ContainersConfig",
+    "containertemplates.apps.ContainertemplatesConfig",
 ]
 
 INSTALLED_APPS = DJANGO_APPS + THIRD_PARTY_APPS + LOCAL_APPS

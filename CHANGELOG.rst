@@ -13,6 +13,11 @@ Added
 
 - **General**
   - Docker deployment
+- **ContainerTemplates**
+  - App itself (#29)
+  - ``ContainerTemplates`` model (#29)
+  - Views for creating/updating/deleting and viewing details of ``ContainerTemplates`` (#29)
+  - Permissions for ``ContainerTemplates`` views (#29)
 
 
 v0.1.3 (2021-06-09)
@@ -21,7 +26,7 @@ v0.1.3 (2021-06-09)
 Added
 -----
 
-- **Container**
+- **Containers**
   - ``process`` field to ``ContainerLogEntry`` to reflect which process writes to the logs (#26)
   - ``date_docker_log`` field to ``ContainerLogEntry`` to represent the time of the Docker log entry (#26)
   - ``ContainerLogEntryManager`` to allow ordering by date of log or date of Docker log (#26)
@@ -45,7 +50,7 @@ Changed
 
 - **General**
   - Bumped github workflow Ubuntu version to 20.04 (#28)
-- **Container**
+- **Containers**
   - Purpose of ``timeout`` field in ``Container`` model (#59)
   - Output of ``__str__`` and ``__repr`` of ``Container`` model (#59)
   - Refined mocking of Docker API (#59)
@@ -54,7 +59,7 @@ Changed
 Removed
 -------
 
-- **Container**
+- **Containers**
   - ``timeout_exceeded`` field in ``Container`` model (#59)
 
 
@@ -64,7 +69,7 @@ v0.1.2 (2021-04-27)
 Added
 -----
 
-- **Container**
+- **Containers**
   - Logging with timeline for views and tasks (#24)
   - Container-centric logging (#25)
 
@@ -77,7 +82,7 @@ Added
 
 - **General**
   - urllib3-mock 0.3.3 dependency (#21)
-- **Container**
+- **Containers**
   - Tests for views (#21)
   - Tests for permissions (#21)
   - Tests f0r forms (#21)

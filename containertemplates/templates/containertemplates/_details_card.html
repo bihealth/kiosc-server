@@ -1,0 +1,25 @@
+{% load rules %}
+{% load static %}
+
+{# Projectroles dependency #}
+{% load projectroles_common_tags %}
+
+
+{% has_perm 'containertemplates.view' request.user project as can_view_container %}
+
+<table class="table sodar-card-table" id="kiosc-containertemplates-details-table">
+  <thead>
+    <tr>
+      <th>Container Template</th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for containertemplate in project.containertemplates.all %}
+      <tr>
+        <td class="pl-4">
+          <a href="{% url 'containertemplates:detail' containertemplate=containertemplate.sodar_uuid %}">{{ containertemplate.get_display_name }}</a>
+        </td>
+      </tr>
+    {% endfor %}
+  </tbody>
+</table>

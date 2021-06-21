@@ -143,12 +143,6 @@ class JobModelMessageContextManagerMixin(JobModelMessageMixin):
             self.mark_success()
 
 
-class ContainerTemplate(models.Model):
-    """Model for container templates. TBD"""
-
-    pass
-
-
 class Container(models.Model):
     """Model for a Docker container instance."""
 

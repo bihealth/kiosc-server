@@ -66,4 +66,10 @@ class ContainersConfig(AppConfig):
             if not container_id:
                 raise Exception("Container found, but has no ID")
 
-            cli.connect_container_to_network(container_id, network_id)
+            try:
+                cli.connect_container_to_network(container_id, network_id)
+
+            except docker.errors.APIError as e:
+                if e.response.status_code == 403:
+                    # Container is already in network
+                    pass

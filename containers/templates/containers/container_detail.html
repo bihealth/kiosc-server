@@ -11,6 +11,7 @@
 {% block projectroles_extend %}
 
 {% has_perm "containers.view_logs" request.user project as can_view_logs %}
+{% get_django_setting "KIOSC_NETWORK_MODE" as network_mode %}
 
 <div class="row sodar-subtitle-container">
   <h3>Container <small class="text-muted">{{ object.sodar_uuid }}</small></h3>
@@ -54,10 +55,12 @@
           <dt class="col-sm-3">Container Path</dt>
           <dd class="col-sm-9">{{ object.container_path }}</dd>
         </dl>
-        <dl class="row">
-          <dt class="col-sm-3">Host Port</dt>
-          <dd class="col-sm-9">{{ object.host_port }}</dd>
-        </dl>
+        {% if network_mode == "host" %}
+          <dl class="row">
+            <dt class="col-sm-3">Host Port</dt>
+            <dd class="col-sm-9">{{ object.host_port }}</dd>
+          </dl>
+        {% endif %}
         <dl class="row">
           <dt class="col-sm-3">State</dt>
           <dd class="col-sm-9">

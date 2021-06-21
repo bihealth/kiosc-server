@@ -10,7 +10,6 @@ class TestContainerForm(TestBase):
     def setUp(self):
         super().setUp()
         self.form_data_min = {
-            "host_port": 8080,
             "environment": '{"test": 1}',
             "repository": "repository",
             "tag": "tag",
@@ -34,12 +33,6 @@ class TestContainerForm(TestBase):
     def test_all_fields(self):
         form = ContainerForm(self.form_data_all)
         self.assertTrue(form.is_valid())
-
-    def test_missing_field_host_port(self):
-        key = "host_port"
-        self.form_data_min.pop(key)
-        form = ContainerForm(self.form_data_min)
-        self.assertEqual(form.errors[key], ["This field is required."])
 
     def test_missing_field_environment(self):
         key = "environment"

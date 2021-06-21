@@ -38,11 +38,12 @@ class ContainerFactory(factory.django.DjangoModelFactory):
     tag = "latest"
     project = factory.SubFactory(ProjectFactory)
     image_id = ""
-    container_id = ""
+    container_id = "abcdefghijklmnopqrstuvwxyz"
     container_port = 80
     container_path = ""
     heartbeat_url = ""
-    host_port = factory.Sequence(lambda n: 8000 + n)
+    # host_port = factory.Sequence(lambda n: 8000 + n)
+    host_port = None
     timeout = 60
     state = STATE_INITIAL
     environment = "{}"

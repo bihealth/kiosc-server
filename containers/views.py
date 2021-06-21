@@ -1,4 +1,5 @@
 from bgjobs.models import BackgroundJob
+from django.conf import settings
 from django.contrib import messages
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.db import transaction
@@ -582,7 +583,11 @@ class ReverseProxyView(
         container = self.get_object()
         kwargs.pop("container")
 
-        upstream = f"http://localhost:{container.host_port}"
+        if settings.KIOSC_NETWORK_MODE == "host":
+            upstream = f"http://localhost:{container.host_port}"
+
+        else:
+            upstream = f"http://{container.container_id[:12]}:{container.container_port}"
 
         proxy_view = KioscProxyView()
         proxy_view.request = request

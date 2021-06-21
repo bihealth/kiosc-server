@@ -333,6 +333,21 @@ class ContainerMachine(StateMachine):
                 user=self.user,
             )
 
+        options = {}
+        options_host_config = {}
+
+        if settings.KIOSC_NETWORK_MODE == "docker-shared":
+            options["networking_config"] = self.cli.create_networking_config(
+                {
+                    settings.KIOSC_DOCKER_NETWORK: self.cli.create_endpoint_config()
+                }
+            )
+
+        if settings.KIOSC_NETWORK_MODE == "host":
+            options_host_config["port_binding"] = {
+                self.container.container_port: self.container.host_port
+            }
+
         # Create container
         container_info = self.cli.create_container(
             detach=True,
@@ -343,9 +358,6 @@ class ContainerMachine(StateMachine):
             else None,
             ports=[self.container.container_port],
             host_config=self.cli.create_host_config(
-                port_bindings={
-                    self.container.container_port: self.container.host_port
-                },
                 ulimits=[
                     Ulimit(
                         name="nofile",
@@ -353,7 +365,9 @@ class ContainerMachine(StateMachine):
                         hard=settings.KIOSC_DOCKER_MAX_ULIMIT_NOFILE_HARD,
                     )
                 ],
+                **options_host_config,
             ),
+            **options,
         )
         self.container.container_id = container_info.get("Id")
         self.container.save()

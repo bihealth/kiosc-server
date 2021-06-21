@@ -17,6 +17,7 @@
 {% has_perm "containers.stop_container" request.user project as can_stop_container %}
 {% has_perm "containers.pause_container" request.user project as can_pause_container %}
 {% has_perm "containers.unpause_container" request.user project as can_unpause_container %}
+{% get_django_setting "KIOSC_NETWORK_MODE" as network_mode %}
 
 <div class="row sodar-subtitle-container">
   <h3>Containers</h3>
@@ -42,7 +43,7 @@
           <tr>
             <th>Repository</th>
             <th>Date Created</th>
-            <th>Port Mapping</th>
+            <th>Port</th>
             <th>State</th>
             <th></th>
           </tr>
@@ -52,7 +53,9 @@
             <tr>
               <td><a href="{% url 'containers:container-detail' container=container.sodar_uuid %}">{{ container.repository }}</a></td>
               <td>{{ container.date_created }}</td>
-              <td>{{ container.host_port }}:{{ container.container_port }}</td>
+              <td>
+                {{ container.container_port }}{% if network_mode == "host" %}:{{ container.host_port }}{% endif %}
+              </td>
               <td>{{ container.state }}</td>
               <td class="text-right">
                 <div class="btn-group sodar-list-btn-group pull-right">

@@ -234,8 +234,8 @@ class Container(models.Model):
     #: The port on the host (to redirect the requests/web socket to).
     host_port = models.IntegerField(
         help_text="Port of the container on the host",
-        blank=False,
-        null=False,
+        blank=True,
+        null=True,
         unique=True,
     )
 
@@ -283,10 +283,10 @@ class Container(models.Model):
     )
 
     def __str__(self):
-        return f"Container: {self.get_repos_full()}:{self.host_port} [{self.state}]"
+        return f"Container: {self.get_repos_full()} [{self.state}]"
 
     def __repr__(self):
-        return f"Container({self.get_repos_full()}:{self.host_port})"
+        return f"Container({self.get_repos_full()})"
 
     def get_repos_full(self):
         tag = f":{self.tag}" if self.tag else ""
@@ -305,7 +305,7 @@ class Container(models.Model):
 
     def get_display_name(self):
         tag = f":{self.tag}" if self.tag else ""
-        return f"{self.repository}{tag}:{self.host_port}"
+        return f"{self.repository}{tag}"
 
 
 class ContainerBackgroundJob(JobModelMessageContextManagerMixin, models.Model):

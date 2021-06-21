@@ -30,7 +30,6 @@ class TestContainerModel(TestBase):
             "tag": "tag",
             "project": self.project,
             "container_port": 80,
-            "host_port": 8080,
             "timeout": 60,
             "state": STATE_INITIAL,
             "environment": json.loads('{"test": 1}'),
@@ -57,9 +56,8 @@ class TestContainerModel(TestBase):
     def test___str__(self):
         self.assertEqual(
             str(self.container1),
-            "Container: {}:{} [{}]".format(
+            "Container: {} [{}]".format(
                 self.container1.get_repos_full(),
-                self.container1.host_port,
                 self.container1.state,
             ),
         )
@@ -67,9 +65,8 @@ class TestContainerModel(TestBase):
     def test___repr__(self):
         self.assertEqual(
             repr(self.container1),
-            "Container({}:{})".format(
+            "Container({})".format(
                 self.container1.get_repos_full(),
-                self.container1.host_port,
             ),
         )
 
@@ -93,10 +90,9 @@ class TestContainerModel(TestBase):
     def test_get_display_name(self):
         self.assertEqual(
             self.container1.get_display_name(),
-            "{}:{}:{}".format(
+            "{}:{}".format(
                 self.container1.repository,
                 self.container1.tag,
-                self.container1.host_port,
             ),
         )
 
@@ -104,11 +100,7 @@ class TestContainerModel(TestBase):
         self.container1.tag = ""
         self.container1.save()
         self.assertEqual(
-            self.container1.get_display_name(),
-            "{}:{}".format(
-                self.container1.repository,
-                self.container1.host_port,
-            ),
+            self.container1.get_display_name(), self.container1.repository
         )
 
     def test_get_date_created(self):

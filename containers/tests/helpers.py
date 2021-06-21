@@ -94,6 +94,8 @@ class DockerMock:
     inspect_container_no_info = {}
     create_container = {"Id": "9", "State": {"Status": STATE_CREATED}}
     create_host_config = None
+    create_networking_config = {}
+    create_endpoint_config = {}
     logs = "\n".join(
         [log_entry1()[1], log_entry2()[1], log_entry3()[1]]
     ).encode("utf-8")

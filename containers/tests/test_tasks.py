@@ -76,10 +76,14 @@ class TestContainerTask(TestBase):
     @patch("docker.api.client.APIClient.inspect_container")
     @patch("docker.api.client.APIClient.inspect_image")
     @patch("docker.api.client.APIClient.create_host_config")
+    @patch("docker.api.client.APIClient.create_networking_config")
+    @patch("docker.api.client.APIClient.create_endpoint_config")
     @patch("docker.api.client.APIClient.create_container")
     def test_start_mocked(
         self,
         create_container,
+        create_endpoint_config,
+        create_networking_config,
         create_host_config,
         inspect_image,
         inspect_container,
@@ -93,6 +97,10 @@ class TestContainerTask(TestBase):
         # Prepare
         create_container.side_effect = [DockerMock.create_container]
         create_host_config.side_effect = [DockerMock.create_host_config]
+        create_networking_config.side_effect = [
+            DockerMock.create_networking_config
+        ]
+        create_endpoint_config.side_effect = [DockerMock.create_endpoint_config]
         inspect_container.side_effect = [DockerMock.inspect_container_started]
         inspect_image.side_effect = [DockerMock.inspect_image]
 
@@ -113,9 +121,6 @@ class TestContainerTask(TestBase):
             host_config=None,
         )
         create_host_config.assert_called_once_with(
-            port_bindings={
-                self.container1.container_port: self.container1.host_port
-            },
             ulimits=[
                 {
                     "Name": "nofile",
@@ -358,7 +363,6 @@ class TestContainerTask(TestBase):
     def test_start_stop(self):
         self.container1.repository = "brndnmtthws/nginx-echo-headers"
         self.container1.tag = "latest"
-        self.container1.host_port = "8888"
         self.container1.save()
 
         # Start
@@ -389,7 +393,6 @@ class TestContainerTask(TestBase):
     def test_start_pause_unpause(self):
         self.container1.repository = "brndnmtthws/nginx-echo-headers"
         self.container1.tag = "latest"
-        self.container1.host_port = "8888"
         self.container1.save()
 
         # Start
@@ -433,7 +436,6 @@ class TestContainerTask(TestBase):
     def test_start_restart(self):
         self.container1.repository = "brndnmtthws/nginx-echo-headers"
         self.container1.tag = "latest"
-        self.container1.host_port = "8888"
         self.container1.save()
 
         # Start

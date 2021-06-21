@@ -94,7 +94,6 @@ class TestContainerCreateView(TestBase):
 
     def test_post_success_min_fields(self):
         post_data = {
-            "host_port": 8080,
             "environment": '{"test": 1}',
             "repository": "repository",
             "tag": "tag",
@@ -133,7 +132,6 @@ class TestContainerCreateView(TestBase):
 
     def test_post_success_all_fields(self):
         post_data = {
-            "host_port": 8080,
             "environment": '{"test": 1}',
             "repository": "repository",
             "tag": "tag",
@@ -271,7 +269,6 @@ class TestContainerUpdateView(TestBase):
 
     def test_post_success_updated_initial(self):
         post_data = {
-            "host_port": self.container1.host_port + 1000,
             "environment": '{"updated": 1234}',
             "repository": "another_repository",
             "tag": "another_tag",
@@ -313,7 +310,6 @@ class TestContainerUpdateView(TestBase):
         self.container1.save()
 
         post_data = {
-            "host_port": self.container1.host_port + 1000,
             "environment": '{"updated": 1234}',
             "repository": "another_repository",
             "tag": "another_tag",
@@ -365,7 +361,6 @@ class TestContainerUpdateView(TestBase):
         self.container1.save()
 
         post_data = {
-            "host_port": self.container1.host_port + 1000,
             "environment": '{"updated": 1234}',
             "repository": "another_repository",
             "tag": "another_tag",
@@ -413,7 +408,6 @@ class TestContainerUpdateView(TestBase):
 
     def test_post_non_existent(self):
         post_data = {
-            "host_port": 9999,
             "environment": '{"updated": 1234}',
             "repository": "another_repository",
             "tag": "another_tag",
@@ -723,9 +717,9 @@ class TestReverseProxyView(TestBase):
 
             self.assertEqual(response.status_code, 200)
             self.assertEqual(len(responses.calls), 1)
-            self.assertEqual(responses.calls[0].request.host, "localhost")
             self.assertEqual(
-                responses.calls[0].request.port, self.container1.host_port
+                responses.calls[0].request.host,
+                self.container1.container_id[:12],
             )
             self.assertEqual(responses.calls[0].request.url, container_url)
 
@@ -754,9 +748,9 @@ class TestReverseProxyView(TestBase):
 
             self.assertEqual(response.status_code, 200)
             self.assertEqual(len(responses.calls), 1)
-            self.assertEqual(responses.calls[0].request.host, "localhost")
             self.assertEqual(
-                responses.calls[0].request.port, self.container1.host_port
+                responses.calls[0].request.host,
+                self.container1.container_id[:12],
             )
             self.assertEqual(responses.calls[0].request.url, container_url)
 

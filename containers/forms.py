@@ -1,4 +1,5 @@
 from django import forms
+from django.conf import settings
 
 from containers.models import Container
 
@@ -27,6 +28,9 @@ class ContainerForm(forms.ModelForm):
         super().__init__(*args, **kwargs)
         # Hide project field
         self.fields["project"].widget = forms.HiddenInput()
+        # Hide host port if in docker-shared mode
+        if settings.KIOSC_NETWORK_MODE == "docker-shared":
+            self.fields["host_port"].widget = forms.HiddenInput()
 
     def clean(self):
         """Override to check for secret keys in the environment."""

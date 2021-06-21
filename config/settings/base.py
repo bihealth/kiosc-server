@@ -9,7 +9,9 @@ https://docs.djangoproject.com/en/dev/ref/settings/
 """
 import os
 
+import docker.errors
 import environ
+
 
 SITE_PACKAGE = "kiosc"
 
@@ -619,3 +621,9 @@ KIOSC_DOCKER_MAX_ULIMIT_NOFILE_SOFT = env.str(
 KIOSC_DOCKER_MAX_ULIMIT_NOFILE_HARD = env.str(
     "KIOSC_DOCKER_MAX_ULIMIT_NOFILE_HARD", 98304
 )
+
+#: Network mode. Can be ``host`` or ``docker-shared``.
+KIOSC_NETWORK_MODE = env.str("KIOSC_NETWORK_MODE", "host")
+#: Docker network name.
+KIOSC_DOCKER_NETWORK = env.str("KIOSC_DOCKER_NETWORK", "kiosc-net")
+KIOSC_DOCKER_WEB_SERVER = env.str("KIOSC_DOCKER_WEB_SERVER", "kiosc-web")

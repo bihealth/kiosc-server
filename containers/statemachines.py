@@ -344,7 +344,7 @@ class ContainerMachine(StateMachine):
             )
 
         if settings.KIOSC_NETWORK_MODE == "host":
-            options_host_config["port_binding"] = {
+            options_host_config["port_bindings"] = {
                 self.container.container_port: self.container.host_port
             }
 

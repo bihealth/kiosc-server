@@ -2,10 +2,12 @@
 import json
 from unittest.mock import patch
 
+from django.contrib.messages import get_messages
 from urllib3_mock import Responses
 
 from django.forms import model_to_dict
 from django.urls import reverse
+from django.test import override_settings
 
 from containers.models import (
     Container,
@@ -92,12 +94,54 @@ class TestContainerCreateView(TestBase):
 
             self.assertEqual(response.status_code, 200)
 
-    def test_post_success_min_fields(self):
+    @override_settings(KIOSC_NETWORK_MODE="host")
+    def test_post_success_min_fields_mode_host(self):
         post_data = {
             "environment": '{"test": 1}',
             "repository": "repository",
             "tag": "tag",
             "container_port": 80,
+            "host_port": 8000,
+            "timeout": 60,
+            "project": self.project.pk,
+            "max_retries": 10,
+        }
+
+        with self.login(self.superuser):
+            response = self.client.post(
+                reverse(
+                    "containers:container-create",
+                    kwargs={"project": self.project.sodar_uuid},
+                ),
+                post_data,
+            )
+
+            self.assertEqual(Container.objects.count(), 1)
+
+            container = Container.objects.first()
+
+            self.assertRedirects(
+                response,
+                reverse(
+                    "containers:container-detail",
+                    kwargs={"container": container.sodar_uuid},
+                ),
+            )
+
+            post_data["environment"] = json.loads(post_data["environment"])
+            result = model_to_dict(container, fields=post_data.keys())
+
+            # Assert updated properties
+            self.assertDictEqual(result, post_data)
+
+    @override_settings(KIOSC_NETWORK_MODE="docker-shared")
+    def test_post_success_min_fields_mode_docker_shared(self):
+        post_data = {
+            "environment": '{"test": 1}',
+            "repository": "repository",
+            "tag": "tag",
+            "container_port": 80,
+            "host_port": 8000,
             "timeout": 60,
             "project": self.project.pk,
             "max_retries": 10,
@@ -136,6 +180,7 @@ class TestContainerCreateView(TestBase):
             "repository": "repository",
             "tag": "tag",
             "container_port": 80,
+            "host_port": 8000,
             "timeout": 60,
             "project": self.project.pk,
             "container_path": "some/path",
@@ -267,7 +312,47 @@ class TestContainerUpdateView(TestBase):
 
             self.assertEqual(response.status_code, 404)
 
-    def test_post_success_updated_initial(self):
+    @override_settings(KIOSC_NETWORK_MODE="host")
+    def test_post_success_updated_initial_mode_host(self):
+        post_data = {
+            "environment": '{"updated": 1234}',
+            "repository": "another_repository",
+            "tag": "another_tag",
+            "container_port": self.container1.container_port + 100,
+            "host_port": self.container1.host_port + 100,
+            "timeout": self.container1.timeout + 60,
+            "project": self.project.pk,
+            "max_retries": 12,
+        }
+
+        with self.login(self.superuser):
+            response = self.client.post(
+                reverse(
+                    "containers:container-update",
+                    kwargs={"container": self.container1.sodar_uuid},
+                ),
+                post_data,
+            )
+
+            # Get updated object
+            self.container1.refresh_from_db()
+
+            self.assertRedirects(
+                response,
+                reverse(
+                    "containers:container-detail",
+                    kwargs={"container": self.container1.sodar_uuid},
+                ),
+            )
+
+            post_data["environment"] = json.loads(post_data["environment"])
+            result = model_to_dict(self.container1, fields=post_data.keys())
+
+            # Assert updated properties
+            self.assertDictEqual(result, post_data)
+
+    @override_settings(KIOSC_NETWORK_MODE="docker-shared")
+    def test_post_success_updated_initial_mode_docker_shared(self):
         post_data = {
             "environment": '{"updated": 1234}',
             "repository": "another_repository",
@@ -304,8 +389,62 @@ class TestContainerUpdateView(TestBase):
             # Assert updated properties
             self.assertDictEqual(result, post_data)
 
+    @override_settings(KIOSC_NETWORK_MODE="host")
     @patch("containers.tasks.container_task.delay")
-    def test_post_success_updated_running(self, mock):
+    def test_post_success_updated_running_mode_host(self, mock):
+        self.container1.state = STATE_RUNNING
+        self.container1.save()
+
+        post_data = {
+            "environment": '{"updated": 1234}',
+            "repository": "another_repository",
+            "tag": "another_tag",
+            "container_port": self.container1.container_port + 100,
+            "host_port": self.container1.container_port + 100,
+            "timeout": self.container1.timeout + 60,
+            "project": self.project.pk,
+            "max_retries": 12,
+        }
+
+        with self.login(self.superuser):
+            response = self.client.post(
+                reverse(
+                    "containers:container-update",
+                    kwargs={"container": self.container1.sodar_uuid},
+                ),
+                post_data,
+            )
+
+            # Get updated object
+            self.container1.refresh_from_db()
+
+            self.assertRedirects(
+                response,
+                reverse(
+                    "containers:container-restart",
+                    kwargs={"container": self.container1.sodar_uuid},
+                ),
+                status_code=302,
+                target_status_code=302,
+            )
+
+            post_data["environment"] = json.loads(post_data["environment"])
+            result = model_to_dict(self.container1, fields=post_data.keys())
+
+            # Assert updated properties
+            self.assertDictEqual(result, post_data)
+
+            # Assert job call
+            mock.assert_called()
+
+            # Assert background job
+            self.assertEqual(ContainerBackgroundJob.objects.count(), 1)
+            bg_job = ContainerBackgroundJob.objects.first()
+            self.assertEqual(bg_job.action, ACTION_RESTART)
+
+    @override_settings(KIOSC_NETWORK_MODE="docker-shared")
+    @patch("containers.tasks.container_task.delay")
+    def test_post_success_updated_running_mode_docker_shared(self, mock):
         self.container1.state = STATE_RUNNING
         self.container1.save()
 
@@ -355,8 +494,62 @@ class TestContainerUpdateView(TestBase):
             bg_job = ContainerBackgroundJob.objects.first()
             self.assertEqual(bg_job.action, ACTION_RESTART)
 
+    @override_settings(KIOSC_NETWORK_MODE="host")
     @patch("containers.tasks.container_task.delay")
-    def test_post_success_updated_paused(self, mock):
+    def test_post_success_updated_paused_mode_host(self, mock):
+        self.container1.state = STATE_PAUSED
+        self.container1.save()
+
+        post_data = {
+            "environment": '{"updated": 1234}',
+            "repository": "another_repository",
+            "tag": "another_tag",
+            "container_port": self.container1.container_port + 100,
+            "host_port": self.container1.host_port + 100,
+            "timeout": self.container1.timeout + 60,
+            "project": self.project.pk,
+            "max_retries": 12,
+        }
+
+        with self.login(self.superuser):
+            response = self.client.post(
+                reverse(
+                    "containers:container-update",
+                    kwargs={"container": self.container1.sodar_uuid},
+                ),
+                post_data,
+            )
+
+            # Get updated object
+            self.container1.refresh_from_db()
+
+            self.assertRedirects(
+                response,
+                reverse(
+                    "containers:container-restart",
+                    kwargs={"container": self.container1.sodar_uuid},
+                ),
+                status_code=302,
+                target_status_code=302,
+            )
+
+            post_data["environment"] = json.loads(post_data["environment"])
+            result = model_to_dict(self.container1, fields=post_data.keys())
+
+            # Assert updated properties
+            self.assertDictEqual(result, post_data)
+
+            # Assert job call
+            mock.assert_called()
+
+            # Assert background job
+            self.assertEqual(ContainerBackgroundJob.objects.count(), 1)
+            bg_job = ContainerBackgroundJob.objects.first()
+            self.assertEqual(bg_job.action, ACTION_RESTART)
+
+    @override_settings(KIOSC_NETWORK_MODE="docker-shared")
+    @patch("containers.tasks.container_task.delay")
+    def test_post_success_updated_paused_mode_docker_shared(self, mock):
         self.container1.state = STATE_PAUSED
         self.container1.save()
 
@@ -694,8 +887,77 @@ class TestReverseProxyView(TestBase):
         self.create_one_container()
         self.create_fake_uuid()
 
+    @override_settings(KIOSC_NETWORK_MODE="host")
     @responses.activate
-    def test_get_success(self):
+    def test_get_success_mode_host(self):
+        with self.login(self.superuser):
+
+            def request_callback(request):
+                return 200, {}, "abc".encode("utf-8")
+
+            container_url = f"/{self.container1.container_path}"
+            responses.add_callback(
+                "GET", container_url, callback=request_callback
+            )
+            response = self.client.get(
+                reverse(
+                    "containers:proxy",
+                    kwargs={
+                        "container": self.container1.sodar_uuid,
+                        "path": self.container1.container_path,
+                    },
+                )
+            )
+
+            self.assertEqual(response.status_code, 200)
+            self.assertEqual(len(responses.calls), 1)
+            self.assertEqual(
+                responses.calls[0].request.host,
+                "localhost",
+            )
+            self.assertEqual(responses.calls[0].request.url, container_url)
+
+    @override_settings(KIOSC_NETWORK_MODE="host")
+    @responses.activate
+    def test_get_success_mode_host_host_port_missing(self):
+        self.container1.host_port = None
+        self.container1.save()
+
+        with self.login(self.superuser):
+
+            def request_callback(request):
+                return 200, {}, "abc".encode("utf-8")
+
+            container_url = f"/{self.container1.container_path}"
+            responses.add_callback(
+                "GET", container_url, callback=request_callback
+            )
+            response = self.client.get(
+                reverse(
+                    "containers:proxy",
+                    kwargs={
+                        "container": self.container1.sodar_uuid,
+                        "path": self.container1.container_path,
+                    },
+                )
+            )
+
+            self.assertRedirects(
+                response,
+                reverse(
+                    "containers:container-list",
+                    kwargs={"project": self.container1.project.sodar_uuid},
+                ),
+            )
+            self.assertEqual(
+                str(list(get_messages(response.wsgi_request))[0]),
+                "Host port not set.",
+            )
+            self.assertEqual(len(responses.calls), 0)
+
+    @override_settings(KIOSC_NETWORK_MODE="docker-shared")
+    @responses.activate
+    def test_get_success_mode_docker_shared(self):
         with self.login(self.superuser):
 
             def request_callback(request):
@@ -723,8 +985,41 @@ class TestReverseProxyView(TestBase):
             )
             self.assertEqual(responses.calls[0].request.url, container_url)
 
+    @override_settings(KIOSC_NETWORK_MODE="host")
     @responses.activate
-    def test_get_success_with_path(self):
+    def test_get_success_with_path_mode_host(self):
+        with self.login(self.superuser):
+            self.container1.container_path = "this/is/some/path"
+            self.container1.save()
+
+            def request_callback(request):
+                return 200, {}, "abc".encode("utf-8")
+
+            container_url = f"/{self.container1.container_path}"
+            responses.add_callback(
+                "GET", container_url, callback=request_callback
+            )
+            response = self.client.get(
+                reverse(
+                    "containers:proxy",
+                    kwargs={
+                        "container": self.container1.sodar_uuid,
+                        "path": self.container1.container_path,
+                    },
+                )
+            )
+
+            self.assertEqual(response.status_code, 200)
+            self.assertEqual(len(responses.calls), 1)
+            self.assertEqual(
+                responses.calls[0].request.host,
+                "localhost",
+            )
+            self.assertEqual(responses.calls[0].request.url, container_url)
+
+    @override_settings(KIOSC_NETWORK_MODE="docker-shared")
+    @responses.activate
+    def test_get_success_with_path_mode_docker_shared(self):
         with self.login(self.superuser):
             self.container1.container_path = "this/is/some/path"
             self.container1.save()
@@ -777,6 +1072,7 @@ class TestContainerProxyLobbyView(TestBase):
         self.create_one_container()
         self.create_fake_uuid()
 
+    @override_settings(KIOSC_NETWORK_MODE="host")
     @responses.activate
     def test_get_success_running(self):
         self.container1.state = STATE_RUNNING
@@ -814,7 +1110,7 @@ class TestContainerProxyLobbyView(TestBase):
                 target_status_code=200,
             )
 
-    #    @patch("containers.tasks.container_task.delay")
+    @override_settings(KIOSC_NETWORK_MODE="host")
     @responses.activate
     def test_get_success_running_with_path(self):
         with self.login(self.superuser):
@@ -853,6 +1149,7 @@ class TestContainerProxyLobbyView(TestBase):
                 target_status_code=200,
             )
 
+    @override_settings(KIOSC_NETWORK_MODE="host")
     @patch("containers.tasks.container_task.delay")
     @responses.activate
     def test_get_success_paused_with_path(self, mock):
@@ -896,6 +1193,7 @@ class TestContainerProxyLobbyView(TestBase):
             self.assertEqual(bg_job.action, ACTION_UNPAUSE)
             mock.assert_called_once_with(job_id=bg_job.id)
 
+    @override_settings(KIOSC_NETWORK_MODE="host")
     @patch("containers.tasks.container_task.delay")
     @responses.activate
     def test_get_success_stopped_with_path(self, mock):

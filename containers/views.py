@@ -583,8 +583,22 @@ class ReverseProxyView(
         container = self.get_object()
         kwargs.pop("container")
 
+        _redirect = redirect(
+            reverse(
+                "containers:container-list",
+                kwargs={
+                    "project": container.project.sodar_uuid,
+                },
+            )
+        )
+
         if settings.KIOSC_NETWORK_MODE == "host":
-            upstream = f"http://localhost:{container.host_port}"
+            if container.host_port:
+                upstream = f"http://localhost:{container.host_port}"
+
+            else:
+                messages.error(request, "Host port not set.")
+                return _redirect
 
         else:
             upstream = f"http://{container.container_id[:12]}:{container.container_port}"
@@ -603,4 +617,9 @@ class ReverseProxyView(
             user=request.user,
         )
 
-        return proxy_view.dispatch(request, *args, **kwargs)
+        try:
+            return proxy_view.dispatch(request, *args, **kwargs)
+
+        except Exception as e:
+            messages.error(request, e)
+            return _redirect

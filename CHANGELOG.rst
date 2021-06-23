@@ -5,6 +5,16 @@ Changelog for the **Kiosc** Django app package.
 Loosely follows the `Keep a Changelog <http://keepachangelog.com/en/1.0.0/>`_ guidelines.
 
 
+HEAD (unreleased)
+=================
+
+Added
+-----
+
+- **General**
+  - Docker deployment
+
+
 v0.1.3 (2021-06-09)
 ===================
 
@@ -31,7 +41,7 @@ Added
   - ``ContainerProxyLobbyView`` called when viewing a container not in state ``running`` (#28)
 
 Changed
-^^^^^^^
+-------
 
 - **General**
   - Bumped github workflow Ubuntu version to 20.04 (#28)
@@ -98,7 +108,7 @@ Added
   - Reverse proxy with view and url (#20)
 
 Changed
-^^^^^^^
+-------
 
 - **General**
   - Upgrade to Django v3.1.7 (#47)

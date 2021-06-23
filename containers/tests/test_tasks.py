@@ -6,7 +6,7 @@ from unittest.mock import patch, call
 
 import docker.errors
 from django.conf import settings
-from django.test import tag
+from django.test import tag, override_settings
 from django.utils import timezone
 
 from containers.models import (
@@ -49,6 +49,8 @@ class TestContainerTask(TestBase):
     def setUp(self):
         super().setUp()
         self.create_one_container()
+        self.container1.container_id = None
+        self.container1.save()
         self.bg_job = ContainerBackgroundJobFactory(
             project=self.project, user=self.superuser, container=self.container1
         )
@@ -67,6 +69,7 @@ class TestContainerTask(TestBase):
         self.cli.prune_containers()
         self.cli.prune_images()
 
+    @override_settings(KIOSC_NETWORK_MODE="host")
     @patch("docker.api.client.APIClient.unpause")
     @patch("docker.api.client.APIClient.pause")
     @patch("docker.api.client.APIClient.restart")
@@ -79,7 +82,85 @@ class TestContainerTask(TestBase):
     @patch("docker.api.client.APIClient.create_networking_config")
     @patch("docker.api.client.APIClient.create_endpoint_config")
     @patch("docker.api.client.APIClient.create_container")
-    def test_start_mocked(
+    def test_start_mocked_mode_host(
+        self,
+        create_container,
+        create_endpoint_config,
+        create_networking_config,
+        create_host_config,
+        inspect_image,
+        inspect_container,
+        pull,
+        start,
+        stop,
+        restart,
+        pause,
+        unpause,
+    ):
+        # Prepare
+        create_container.side_effect = [DockerMock.create_container]
+        create_host_config.side_effect = [DockerMock.create_host_config]
+        inspect_container.side_effect = [DockerMock.inspect_container_started]
+        inspect_image.side_effect = [DockerMock.inspect_image]
+
+        # Run
+        container_task(job_id=self.bg_job.pk)
+
+        # Assert objects
+        self.container1.refresh_from_db()
+        self.assertEqual(self.container1.state, STATE_RUNNING)
+
+        # Assert mocks
+        create_container.assert_called_once_with(
+            detach=True,
+            image=self.container1.image_id,
+            environment=json.loads(self.container1.environment),
+            command=self.container1.command or None,
+            ports=[self.container1.container_port],
+            host_config=None,
+        )
+        create_host_config.assert_called_once_with(
+            ulimits=[
+                {
+                    "Name": "nofile",
+                    "Soft": settings.KIOSC_DOCKER_MAX_ULIMIT_NOFILE_SOFT,
+                    "Hard": settings.KIOSC_DOCKER_MAX_ULIMIT_NOFILE_HARD,
+                }
+            ],
+            port_bindings={
+                self.container1.container_port: self.container1.host_port
+            },
+        )
+        create_networking_config.assert_not_called()
+        create_endpoint_config.assert_not_called()
+        inspect_image.assert_called_once_with(self.container1.get_repos_full())
+        inspect_container.assert_called_once_with(self.container1.container_id)
+        pull.assert_called_once_with(
+            repository=self.container1.repository,
+            tag=self.container1.tag,
+            stream=True,
+            decode=True,
+        )
+        start.assert_called_once_with(self.container1.container_id)
+        stop.assert_not_called()
+        restart.assert_not_called()
+        pause.assert_not_called()
+        unpause.assert_not_called()
+
+    @override_settings(KIOSC_NETWORK_MODE="docker-shared")
+    @patch("docker.api.client.APIClient.unpause")
+    @patch("docker.api.client.APIClient.pause")
+    @patch("docker.api.client.APIClient.restart")
+    @patch("docker.api.client.APIClient.stop")
+    @patch("docker.api.client.APIClient.start")
+    @patch("docker.api.client.APIClient.pull")
+    @patch("docker.api.client.APIClient.inspect_container")
+    @patch("docker.api.client.APIClient.inspect_image")
+    @patch("docker.api.client.APIClient.create_host_config")
+    @patch("docker.api.client.APIClient.create_networking_config")
+    @patch("docker.api.client.APIClient.create_endpoint_config")
+    @patch("docker.api.client.APIClient.create_container")
+    def test_start_mocked_mode_docker_shared(
         self,
         create_container,
         create_endpoint_config,
@@ -119,6 +200,7 @@ class TestContainerTask(TestBase):
             command=self.container1.command or None,
             ports=[self.container1.container_port],
             host_config=None,
+            networking_config={},
         )
         create_host_config.assert_called_once_with(
             ulimits=[
@@ -129,6 +211,10 @@ class TestContainerTask(TestBase):
                 }
             ],
         )
+        create_networking_config.assert_called_once_with(
+            {settings.KIOSC_DOCKER_NETWORK: {}}
+        )
+        create_endpoint_config.assert_called_once_with()
         inspect_image.assert_called_once_with(self.container1.get_repos_full())
         inspect_container.assert_called_once_with(self.container1.container_id)
         pull.assert_called_once_with(
@@ -152,10 +238,14 @@ class TestContainerTask(TestBase):
     @patch("docker.api.client.APIClient.inspect_container")
     @patch("docker.api.client.APIClient.inspect_image")
     @patch("docker.api.client.APIClient.create_host_config")
+    @patch("docker.api.client.APIClient.create_networking_config")
+    @patch("docker.api.client.APIClient.create_endpoint_config")
     @patch("docker.api.client.APIClient.create_container")
     def test_stop_mocked(
         self,
         create_container,
+        create_endpoint_config,
+        create_networking_config,
         create_host_config,
         inspect_image,
         inspect_container,
@@ -188,6 +278,8 @@ class TestContainerTask(TestBase):
         # Assert mocks
         create_container.assert_not_called()
         create_host_config.assert_not_called()
+        create_networking_config.assert_not_called()
+        create_endpoint_config.assert_not_called()
         inspect_image.assert_not_called()
         inspect_container.assert_called_once_with(self.container1.container_id)
         pull.assert_not_called()
@@ -206,10 +298,14 @@ class TestContainerTask(TestBase):
     @patch("docker.api.client.APIClient.inspect_container")
     @patch("docker.api.client.APIClient.inspect_image")
     @patch("docker.api.client.APIClient.create_host_config")
+    @patch("docker.api.client.APIClient.create_networking_config")
+    @patch("docker.api.client.APIClient.create_endpoint_config")
     @patch("docker.api.client.APIClient.create_container")
     def test_restart_mocked(
         self,
         create_container,
+        create_endpoint_config,
+        create_networking_config,
         create_host_config,
         inspect_image,
         inspect_container,
@@ -242,6 +338,8 @@ class TestContainerTask(TestBase):
         # Assert mocks
         create_container.assert_not_called()
         create_host_config.assert_not_called()
+        create_networking_config.assert_not_called()
+        create_endpoint_config.assert_not_called()
         inspect_image.assert_not_called()
         inspect_container.assert_called_once_with(self.container1.container_id)
         pull.assert_not_called()
@@ -260,10 +358,14 @@ class TestContainerTask(TestBase):
     @patch("docker.api.client.APIClient.inspect_container")
     @patch("docker.api.client.APIClient.inspect_image")
     @patch("docker.api.client.APIClient.create_host_config")
+    @patch("docker.api.client.APIClient.create_networking_config")
+    @patch("docker.api.client.APIClient.create_endpoint_config")
     @patch("docker.api.client.APIClient.create_container")
     def test_pause_mocked(
         self,
         create_container,
+        create_endpoint_config,
+        create_networking_config,
         create_host_config,
         inspect_image,
         inspect_container,
@@ -296,6 +398,8 @@ class TestContainerTask(TestBase):
         # Assert mocks
         create_container.assert_not_called()
         create_host_config.assert_not_called()
+        create_networking_config.assert_not_called()
+        create_endpoint_config.assert_not_called()
         inspect_image.assert_not_called()
         inspect_container.assert_called_once_with(self.container1.container_id)
         pull.assert_not_called()
@@ -314,10 +418,14 @@ class TestContainerTask(TestBase):
     @patch("docker.api.client.APIClient.inspect_container")
     @patch("docker.api.client.APIClient.inspect_image")
     @patch("docker.api.client.APIClient.create_host_config")
+    @patch("docker.api.client.APIClient.create_networking_config")
+    @patch("docker.api.client.APIClient.create_endpoint_config")
     @patch("docker.api.client.APIClient.create_container")
     def test_unpause_mocked(
         self,
         create_container,
+        create_endpoint_config,
+        create_networking_config,
         create_host_config,
         inspect_image,
         inspect_container,
@@ -350,6 +458,8 @@ class TestContainerTask(TestBase):
         # Assert mocks
         create_container.assert_not_called()
         create_host_config.assert_not_called()
+        create_networking_config.assert_not_called()
+        create_endpoint_config.assert_not_called()
         inspect_image.assert_not_called()
         inspect_container.assert_called_once_with(self.container1.container_id)
         pull.assert_not_called()

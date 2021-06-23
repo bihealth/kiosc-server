@@ -43,6 +43,7 @@ class TestContainerModel(TestBase):
             "container_id": None,
             "container_path": None,
             "heartbeat_url": None,
+            "host_port": None,
             "environment_secret_keys": None,
             "image_id": None,
             "date_last_status_update": None,

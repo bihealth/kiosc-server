@@ -106,7 +106,7 @@ class ProjectAppPlugin(ProjectAppPluginPoint):
     icon = "mdi:docker"
 
     #: Entry point URL ID (must take project sodar_uuid as "project" argument)
-    entry_point_url_id = "containers:container-list"
+    entry_point_url_id = "containers:list"
 
     #: Description string
     description = "Create and manage Docker containers"
@@ -130,7 +130,7 @@ class ProjectAppPlugin(ProjectAppPluginPoint):
     details_title = "Containers overview"
 
     #: Position in plugin ordering
-    plugin_ordering = 10
+    plugin_ordering = 20
 
     #: Project list columns
     project_list_columns = {
@@ -169,7 +169,7 @@ class ProjectAppPlugin(ProjectAppPluginPoint):
         elif obj.__class__ == Container:
             return {
                 "url": reverse(
-                    "containers:container-detail",
+                    "containers:detail",
                     kwargs={"container": obj.sodar_uuid},
                 ),
                 "label": obj.get_display_name(),

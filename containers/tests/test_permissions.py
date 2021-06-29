@@ -19,9 +19,9 @@ class TestContainerPermissions(TestProjectPermissionBase):
         self.container = ContainerFactory(project=self.project)
 
     def test_container_list(self):
-        """Test permissions for the ``container-list`` view."""
+        """Test permissions for the ``list`` view."""
         url = reverse(
-            "containers:container-list",
+            "containers:list",
             kwargs={"project": self.project.sodar_uuid},
         )
         good_users = [
@@ -36,9 +36,9 @@ class TestContainerPermissions(TestProjectPermissionBase):
         self.assert_response(url, bad_users, 302)
 
     def test_container_create(self):
-        """Test permissions for the ``container-create`` view."""
+        """Test permissions for the ``create`` view."""
         url = reverse(
-            "containers:container-create",
+            "containers:create",
             kwargs={"project": self.project.sodar_uuid},
         )
         good_users = [
@@ -52,9 +52,9 @@ class TestContainerPermissions(TestProjectPermissionBase):
         self.assert_response(url, bad_users, 302)
 
     def test_container_update(self):
-        """Test permissions for the ``container-update`` view."""
+        """Test permissions for the ``update`` view."""
         url = reverse(
-            "containers:container-update",
+            "containers:update",
             kwargs={"container": self.container.sodar_uuid},
         )
         good_users = [
@@ -68,9 +68,9 @@ class TestContainerPermissions(TestProjectPermissionBase):
         self.assert_response(url, bad_users, 302)
 
     def test_container_detail(self):
-        """Test permissions for the ``container-detail`` view."""
+        """Test permissions for the ``detail`` view."""
         url = reverse(
-            "containers:container-detail",
+            "containers:detail",
             kwargs={"container": self.container.sodar_uuid},
         )
         good_users = [
@@ -85,9 +85,9 @@ class TestContainerPermissions(TestProjectPermissionBase):
         self.assert_response(url, bad_users, 302)
 
     def test_container_delete(self):
-        """Test permissions for the ``container-delete`` view."""
+        """Test permissions for the ``delete`` view."""
         url = reverse(
-            "containers:container-delete",
+            "containers:delete",
             kwargs={"container": self.container.sodar_uuid},
         )
         good_users = [
@@ -102,9 +102,9 @@ class TestContainerPermissions(TestProjectPermissionBase):
 
     @patch("containers.tasks.container_task.delay")
     def test_container_start(self, mock):
-        """Test permissions for the ``container-start`` view."""
+        """Test permissions for the ``start`` view."""
         url = reverse(
-            "containers:container-start",
+            "containers:start",
             kwargs={"container": self.container.sodar_uuid},
         )
         good_users = [
@@ -119,7 +119,7 @@ class TestContainerPermissions(TestProjectPermissionBase):
             good_users,
             302,
             redirect_user=reverse(
-                "containers:container-detail",
+                "containers:detail",
                 kwargs={"container": self.container.sodar_uuid},
             ),
         )
@@ -127,9 +127,9 @@ class TestContainerPermissions(TestProjectPermissionBase):
 
     @patch("containers.tasks.container_task.delay")
     def test_container_stop(self, mock):
-        """Test permissions for the ``container-stop`` view."""
+        """Test permissions for the ``stop`` view."""
         url = reverse(
-            "containers:container-stop",
+            "containers:stop",
             kwargs={"container": self.container.sodar_uuid},
         )
         good_users = [
@@ -144,7 +144,7 @@ class TestContainerPermissions(TestProjectPermissionBase):
             good_users,
             302,
             redirect_user=reverse(
-                "containers:container-detail",
+                "containers:detail",
                 kwargs={"container": self.container.sodar_uuid},
             ),
         )
@@ -152,9 +152,9 @@ class TestContainerPermissions(TestProjectPermissionBase):
 
     @patch("containers.tasks.container_task.delay")
     def test_container_restart(self, mock):
-        """Test permissions for the ``container-restart`` view."""
+        """Test permissions for the ``restart`` view."""
         url = reverse(
-            "containers:container-restart",
+            "containers:restart",
             kwargs={"container": self.container.sodar_uuid},
         )
         good_users = [
@@ -169,7 +169,7 @@ class TestContainerPermissions(TestProjectPermissionBase):
             good_users,
             302,
             redirect_user=reverse(
-                "containers:container-detail",
+                "containers:detail",
                 kwargs={"container": self.container.sodar_uuid},
             ),
         )
@@ -177,9 +177,9 @@ class TestContainerPermissions(TestProjectPermissionBase):
 
     @patch("containers.tasks.container_task.delay")
     def test_container_pause(self, mock):
-        """Test permissions for the ``container-pause`` view."""
+        """Test permissions for the ``pause`` view."""
         url = reverse(
-            "containers:container-pause",
+            "containers:pause",
             kwargs={"container": self.container.sodar_uuid},
         )
         good_users = [
@@ -194,7 +194,7 @@ class TestContainerPermissions(TestProjectPermissionBase):
             good_users,
             302,
             redirect_user=reverse(
-                "containers:container-detail",
+                "containers:detail",
                 kwargs={"container": self.container.sodar_uuid},
             ),
         )
@@ -202,9 +202,9 @@ class TestContainerPermissions(TestProjectPermissionBase):
 
     @patch("containers.tasks.container_task.delay")
     def test_container_unpause(self, mock):
-        """Test permissions for the ``container-unpause`` view."""
+        """Test permissions for the ``unpause`` view."""
         url = reverse(
-            "containers:container-unpause",
+            "containers:unpause",
             kwargs={"container": self.container.sodar_uuid},
         )
         good_users = [
@@ -219,7 +219,7 @@ class TestContainerPermissions(TestProjectPermissionBase):
             good_users,
             302,
             redirect_user=reverse(
-                "containers:container-detail",
+                "containers:detail",
                 kwargs={"container": self.container.sodar_uuid},
             ),
         )

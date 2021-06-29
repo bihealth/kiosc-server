@@ -8,8 +8,6 @@ For the full list of settings and their values, see
 https://docs.djangoproject.com/en/dev/ref/settings/
 """
 import os
-
-import docker.errors
 import environ
 
 
@@ -198,6 +196,7 @@ TEMPLATES = [
                 "django.contrib.messages.context_processors.messages",
                 # Site context processors
                 "projectroles.context_processors.urls_processor",
+                "projectroles.context_processors.site_app_processor",
             ],
         },
     }

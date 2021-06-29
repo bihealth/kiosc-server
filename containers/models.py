@@ -288,7 +288,7 @@ class Container(models.Model):
 
     def get_absolute_url(self):
         return reverse(
-            "containers:container-detail", kwargs={"container": self.sodar_uuid}
+            "containers:detail", kwargs={"container": self.sodar_uuid}
         )
 
     def get_date_created(self):

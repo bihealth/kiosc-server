@@ -11,7 +11,6 @@ class TestContainerTemplateForm(TestBase):
         super().setUp()
         self.form_data_min = {
             "title": "some title",
-            "project": self.project,
         }
         self.form_data_all = {
             **self.form_data_min,

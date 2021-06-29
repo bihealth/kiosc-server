@@ -5,20 +5,21 @@
 {% load rules %}
 
 {% block title %}
-  Container Templates for {{ project.title }}
+  Container Templates
 {% endblock title %}
 
-{% block projectroles_extend %}
+{% block projectroles %}
 
-{% has_perm "containertemplates.create" request.user project as can_create_containertemplate %}
-{% has_perm "containertemplates.edit" request.user project as can_edit_containertemplate %}
-{% has_perm "containertemplates.delete" request.user project as can_delete_containertemplate %}
+{% has_perm "containertemplates.create" request.user as can_create_containertemplate %}
+{% has_perm "containertemplates.edit" request.user as can_edit_containertemplate %}
+{% has_perm "containertemplates.delete" request.user as can_delete_containertemplate %}
+{% has_perm "containertemplates.duplicate" request.user as can_duplicate_containertemplate %}
 
 <div class="row sodar-subtitle-container">
   <h3>Container Templates</h3>
     <div class="ml-auto">
       {% if can_create_containertemplate %}
-      <a href="{% url 'containertemplates:create' project=project.sodar_uuid %}"
+      <a href="{% url 'containertemplates:create' %}"
          class="btn btn-primary" role="button">
         <i class="iconify" data-icon="mdi:plus-circle"></i>
         Create Container Template
@@ -50,7 +51,7 @@
               <td>{{ obj.date_created }}</td>
               <td class="text-right">
                 <div class="btn-group sodar-list-btn-group pull-right">
-                  {% if can_edit_containertemplate or can_delete_containertemplate %}
+                  {% if can_edit_containertemplate or can_delete_containertemplate or can_duplicate_containertemplate %}
                     <button class="btn btn-secondary dropdown-toggle sodar-list-dropdown"
                             type="button" data-toggle="dropdown" aria-expanded="false">
                       <i class="iconify" data-icon="mdi:cog"></i>
@@ -60,6 +61,12 @@
                         <a class="dropdown-item"
                            href="{% url 'containertemplates:update' containertemplate=obj.sodar_uuid %}">
                           <i class="iconify" data-icon="mdi:lead-pencil"></i> Update
+                        </a>
+                      {% endif %}
+                      {% if can_duplicate_containertemplate %}
+                        <a class="dropdown-item"
+                           href="{% url 'containertemplates:duplicate' containertemplate=obj.sodar_uuid %}">
+                          <i class="iconify" data-icon="octicon:duplicate-16"></i> Duplicate
                         </a>
                       {% endif %}
                       {% if can_delete_containertemplate %}
@@ -88,5 +95,5 @@
 {% endif %}
 </div>
 
-{% endblock projectroles_extend %}
+{% endblock projectroles %}
 \

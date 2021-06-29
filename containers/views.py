@@ -113,7 +113,7 @@ class ContainerDeleteView(
             "Container deleted.",
         )
         return reverse(
-            "containers:container-list",
+            "containers:list",
             kwargs={"project": self.object.project.sodar_uuid},
         )
 
@@ -161,7 +161,7 @@ class ContainerUpdateView(
             "Container updated and restarted.",
         )
         return reverse(
-            "containers:container-restart",
+            "containers:restart",
             kwargs={
                 "container": self.object.sodar_uuid,
             },
@@ -274,7 +274,7 @@ class ContainerStartView(
 
         return redirect(
             reverse(
-                "containers:container-detail",
+                "containers:detail",
                 kwargs={"container": kwargs.get("container")},
             )
         )
@@ -326,7 +326,7 @@ class ContainerStopView(
 
         return redirect(
             reverse(
-                "containers:container-detail",
+                "containers:detail",
                 kwargs={"container": kwargs.get("container")},
             )
         )
@@ -378,7 +378,7 @@ class ContainerPauseView(
 
         return redirect(
             reverse(
-                "containers:container-detail",
+                "containers:detail",
                 kwargs={"container": kwargs.get("container")},
             )
         )
@@ -430,7 +430,7 @@ class ContainerUnpauseView(
 
         return redirect(
             reverse(
-                "containers:container-detail",
+                "containers:detail",
                 kwargs={"container": kwargs.get("container")},
             )
         )
@@ -482,7 +482,7 @@ class ContainerRestartView(
 
         return redirect(
             reverse(
-                "containers:container-detail",
+                "containers:detail",
                 kwargs={"container": kwargs.get("container")},
             )
         )
@@ -585,7 +585,7 @@ class ReverseProxyView(
 
         _redirect = redirect(
             reverse(
-                "containers:container-list",
+                "containers:list",
                 kwargs={
                     "project": container.project.sodar_uuid,
                 },

@@ -3,7 +3,6 @@ import uuid
 
 from test_plus.test import TestCase
 
-from containertemplates.tests.factories import ProjectFactory
 from containertemplates.models import ContainerTemplate
 from containertemplates.tests.factories import ContainerTemplateFactory
 
@@ -17,9 +16,6 @@ class TestBase(TestCase):
         # Show full diff
         self.maxDiff = None
 
-        # Setup project
-        self.project = ProjectFactory()
-
         # Setup superuser
         self.superuser = self.make_user("superuser")
         self.superuser.is_staff = True
@@ -27,14 +23,14 @@ class TestBase(TestCase):
         self.superuser.save()
 
     def create_one_containertemplate(self):
-        """Create one containertemplate assigned to the project."""
-        self.containertemplate1 = ContainerTemplateFactory(project=self.project)
+        """Create one containertemplate."""
+        self.containertemplate1 = ContainerTemplateFactory()
         self.assertEqual(ContainerTemplate.objects.count(), 1)
 
     def create_two_containertemplates(self):
-        """Create two containertemplates in the same project."""
+        """Create two containertemplates."""
         self.create_one_containertemplate()
-        self.containertemplate2 = ContainerTemplateFactory(project=self.project)
+        self.containertemplate2 = ContainerTemplateFactory()
         self.assertEqual(ContainerTemplate.objects.count(), 2)
 
     def create_fake_uuid(self):

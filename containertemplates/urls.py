@@ -8,7 +8,7 @@ app_name = "containertemplates"
 
 urlpatterns = [
     url(
-        regex=r"^(?P<project>[0-9a-f-]+)$",
+        regex=r"^$",
         view=views.ContainerTemplateListView.as_view(),
         name="list",
     ),
@@ -18,7 +18,7 @@ urlpatterns = [
         name="detail",
     ),
     url(
-        regex=r"^create/(?P<project>[0-9a-f-]+)$",
+        regex=r"^create$",
         view=views.ContainerTemplateCreateView.as_view(),
         name="create",
     ),
@@ -31,5 +31,10 @@ urlpatterns = [
         regex=r"^delete/(?P<containertemplate>[0-9a-f-]+)$",
         view=views.ContainerTemplateDeleteView.as_view(),
         name="delete",
+    ),
+    url(
+        regex=r"^duplicate/(?P<containertemplate>[0-9a-f-]+)$",
+        view=views.ContainerTemplateDuplicateView.as_view(),
+        name="duplicate",
     ),
 ]

@@ -120,7 +120,7 @@ class TestContainerModel(TestBase):
         self.assertEqual(
             self.container1.get_absolute_url(),
             reverse(
-                "containers:container-detail",
+                "containers:detail",
                 kwargs={"container": self.container1.sodar_uuid},
             ),
         )

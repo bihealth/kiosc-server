@@ -13,11 +13,27 @@ Added
 
 - **General**
   - Docker deployment
+  - Site-wide apps to menu (#30)
 - **ContainerTemplates**
   - App itself (#29)
   - ``ContainerTemplates`` model (#29)
   - Views for creating/updating/deleting and viewing details of ``ContainerTemplates`` (#29)
   - Permissions for ``ContainerTemplates`` views (#29)
+  - View for duplicate a ``ContainerTemplate`` (#30)
+
+Changed
+-------
+
+- **Containers**
+  - Internal naming of URLs (#30)
+- **ContainerTemplates**
+  - ``ProjectApp`` to ``SiteApp`` (#30)
+
+Removed
+-------
+
+- **ContainerTemplates**
+  - ``project`` field from ``ContainerTemplates`` model (#30)
 
 
 v0.1.3 (2021-06-09)

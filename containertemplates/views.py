@@ -1,6 +1,10 @@
 # Create your views here.
 from django.contrib import messages
+from django.db import transaction
+from django.forms import model_to_dict
+from django.shortcuts import get_object_or_404, redirect
 from django.urls import reverse
+from django.views import View
 from django.views.generic import (
     CreateView,
     DeleteView,
@@ -12,8 +16,6 @@ from projectroles.plugins import get_backend_api
 from projectroles.views import (
     LoginRequiredMixin,
     LoggedInPermissionMixin,
-    ProjectPermissionMixin,
-    ProjectContextMixin,
 )
 
 from containertemplates.forms import ContainerTemplateForm
@@ -25,8 +27,6 @@ APP_NAME = "containertemplates"
 class ContainerTemplateCreateView(
     LoginRequiredMixin,
     LoggedInPermissionMixin,
-    ProjectPermissionMixin,
-    ProjectContextMixin,
     CreateView,
 ):
     """View for creating a containertemplate."""
@@ -35,12 +35,6 @@ class ContainerTemplateCreateView(
     template_name = "containertemplates/form.html"
     form_class = ContainerTemplateForm
 
-    def get_initial(self):
-        """Set hidden project field."""
-        initial = super().get_initial()
-        initial["project"] = self.get_project()
-        return initial
-
     def form_valid(self, form):
         response = super().form_valid(form)
         timeline = get_backend_api("timeline_backend")
@@ -48,7 +42,7 @@ class ContainerTemplateCreateView(
         # Add timeline event
         if timeline:
             tl_event = timeline.add_event(
-                project=self.get_project(),
+                project=None,
                 app_name=APP_NAME,
                 user=self.request.user,
                 event_name="create_containertemplate",
@@ -67,8 +61,6 @@ class ContainerTemplateCreateView(
 class ContainerTemplateDeleteView(
     LoginRequiredMixin,
     LoggedInPermissionMixin,
-    ProjectPermissionMixin,
-    ProjectContextMixin,
     DeleteView,
 ):
     """View for deleting a containertemplate."""
@@ -86,18 +78,16 @@ class ContainerTemplateDeleteView(
         )
         return reverse(
             "containertemplates:list",
-            kwargs={"project": self.object.project.sodar_uuid},
         )
 
     def delete(self, request, *args, **kwargs):
         timeline = get_backend_api("timeline_backend")
         obj = self.get_object()
-        project = self.get_project()
 
         # Add timeline event
         if timeline:
             timeline.add_event(
-                project=project,
+                project=None,
                 app_name=APP_NAME,
                 user=request.user,
                 event_name="delete_containertemplate",
@@ -111,8 +101,6 @@ class ContainerTemplateDeleteView(
 class ContainerTemplateUpdateView(
     LoginRequiredMixin,
     LoggedInPermissionMixin,
-    ProjectPermissionMixin,
-    ProjectContextMixin,
     UpdateView,
 ):
     """View for updating a ContainerTemplate."""
@@ -130,7 +118,7 @@ class ContainerTemplateUpdateView(
 
         if timeline:
             tl_event = timeline.add_event(
-                project=self.get_project(),
+                project=None,
                 app_name=APP_NAME,
                 user=self.request.user,
                 event_name="update_containertemplate",
@@ -149,8 +137,6 @@ class ContainerTemplateUpdateView(
 class ContainerTemplateListView(
     LoginRequiredMixin,
     LoggedInPermissionMixin,
-    ProjectPermissionMixin,
-    ProjectContextMixin,
     ListView,
 ):
     """View for listing ContainerTemplates."""
@@ -158,15 +144,11 @@ class ContainerTemplateListView(
     permission_required = "containertemplates.view"
     template_name = "containertemplates/list.html"
     model = ContainerTemplate
-    slug_url_kwarg = "project"
-    slug_field = "sodar_uuid"
 
 
 class ContainerTemplateDetailView(
     LoginRequiredMixin,
     LoggedInPermissionMixin,
-    ProjectPermissionMixin,
-    ProjectContextMixin,
     DetailView,
 ):
     """View for details of containertemplate."""
@@ -176,3 +158,48 @@ class ContainerTemplateDetailView(
     model = ContainerTemplate
     slug_url_kwarg = "containertemplate"
     slug_field = "sodar_uuid"
+
+
+class ContainerTemplateDuplicateView(
+    LoginRequiredMixin,
+    LoggedInPermissionMixin,
+    View,
+):
+    """View for duplicating a containertemplate."""
+
+    permission_required = "containertemplates.duplicate"
+    model = ContainerTemplate
+    slug_url_kwarg = "containertemplate"
+    slug_field = "sodar_uuid"
+
+    def get(self, request, *args, **kwargs):
+        with transaction.atomic():
+            containertemplate = get_object_or_404(
+                ContainerTemplate,
+                sodar_uuid=kwargs.get("containertemplate"),
+            )
+            data = model_to_dict(
+                containertemplate, exclude=["id", "sodar_uuid"]
+            )
+            title_original = data["title"]
+            title_new = f"{data['title']} (Duplicate)"
+            counter = 1
+
+            while ContainerTemplate.objects.filter(title=title_new).exists():
+                counter += 1
+                title_new = f"{title_original} (Duplicate {counter})"
+
+            data["title"] = title_new
+
+            try:
+                ContainerTemplate.objects.create(**data)
+
+            except Exception as e:
+                messages.error(e)
+
+            messages.success(
+                request,
+                f"Successfully created container template '{title_new}' from '{title_original}'",
+            )
+
+            return redirect(reverse("containertemplates:list"))

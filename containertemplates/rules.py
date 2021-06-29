@@ -1,38 +1,32 @@
 import rules
 
-# Projectroles dependency
-from projectroles import rules as pr_rules  # To access common predicates
-
 
 # Allow listing templates and viewing details.
 rules.add_perm(
     "containertemplates.view",
-    pr_rules.is_project_owner
-    | pr_rules.is_project_delegate
-    | pr_rules.is_project_contributor
-    | pr_rules.is_project_guest,
+    rules.is_superuser | rules.is_authenticated,
 )
 
 # Allow creating templates.
 rules.add_perm(
     "containertemplates.create",
-    pr_rules.is_project_owner
-    | pr_rules.is_project_delegate
-    | pr_rules.is_project_contributor,
+    rules.is_superuser,
 )
 
 # Allow updating templates.
 rules.add_perm(
     "containertemplates.edit",
-    pr_rules.is_project_owner
-    | pr_rules.is_project_delegate
-    | pr_rules.is_project_contributor,
+    rules.is_superuser,
 )
 
 # Allow deleting templates.
 rules.add_perm(
     "containertemplates.delete",
-    pr_rules.is_project_owner
-    | pr_rules.is_project_delegate
-    | pr_rules.is_project_contributor,
+    rules.is_superuser,
+)
+
+# Allow duplicating templates.
+rules.add_perm(
+    "containertemplates.duplicate",
+    rules.is_superuser,
 )

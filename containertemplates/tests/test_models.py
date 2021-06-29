@@ -16,7 +16,6 @@ class TestContainerTemplateModel(TestBase):
         self.create_one_containertemplate()
         self.data = {
             "title": "some title",
-            "project": self.project,
         }
 
     def test_initialization(self):
@@ -33,7 +32,6 @@ class TestContainerTemplateModel(TestBase):
             "container_path": None,
             "heartbeat_url": None,
             "environment_secret_keys": None,
-            "project": self.project.pk,
             "id": container.id,
             "sodar_uuid": container.sodar_uuid,
             "max_retries": container.max_retries,

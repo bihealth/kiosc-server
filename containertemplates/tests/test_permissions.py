@@ -11,13 +11,12 @@ class TestContainerTemplatePermissions(TestProjectPermissionBase):
 
     def setUp(self):
         super().setUp()
-        self.containertemplate = ContainerTemplateFactory(project=self.project)
+        self.containertemplate = ContainerTemplateFactory()
 
     def test_containertemplate_list(self):
         """Test permissions for the ``containertemplates:list`` view."""
         url = reverse(
             "containertemplates:list",
-            kwargs={"project": self.project.sodar_uuid},
         )
         good_users = [
             self.superuser,
@@ -25,8 +24,9 @@ class TestContainerTemplatePermissions(TestProjectPermissionBase):
             self.delegate_as.user,
             self.contributor_as.user,
             self.guest_as.user,
+            self.user_no_roles,
         ]
-        bad_users = [self.user_no_roles, self.anonymous]
+        bad_users = [self.anonymous]
         self.assert_response(url, good_users, 200)
         self.assert_response(url, bad_users, 302)
 
@@ -34,15 +34,18 @@ class TestContainerTemplatePermissions(TestProjectPermissionBase):
         """Test permissions for the ``containertemplates:create`` view."""
         url = reverse(
             "containertemplates:create",
-            kwargs={"project": self.project.sodar_uuid},
         )
         good_users = [
             self.superuser,
+        ]
+        bad_users = [
             self.owner_as.user,
             self.delegate_as.user,
             self.contributor_as.user,
+            self.guest_as.user,
+            self.user_no_roles,
+            self.anonymous,
         ]
-        bad_users = [self.guest_as.user, self.user_no_roles, self.anonymous]
         self.assert_response(url, good_users, 200)
         self.assert_response(url, bad_users, 302)
 
@@ -54,11 +57,15 @@ class TestContainerTemplatePermissions(TestProjectPermissionBase):
         )
         good_users = [
             self.superuser,
+        ]
+        bad_users = [
             self.owner_as.user,
             self.delegate_as.user,
             self.contributor_as.user,
+            self.guest_as.user,
+            self.user_no_roles,
+            self.anonymous,
         ]
-        bad_users = [self.guest_as.user, self.user_no_roles, self.anonymous]
         self.assert_response(url, good_users, 200)
         self.assert_response(url, bad_users, 302)
 
@@ -74,8 +81,9 @@ class TestContainerTemplatePermissions(TestProjectPermissionBase):
             self.delegate_as.user,
             self.contributor_as.user,
             self.guest_as.user,
+            self.user_no_roles,
         ]
-        bad_users = [self.user_no_roles, self.anonymous]
+        bad_users = [self.anonymous]
         self.assert_response(url, good_users, 200)
         self.assert_response(url, bad_users, 302)
 
@@ -87,10 +95,41 @@ class TestContainerTemplatePermissions(TestProjectPermissionBase):
         )
         good_users = [
             self.superuser,
+        ]
+        bad_users = [
             self.owner_as.user,
             self.delegate_as.user,
             self.contributor_as.user,
+            self.guest_as.user,
+            self.user_no_roles,
+            self.anonymous,
         ]
-        bad_users = [self.guest_as.user, self.user_no_roles, self.anonymous]
         self.assert_response(url, good_users, 200)
+        self.assert_response(url, bad_users, 302)
+
+    def test_containertemplate_duplicate(self):
+        """Test permissions for the ``containertemplates:duplicate`` view."""
+        url = reverse(
+            "containertemplates:duplicate",
+            kwargs={"containertemplate": self.containertemplate.sodar_uuid},
+        )
+        good_users = [
+            self.superuser,
+        ]
+        bad_users = [
+            self.owner_as.user,
+            self.delegate_as.user,
+            self.contributor_as.user,
+            self.guest_as.user,
+            self.user_no_roles,
+            self.anonymous,
+        ]
+        self.assert_response(
+            url,
+            good_users,
+            302,
+            redirect_user=reverse(
+                "containertemplates:list",
+            ),
+        )
         self.assert_response(url, bad_users, 302)

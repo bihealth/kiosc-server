@@ -34,7 +34,7 @@ class TestContainerListView(TestBase):
         with self.login(self.superuser):
             response = self.client.get(
                 reverse(
-                    "containers:container-list",
+                    "containers:list",
                     kwargs={"project": self.project.sodar_uuid},
                 )
             )
@@ -48,7 +48,7 @@ class TestContainerListView(TestBase):
         with self.login(self.superuser):
             response = self.client.get(
                 reverse(
-                    "containers:container-list",
+                    "containers:list",
                     kwargs={"project": self.project.sodar_uuid},
                 )
             )
@@ -66,7 +66,7 @@ class TestContainerListView(TestBase):
         with self.login(self.superuser):
             response = self.client.get(
                 reverse(
-                    "containers:container-list",
+                    "containers:list",
                     kwargs={"project": self.project.sodar_uuid},
                 )
             )
@@ -87,7 +87,7 @@ class TestContainerCreateView(TestBase):
         with self.login(self.superuser):
             response = self.client.get(
                 reverse(
-                    "containers:container-create",
+                    "containers:create",
                     kwargs={"project": self.project.sodar_uuid},
                 )
             )
@@ -110,7 +110,7 @@ class TestContainerCreateView(TestBase):
         with self.login(self.superuser):
             response = self.client.post(
                 reverse(
-                    "containers:container-create",
+                    "containers:create",
                     kwargs={"project": self.project.sodar_uuid},
                 ),
                 post_data,
@@ -123,7 +123,7 @@ class TestContainerCreateView(TestBase):
             self.assertRedirects(
                 response,
                 reverse(
-                    "containers:container-detail",
+                    "containers:detail",
                     kwargs={"container": container.sodar_uuid},
                 ),
             )
@@ -150,7 +150,7 @@ class TestContainerCreateView(TestBase):
         with self.login(self.superuser):
             response = self.client.post(
                 reverse(
-                    "containers:container-create",
+                    "containers:create",
                     kwargs={"project": self.project.sodar_uuid},
                 ),
                 post_data,
@@ -163,7 +163,7 @@ class TestContainerCreateView(TestBase):
             self.assertRedirects(
                 response,
                 reverse(
-                    "containers:container-detail",
+                    "containers:detail",
                     kwargs={"container": container.sodar_uuid},
                 ),
             )
@@ -193,7 +193,7 @@ class TestContainerCreateView(TestBase):
         with self.login(self.superuser):
             response = self.client.post(
                 reverse(
-                    "containers:container-create",
+                    "containers:create",
                     kwargs={"project": self.project.sodar_uuid},
                 ),
                 post_data,
@@ -206,7 +206,7 @@ class TestContainerCreateView(TestBase):
             self.assertRedirects(
                 response,
                 reverse(
-                    "containers:container-detail",
+                    "containers:detail",
                     kwargs={"container": container.sodar_uuid},
                 ),
             )
@@ -230,7 +230,7 @@ class TestContainerDeleteView(TestBase):
         with self.login(self.superuser):
             response = self.client.get(
                 reverse(
-                    "containers:container-delete",
+                    "containers:delete",
                     kwargs={"container": self.container1.sodar_uuid},
                 )
             )
@@ -242,7 +242,7 @@ class TestContainerDeleteView(TestBase):
         with self.login(self.superuser):
             response = self.client.get(
                 reverse(
-                    "containers:container-delete",
+                    "containers:delete",
                     kwargs={"container": self.fake_uuid},
                 )
             )
@@ -254,7 +254,7 @@ class TestContainerDeleteView(TestBase):
         with self.login(self.superuser):
             response = self.client.post(
                 reverse(
-                    "containers:container-delete",
+                    "containers:delete",
                     kwargs={"container": self.container1.sodar_uuid},
                 )
             )
@@ -262,7 +262,7 @@ class TestContainerDeleteView(TestBase):
             self.assertRedirects(
                 response,
                 reverse(
-                    "containers:container-list",
+                    "containers:list",
                     kwargs={"project": self.project.sodar_uuid},
                 ),
             )
@@ -273,7 +273,7 @@ class TestContainerDeleteView(TestBase):
         with self.login(self.superuser):
             response = self.client.post(
                 reverse(
-                    "containers:container-delete",
+                    "containers:delete",
                     kwargs={"container": self.fake_uuid},
                 )
             )
@@ -294,7 +294,7 @@ class TestContainerUpdateView(TestBase):
         with self.login(self.superuser):
             response = self.client.get(
                 reverse(
-                    "containers:container-update",
+                    "containers:update",
                     kwargs={"container": self.container1.sodar_uuid},
                 )
             )
@@ -305,7 +305,7 @@ class TestContainerUpdateView(TestBase):
         with self.login(self.superuser):
             response = self.client.get(
                 reverse(
-                    "containers:container-update",
+                    "containers:update",
                     kwargs={"container": self.fake_uuid},
                 )
             )
@@ -328,7 +328,7 @@ class TestContainerUpdateView(TestBase):
         with self.login(self.superuser):
             response = self.client.post(
                 reverse(
-                    "containers:container-update",
+                    "containers:update",
                     kwargs={"container": self.container1.sodar_uuid},
                 ),
                 post_data,
@@ -340,7 +340,7 @@ class TestContainerUpdateView(TestBase):
             self.assertRedirects(
                 response,
                 reverse(
-                    "containers:container-detail",
+                    "containers:detail",
                     kwargs={"container": self.container1.sodar_uuid},
                 ),
             )
@@ -366,7 +366,7 @@ class TestContainerUpdateView(TestBase):
         with self.login(self.superuser):
             response = self.client.post(
                 reverse(
-                    "containers:container-update",
+                    "containers:update",
                     kwargs={"container": self.container1.sodar_uuid},
                 ),
                 post_data,
@@ -378,7 +378,7 @@ class TestContainerUpdateView(TestBase):
             self.assertRedirects(
                 response,
                 reverse(
-                    "containers:container-detail",
+                    "containers:detail",
                     kwargs={"container": self.container1.sodar_uuid},
                 ),
             )
@@ -409,7 +409,7 @@ class TestContainerUpdateView(TestBase):
         with self.login(self.superuser):
             response = self.client.post(
                 reverse(
-                    "containers:container-update",
+                    "containers:update",
                     kwargs={"container": self.container1.sodar_uuid},
                 ),
                 post_data,
@@ -421,7 +421,7 @@ class TestContainerUpdateView(TestBase):
             self.assertRedirects(
                 response,
                 reverse(
-                    "containers:container-restart",
+                    "containers:restart",
                     kwargs={"container": self.container1.sodar_uuid},
                 ),
                 status_code=302,
@@ -461,7 +461,7 @@ class TestContainerUpdateView(TestBase):
         with self.login(self.superuser):
             response = self.client.post(
                 reverse(
-                    "containers:container-update",
+                    "containers:update",
                     kwargs={"container": self.container1.sodar_uuid},
                 ),
                 post_data,
@@ -473,7 +473,7 @@ class TestContainerUpdateView(TestBase):
             self.assertRedirects(
                 response,
                 reverse(
-                    "containers:container-restart",
+                    "containers:restart",
                     kwargs={"container": self.container1.sodar_uuid},
                 ),
                 status_code=302,
@@ -514,7 +514,7 @@ class TestContainerUpdateView(TestBase):
         with self.login(self.superuser):
             response = self.client.post(
                 reverse(
-                    "containers:container-update",
+                    "containers:update",
                     kwargs={"container": self.container1.sodar_uuid},
                 ),
                 post_data,
@@ -526,7 +526,7 @@ class TestContainerUpdateView(TestBase):
             self.assertRedirects(
                 response,
                 reverse(
-                    "containers:container-restart",
+                    "containers:restart",
                     kwargs={"container": self.container1.sodar_uuid},
                 ),
                 status_code=302,
@@ -566,7 +566,7 @@ class TestContainerUpdateView(TestBase):
         with self.login(self.superuser):
             response = self.client.post(
                 reverse(
-                    "containers:container-update",
+                    "containers:update",
                     kwargs={"container": self.container1.sodar_uuid},
                 ),
                 post_data,
@@ -578,7 +578,7 @@ class TestContainerUpdateView(TestBase):
             self.assertRedirects(
                 response,
                 reverse(
-                    "containers:container-restart",
+                    "containers:restart",
                     kwargs={"container": self.container1.sodar_uuid},
                 ),
                 status_code=302,
@@ -613,7 +613,7 @@ class TestContainerUpdateView(TestBase):
         with self.login(self.superuser):
             response = self.client.post(
                 reverse(
-                    "containers:container-update",
+                    "containers:update",
                     kwargs={"container": self.fake_uuid},
                 ),
                 post_data,
@@ -634,7 +634,7 @@ class TestContainerDetailView(TestBase):
         with self.login(self.superuser):
             response = self.client.get(
                 reverse(
-                    "containers:container-detail",
+                    "containers:detail",
                     kwargs={"container": self.container1.sodar_uuid},
                 )
             )
@@ -646,7 +646,7 @@ class TestContainerDetailView(TestBase):
         with self.login(self.superuser):
             response = self.client.get(
                 reverse(
-                    "containers:container-detail",
+                    "containers:detail",
                     kwargs={"container": self.fake_uuid},
                 )
             )
@@ -667,7 +667,7 @@ class TestContainerStartView(TestBase):
         with self.login(self.superuser):
             response = self.client.get(
                 reverse(
-                    "containers:container-start",
+                    "containers:start",
                     kwargs={"container": self.container1.sodar_uuid},
                 )
             )
@@ -679,7 +679,7 @@ class TestContainerStartView(TestBase):
             self.assertRedirects(
                 response,
                 reverse(
-                    "containers:container-detail",
+                    "containers:detail",
                     kwargs={"container": self.container1.sodar_uuid},
                 ),
             )
@@ -691,7 +691,7 @@ class TestContainerStartView(TestBase):
         with self.login(self.superuser):
             response = self.client.get(
                 reverse(
-                    "containers:container-start",
+                    "containers:start",
                     kwargs={"container": self.fake_uuid},
                 )
             )
@@ -712,7 +712,7 @@ class TestContainerStopView(TestBase):
         with self.login(self.superuser):
             response = self.client.get(
                 reverse(
-                    "containers:container-stop",
+                    "containers:stop",
                     kwargs={"container": self.container1.sodar_uuid},
                 )
             )
@@ -724,7 +724,7 @@ class TestContainerStopView(TestBase):
             self.assertRedirects(
                 response,
                 reverse(
-                    "containers:container-detail",
+                    "containers:detail",
                     kwargs={"container": self.container1.sodar_uuid},
                 ),
             )
@@ -736,7 +736,7 @@ class TestContainerStopView(TestBase):
         with self.login(self.superuser):
             response = self.client.get(
                 reverse(
-                    "containers:container-stop",
+                    "containers:stop",
                     kwargs={"container": self.fake_uuid},
                 )
             )
@@ -757,7 +757,7 @@ class TestContainerRestartView(TestBase):
         with self.login(self.superuser):
             response = self.client.get(
                 reverse(
-                    "containers:container-restart",
+                    "containers:restart",
                     kwargs={"container": self.container1.sodar_uuid},
                 )
             )
@@ -769,7 +769,7 @@ class TestContainerRestartView(TestBase):
             self.assertRedirects(
                 response,
                 reverse(
-                    "containers:container-detail",
+                    "containers:detail",
                     kwargs={"container": self.container1.sodar_uuid},
                 ),
             )
@@ -781,7 +781,7 @@ class TestContainerRestartView(TestBase):
         with self.login(self.superuser):
             response = self.client.get(
                 reverse(
-                    "containers:container-restart",
+                    "containers:restart",
                     kwargs={"container": self.fake_uuid},
                 )
             )
@@ -802,7 +802,7 @@ class TestContainerPauseView(TestBase):
         with self.login(self.superuser):
             response = self.client.get(
                 reverse(
-                    "containers:container-pause",
+                    "containers:pause",
                     kwargs={"container": self.container1.sodar_uuid},
                 )
             )
@@ -814,7 +814,7 @@ class TestContainerPauseView(TestBase):
             self.assertRedirects(
                 response,
                 reverse(
-                    "containers:container-detail",
+                    "containers:detail",
                     kwargs={"container": self.container1.sodar_uuid},
                 ),
             )
@@ -826,7 +826,7 @@ class TestContainerPauseView(TestBase):
         with self.login(self.superuser):
             response = self.client.get(
                 reverse(
-                    "containers:container-pause",
+                    "containers:pause",
                     kwargs={"container": self.fake_uuid},
                 )
             )
@@ -847,7 +847,7 @@ class TestContainerUnpauseView(TestBase):
         with self.login(self.superuser):
             response = self.client.get(
                 reverse(
-                    "containers:container-unpause",
+                    "containers:unpause",
                     kwargs={"container": self.container1.sodar_uuid},
                 )
             )
@@ -859,7 +859,7 @@ class TestContainerUnpauseView(TestBase):
             self.assertRedirects(
                 response,
                 reverse(
-                    "containers:container-detail",
+                    "containers:detail",
                     kwargs={"container": self.container1.sodar_uuid},
                 ),
             )
@@ -871,7 +871,7 @@ class TestContainerUnpauseView(TestBase):
         with self.login(self.superuser):
             response = self.client.get(
                 reverse(
-                    "containers:container-unpause",
+                    "containers:unpause",
                     kwargs={"container": self.fake_uuid},
                 )
             )
@@ -945,7 +945,7 @@ class TestReverseProxyView(TestBase):
             self.assertRedirects(
                 response,
                 reverse(
-                    "containers:container-list",
+                    "containers:list",
                     kwargs={"project": self.container1.project.sodar_uuid},
                 ),
             )

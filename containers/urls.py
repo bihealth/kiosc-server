@@ -11,52 +11,52 @@ urlpatterns = [
     url(
         regex=r"^(?P<project>[0-9a-f-]+)$",
         view=views.ContainerListView.as_view(),
-        name="container-list",
+        name="list",
     ),
     url(
         regex=r"^detail/(?P<container>[0-9a-f-]+)$",
         view=views.ContainerDetailView.as_view(),
-        name="container-detail",
+        name="detail",
     ),
     url(
         regex=r"^create/(?P<project>[0-9a-f-]+)$",
         view=views.ContainerCreateView.as_view(),
-        name="container-create",
+        name="create",
     ),
     url(
         regex=r"^update/(?P<container>[0-9a-f-]+)$",
         view=views.ContainerUpdateView.as_view(),
-        name="container-update",
+        name="update",
     ),
     url(
         regex=r"^delete/(?P<container>[0-9a-f-]+)$",
         view=views.ContainerDeleteView.as_view(),
-        name="container-delete",
+        name="delete",
     ),
     url(
         regex=r"^start/(?P<container>[0-9a-f-]+)$",
         view=views.ContainerStartView.as_view(),
-        name="container-start",
+        name="start",
     ),
     url(
         regex=r"^stop/(?P<container>[0-9a-f-]+)$",
         view=views.ContainerStopView.as_view(),
-        name="container-stop",
+        name="stop",
     ),
     url(
         regex=r"^pause/(?P<container>[0-9a-f-]+)$",
         view=views.ContainerPauseView.as_view(),
-        name="container-pause",
+        name="pause",
     ),
     url(
         regex=r"^unpause/(?P<container>[0-9a-f-]+)$",
         view=views.ContainerUnpauseView.as_view(),
-        name="container-unpause",
+        name="unpause",
     ),
     url(
         regex=r"^restart/(?P<container>[0-9a-f-]+)$",
         view=views.ContainerRestartView.as_view(),
-        name="container-restart",
+        name="restart",
     ),
     url(
         regex=r"^proxy/(?P<container>[0-9a-f-]+)/(?P<path>.*)$",

@@ -19,7 +19,7 @@
     {% for container in project.containers.all %}
       <tr>
         <td class="pl-4">
-          <a href="{% url 'containers:container-detail' container=container.sodar_uuid %}">{{ container.get_display_name }}</a>
+          <a href="{% url 'containers:detail' container=container.sodar_uuid %}">{{ container.get_display_name }}</a>
         </td>
         <td>
           {{ container.container_port }}{% if network_mode == "host" %}:{{ container.host_port }}{% endif %}

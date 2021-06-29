@@ -4,7 +4,6 @@ from django.db import models
 from django.db.models import JSONField
 from django.urls import reverse
 from django.utils.timezone import localtime
-from projectroles.models import Project
 
 
 class ContainerTemplate(models.Model):
@@ -17,6 +16,7 @@ class ContainerTemplate(models.Model):
     title = models.CharField(
         max_length=512,
         help_text="Title of the container template.",
+        unique=True,
     )
 
     #: Description of the template
@@ -58,14 +58,6 @@ class ContainerTemplate(models.Model):
         default=uuid.uuid4,
         unique=True,
         help_text="ContainerTemplate SODAR UUID",
-    )
-
-    #: The project containing this container.
-    project = models.ForeignKey(
-        Project,
-        related_name="containertemplates",
-        help_text="Project in which this containertemplate belongs",
-        on_delete=models.CASCADE,
     )
 
     #: The port within the Docker container to listen on.

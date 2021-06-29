@@ -18,13 +18,7 @@ class ContainerTemplateForm(forms.ModelForm):
             "environment",
             "environment_secret_keys",
             "command",
-            "project",
             "repository",
             "tag",
             "max_retries",
         ]
-
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        # Hide project field
-        self.fields["project"].widget = forms.HiddenInput()

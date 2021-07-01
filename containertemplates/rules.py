@@ -1,32 +1,75 @@
 import rules
 
+from projectroles import rules as pr_rules
 
-# Allow listing templates and viewing details.
+
+# Allow listing site-wide templates and viewing details.
 rules.add_perm(
-    "containertemplates.view",
+    "containertemplates.site_view",
     rules.is_superuser | rules.is_authenticated,
 )
 
-# Allow creating templates.
+# Allow creating site-wide templates.
 rules.add_perm(
-    "containertemplates.create",
+    "containertemplates.site_create",
     rules.is_superuser,
 )
 
-# Allow updating templates.
+# Allow updating site-wide templates.
 rules.add_perm(
-    "containertemplates.edit",
+    "containertemplates.site_edit",
     rules.is_superuser,
 )
 
-# Allow deleting templates.
+# Allow deleting site-wide templates.
 rules.add_perm(
-    "containertemplates.delete",
+    "containertemplates.site_delete",
     rules.is_superuser,
 )
 
-# Allow duplicating templates.
+# Allow duplicating site-wide templates.
 rules.add_perm(
-    "containertemplates.duplicate",
+    "containertemplates.site_duplicate",
     rules.is_superuser,
+)
+
+# Allow listing project-wide templates and viewing details.
+rules.add_perm(
+    "containertemplates.project_view",
+    pr_rules.is_project_owner
+    | pr_rules.is_project_delegate
+    | pr_rules.is_project_contributor
+    | pr_rules.is_project_guest,
+)
+
+# Allow creating project-wide templates.
+rules.add_perm(
+    "containertemplates.project_create",
+    pr_rules.is_project_owner
+    | pr_rules.is_project_delegate
+    | pr_rules.is_project_contributor,
+)
+
+# Allow updating project-wide templates.
+rules.add_perm(
+    "containertemplates.project_edit",
+    pr_rules.is_project_owner
+    | pr_rules.is_project_delegate
+    | pr_rules.is_project_contributor,
+)
+
+# Allow deleting project-wide templates.
+rules.add_perm(
+    "containertemplates.project_delete",
+    pr_rules.is_project_owner
+    | pr_rules.is_project_delegate
+    | pr_rules.is_project_contributor,
+)
+
+# Allow duplicating project-wide templates.
+rules.add_perm(
+    "containertemplates.project_duplicate",
+    pr_rules.is_project_owner
+    | pr_rules.is_project_delegate
+    | pr_rules.is_project_contributor,
 )

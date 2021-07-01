@@ -253,7 +253,9 @@ class Container(models.Model):
 
     #: Define the environment variables to use, as an array of dicts with keys "name" and "value".
     #: This guarantees that the order of environment variable definitions does not change.
-    environment = JSONField(help_text="The environment variables to use")
+    environment = JSONField(
+        help_text="The environment variables to use", blank=True, null=True
+    )
 
     #: List if keys that when defined in ``environment`` are set but no displayed.
     environment_secret_keys = models.CharField(

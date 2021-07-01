@@ -32,10 +32,30 @@ class TestContainerModel(TestBase):
             "container_port": 80,
             "timeout": 60,
             "state": STATE_INITIAL,
-            "environment": json.loads('{"test": 1}'),
         }
 
     def test_initialization(self):
+        container = Container.objects.create(**self.data)
+        expected = {
+            **self.data,
+            "command": None,
+            "container_id": None,
+            "container_path": None,
+            "heartbeat_url": None,
+            "host_port": None,
+            "environment": None,
+            "environment_secret_keys": None,
+            "image_id": None,
+            "date_last_status_update": None,
+            "project": self.project.pk,
+            "id": container.id,
+            "sodar_uuid": container.sodar_uuid,
+            "max_retries": container.max_retries,
+        }
+        self.assertEqual(model_to_dict(container), expected)
+
+    def test_initialization_with_json_field(self):
+        self.data.update({"environment": json.loads('{"test": 1}')})
         container = Container.objects.create(**self.data)
         expected = {
             **self.data,

@@ -14,20 +14,26 @@ Added
 - **General**
   - Docker deployment
   - Site-wide apps to menu (#30)
-- **ContainerTemplates**
+- **Containertemplates**
   - App itself (#29)
   - ``ContainerTemplates`` model (#29)
-  - Views for creating/updating/deleting and viewing details of ``ContainerTemplates`` (#29)
-  - Permissions for ``ContainerTemplates`` views (#29)
+  - Views for creating/updating/deleting and viewing details of ``ContainerTemplate`` (#29)
+  - Permissions for ``ContainerTemplate`` views (#29)
   - View for duplicate a ``ContainerTemplate`` (#30)
+  - ``ContainerTemplateProject`` model (#31)
+  - Views for creating/updating/deleting/duplicating and viewing details of ``ContainerTemplateProject`` (#31)
+  - Permissions for ``ContainerTemplateSite`` views (#31)
+  - ``ProjectApp`` re-introduced living alongside ``SiteApp`` (#31)
 
 Changed
 -------
 
 - **Containers**
   - Internal naming of URLs (#30)
-- **ContainerTemplates**
+  - Field ``environment`` now optional (#31)
+- **Containertemplates**
   - ``ProjectApp`` to ``SiteApp`` (#30)
+  - Naming ``ContainerTemplates`` model to ``ContainerTemplateSite`` (#31)
 
 Removed
 -------

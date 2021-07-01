@@ -6,21 +6,24 @@ from urllib3_mock import Responses
 from django.forms import model_to_dict
 from django.urls import reverse
 
-from containertemplates.models import ContainerTemplate
+from containertemplates.models import (
+    ContainerTemplateSite,
+    ContainerTemplateProject,
+)
 from containertemplates.tests.helpers import TestBase
 
 
 responses = Responses("requests.packages.urllib3")
 
 
-class TestContainerTemplateListView(TestBase):
-    """Tests for ``ContainerTemplateListView``."""
+class TestContainerTemplateSiteListView(TestBase):
+    """Tests for ``ContainerTemplateSiteListView``."""
 
     def test_get_success_list_empty(self):
         with self.login(self.superuser):
             response = self.client.get(
                 reverse(
-                    "containertemplates:list",
+                    "containertemplates:site-list",
                 )
             )
 
@@ -28,12 +31,12 @@ class TestContainerTemplateListView(TestBase):
             self.assertEqual(len(response.context["object_list"]), 0)
 
     def test_get_success_list_one_item(self):
-        self.create_one_containertemplate()
+        self.create_one_containertemplatesite()
 
         with self.login(self.superuser):
             response = self.client.get(
                 reverse(
-                    "containertemplates:list",
+                    "containertemplates:site-list",
                 )
             )
 
@@ -42,15 +45,15 @@ class TestContainerTemplateListView(TestBase):
             items = list(response.context["object_list"])
 
             self.assertEqual(len(items), 1)
-            self.assertEqual(items[0].id, self.containertemplate1.id)
+            self.assertEqual(items[0].id, self.containertemplatesite1.id)
 
     def test_get_success_list_two_items(self):
-        self.create_two_containertemplates()
+        self.create_two_containertemplatesites()
 
         with self.login(self.superuser):
             response = self.client.get(
                 reverse(
-                    "containertemplates:list",
+                    "containertemplates:site-list",
                 )
             )
 
@@ -59,18 +62,18 @@ class TestContainerTemplateListView(TestBase):
             items = list(response.context["object_list"])
 
             self.assertEqual(len(items), 2)
-            self.assertEqual(items[0].id, self.containertemplate2.id)
-            self.assertEqual(items[1].id, self.containertemplate1.id)
+            self.assertEqual(items[0].id, self.containertemplatesite2.id)
+            self.assertEqual(items[1].id, self.containertemplatesite1.id)
 
 
-class TestContainerTemplateCreateView(TestBase):
-    """Tests for ``ContainerTemplateCreateView``."""
+class TestContainerTemplateSiteCreateView(TestBase):
+    """Tests for ``ContainerTemplateSiteCreateView``."""
 
     def test_get_success(self):
         with self.login(self.superuser):
             response = self.client.get(
                 reverse(
-                    "containertemplates:create",
+                    "containertemplates:site-create",
                 )
             )
 
@@ -84,20 +87,22 @@ class TestContainerTemplateCreateView(TestBase):
         with self.login(self.superuser):
             response = self.client.post(
                 reverse(
-                    "containertemplates:create",
+                    "containertemplates:site-create",
                 ),
                 post_data,
             )
 
-            self.assertEqual(ContainerTemplate.objects.count(), 1)
+            self.assertEqual(ContainerTemplateSite.objects.count(), 1)
 
-            containertemplate = ContainerTemplate.objects.first()
+            containertemplate = ContainerTemplateSite.objects.first()
 
             self.assertRedirects(
                 response,
                 reverse(
-                    "containertemplates:detail",
-                    kwargs={"containertemplate": containertemplate.sodar_uuid},
+                    "containertemplates:site-detail",
+                    kwargs={
+                        "containertemplatesite": containertemplate.sodar_uuid
+                    },
                 ),
             )
 
@@ -125,20 +130,22 @@ class TestContainerTemplateCreateView(TestBase):
         with self.login(self.superuser):
             response = self.client.post(
                 reverse(
-                    "containertemplates:create",
+                    "containertemplates:site-create",
                 ),
                 post_data,
             )
 
-            self.assertEqual(ContainerTemplate.objects.count(), 1)
+            self.assertEqual(ContainerTemplateSite.objects.count(), 1)
 
-            containertemplate = ContainerTemplate.objects.first()
+            containertemplate = ContainerTemplateSite.objects.first()
 
             self.assertRedirects(
                 response,
                 reverse(
-                    "containertemplates:detail",
-                    kwargs={"containertemplate": containertemplate.sodar_uuid},
+                    "containertemplates:site-detail",
+                    kwargs={
+                        "containertemplatesite": containertemplate.sodar_uuid
+                    },
                 ),
             )
 
@@ -149,47 +156,47 @@ class TestContainerTemplateCreateView(TestBase):
             self.assertDictEqual(result, post_data)
 
 
-class TestContainerTemplateDeleteView(TestBase):
-    """Tests for ``ContainerTemplateDeleteView``."""
+class TestContainerTemplateSiteDeleteView(TestBase):
+    """Tests for ``ContainerTemplateSiteDeleteView``."""
 
     def setUp(self):
         super().setUp()
-        self.create_one_containertemplate()
+        self.create_one_containertemplatesite()
         self.create_fake_uuid()
 
     def test_get_success(self):
         with self.login(self.superuser):
             response = self.client.get(
                 reverse(
-                    "containertemplates:delete",
+                    "containertemplates:site-delete",
                     kwargs={
-                        "containertemplate": self.containertemplate1.sodar_uuid
+                        "containertemplatesite": self.containertemplatesite1.sodar_uuid
                     },
                 )
             )
 
             self.assertEqual(response.status_code, 200)
-            self.assertEqual(ContainerTemplate.objects.count(), 1)
+            self.assertEqual(ContainerTemplateSite.objects.count(), 1)
 
     def test_get_non_existent(self):
         with self.login(self.superuser):
             response = self.client.get(
                 reverse(
-                    "containertemplates:delete",
-                    kwargs={"containertemplate": self.fake_uuid},
+                    "containertemplates:site-delete",
+                    kwargs={"containertemplatesite": self.fake_uuid},
                 )
             )
 
             self.assertEqual(response.status_code, 404)
-            self.assertEqual(ContainerTemplate.objects.count(), 1)
+            self.assertEqual(ContainerTemplateSite.objects.count(), 1)
 
     def test_post_success_deleted(self):
         with self.login(self.superuser):
             response = self.client.post(
                 reverse(
-                    "containertemplates:delete",
+                    "containertemplates:site-delete",
                     kwargs={
-                        "containertemplate": self.containertemplate1.sodar_uuid
+                        "containertemplatesite": self.containertemplatesite1.sodar_uuid
                     },
                 )
             )
@@ -197,40 +204,40 @@ class TestContainerTemplateDeleteView(TestBase):
             self.assertRedirects(
                 response,
                 reverse(
-                    "containertemplates:list",
+                    "containertemplates:site-list",
                 ),
             )
 
-            self.assertEqual(ContainerTemplate.objects.count(), 0)
+            self.assertEqual(ContainerTemplateSite.objects.count(), 0)
 
     def test_post_non_existent(self):
         with self.login(self.superuser):
             response = self.client.post(
                 reverse(
-                    "containertemplates:delete",
-                    kwargs={"containertemplate": self.fake_uuid},
+                    "containertemplates:site-delete",
+                    kwargs={"containertemplatesite": self.fake_uuid},
                 )
             )
 
             self.assertEqual(response.status_code, 404)
-            self.assertEqual(ContainerTemplate.objects.count(), 1)
+            self.assertEqual(ContainerTemplateSite.objects.count(), 1)
 
 
-class TestContainerTemplateUpdateView(TestBase):
-    """Tests for ``ContainerTemplateUpdateView``."""
+class TestContainerTemplateSiteUpdateView(TestBase):
+    """Tests for ``ContainerTemplateSiteUpdateView``."""
 
     def setUp(self):
         super().setUp()
-        self.create_one_containertemplate()
+        self.create_one_containertemplatesite()
         self.create_fake_uuid()
 
     def test_get_success(self):
         with self.login(self.superuser):
             response = self.client.get(
                 reverse(
-                    "containertemplates:update",
+                    "containertemplates:site-update",
                     kwargs={
-                        "containertemplate": self.containertemplate1.sodar_uuid
+                        "containertemplatesite": self.containertemplatesite1.sodar_uuid
                     },
                 )
             )
@@ -241,8 +248,8 @@ class TestContainerTemplateUpdateView(TestBase):
         with self.login(self.superuser):
             response = self.client.get(
                 reverse(
-                    "containertemplates:update",
-                    kwargs={"containertemplate": self.fake_uuid},
+                    "containertemplates:site-update",
+                    kwargs={"containertemplatesite": self.fake_uuid},
                 )
             )
 
@@ -256,29 +263,29 @@ class TestContainerTemplateUpdateView(TestBase):
         with self.login(self.superuser):
             response = self.client.post(
                 reverse(
-                    "containertemplates:update",
+                    "containertemplates:site-update",
                     kwargs={
-                        "containertemplate": self.containertemplate1.sodar_uuid
+                        "containertemplatesite": self.containertemplatesite1.sodar_uuid
                     },
                 ),
                 post_data,
             )
 
             # Get updated object
-            self.containertemplate1.refresh_from_db()
+            self.containertemplatesite1.refresh_from_db()
 
             self.assertRedirects(
                 response,
                 reverse(
-                    "containertemplates:detail",
+                    "containertemplates:site-detail",
                     kwargs={
-                        "containertemplate": self.containertemplate1.sodar_uuid
+                        "containertemplatesite": self.containertemplatesite1.sodar_uuid
                     },
                 ),
             )
 
             result = model_to_dict(
-                self.containertemplate1, fields=post_data.keys()
+                self.containertemplatesite1, fields=post_data.keys()
             )
 
             # Assert updated properties
@@ -291,8 +298,8 @@ class TestContainerTemplateUpdateView(TestBase):
             "environment": '{"updated": 1234}',
             "repository": "another_repository",
             "tag": "another_tag",
-            "container_port": self.containertemplate1.container_port + 100,
-            "timeout": self.containertemplate1.timeout + 60,
+            "container_port": self.containertemplatesite1.container_port + 100,
+            "timeout": self.containertemplatesite1.timeout + 60,
             "container_path": "updated/path",
             "heartbeat_url": "https://updated.url",
             "environment_secret_keys": "updated",
@@ -303,30 +310,30 @@ class TestContainerTemplateUpdateView(TestBase):
         with self.login(self.superuser):
             response = self.client.post(
                 reverse(
-                    "containertemplates:update",
+                    "containertemplates:site-update",
                     kwargs={
-                        "containertemplate": self.containertemplate1.sodar_uuid
+                        "containertemplatesite": self.containertemplatesite1.sodar_uuid
                     },
                 ),
                 post_data,
             )
 
             # Get updated object
-            self.containertemplate1.refresh_from_db()
+            self.containertemplatesite1.refresh_from_db()
 
             self.assertRedirects(
                 response,
                 reverse(
-                    "containertemplates:detail",
+                    "containertemplates:site-detail",
                     kwargs={
-                        "containertemplate": self.containertemplate1.sodar_uuid
+                        "containertemplatesite": self.containertemplatesite1.sodar_uuid
                     },
                 ),
             )
 
             post_data["environment"] = json.loads(post_data["environment"])
             result = model_to_dict(
-                self.containertemplate1, fields=post_data.keys()
+                self.containertemplatesite1, fields=post_data.keys()
             )
 
             # Assert updated properties
@@ -347,8 +354,8 @@ class TestContainerTemplateUpdateView(TestBase):
         with self.login(self.superuser):
             response = self.client.post(
                 reverse(
-                    "containertemplates:update",
-                    kwargs={"containertemplate": self.fake_uuid},
+                    "containertemplates:site-update",
+                    kwargs={"containertemplatesite": self.fake_uuid},
                 ),
                 post_data,
             )
@@ -356,57 +363,57 @@ class TestContainerTemplateUpdateView(TestBase):
             self.assertEqual(response.status_code, 404)
 
 
-class TestContainerTemplateDetailView(TestBase):
-    """Tests for ``ContainerTemplateDetailView``."""
+class TestContainerTemplateSiteDetailView(TestBase):
+    """Tests for ``ContainerTemplateSiteDetailView``."""
 
     def setUp(self):
         super().setUp()
-        self.create_one_containertemplate()
+        self.create_one_containertemplatesite()
         self.create_fake_uuid()
 
     def test_get_success(self):
         with self.login(self.superuser):
             response = self.client.get(
                 reverse(
-                    "containertemplates:detail",
+                    "containertemplates:site-detail",
                     kwargs={
-                        "containertemplate": self.containertemplate1.sodar_uuid
+                        "containertemplatesite": self.containertemplatesite1.sodar_uuid
                     },
                 )
             )
 
             self.assertEqual(response.status_code, 200)
             self.assertEqual(
-                response.context["object"], self.containertemplate1
+                response.context["object"], self.containertemplatesite1
             )
 
     def test_get_non_existent(self):
         with self.login(self.superuser):
             response = self.client.get(
                 reverse(
-                    "containertemplates:detail",
-                    kwargs={"containertemplate": self.fake_uuid},
+                    "containertemplates:site-detail",
+                    kwargs={"containertemplatesite": self.fake_uuid},
                 )
             )
 
             self.assertEqual(response.status_code, 404)
 
 
-class TestContainerTemplateDuplicateView(TestBase):
-    """Tests for ``ContainerTemplateDuplicateView``."""
+class TestContainerTemplateSiteDuplicateView(TestBase):
+    """Tests for ``ContainerTemplateSiteDuplicateView``."""
 
     def setUp(self):
         super().setUp()
-        self.create_one_containertemplate()
+        self.create_one_containertemplatesite()
         self.create_fake_uuid()
 
     def test_get_success(self):
         with self.login(self.superuser):
             response = self.client.get(
                 reverse(
-                    "containertemplates:duplicate",
+                    "containertemplates:site-duplicate",
                     kwargs={
-                        "containertemplate": self.containertemplate1.sodar_uuid
+                        "containertemplatesite": self.containertemplatesite1.sodar_uuid
                     },
                 )
             )
@@ -414,20 +421,22 @@ class TestContainerTemplateDuplicateView(TestBase):
             self.assertRedirects(
                 response,
                 reverse(
-                    "containertemplates:list",
+                    "containertemplates:site-list",
                 ),
             )
-            self.assertEqual(ContainerTemplate.objects.count(), 2)
-            dup_obj = ContainerTemplate.objects.get(
+            self.assertEqual(ContainerTemplateSite.objects.count(), 2)
+            dup_obj = ContainerTemplateSite.objects.get(
                 title__contains="(Duplicate)"
             )
             orig = model_to_dict(
-                self.containertemplate1, exclude=["id", "sodar_uuid", "title"]
+                self.containertemplatesite1,
+                exclude=["id", "sodar_uuid", "title"],
             )
             dup = model_to_dict(dup_obj, exclude=["id", "sodar_uuid", "title"])
             self.assertEqual(orig, dup)
             self.assertEqual(
-                dup_obj.title, f"{self.containertemplate1.title} (Duplicate)"
+                dup_obj.title,
+                f"{self.containertemplatesite1.title} (Duplicate)",
             )
 
     def test_get_success_with_existing_duplicate(self):
@@ -435,9 +444,9 @@ class TestContainerTemplateDuplicateView(TestBase):
             # Create first duplicate
             self.client.get(
                 reverse(
-                    "containertemplates:duplicate",
+                    "containertemplates:site-duplicate",
                     kwargs={
-                        "containertemplate": self.containertemplate1.sodar_uuid
+                        "containertemplatesite": self.containertemplatesite1.sodar_uuid
                     },
                 )
             )
@@ -445,33 +454,522 @@ class TestContainerTemplateDuplicateView(TestBase):
             # Create second duplicate
             self.client.get(
                 reverse(
-                    "containertemplates:duplicate",
+                    "containertemplates:site-duplicate",
                     kwargs={
-                        "containertemplate": self.containertemplate1.sodar_uuid
+                        "containertemplatesite": self.containertemplatesite1.sodar_uuid
                     },
                 )
             )
 
-            self.assertEqual(ContainerTemplate.objects.count(), 3)
+            self.assertEqual(ContainerTemplateSite.objects.count(), 3)
 
-            dup_obj = ContainerTemplate.objects.get(
+            dup_obj = ContainerTemplateSite.objects.get(
                 title__contains="(Duplicate 2)"
             )
             orig = model_to_dict(
-                self.containertemplate1, exclude=["id", "sodar_uuid", "title"]
+                self.containertemplatesite1,
+                exclude=["id", "sodar_uuid", "title"],
             )
             dup = model_to_dict(dup_obj, exclude=["id", "sodar_uuid", "title"])
             self.assertEqual(orig, dup)
             self.assertEqual(
-                dup_obj.title, f"{self.containertemplate1.title} (Duplicate 2)"
+                dup_obj.title,
+                f"{self.containertemplatesite1.title} (Duplicate 2)",
             )
 
     def test_get_non_existent(self):
         with self.login(self.superuser):
             response = self.client.get(
                 reverse(
-                    "containertemplates:duplicate",
-                    kwargs={"containertemplate": self.fake_uuid},
+                    "containertemplates:site-duplicate",
+                    kwargs={"containertemplatesite": self.fake_uuid},
+                )
+            )
+
+            self.assertEqual(response.status_code, 404)
+
+
+class TestContainerTemplateProjectListView(TestBase):
+    """Tests for ``ContainerTemplateProjectListView``."""
+
+    def test_get_success_list_empty(self):
+        with self.login(self.superuser):
+            response = self.client.get(
+                reverse(
+                    "containertemplates:project-list",
+                    kwargs={"project": self.project.sodar_uuid},
+                )
+            )
+
+            self.assertEqual(response.status_code, 200)
+            self.assertEqual(len(response.context["object_list"]), 0)
+
+    def test_get_success_list_one_item(self):
+        self.create_one_containertemplateproject()
+
+        with self.login(self.superuser):
+            response = self.client.get(
+                reverse(
+                    "containertemplates:project-list",
+                    kwargs={"project": self.project.sodar_uuid},
+                )
+            )
+
+            self.assertEqual(response.status_code, 200)
+
+            items = list(response.context["object_list"])
+
+            self.assertEqual(len(items), 1)
+            self.assertEqual(items[0].id, self.containertemplateproject1.id)
+
+    def test_get_success_list_two_items(self):
+        self.create_two_containertemplateprojects()
+
+        with self.login(self.superuser):
+            response = self.client.get(
+                reverse(
+                    "containertemplates:project-list",
+                    kwargs={"project": self.project.sodar_uuid},
+                )
+            )
+
+            self.assertEqual(response.status_code, 200)
+
+            items = list(response.context["object_list"])
+
+            self.assertEqual(len(items), 2)
+            self.assertEqual(items[0].id, self.containertemplateproject2.id)
+            self.assertEqual(items[1].id, self.containertemplateproject1.id)
+
+
+class TestContainerTemplateProjectCreateView(TestBase):
+    """Tests for ``ContainerTemplateProjectCreateView``."""
+
+    def test_get_success(self):
+        with self.login(self.superuser):
+            response = self.client.get(
+                reverse(
+                    "containertemplates:project-create",
+                    kwargs={"project": self.project.sodar_uuid},
+                )
+            )
+
+            self.assertEqual(response.status_code, 200)
+
+    def test_post_success_min_fields(self):
+        post_data = {
+            "title": "some other title",
+            "project": self.project.pk,
+        }
+
+        with self.login(self.superuser):
+            response = self.client.post(
+                reverse(
+                    "containertemplates:project-create",
+                    kwargs={"project": self.project.sodar_uuid},
+                ),
+                post_data,
+            )
+
+            self.assertEqual(ContainerTemplateProject.objects.count(), 1)
+
+            containertemplate = ContainerTemplateProject.objects.first()
+
+            self.assertRedirects(
+                response,
+                reverse(
+                    "containertemplates:project-detail",
+                    kwargs={
+                        "containertemplateproject": containertemplate.sodar_uuid
+                    },
+                ),
+            )
+
+            result = model_to_dict(containertemplate, fields=post_data.keys())
+
+            # Assert updated properties
+            self.assertDictEqual(result, post_data)
+
+    def test_post_success_all_fields(self):
+        post_data = {
+            "title": "some other title",
+            "project": self.project.pk,
+            "description": "some other description",
+            "environment": '{"test": 1}',
+            "repository": "repository",
+            "tag": "tag",
+            "container_port": 80,
+            "timeout": 60,
+            "container_path": "some/path",
+            "heartbeat_url": "https://heartbeat.url",
+            "environment_secret_keys": "test",
+            "command": "some command",
+            "max_retries": 10,
+        }
+
+        with self.login(self.superuser):
+            response = self.client.post(
+                reverse(
+                    "containertemplates:project-create",
+                    kwargs={"project": self.project.sodar_uuid},
+                ),
+                post_data,
+            )
+
+            self.assertEqual(ContainerTemplateProject.objects.count(), 1)
+
+            containertemplate = ContainerTemplateProject.objects.first()
+
+            self.assertRedirects(
+                response,
+                reverse(
+                    "containertemplates:project-detail",
+                    kwargs={
+                        "containertemplateproject": containertemplate.sodar_uuid
+                    },
+                ),
+            )
+
+            post_data["environment"] = json.loads(post_data["environment"])
+            result = model_to_dict(containertemplate, fields=post_data.keys())
+
+            # Assert updated properties
+            self.assertDictEqual(result, post_data)
+
+
+class TestContainerTemplateProjectDeleteView(TestBase):
+    """Tests for ``ContainerTemplateProjectDeleteView``."""
+
+    def setUp(self):
+        super().setUp()
+        self.create_one_containertemplateproject()
+        self.create_fake_uuid()
+
+    def test_get_success(self):
+        with self.login(self.superuser):
+            response = self.client.get(
+                reverse(
+                    "containertemplates:project-delete",
+                    kwargs={
+                        "containertemplateproject": self.containertemplateproject1.sodar_uuid
+                    },
+                )
+            )
+
+            self.assertEqual(response.status_code, 200)
+            self.assertEqual(ContainerTemplateProject.objects.count(), 1)
+
+    def test_get_non_existent(self):
+        with self.login(self.superuser):
+            response = self.client.get(
+                reverse(
+                    "containertemplates:project-delete",
+                    kwargs={"containertemplateproject": self.fake_uuid},
+                )
+            )
+
+            self.assertEqual(response.status_code, 404)
+            self.assertEqual(ContainerTemplateProject.objects.count(), 1)
+
+    def test_post_success_deleted(self):
+        with self.login(self.superuser):
+            response = self.client.post(
+                reverse(
+                    "containertemplates:project-delete",
+                    kwargs={
+                        "containertemplateproject": self.containertemplateproject1.sodar_uuid
+                    },
+                )
+            )
+
+            self.assertRedirects(
+                response,
+                reverse(
+                    "containertemplates:project-list",
+                    kwargs={"project": self.project.sodar_uuid},
+                ),
+            )
+
+            self.assertEqual(ContainerTemplateProject.objects.count(), 0)
+
+    def test_post_non_existent(self):
+        with self.login(self.superuser):
+            response = self.client.post(
+                reverse(
+                    "containertemplates:project-delete",
+                    kwargs={"containertemplateproject": self.fake_uuid},
+                )
+            )
+
+            self.assertEqual(response.status_code, 404)
+            self.assertEqual(ContainerTemplateProject.objects.count(), 1)
+
+
+class TestContainerTemplateProjectUpdateView(TestBase):
+    """Tests for ``ContainerTemplateProjectUpdateView``."""
+
+    def setUp(self):
+        super().setUp()
+        self.create_one_containertemplateproject()
+        self.create_fake_uuid()
+
+    def test_get_success(self):
+        with self.login(self.superuser):
+            response = self.client.get(
+                reverse(
+                    "containertemplates:project-update",
+                    kwargs={
+                        "containertemplateproject": self.containertemplateproject1.sodar_uuid
+                    },
+                )
+            )
+
+            self.assertEqual(response.status_code, 200)
+
+    def test_get_non_existent(self):
+        with self.login(self.superuser):
+            response = self.client.get(
+                reverse(
+                    "containertemplates:project-update",
+                    kwargs={"containertemplateproject": self.fake_uuid},
+                )
+            )
+
+            self.assertEqual(response.status_code, 404)
+
+    def test_post_success_min_fields(self):
+        post_data = {
+            "title": "updated title",
+            "project": self.project.pk,
+        }
+
+        with self.login(self.superuser):
+            response = self.client.post(
+                reverse(
+                    "containertemplates:project-update",
+                    kwargs={
+                        "containertemplateproject": self.containertemplateproject1.sodar_uuid
+                    },
+                ),
+                post_data,
+            )
+
+            # Get updated object
+            self.containertemplateproject1.refresh_from_db()
+
+            self.assertRedirects(
+                response,
+                reverse(
+                    "containertemplates:project-detail",
+                    kwargs={
+                        "containertemplateproject": self.containertemplateproject1.sodar_uuid
+                    },
+                ),
+            )
+
+            result = model_to_dict(
+                self.containertemplateproject1, fields=post_data.keys()
+            )
+
+            # Assert updated properties
+            self.assertDictEqual(result, post_data)
+
+    def test_post_success_all_fields(self):
+        post_data = {
+            "title": "updated title",
+            "project": self.project.pk,
+            "description": "updated description",
+            "environment": '{"updated": 1234}',
+            "repository": "another_repository",
+            "tag": "another_tag",
+            "container_port": self.containertemplateproject1.container_port
+            + 100,
+            "timeout": self.containertemplateproject1.timeout + 60,
+            "container_path": "updated/path",
+            "heartbeat_url": "https://updated.url",
+            "environment_secret_keys": "updated",
+            "command": "updated command",
+            "max_retries": 13,
+        }
+
+        with self.login(self.superuser):
+            response = self.client.post(
+                reverse(
+                    "containertemplates:project-update",
+                    kwargs={
+                        "containertemplateproject": self.containertemplateproject1.sodar_uuid
+                    },
+                ),
+                post_data,
+            )
+
+            # Get updated object
+            self.containertemplateproject1.refresh_from_db()
+
+            self.assertRedirects(
+                response,
+                reverse(
+                    "containertemplates:project-detail",
+                    kwargs={
+                        "containertemplateproject": self.containertemplateproject1.sodar_uuid
+                    },
+                ),
+            )
+
+            post_data["environment"] = json.loads(post_data["environment"])
+            result = model_to_dict(
+                self.containertemplateproject1, fields=post_data.keys()
+            )
+
+            # Assert updated properties
+            self.assertDictEqual(result, post_data)
+
+    def test_post_non_existent(self):
+        post_data = {
+            "title": "some other title",
+            "project": self.project.pk,
+            "description": "some other description",
+            "environment": '{"updated": 1234}',
+            "repository": "another_repository",
+            "tag": "another_tag",
+            "container_port": 443,
+            "timeout": 99,
+            "max_retries": 10,
+        }
+
+        with self.login(self.superuser):
+            response = self.client.post(
+                reverse(
+                    "containertemplates:project-update",
+                    kwargs={"containertemplateproject": self.fake_uuid},
+                ),
+                post_data,
+            )
+
+            self.assertEqual(response.status_code, 404)
+
+
+class TestContainerTemplateProjectDetailView(TestBase):
+    """Tests for ``ContainerTemplateProjectDetailView``."""
+
+    def setUp(self):
+        super().setUp()
+        self.create_one_containertemplateproject()
+        self.create_fake_uuid()
+
+    def test_get_success(self):
+        with self.login(self.superuser):
+            response = self.client.get(
+                reverse(
+                    "containertemplates:project-detail",
+                    kwargs={
+                        "containertemplateproject": self.containertemplateproject1.sodar_uuid
+                    },
+                )
+            )
+
+            self.assertEqual(response.status_code, 200)
+            self.assertEqual(
+                response.context["object"], self.containertemplateproject1
+            )
+
+    def test_get_non_existent(self):
+        with self.login(self.superuser):
+            response = self.client.get(
+                reverse(
+                    "containertemplates:project-detail",
+                    kwargs={"containertemplateproject": self.fake_uuid},
+                )
+            )
+
+            self.assertEqual(response.status_code, 404)
+
+
+class TestContainerTemplateProjectDuplicateView(TestBase):
+    """Tests for ``ContainerTemplateProjectDuplicateView``."""
+
+    def setUp(self):
+        super().setUp()
+        self.create_one_containertemplateproject()
+        self.create_fake_uuid()
+
+    def test_get_success(self):
+        with self.login(self.superuser):
+            response = self.client.get(
+                reverse(
+                    "containertemplates:project-duplicate",
+                    kwargs={
+                        "containertemplateproject": self.containertemplateproject1.sodar_uuid
+                    },
+                )
+            )
+
+            self.assertRedirects(
+                response,
+                reverse(
+                    "containertemplates:project-list",
+                    kwargs={"project": self.project.sodar_uuid},
+                ),
+            )
+            self.assertEqual(ContainerTemplateProject.objects.count(), 2)
+            dup_obj = ContainerTemplateProject.objects.get(
+                title__contains="(Duplicate)"
+            )
+            orig = model_to_dict(
+                self.containertemplateproject1,
+                exclude=["id", "sodar_uuid", "title"],
+            )
+            dup = model_to_dict(dup_obj, exclude=["id", "sodar_uuid", "title"])
+            self.assertEqual(orig, dup)
+            self.assertEqual(
+                dup_obj.title,
+                f"{self.containertemplateproject1.title} (Duplicate)",
+            )
+
+    def test_get_success_with_existing_duplicate(self):
+        with self.login(self.superuser):
+            # Create first duplicate
+            self.client.get(
+                reverse(
+                    "containertemplates:project-duplicate",
+                    kwargs={
+                        "containertemplateproject": self.containertemplateproject1.sodar_uuid
+                    },
+                )
+            )
+
+            # Create second duplicate
+            self.client.get(
+                reverse(
+                    "containertemplates:project-duplicate",
+                    kwargs={
+                        "containertemplateproject": self.containertemplateproject1.sodar_uuid
+                    },
+                )
+            )
+
+            self.assertEqual(ContainerTemplateProject.objects.count(), 3)
+
+            dup_obj = ContainerTemplateProject.objects.get(
+                title__contains="(Duplicate 2)"
+            )
+            orig = model_to_dict(
+                self.containertemplateproject1,
+                exclude=["id", "sodar_uuid", "title"],
+            )
+            dup = model_to_dict(dup_obj, exclude=["id", "sodar_uuid", "title"])
+            self.assertEqual(orig, dup)
+            self.assertEqual(
+                dup_obj.title,
+                f"{self.containertemplateproject1.title} (Duplicate 2)",
+            )
+
+    def test_get_non_existent(self):
+        with self.login(self.superuser):
+            response = self.client.get(
+                reverse(
+                    "containertemplates:project-duplicate",
+                    kwargs={"containertemplateproject": self.fake_uuid},
                 )
             )
 

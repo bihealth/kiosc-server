@@ -1,15 +1,29 @@
 """Factories for container tests."""
 
 import factory
+from projectroles.constants import SODAR_CONSTANTS
+from projectroles.models import Project
 
-from containertemplates.models import ContainerTemplate
+from containertemplates.models import (
+    ContainerTemplateSite,
+    ContainerTemplateProject,
+)
 
 
-class ContainerTemplateFactory(factory.django.DjangoModelFactory):
-    """Factory for ``ContainerTemplate`` model."""
+class ProjectFactory(factory.django.DjangoModelFactory):
+    """Factory for creating ``projectroles`` ``Project`` objects."""
 
     class Meta:
-        model = ContainerTemplate
+        model = Project
+
+    title = factory.Sequence(lambda n: "Project %03d" % n)
+    type = SODAR_CONSTANTS["PROJECT_TYPE_PROJECT"]
+    parent = None
+    description = factory.Sequence(lambda n: "This is project %03d" % n)
+
+
+class ContainerTemplateFactoryBase(factory.django.DjangoModelFactory):
+    """Base factory for ``ContainerTemplate`` model."""
 
     title = factory.Sequence(lambda n: f"Container Template {n}")
     description = "Some description"
@@ -22,3 +36,19 @@ class ContainerTemplateFactory(factory.django.DjangoModelFactory):
     environment = "{}"
     environment_secret_keys = ""
     command = ""
+
+
+class ContainerTemplateSiteFactory(ContainerTemplateFactoryBase):
+    """Factory for ``ContainerTemplateSite`` model."""
+
+    class Meta:
+        model = ContainerTemplateSite
+
+
+class ContainerTemplateProjectFactory(ContainerTemplateFactoryBase):
+    """Factory for ``ContainerTemplateProject`` model."""
+
+    class Meta:
+        model = ContainerTemplateProject
+
+    project = factory.SubFactory(ProjectFactory)

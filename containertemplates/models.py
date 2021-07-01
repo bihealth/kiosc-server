@@ -4,19 +4,19 @@ from django.db import models
 from django.db.models import JSONField
 from django.urls import reverse
 from django.utils.timezone import localtime
+from projectroles.models import Project
 
 
-class ContainerTemplate(models.Model):
-    """Model for a ContainerTemplate instance."""
+class ContainerTemplateBase(models.Model):
+    """Base model for a ContainerTemplate* instances."""
 
     class Meta:
-        ordering = ("-date_created",)
+        abstract = True
 
     #: Title of the template
     title = models.CharField(
         max_length=512,
         help_text="Title of the container template.",
-        unique=True,
     )
 
     #: Description of the template
@@ -122,10 +122,10 @@ class ContainerTemplate(models.Model):
     )
 
     def __str__(self):
-        return f"ContainerTemplate: {self.title} ({self.get_repos_full()})"
+        return f"{type(self).__name__}: {self.title} ({self.get_repos_full()})"
 
     def __repr__(self):
-        return f"ContainerTemplate({self.title}, {self.get_repos_full()})"
+        return f"{type(self).__name__}({self.title}, {self.get_repos_full()})"
 
     def get_repos_full(self):
         repos = self.repository or "<no_repository>"
@@ -138,11 +138,43 @@ class ContainerTemplate(models.Model):
     def get_date_modified(self):
         return localtime(self.date_modified).strftime("%Y-%m-%d %H:%M")
 
-    def get_absolute_url(self):
-        return reverse(
-            "containertemplates:detail",
-            kwargs={"containertemplate": self.sodar_uuid},
-        )
-
     def get_display_name(self):
         return self.title
+
+
+class ContainerTemplateSite(ContainerTemplateBase):
+    """Model for a ContainerTemplate instance."""
+
+    class Meta:
+        ordering = ("-date_created",)
+        unique_together = ("title",)
+
+    def get_absolute_url(self):
+        return reverse(
+            "containertemplates:site-detail",
+            kwargs={"containertemplatesite": self.sodar_uuid},
+        )
+
+
+class ContainerTemplateProject(ContainerTemplateBase):
+    """Model for a ContainerTemplateProject instance."""
+
+    project = models.ForeignKey(
+        Project,
+        related_name="containertemplates",
+        help_text="Project in which the object belongs",
+        on_delete=models.CASCADE,
+    )
+
+    class Meta:
+        ordering = ("-date_created",)
+        unique_together = (
+            "title",
+            "project",
+        )
+
+    def get_absolute_url(self):
+        return reverse(
+            "containertemplates:project-detail",
+            kwargs={"containertemplateproject": self.sodar_uuid},
+        )

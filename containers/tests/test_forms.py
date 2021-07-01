@@ -12,7 +12,6 @@ class TestContainerForm(TestBase):
     def setUp(self):
         super().setUp()
         self.form_data_min_mode_docker_shared = {
-            "environment": '{"test": 1}',
             "repository": "repository",
             "tag": "tag",
             "container_port": 80,
@@ -28,6 +27,7 @@ class TestContainerForm(TestBase):
             **self.form_data_min_mode_host,
             "container_path": "some/path",
             "heartbeat_url": "https://heartbeat.url",
+            "environment": '{"test": 1}',
             "environment_secret_keys": "test",
             "command": "some command",
         }
@@ -45,13 +45,6 @@ class TestContainerForm(TestBase):
     def test_all_fields(self):
         form = ContainerForm(self.form_data_all)
         self.assertTrue(form.is_valid())
-
-    @override_settings(KIOSC_NETWORK_MODE="host")
-    def test_missing_field_environment(self):
-        key = "environment"
-        self.form_data_min_mode_host.pop(key)
-        form = ContainerForm(self.form_data_min_mode_host)
-        self.assertEqual(form.errors[key], ["This field is required."])
 
     @override_settings(KIOSC_NETWORK_MODE="host")
     def test_missing_field_repository(self):

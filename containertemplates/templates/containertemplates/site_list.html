@@ -10,16 +10,16 @@
 
 {% block projectroles %}
 
-{% has_perm "containertemplates.create" request.user as can_create_containertemplate %}
-{% has_perm "containertemplates.edit" request.user as can_edit_containertemplate %}
-{% has_perm "containertemplates.delete" request.user as can_delete_containertemplate %}
-{% has_perm "containertemplates.duplicate" request.user as can_duplicate_containertemplate %}
+{% has_perm "containertemplates.site_create" request.user as can_create_containertemplate %}
+{% has_perm "containertemplates.site_edit" request.user as can_edit_containertemplate %}
+{% has_perm "containertemplates.site_delete" request.user as can_delete_containertemplate %}
+{% has_perm "containertemplates.site_duplicate" request.user as can_duplicate_containertemplate %}
 
 <div class="row sodar-subtitle-container">
-  <h3>Container Templates</h3>
+  <h3>Container Templates <small class="text-muted">site-wide</small></h3>
     <div class="ml-auto">
       {% if can_create_containertemplate %}
-      <a href="{% url 'containertemplates:create' %}"
+      <a href="{% url 'containertemplates:site-create' %}"
          class="btn btn-primary" role="button">
         <i class="iconify" data-icon="mdi:plus-circle"></i>
         Create Container Template
@@ -46,7 +46,7 @@
         <tbody>
           {% for obj in object_list %}
             <tr>
-              <td><a href="{% url 'containertemplates:detail' containertemplate=obj.sodar_uuid %}">{{ obj.get_display_name }}</a></td>
+              <td><a href="{% url 'containertemplates:site-detail' containertemplatesite=obj.sodar_uuid %}">{{ obj.get_display_name }}</a></td>
               <td>{{ obj.repository }}</td>
               <td>{{ obj.date_created }}</td>
               <td class="text-right">
@@ -59,19 +59,19 @@
                     <div class="dropdown-menu dropdown-menu-right">
                       {% if can_edit_containertemplate %}
                         <a class="dropdown-item"
-                           href="{% url 'containertemplates:update' containertemplate=obj.sodar_uuid %}">
+                           href="{% url 'containertemplates:site-update' containertemplatesite=obj.sodar_uuid %}">
                           <i class="iconify" data-icon="mdi:lead-pencil"></i> Update
                         </a>
                       {% endif %}
                       {% if can_duplicate_containertemplate %}
                         <a class="dropdown-item"
-                           href="{% url 'containertemplates:duplicate' containertemplate=obj.sodar_uuid %}">
+                           href="{% url 'containertemplates:site-duplicate' containertemplatesite=obj.sodar_uuid %}">
                           <i class="iconify" data-icon="octicon:duplicate-16"></i> Duplicate
                         </a>
                       {% endif %}
                       {% if can_delete_containertemplate %}
                         <a class="dropdown-item text-danger"
-                           href="{% url 'containertemplates:delete' containertemplate=obj.sodar_uuid %}">
+                           href="{% url 'containertemplates:site-delete' containertemplatesite=obj.sodar_uuid %}">
                           <i class="iconify" data-icon="mdi:close-thick"></i> Delete
                         </a>
                       {% endif %}

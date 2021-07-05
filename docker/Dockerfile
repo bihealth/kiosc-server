@@ -36,6 +36,7 @@ RUN apt-get update && \
 RUN cd /usr/src/app && \
     pip install --no-cache-dir -r requirements/production.txt && \
     pip install --no-cache-dir -r requirements/local.txt && \
+    pip install --no-cache-dir -r requirements/ldap.txt && \
     pip install celery  # appears to be missing
 
 # Download files from CDN.

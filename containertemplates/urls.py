@@ -67,4 +67,9 @@ urlpatterns = [
         view=views.ContainerTemplateProjectDuplicateView.as_view(),
         name="project-duplicate",
     ),
+    url(
+        regex=r"^project/copy/(?P<project>[0-9a-f-]+)$",
+        view=views.ContainerTemplateProjectCopyView.as_view(),
+        name="project-copy",
+    ),
 ]

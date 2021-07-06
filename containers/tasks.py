@@ -22,6 +22,7 @@ from containers.models import (
     STATE_FAILED,
     PROCESS_TASK,
     PROCESS_DOCKER,
+    LOG_LEVEL_WARNING,
 )
 from containers.statemachines import (
     ContainerMachine,
@@ -203,11 +204,15 @@ def poll_docker_status_and_logs(_self):
 
             for line in logs:
                 try:
-                    text = line[51:]
+                    text = line[31:]
                     log_date = dateutil.parser.parse(line[:30])
                 except dateutil.parser.ParserError:
-                    text = line
-                    log_date = timezone.now()
+                    container.log_entries.create(
+                        text=f"Docker log has no timestamp! ({line})",
+                        level=LOG_LEVEL_WARNING,
+                        process=PROCESS_TASK,
+                    )
+                    continue
 
                 # Filter out duplicates
                 if date_last_logs and log_date <= date_last_logs:

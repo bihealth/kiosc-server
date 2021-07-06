@@ -8,43 +8,39 @@ Loosely follows the `Keep a Changelog <http://keepachangelog.com/en/1.0.0/>`_ gu
 HEAD (unreleased)
 =================
 
-Added
------
-
-- **General**
-  - Docker deployment
-  - Site-wide apps to menu (#30)
-- **Containertemplates**
-  - App itself (#29)
-  - ``ContainerTemplates`` model (#29)
-  - Views for creating/updating/deleting and viewing details of ``ContainerTemplate`` (#29)
-  - Permissions for ``ContainerTemplate`` views (#29)
-  - View for duplicate a ``ContainerTemplate`` (#30)
-  - ``ContainerTemplateProject`` model (#31)
-  - Views for creating/updating/deleting/duplicating and viewing details of ``ContainerTemplateProject`` (#31)
-  - Permissions for ``ContainerTemplateSite`` views (#31)
-  - ``ProjectApp`` re-introduced living alongside ``SiteApp`` (#31)
-
-Changed
+General
 -------
 
-- **General**
-  - Migrated to SODAR core v0.10.3
-  - Celery production settings which prevented workers from receiving jobs
-- **Containers**
-  - Internal naming of URLs (#30)
-  - Field ``environment`` now optional (#31)
-  - Fixed setting the environment variables in the container
-  - Fixed bug in parsing of docker log date
-- **Containertemplates**
-  - ``ProjectApp`` to ``SiteApp`` (#30)
-  - Naming ``ContainerTemplates`` model to ``ContainerTemplateSite`` (#31)
+- Switched to Docker deployment
+- Added site-wide apps to menu (#30)
+- Migrated to SODAR core v0.10.3
+- Celery production settings which prevented workers from receiving jobs
 
-Removed
--------
+Containertemplates
+------------------
 
-- **ContainerTemplates**
-  - ``project`` field from ``ContainerTemplates`` model (#30)
+- Added app itself (#29)
+- ``ContainerTemplates`` model (#29)
+- Views for creating/updating/deleting and viewing details of ``ContainerTemplate`` (#29)
+- Permissions for ``ContainerTemplate`` views (#29)
+- View for duplicate a ``ContainerTemplate`` (#30)
+- Renamed ``ProjectApp`` to ``SiteApp`` (#30)
+- Removed ``project`` field from ``ContainerTemplates`` model (#30)
+- ``ContainerTemplateProject`` model (#31)
+- Views for creating/updating/deleting/duplicating and viewing details of ``ContainerTemplateProject`` (#31)
+- Permissions for ``ContainerTemplateSite`` views (#31)
+- ``ProjectApp`` re-introduced living alongside ``SiteApp`` (#31)
+- Renamed ``ContainerTemplate`` model to ``ContainerTemplateSite`` (#31)
+- View and forms to copy site-wide and project-wide container template (#32)
+- Added optional foreign key ``containertemplatesite`` to ``ContainerTemplateProject`` model (#32)
+
+Containers
+----------
+
+- Changed internal naming of URLs (#30)
+- Field ``environment`` now optional (#31)
+- Fixed setting the environment variables in the container (#32)
+- Fixed bug in parsing of docker log date (#32)
 
 
 v0.1.3 (2021-06-09)

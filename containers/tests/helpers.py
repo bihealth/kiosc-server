@@ -60,6 +60,11 @@ def log_entry1():
     )
 
 
+def log_entry1_no_date():
+    """First log entry without date."""
+    return "no date [info] Log entry 1"
+
+
 def log_entry2():
     """Second log entry, same second but different millisecond."""
     dt = dateutil.parser.parse("2021-01-01 01:01:01.500001+00:00")
@@ -99,4 +104,5 @@ class DockerMock:
     logs = "\n".join(
         [log_entry1()[1], log_entry2()[1], log_entry3()[1]]
     ).encode("utf-8")
+    logs_no_date = log_entry1_no_date().encode("utf-8")
     logs_since = "\n".join([log_entry2()[1], log_entry3()[1]]).encode("utf-8")

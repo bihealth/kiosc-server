@@ -46,7 +46,7 @@
         <tbody>
           {% for obj in object_list %}
             <tr>
-              <td><a href="{% url 'containertemplates:site-detail' containertemplatesite=obj.sodar_uuid %}">{{ obj.get_display_name }}</a></td>
+              <td><a href="{% url 'containertemplates:site-detail' containertemplatesite=obj.sodar_uuid %}">{{ obj }}</a></td>
               <td>{{ obj.repository }}</td>
               <td>{{ obj.date_created }}</td>
               <td class="text-right">

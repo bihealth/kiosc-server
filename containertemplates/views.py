@@ -11,6 +11,7 @@ from django.views.generic import (
     UpdateView,
     ListView,
     DetailView,
+    TemplateView,
 )
 from django.views.generic.detail import SingleObjectMixin
 from projectroles.plugins import get_backend_api
@@ -24,6 +25,8 @@ from projectroles.views import (
 from containertemplates.forms import (
     ContainerTemplateSiteForm,
     ContainerTemplateProjectForm,
+    ContainerTemplateSiteToProjectCopyForm,
+    ContainerTemplateProjectToProjectCopyForm,
 )
 from containertemplates.models import (
     ContainerTemplateSite,
@@ -62,7 +65,7 @@ class ContainerTemplateSiteCreateView(
             tl_event.add_object(
                 obj=self.object,
                 label="containertemplate",
-                name=self.object.get_display_name(),
+                name=str(self.object),
             )
 
         return response
@@ -101,7 +104,7 @@ class ContainerTemplateSiteDeleteView(
                 app_name=APP_NAME,
                 user=request.user,
                 event_name="delete_containertemplate_site",
-                description=f"deleted {obj.get_display_name()}",
+                description=f"deleted {str(obj)}",
                 status_type="OK",
             )
 
@@ -138,7 +141,7 @@ class ContainerTemplateSiteUpdateView(
             tl_event.add_object(
                 obj=self.object,
                 label="containertemplate",
-                name=self.object.get_display_name(),
+                name=str(self.object),
             )
 
         return response
@@ -201,7 +204,7 @@ class ContainerTemplateSiteDuplicateView(
                 tl_event.add_object(
                     obj=obj,
                     label="containertemplate",
-                    name=obj.get_display_name(),
+                    name=str(obj),
                 )
 
             data = model_to_dict(obj, exclude=["id", "sodar_uuid"])
@@ -268,7 +271,7 @@ class ContainerTemplateProjectCreateView(
             tl_event.add_object(
                 obj=self.object,
                 label="containertemplate",
-                name=self.object.get_display_name(),
+                name=str(self.object),
             )
 
         return response
@@ -309,7 +312,7 @@ class ContainerTemplateProjectDeleteView(
                 app_name=APP_NAME,
                 user=request.user,
                 event_name="delete_containertemplate_project",
-                description=f"deleted {self.get_object().get_display_name()} project-wide",
+                description=f"deleted {self.get_object()} project-wide",
                 status_type="OK",
             )
 
@@ -354,7 +357,7 @@ class ContainerTemplateProjectUpdateView(
             tl_event.add_object(
                 obj=self.object,
                 label="containertemplate",
-                name=self.object.get_display_name(),
+                name=str(self.object),
             )
 
         return response
@@ -430,7 +433,7 @@ class ContainerTemplateProjectDuplicateView(
                 tl_event.add_object(
                     obj=obj,
                     label="containertemplate",
-                    name=obj.get_display_name(),
+                    name=str(obj),
                 )
 
             data = model_to_dict(obj, exclude=["id", "sodar_uuid", "project"])
@@ -439,13 +442,137 @@ class ContainerTemplateProjectDuplicateView(
             counter = 1
 
             while ContainerTemplateProject.objects.filter(
-                title=title_new
+                title=title_new,
+                project=obj.project,
             ).exists():
                 counter += 1
                 title_new = f"{title_original} (Duplicate {counter})"
 
             data["title"] = title_new
             data["project"] = obj.project
+            data["containertemplatesite"] = obj.containertemplatesite
+
+            try:
+                ContainerTemplateProject.objects.create(**data)
+
+            except Exception as e:
+                messages.error(request, e)
+                return _redirect
+
+            messages.success(
+                request,
+                f"Successfully created container template '{title_new}' from '{title_original}'",
+            )
+
+            return _redirect
+
+
+class ContainerTemplateProjectCopyView(
+    LoginRequiredMixin,
+    LoggedInPermissionMixin,
+    ProjectPermissionMixin,
+    ProjectContextMixin,
+    TemplateView,
+):
+    """View for copying a project-wide containertemplate."""
+
+    permission_required = "containertemplates.project_duplicate"
+    slug_url_kwarg = "project"
+    slug_field = "sodar_uuid"
+    template_name = "containertemplates/project_copy.html"
+
+    def get_context_data(self, *args, **kwargs):
+        context = super().get_context_data(*args, **kwargs)
+        context[
+            "site_to_project_copy_form"
+        ] = ContainerTemplateSiteToProjectCopyForm()
+        context[
+            "project_to_project_copy_form"
+        ] = ContainerTemplateProjectToProjectCopyForm(user=self.request.user)
+        return context
+
+    def post(self, request, *args, **kwargs):
+        project = self.get_project()
+        timeline = get_backend_api("timeline_backend")
+        _redirect = redirect(
+            reverse(
+                "containertemplates:project-list",
+                kwargs={"project": project.sodar_uuid},
+            )
+        )
+
+        source_id = request.POST.get("source")
+        site_or_project = request.POST.get("site_or_project")
+
+        if site_or_project == "site":
+            model = ContainerTemplateSite
+            exclude = ["id", "sodar_uuid"]
+
+        elif site_or_project == "project":
+            model = ContainerTemplateProject
+            exclude = ["id", "sodar_uuid", "project"]
+
+        else:
+            messages.error(
+                request, "Can't determine model of container template source!"
+            )
+            return _redirect
+
+        try:
+            obj = model.objects.get(id=source_id)
+
+        except model.DoesNotExist:
+            messages.error(request, "Source template not found!")
+            return _redirect
+
+        with transaction.atomic():
+            if timeline:
+                tl_event = timeline.add_event(
+                    project=project,
+                    app_name=APP_NAME,
+                    user=self.request.user,
+                    event_name=f"copy_containertemplate_{site_or_project}",
+                    description="copied {containertemplate} %s"
+                    % site_or_project,
+                    status_type="OK",
+                )
+                tl_event.add_object(
+                    obj=obj,
+                    label="containertemplate",
+                    name=str(obj),
+                )
+
+            data = model_to_dict(obj, exclude=exclude)
+            title_original = data["title"]
+            title_new = f"{data['title']} (Copy)"
+            counter = 1
+
+            while ContainerTemplateProject.objects.filter(
+                title=title_new, project=project
+            ).exists():
+                counter += 1
+                title_new = f"{title_original} (Copy {counter})"
+
+            data["title"] = title_new
+            data["project"] = project
+
+            if site_or_project == "site":
+                data["containertemplatesite"] = obj
+
+            else:
+                if data.get("containertemplatesite") is not None:
+                    try:
+                        data[
+                            "containertemplatesite"
+                        ] = ContainerTemplateSite.objects.get(
+                            id=data.get("containertemplatesite")
+                        )
+
+                    except ContainerTemplateSite.DoesNotExist:
+                        messages.error(
+                            request, "Site-wide container template not found!"
+                        )
+                        return _redirect
 
             try:
                 ContainerTemplateProject.objects.create(**data)

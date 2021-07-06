@@ -1,11 +1,16 @@
 """Tests for the containertemplate views."""
 import json
 
+from django.contrib.messages import get_messages
 from urllib3_mock import Responses
 
 from django.forms import model_to_dict
 from django.urls import reverse
 
+from containertemplates.forms import (
+    ContainerTemplateSiteToProjectCopyForm,
+    ContainerTemplateProjectToProjectCopyForm,
+)
 from containertemplates.models import (
     ContainerTemplateSite,
     ContainerTemplateProject,
@@ -974,3 +979,190 @@ class TestContainerTemplateProjectDuplicateView(TestBase):
             )
 
             self.assertEqual(response.status_code, 404)
+
+
+class TestContainerTemplateProjectCopyView(TestBase):
+    """Tests for ``ContainerTemplateProjectCopyView``."""
+
+    def setUp(self):
+        super().setUp()
+        self.create_one_containertemplatesite()
+        self.create_four_containertemplates_in_two_projects()
+        self.create_fake_uuid()
+
+    def test_get_success(self):
+        with self.login(self.superuser):
+            response = self.client.get(
+                reverse(
+                    "containertemplates:project-copy",
+                    kwargs={"project": self.project.sodar_uuid},
+                )
+            )
+
+            self.assertEqual(response.status_code, 200)
+            self.assertIsInstance(
+                response.context.get("site_to_project_copy_form"),
+                ContainerTemplateSiteToProjectCopyForm,
+            )
+            self.assertIsInstance(
+                response.context.get("project_to_project_copy_form"),
+                ContainerTemplateProjectToProjectCopyForm,
+            )
+
+    def test_post_success_site_wide(self):
+        with self.login(self.superuser):
+            # Create first duplicate
+            self.client.post(
+                reverse(
+                    "containertemplates:project-copy",
+                    kwargs={"project": self.project.sodar_uuid},
+                ),
+                {
+                    "source": self.containertemplatesite1.pk,
+                    "site_or_project": "site",
+                },
+            )
+
+            self.assertEqual(ContainerTemplateProject.objects.count(), 5)
+
+            copy_obj = ContainerTemplateProject.objects.get(
+                title__contains="(Copy)"
+            )
+            orig = model_to_dict(
+                self.containertemplatesite1,
+                exclude=["id", "sodar_uuid", "title"],
+            )
+            copy = model_to_dict(
+                copy_obj,
+                exclude=[
+                    "id",
+                    "sodar_uuid",
+                    "title",
+                    "project",
+                    "containertemplatesite",
+                ],
+            )
+            self.assertEqual(orig, copy)
+            self.assertEqual(
+                copy_obj.title,
+                f"{self.containertemplatesite1.title} (Copy)",
+            )
+            self.assertEqual(
+                copy_obj.containertemplatesite,
+                self.containertemplatesite1,
+            )
+            self.assertEqual(
+                copy_obj.project,
+                self.project,
+            )
+
+    def test_post_success_project_wide(self):
+        with self.login(self.superuser):
+            # Create first duplicate
+            self.client.post(
+                reverse(
+                    "containertemplates:project-copy",
+                    kwargs={"project": self.project.sodar_uuid},
+                ),
+                {
+                    "source": self.containertemplateproject1_project2.pk,
+                    "site_or_project": "project",
+                },
+            )
+
+            self.assertEqual(ContainerTemplateProject.objects.count(), 5)
+
+            copy_obj = ContainerTemplateProject.objects.get(
+                title__contains="(Copy)"
+            )
+            orig = model_to_dict(
+                self.containertemplateproject1_project2,
+                exclude=["id", "sodar_uuid", "title", "project"],
+            )
+            copy = model_to_dict(
+                copy_obj, exclude=["id", "sodar_uuid", "title", "project"]
+            )
+            self.assertEqual(orig, copy)
+            self.assertEqual(
+                copy_obj.title,
+                f"{self.containertemplateproject1_project2.title} (Copy)",
+            )
+            self.assertEqual(
+                copy_obj.project,
+                self.project,
+            )
+
+    def test_post_non_existent_mode(self):
+        with self.login(self.superuser):
+            response = self.client.post(
+                reverse(
+                    "containertemplates:project-copy",
+                    kwargs={"project": self.project.sodar_uuid},
+                ),
+                {
+                    "source": 0,
+                    "site_or_project": "non_existent",
+                },
+            )
+
+            self.assertRedirects(
+                response,
+                reverse(
+                    "containertemplates:project-list",
+                    kwargs={"project": self.project.sodar_uuid},
+                ),
+            )
+            self.assertEqual(
+                str(list(get_messages(response.wsgi_request))[0]),
+                "Can't determine model of container template source!",
+            )
+
+    def test_post_non_existent_site_wide(self):
+        with self.login(self.superuser):
+            response = self.client.post(
+                reverse(
+                    "containertemplates:project-copy",
+                    kwargs={"project": self.project.sodar_uuid},
+                ),
+                {
+                    "source": 999,
+                    "site_or_project": "site",
+                },
+            )
+
+            self.assertRedirects(
+                response,
+                reverse(
+                    "containertemplates:project-list",
+                    kwargs={"project": self.project.sodar_uuid},
+                ),
+            )
+            self.assertEqual(
+                str(list(get_messages(response.wsgi_request))[0]),
+                "Source template not found!",
+            )
+
+    def test_post_non_existent_project_wide(self):
+        with self.login(self.superuser):
+            response = self.client.post(
+                reverse(
+                    "containertemplates:project-copy",
+                    kwargs={"project": self.project.sodar_uuid},
+                ),
+                {
+                    "source": 999,
+                    "site_or_project": "project",
+                },
+            )
+
+            self.assertRedirects(
+                response,
+                reverse(
+                    "containertemplates:project-list",
+                    kwargs={"project": self.project.sodar_uuid},
+                ),
+            )
+            self.assertEqual(
+                str(list(get_messages(response.wsgi_request))[0]),
+                "Source template not found!",
+            )

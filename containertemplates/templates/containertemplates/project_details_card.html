@@ -15,7 +15,7 @@
     {% for containertemplate in project.containertemplates.all %}
       <tr>
         <td class="pl-4">
-          <a href="{% url 'containertemplates:project-detail' containertemplateproject=containertemplate.sodar_uuid %}">{{ containertemplate.get_display_name }}</a>
+          <a href="{% url 'containertemplates:project-detail' containertemplateproject=containertemplate.sodar_uuid %}">{{ containertemplate }}</a>
         </td>
       </tr>
     {% endfor %}

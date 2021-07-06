@@ -77,7 +77,7 @@ class TestContainerModel(TestBase):
     def test___str__(self):
         self.assertEqual(
             str(self.container1),
-            "Container: {} [{}]".format(
+            "{} [{}]".format(
                 self.container1.get_repos_full(),
                 self.container1.state,
             ),

@@ -44,10 +44,7 @@ class TestContainerTemplateSiteModel(TestBase):
     def test___str__(self):
         self.assertEqual(
             str(self.containertemplatesite1),
-            "ContainerTemplateSite: {} ({})".format(
-                self.containertemplatesite1.title,
-                self.containertemplatesite1.get_repos_full(),
-            ),
+            self.containertemplatesite1.title,
         )
 
     def test___repr__(self):
@@ -96,7 +93,10 @@ class TestContainerTemplateSiteModel(TestBase):
     def test_get_display_name(self):
         self.assertEqual(
             self.containertemplatesite1.get_display_name(),
-            self.containertemplatesite1.title,
+            "{} ({})".format(
+                self.containertemplatesite1.title,
+                self.containertemplatesite1.get_repos_full(),
+            ),
         )
 
     def test_get_date_created(self):
@@ -142,6 +142,7 @@ class TestContainerTemplateProjectModel(TestBase):
         container = ContainerTemplateProject.objects.create(**self.data)
         expected = {
             **self.data,
+            "containertemplatesite": None,
             "repository": None,
             "tag": None,
             "description": None,
@@ -162,16 +163,14 @@ class TestContainerTemplateProjectModel(TestBase):
     def test___str__(self):
         self.assertEqual(
             str(self.containertemplateproject1),
-            "ContainerTemplateProject: {} ({})".format(
-                self.containertemplateproject1.title,
-                self.containertemplateproject1.get_repos_full(),
-            ),
+            self.containertemplateproject1.title,
         )
 
     def test___repr__(self):
         self.assertEqual(
             repr(self.containertemplateproject1),
-            "ContainerTemplateProject({}, {})".format(
+            "ContainerTemplateProject({}, {}, {})".format(
+                self.containertemplateproject1.project,
                 self.containertemplateproject1.title,
                 self.containertemplateproject1.get_repos_full(),
             ),
@@ -214,7 +213,11 @@ class TestContainerTemplateProjectModel(TestBase):
     def test_get_display_name(self):
         self.assertEqual(
             self.containertemplateproject1.get_display_name(),
-            self.containertemplateproject1.title,
+            "{} / {} ({})".format(
+                self.containertemplateproject1.project,
+                self.containertemplateproject1.title,
+                self.containertemplateproject1.get_repos_full(),
+            ),
         )
 
     def test_get_date_created(self):

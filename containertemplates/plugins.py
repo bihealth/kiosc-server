@@ -99,7 +99,7 @@ class ProjectAppPlugin(ProjectAppPluginPoint):
                     "containertemplates:project-detail",
                     kwargs={"containertemplateproject": obj.sodar_uuid},
                 ),
-                "label": obj.get_display_name(),
+                "label": str(obj),
                 "blank": True,
             }
 

@@ -122,10 +122,7 @@ class ContainerTemplateBase(models.Model):
     )
 
     def __str__(self):
-        return f"{type(self).__name__}: {self.title} ({self.get_repos_full()})"
-
-    def __repr__(self):
-        return f"{type(self).__name__}({self.title}, {self.get_repos_full()})"
+        return self.title
 
     def get_repos_full(self):
         repos = self.repository or "<no_repository>"
@@ -137,9 +134,6 @@ class ContainerTemplateBase(models.Model):
 
     def get_date_modified(self):
         return localtime(self.date_modified).strftime("%Y-%m-%d %H:%M")
-
-    def get_display_name(self):
-        return self.title
 
 
 class ContainerTemplateSite(ContainerTemplateBase):
@@ -155,15 +149,32 @@ class ContainerTemplateSite(ContainerTemplateBase):
             kwargs={"containertemplatesite": self.sodar_uuid},
         )
 
+    def get_display_name(self):
+        return f"{self.title} ({self.get_repos_full()})"
+
+    def __repr__(self):
+        return f"ContainerTemplateSite({self.title}, {self.get_repos_full()})"
+
 
 class ContainerTemplateProject(ContainerTemplateBase):
     """Model for a ContainerTemplateProject instance."""
 
+    #: Project the containertemplate belongs to.
     project = models.ForeignKey(
         Project,
         related_name="containertemplates",
         help_text="Project in which the object belongs",
         on_delete=models.CASCADE,
+    )
+
+    #: Link to the site-wide containertemplate (optional).
+    containertemplatesite = models.ForeignKey(
+        ContainerTemplateSite,
+        related_name="containertemplateprojects",
+        help_text="Link to site-wide container template",
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
     )
 
     class Meta:
@@ -173,8 +184,14 @@ class ContainerTemplateProject(ContainerTemplateBase):
             "project",
         )
 
+    def get_display_name(self):
+        return f"{self.project} / {self.title} ({self.get_repos_full()})"
+
     def get_absolute_url(self):
         return reverse(
             "containertemplates:project-detail",
             kwargs={"containertemplateproject": self.sodar_uuid},
         )
+
+    def __repr__(self):
+        return f"ContainerTemplateProject({self.project}, {self.title}, {self.get_repos_full()})"

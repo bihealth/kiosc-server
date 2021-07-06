@@ -40,6 +40,7 @@ from containers.tests.helpers import (
     log_entry1,
     log_entry2,
     log_entry3,
+    log_entry1_no_date,
 )
 
 
@@ -615,9 +616,49 @@ class TestPollDockerStatusAndLogsTask(TestBase):
         self.assertEqual(
             logs,
             [
-                log_entry1()[1][51:],
-                log_entry2()[1][51:],
-                log_entry3()[1][51:],
+                log_entry1()[1][31:],
+                log_entry2()[1][31:],
+                log_entry3()[1][31:],
+            ],
+        )
+
+        # Assert mocks
+        inspect_container.assert_called_once_with(self.container1.container_id)
+        _logs.assert_called_once_with(
+            self.container1.container_id, timestamps=True
+        )
+
+    @patch("docker.api.client.APIClient.logs")
+    @patch("docker.api.client.APIClient.inspect_container")
+    def test_all_new_entries_no_date(self, inspect_container, _logs):
+        self.assertEqual(self.container1.state, STATE_INITIAL)
+
+        # Prepare
+        inspect_container.side_effect = [DockerMock.inspect_container_started]
+        _logs.side_effect = [DockerMock.logs_no_date]
+
+        # Run
+        poll_docker_status_and_logs()
+
+        # Assert objects
+        self.container1.refresh_from_db()
+        self.assertEqual(self.container1.state, STATE_RUNNING)
+        self.assertEqual(
+            ContainerLogEntry.objects.filter(container=self.container1).count(),
+            1,
+        )
+        logs = [
+            entry.text
+            for entry in ContainerLogEntry.objects.filter(
+                container=self.container1
+            )
+        ]
+        self.assertEqual(
+            logs,
+            [
+                "Docker log has no timestamp! ({})".format(
+                    log_entry1_no_date()
+                ),
             ],
         )
 
@@ -636,14 +677,14 @@ class TestPollDockerStatusAndLogsTask(TestBase):
         dt1, entry1 = log_entry1()
         dt2, entry2 = log_entry2()
         ContainerLogEntryFactory(
-            text=entry1[51:],
+            text=entry1[31:],
             container=self.container1,
             process=PROCESS_DOCKER,
             date_docker_log=dt1,
             user=None,
         )
         last_log = ContainerLogEntryFactory(
-            text=entry2[51:],
+            text=entry2[31:],
             container=self.container1,
             process=PROCESS_DOCKER,
             date_docker_log=dt2,
@@ -671,9 +712,9 @@ class TestPollDockerStatusAndLogsTask(TestBase):
         self.assertEqual(
             logs,
             [
-                log_entry1()[1][51:],
-                log_entry2()[1][51:],
-                log_entry3()[1][51:],
+                log_entry1()[1][31:],
+                log_entry2()[1][31:],
+                log_entry3()[1][31:],
             ],
         )
 

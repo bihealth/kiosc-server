@@ -284,3 +284,23 @@ class TestContainerTemplateProjectPermissions(TestProjectPermissionBase):
             ),
         )
         self.assert_response(url, bad_users, 302)
+
+    def test_containertemplateproject_copy(self):
+        """Test permissions for the ``containertemplates:project-copy`` view."""
+        url = reverse(
+            "containertemplates:project-copy",
+            kwargs={"project": self.project.sodar_uuid},
+        )
+        good_users = [
+            self.superuser,
+            self.owner_as.user,
+            self.delegate_as.user,
+            self.contributor_as.user,
+        ]
+        bad_users = [
+            self.guest_as.user,
+            self.user_no_roles,
+            self.anonymous,
+        ]
+        self.assert_response(url, good_users, 200)
+        self.assert_response(url, bad_users, 302)

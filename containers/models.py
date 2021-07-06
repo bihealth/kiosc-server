@@ -279,7 +279,7 @@ class Container(models.Model):
     )
 
     def __str__(self):
-        return f"Container: {self.get_repos_full()} [{self.state}]"
+        return f"{self.get_repos_full()} [{self.state}]"
 
     def __repr__(self):
         return f"Container({self.get_repos_full()})"
@@ -300,8 +300,7 @@ class Container(models.Model):
         return localtime(self.date_modified).strftime("%Y-%m-%d %H:%M")
 
     def get_display_name(self):
-        tag = f":{self.tag}" if self.tag else ""
-        return f"{self.repository}{tag}"
+        return self.get_repos_full()
 
 
 class ContainerBackgroundJob(JobModelMessageContextManagerMixin, models.Model):

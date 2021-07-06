@@ -18,12 +18,19 @@
 <div class="row sodar-subtitle-container">
   <h3>Container Templates <small class="text-muted">project-wide</small></h3>
     <div class="ml-auto">
+      {% if can_duplicate_containertemplate %}
+        <a href="{% url 'containertemplates:project-copy' project=project.sodar_uuid %}"
+           class="btn btn-secondary" role="button">
+          <i class="iconify" data-icon="octicon:duplicate-16"></i>
+          Copy Container Template
+        </a>
+      {% endif %}
       {% if can_create_containertemplate %}
-      <a href="{% url 'containertemplates:project-create' project=project.sodar_uuid %}"
-         class="btn btn-primary" role="button">
-        <i class="iconify" data-icon="mdi:plus-circle"></i>
-        Create Container Template
-      </a>
+        <a href="{% url 'containertemplates:project-create' project=project.sodar_uuid %}"
+           class="btn btn-primary" role="button">
+          <i class="iconify" data-icon="mdi:plus-circle"></i>
+          Create Container Template
+        </a>
       {% endif %}
     </div>
 </div>
@@ -46,7 +53,7 @@
         <tbody>
           {% for obj in object_list %}
             <tr>
-              <td><a href="{% url 'containertemplates:project-detail' containertemplateproject=obj.sodar_uuid %}">{{ obj.get_display_name }}</a></td>
+              <td><a href="{% url 'containertemplates:project-detail' containertemplateproject=obj.sodar_uuid %}">{{ obj }}</a></td>
               <td>{{ obj.repository }}</td>
               <td>{{ obj.date_created }}</td>
               <td class="text-right">

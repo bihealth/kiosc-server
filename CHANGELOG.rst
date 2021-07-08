@@ -30,6 +30,7 @@ Changed
 
 - **General**
   - Migrated to SODAR core v0.10.3
+  - Celery production settings which prevented workers from receiving jobs
 - **Containers**
   - Internal naming of URLs (#30)
   - Field ``environment`` now optional (#31)

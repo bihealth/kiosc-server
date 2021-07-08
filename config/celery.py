@@ -14,5 +14,12 @@ app = Celery("kiosc")
 #   should have a `CELERY_` prefix.
 app.config_from_object("django.conf:settings", namespace="CELERY")
 
+if "production" in os.environ.get("DJANGO_SETTINGS_MODULE"):
+    # Configure routing as we nee different degrees of concurrency for the background job processing.
+    app.conf.task_routes = {}
+
+    # Explicitely set the name of the default queue to default (is celery).
+    app.conf.task_default_queue = "default"
+
 # Load task modules from all registered Django app configs.
 app.autodiscover_tasks()

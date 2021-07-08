@@ -35,6 +35,7 @@ Changed
   - Internal naming of URLs (#30)
   - Field ``environment`` now optional (#31)
   - Fixed setting the environment variables in the container
+  - Fixed bug in parsing of docker log date
 - **Containertemplates**
   - ``ProjectApp`` to ``SiteApp`` (#30)
   - Naming ``ContainerTemplates`` model to ``ContainerTemplateSite`` (#31)

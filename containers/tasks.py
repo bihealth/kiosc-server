@@ -202,8 +202,12 @@ def poll_docker_status_and_logs(_self):
                 container.save()
 
             for line in logs:
-                text = line[51:]
-                log_date = dateutil.parser.parse(line[:30])
+                try:
+                    text = line[51:]
+                    log_date = dateutil.parser.parse(line[:30])
+                except dateutil.parser.ParserError:
+                    text = line
+                    log_date = timezone.now()
 
                 # Filter out duplicates
                 if date_last_logs and log_date <= date_last_logs:

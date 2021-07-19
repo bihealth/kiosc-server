@@ -10,7 +10,6 @@ from statemachine import StateMachine, State
 
 from containers.models import (
     STATE_CREATED,
-    STATE_RESTARTING,
     STATE_RUNNING,
     STATE_PAUSED,
     STATE_EXITED,
@@ -77,7 +76,10 @@ class ActionSwitch:
             self.cm.start_created()
 
         elif state == STATE_EXITED:
-            self.cm.start_exited()
+            self.cm.delete()
+            self.cm.delete_success()
+            self.cm.pull_deleted()
+            self.cm.start_pulled()
 
         elif state == STATE_FAILED:
             self.cm.pull_failed()
@@ -112,13 +114,11 @@ class ActionSwitch:
 
     def _restart(self, state):
         if state == STATE_RUNNING:
-            self.cm.restart_stop()
-
-        elif state == STATE_EXITED:
-            self.cm.restart_exited()
-
-        elif state == STATE_PAUSED:
-            self.cm.restart_paused()
+            self.cm.stop_running()
+            self.cm.delete()
+            self.cm.delete_success()
+            self.cm.pull_deleted()
+            self.cm.start_pulled()
 
         else:
             raise RuntimeError(f"Action restart not allowed in state {state}")
@@ -150,9 +150,6 @@ class ContainerMachine(StateMachine):
 
     #: State when a newly created container fails to start (Docker state).
     created = State(STATE_CREATED)
-
-    #: State when restarting a container (Docker state).
-    restarting = State(STATE_RESTARTING)
 
     #: State when container is started and running (Docker state).
     running = State(STATE_RUNNING)
@@ -207,18 +204,6 @@ class ContainerMachine(StateMachine):
     #: Transition when starting a paused container (action: unpause).
     unpause = paused.to(running)
 
-    #: Transition when restarting a container (action: restart).
-    restart_stop = running.to(restarting)
-
-    #: Transition to running when in restarting state (no action).
-    restart_start = restarting.to(running)
-
-    #: Transition when restarting a stopped container (action: restart).
-    restart_exited = exited.to(restarting)
-
-    #: Transition when restarting a paused container (action: restart).
-    restart_paused = paused.to(restarting)
-
     #: Transition when stopping a running container (action: stop).
     stop_running = running.to(exited)
 
@@ -254,9 +239,6 @@ class ContainerMachine(StateMachine):
     #: Transition ``deleting`` to ``failed``
     failed_deleting = deleting.to(failed)
 
-    #: Transition ``restarting`` to ``failed``
-    failed_restarting = restarting.to(failed)
-
     #: Transition ``deleted`` to ``failed``
     failed_deleted = deleted.to(failed)
 
@@ -288,51 +270,48 @@ class ContainerMachine(StateMachine):
             self.container.save()
 
     def on_pull(self):
-        if not self.container.image_id:
-            # Pulling image
-            self.job.add_log_entry(
-                f"Pulling image {self.container.get_repos_full()} ..."
-            )
-            self.container.log_entries.create(
-                text="Pulling image ...",
-                process=PROCESS_TASK,
-                user=self.user,
-            )
-            self.container.state = STATE_PULLING
-            self.container.save()
+        # Pulling image
+        self.job.add_log_entry(
+            f"Pulling image {self.container.get_repos_full()} ..."
+        )
+        self.container.log_entries.create(
+            text="Pulling image ...",
+            process=PROCESS_TASK,
+            user=self.user,
+        )
+        self.container.state = STATE_PULLING
+        self.container.save()
 
-            for line in self.cli.pull(
-                repository=self.container.repository,
-                tag=self.container.tag,
-                stream=True,
-                decode=True,
-            ):
-                if line.get("progressDetail"):
-                    docker_log_line = "{status} ({progressDetail[current]}/{progressDetail[total]})".format(
-                        **line
-                    )
-                else:
-                    docker_log_line = line["status"]
-
-                self.container.log_entries.create(
-                    text=docker_log_line,
-                    process=PROCESS_DOCKER,
-                    date_docker_log=timezone.now(),
-                    user=self.user,
+        for line in self.cli.pull(
+            repository=self.container.repository,
+            tag=self.container.tag,
+            stream=True,
+            decode=True,
+        ):
+            if line.get("progressDetail"):
+                docker_log_line = "{status} ({progressDetail[current]}/{progressDetail[total]})".format(
+                    **line
                 )
-                self.job.add_log_entry(docker_log_line)
+            else:
+                docker_log_line = line["status"]
 
-            image_details = self.cli.inspect_image(
-                self.container.get_repos_full()
-            )
-            self.container.image_id = image_details.get("Id")
-            self.container.save()
-            self.job.add_log_entry("Pulling image succeeded")
             self.container.log_entries.create(
-                text="Pulling image succeeded",
-                process=PROCESS_TASK,
+                text=docker_log_line,
+                process=PROCESS_DOCKER,
+                date_docker_log=timezone.now(),
                 user=self.user,
             )
+            self.job.add_log_entry(docker_log_line)
+
+        image_details = self.cli.inspect_image(self.container.get_repos_full())
+        self.container.image_id = image_details.get("Id")
+        self.container.save()
+        self.job.add_log_entry("Pulling image succeeded")
+        self.container.log_entries.create(
+            text="Pulling image succeeded",
+            process=PROCESS_TASK,
+            user=self.user,
+        )
 
         options = {}
         options_host_config = {}
@@ -353,7 +332,9 @@ class ContainerMachine(StateMachine):
         container_info = self.cli.create_container(
             detach=True,
             image=self.container.image_id,
-            environment=json.loads(self.container.environment),
+            environment=json.loads(self.container.environment)
+            if self.container.environment
+            else None,
             command=shlex.split(self.container.command)
             if self.container.command
             else None,
@@ -429,34 +410,16 @@ class ContainerMachine(StateMachine):
             user=self.user,
         )
 
-    def on_restart_stop(self):
-        self.container.log_entries.create(
-            text="Restarting ...", process=PROCESS_TASK, user=self.user
-        )
-        self.job.add_log_entry("Restarting container")
-        self.cli.restart(self.container.container_id)
-        self._update_status()
-        self.job.add_log_entry("Restarting container succeeded")
-        self.container.log_entries.create(
-            text="Restarting succeeded",
-            process=PROCESS_TASK,
-            user=self.user,
-        )
-
-    def on_restart_start(self):
-        pass
-
-    def on_restart_exited(self):
-        self.on_restart_stop()
-
     def on_stop_running(self):
-        # Stopping container
         self.container.log_entries.create(
             text="Stopping ...", process=PROCESS_TASK, user=self.user
         )
         self.job.add_log_entry("Stopping container")
+
+        # Stopping container and updating status
         self.cli.stop(self.container.container_id)
         self._update_status()
+
         self.container.log_entries.create(
             text="Stopping succeeded",
             process=PROCESS_TASK,
@@ -468,7 +431,22 @@ class ContainerMachine(StateMachine):
         self.on_stop_running()
 
     def on_delete(self):
-        pass  # TODO
+        self.container.log_entries.create(
+            text="Deleting ...", process=PROCESS_TASK, user=self.user
+        )
+        self.job.add_log_entry("Deleting container")
+        self.container.state = STATE_DELETING
+
+        # Removing container and erasing container_id
+        self.cli.remove_container(self.container.container_id)
+        self.container.state = STATE_DELETED
+        self.container.container_id = None
+        self.container.save()
 
     def on_delete_success(self):
-        pass  # TODO
+        self.container.log_entries.create(
+            text="Deleting succeeded",
+            process=PROCESS_TASK,
+            user=self.user,
+        )
+        self.job.add_log_entry("Deleting container succeeded")

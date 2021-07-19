@@ -11,11 +11,96 @@
 {% block projectroles_extend %}
 
 {% has_perm "containers.view_logs" request.user project as can_view_logs %}
+{% has_perm "containers.create_container" request.user project as can_create_container %}
+{% has_perm "containers.edit_container" request.user project as can_edit_container %}
+{% has_perm "containers.delete_container" request.user project as can_delete_container %}
+{% has_perm "containers.start_container" request.user project as can_start_container %}
+{% has_perm "containers.stop_container" request.user project as can_stop_container %}
+{% has_perm "containers.pause_container" request.user project as can_pause_container %}
+{% has_perm "containers.unpause_container" request.user project as can_unpause_container %}
 {% get_django_setting "KIOSC_NETWORK_MODE" as network_mode %}
 
 <div class="row sodar-subtitle-container">
   <h3>Container <small class="text-muted">{{ object.sodar_uuid }}</small></h3>
   <div class="ml-auto">
+    <div class="btn-group">
+      {% if container.state == "running" %}
+        <a href="{% url 'containers:proxy' container=container.sodar_uuid path=container.path %}"
+            class="btn btn-primary" target="_blank"
+            data-toggle="tooltip" data-placement="top" title="Open app">
+          <i class="iconify" data-icon="mdi:eye"></i>
+          View
+        </a>
+      {% else %}
+        <a href="{% url 'containers:proxy-lobby' container=container.sodar_uuid path=container.path %}"
+            class="btn btn-outline-secondary" target="_blank"
+            data-toggle="tooltip" data-placement="top" title="App not running">
+          <i class="iconify" data-icon="mdi:eye-off"></i>
+          View
+        </a>
+      {% endif %}
+      {% if can_start_container or can_stop_container or can_pause_container or can_unpause_container or can_edit_container or can_delete_container %}
+        <button class="btn btn-secondary dropdown-toggle"
+                type="button" data-toggle="dropdown" aria-expanded="false">
+          <i class="iconify" data-icon="mdi:cog"></i>
+          Controls
+        </button>
+        <div class="dropdown-menu dropdown-menu-right">
+          {% if container.state == "running" %}
+            {% if can_start_container %}
+              <a class="dropdown-item"
+                 href="{% url 'containers:stop' container=container.sodar_uuid %}">
+                <i class="iconify" data-icon="mdi:stop"></i> Stop
+              </a>
+            {% endif %}
+            {% if can_pause_container %}
+              <a class="dropdown-item"
+                 href="{% url 'containers:pause' container=container.sodar_uuid %}">
+                <i class="iconify" data-icon="mdi:pause"></i> Pause
+              </a>
+            {% endif %}
+            {% if can_start_container %}
+              <a class="dropdown-item"
+                 href="{% url 'containers:restart' container=container.sodar_uuid %}">
+                <i class="iconify" data-icon="mdi:restart"></i> Restart
+              </a>
+            {% endif %}
+          {% elif container.state == "paused" %}
+            {% if can_stop_container %}
+              <a class="dropdown-item"
+                 href="{% url 'containers:stop' container=container.sodar_uuid %}">
+                <i class="iconify" data-icon="mdi:stop"></i> Stop
+              </a>
+            {% endif %}
+            {% if can_unpause_container %}
+              <a class="dropdown-item"
+                 href="{% url 'containers:unpause' container=container.sodar_uuid %}">
+                <i class="iconify" data-icon="mdi:play"></i> Unpause
+              </a>
+            {% endif %}
+          {% else %}
+            {% if can_start_container %}
+              <a class="dropdown-item"
+                 href="{% url 'containers:start' container=container.sodar_uuid %}">
+                <i class="iconify" data-icon="mdi:play"></i> Start
+              </a>
+            {% endif %}
+          {% endif %}
+          {% if can_edit_container %}
+            <a class="dropdown-item"
+               href="{% url 'containers:update' container=container.sodar_uuid %}">
+              <i class="iconify" data-icon="mdi:lead-pencil"></i> Update
+            </a>
+          {% endif %}
+          {% if can_delete_container %}
+            <a class="dropdown-item text-danger"
+               href="{% url 'containers:delete' container=container.sodar_uuid %}">
+              <i class="iconify" data-icon="mdi:close-thick"></i> Delete
+            </a>
+          {% endif %}
+        </div>
+      {% endif %}
+    </div>
     <a role="button" class="btn btn-secondary"
       href="{% url "containers:list" project=object.project.sodar_uuid %}">
       <i class="iconify" data-icon="mdi:arrow-left-circle"></i> Container List

@@ -177,8 +177,8 @@
     <div class="card-header"><h4>Logs</h4></div>
     <div id="logs" class="card-body m-2 overflow-auto bg-dark text-light border border-dark rounded-lg" style="height: 400px">
       <samp>
-        {% for entry in object.log_entries.merge_order %}
-          {{ entry }}<br/>
+        {% for entry in logs %}
+          {{ entry }}<br />
         {% endfor %}
       </samp>
     </div>

@@ -1,4 +1,3 @@
-import json
 import shlex
 
 import docker
@@ -332,9 +331,7 @@ class ContainerMachine(StateMachine):
         container_info = self.cli.create_container(
             detach=True,
             image=self.container.image_id,
-            environment=json.loads(self.container.environment)
-            if self.container.environment
-            else None,
+            environment=self.container.environment,
             command=shlex.split(self.container.command)
             if self.container.command
             else None,

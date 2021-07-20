@@ -43,6 +43,7 @@ Containers
 - Fixed bug in parsing of docker log date (#32)
 - Starting and restarting a container now removes old container and creates a new one (#72)
 - Detail page now allows for managing the container (#72)
+- Extended container logs with stack trace in case of unknown error
 
 
 v0.1.3 (2021-06-09)

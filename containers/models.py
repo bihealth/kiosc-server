@@ -1,7 +1,7 @@
 import contextlib
 import uuid
 
-from bgjobs.models import BackgroundJob, JobModelMessageMixin
+from bgjobs.models import BackgroundJob, JobModelMessageMixin, LOG_LEVEL_DEBUG
 from django.conf import settings
 from django.db.models import JSONField
 from django.db import models
@@ -357,7 +357,15 @@ class ContainerBackgroundJob(JobModelMessageContextManagerMixin, models.Model):
 
 class ContainerLogEntryManager(models.Manager):
     def merge_order(self, *args, **kwargs):
+        is_superuser = (
+            kwargs.pop("user").is_superuser if "user" in kwargs else False
+        )
         qs = self.get_queryset().filter(*args, **kwargs)
+
+        # Show DEBUG level only to superuser
+        if not is_superuser:
+            qs = qs.exclude(level=LOG_LEVEL_DEBUG)
+
         return sorted(
             qs,
             key=lambda a: a.date_docker_log

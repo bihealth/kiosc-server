@@ -227,6 +227,13 @@ class ContainerDetailView(
     slug_url_kwarg = "container"
     slug_field = "sodar_uuid"
 
+    def get_context_data(self, *args, **kwargs):
+        context = super().get_context_data(*args, **kwargs)
+        context["logs"] = self.get_object().log_entries.merge_order(
+            user=self.request.user
+        )
+        return context
+
 
 class ContainerStartView(
     LoginRequiredMixin,

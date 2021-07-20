@@ -1,9 +1,11 @@
+import traceback
 from datetime import timedelta
 
 import docker
 import docker.errors
 import dateutil.parser
 import statemachine.exceptions
+from bgjobs.models import LOG_LEVEL_DEBUG
 
 from django.db import transaction
 from django.utils import timezone
@@ -142,6 +144,13 @@ def container_task(_self, job_id):
             job.add_log_entry(
                 f"Action failed: {job.action}", level=LOG_LEVEL_ERROR
             )
+            for line in traceback.format_exc().split("\n"):
+                container.log_entries.create(
+                    text=line,
+                    process=PROCESS_TASK,
+                    user=user,
+                    level=LOG_LEVEL_DEBUG,
+                )
             container.log_entries.create(
                 text=f"Action failed: {job.action} ({e})",
                 process=PROCESS_TASK,

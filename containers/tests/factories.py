@@ -45,7 +45,7 @@ class ContainerFactory(factory.django.DjangoModelFactory):
     host_port = factory.Sequence(lambda n: 8000 + n)
     timeout = 60
     state = STATE_INITIAL
-    environment = "{}"
+    environment = {}
     environment_secret_keys = ""
     command = ""
 

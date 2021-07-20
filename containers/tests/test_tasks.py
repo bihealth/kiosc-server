@@ -1,5 +1,4 @@
 """Test container tasks."""
-import json
 import time
 from datetime import timedelta
 from unittest.mock import patch, call
@@ -115,7 +114,7 @@ class TestContainerTask(TestBase):
         create_container.assert_called_once_with(
             detach=True,
             image=self.container1.image_id,
-            environment=json.loads(self.container1.environment),
+            environment=self.container1.environment,
             command=self.container1.command or None,
             ports=[self.container1.container_port],
             host_config=None,
@@ -197,7 +196,7 @@ class TestContainerTask(TestBase):
         create_container.assert_called_once_with(
             detach=True,
             image=self.container1.image_id,
-            environment=json.loads(self.container1.environment),
+            environment=self.container1.environment,
             command=self.container1.command or None,
             ports=[self.container1.container_port],
             host_config=None,
@@ -343,7 +342,7 @@ class TestContainerTask(TestBase):
         create_container.assert_called_once_with(
             detach=True,
             image=self.container1.image_id,
-            environment=json.loads(self.container1.environment),
+            environment=self.container1.environment,
             command=self.container1.command or None,
             ports=[self.container1.container_port],
             host_config=None,
@@ -1367,7 +1366,7 @@ class TestSyncContainerStateWithLastUserActionTask(TestBase):
         create_container.assert_called_once_with(
             detach=True,
             image=self.container1.image_id,
-            environment=json.loads(self.container1.environment),
+            environment=self.container1.environment,
             command=self.container1.command or None,
             ports=[self.container1.container_port],
             host_config=None,
@@ -1384,6 +1383,8 @@ class TestSyncContainerStateWithLastUserActionTask(TestBase):
                 self.container1.container_port: self.container1.host_port
             },
         )
+        create_endpoint_config.assert_not_called(),
+        create_networking_config.assert_not_called(),
         inspect_image.assert_called_once_with(self.container1.get_repos_full())
         inspect_container.assert_has_calls(
             [call(self.container1.container_id)] * 2

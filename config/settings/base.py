@@ -626,4 +626,7 @@ KIOSC_DOCKER_MAX_ULIMIT_NOFILE_HARD = env.str(
 KIOSC_NETWORK_MODE = env.str("KIOSC_NETWORK_MODE", "host")
 #: Docker network name.
 KIOSC_DOCKER_NETWORK = env.str("KIOSC_DOCKER_NETWORK", "kiosc-net")
+#: Name of the web server Docker container.
 KIOSC_DOCKER_WEB_SERVER = env.str("KIOSC_DOCKER_WEB_SERVER", "kiosc-web")
+#: Min delay in seconds for container actions.
+KIOSC_DOCKER_ACTION_MIN_DELAY = env.int("KIOSC_DOCKER_ACTION_MIN_DELAY", 1)

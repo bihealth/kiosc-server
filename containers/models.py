@@ -1,11 +1,13 @@
 import contextlib
 import uuid
+from datetime import timedelta
 
 from bgjobs.models import BackgroundJob, JobModelMessageMixin, LOG_LEVEL_DEBUG
 from django.conf import settings
 from django.db.models import JSONField
-from django.db import models
+from django.db import models, transaction
 from django.urls import reverse
+from django.utils import timezone
 from django.utils.timezone import localtime
 from projectroles.models import Project
 
@@ -464,3 +466,48 @@ class ContainerLogEntry(models.Model):
 
     def __repr__(self):
         return f"ContainerLogEntry({self.container.get_display_name()},{self.get_date_created()})"
+
+
+class ContainerActionLock(models.Model):
+    """Model for tracking container actions (with the purpose of limiting them)."""
+
+    #: DateTime of creation
+    date_of_action = models.DateTimeField(
+        auto_now=True, help_text="DateTime of action"
+    )
+
+    #: ``Container`` the action was performed on.
+    container = models.ForeignKey(
+        Container,
+        related_name="action_lock",
+        blank=False,
+        null=False,
+        on_delete=models.CASCADE,
+    )
+
+    #: Action
+    action = models.CharField(max_length=32, choices=ACTION_CHOICES)
+
+    class CoolDown(Exception):
+        pass
+
+    def queryset(self):
+        return self.__class__.objects.filter(id=self.id)
+
+    def is_locked(self):
+        return timezone.now() < self.date_of_action + timedelta(
+            seconds=settings.KIOSC_DOCKER_ACTION_MIN_DELAY
+        )
+
+    def lock(self, action):
+        if self.is_locked():
+            raise ContainerActionLock.CoolDown
+
+        with transaction.atomic():
+            lock = self.queryset().select_for_update().get()
+
+            if lock.is_locked():
+                raise ContainerActionLock.CoolDown
+
+            lock.action = action
+            lock.save()

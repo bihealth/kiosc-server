@@ -6,7 +6,9 @@ from django.forms import model_to_dict
 from django.urls import reverse
 from django.utils import timezone
 from django.utils.timezone import localtime
+from django.test import override_settings, TransactionTestCase
 
+import containers
 from containers.models import (
     Container,
     STATE_INITIAL,
@@ -14,8 +16,14 @@ from containers.models import (
     ContainerLogEntry,
     PROCESS_DOCKER,
     PROCESS_OBJECT,
+    ACTION_START,
+    ContainerActionLock,
 )
-from containers.tests.factories import ContainerLogEntryFactory
+from containers.tests.factories import (
+    ContainerLogEntryFactory,
+    ProjectFactory,
+    ContainerFactory,
+)
 from containers.tests.helpers import TestBase
 
 
@@ -294,3 +302,60 @@ class TestContainerLogEntry(TestBase):
             self.log_entry_docker2.get_date_docker_log(),
             ContainerLogEntry.objects.get_date_last_docker_log(),
         )
+
+
+class TestContainerActionLock(TransactionTestCase):
+    """Tests for the ``ContainerActionLock`` model."""
+
+    def setUp(self):
+        super().setUp()
+        self.project = ProjectFactory()
+        self.container = ContainerFactory(project=self.project)
+        self.data = {
+            "container": self.container,
+            "action": ACTION_START,
+        }
+
+    def test_initialization(self):
+        lock = ContainerActionLock.objects.create(**self.data)
+        expected = {
+            **self.data,
+            "id": lock.pk,
+            "container": lock.container.id,
+        }
+        self.assertEqual(model_to_dict(lock), expected)
+
+    def test_queryset(self):
+        lock = ContainerActionLock.objects.create(**self.data)
+        self.assertListEqual(
+            list(ContainerActionLock.objects.all()), list(lock.queryset())
+        )
+
+    @override_settings(KIOSC_DOCKER_ACTION_MIN_DELAY=20)
+    def test_is_locked_true(self):
+        lock = ContainerActionLock.objects.create(**self.data)
+        self.assertTrue(lock.is_locked())
+
+    @override_settings(KIOSC_DOCKER_ACTION_MIN_DELAY=0)
+    def test_is_locked_false(self):
+        lock = ContainerActionLock.objects.create(**self.data)
+        self.assertFalse(lock.is_locked())
+
+    @override_settings(KIOSC_DOCKER_ACTION_MIN_DELAY=10)
+    def test_lock_in_cooldown(self):
+        lock = ContainerActionLock.objects.create(**self.data)
+
+        with self.assertRaises(containers.models.ContainerActionLock.CoolDown):
+            lock.lock("stop")
+
+    @override_settings(KIOSC_DOCKER_ACTION_MIN_DELAY=0)
+    def test_lock(self):
+        lock = ContainerActionLock.objects.create(**self.data)
+        lock.lock("stop")
+
+    # TODO Test the database locking (select_for_update)
+    # https://medium.com/@alexandre.laplante/djangos-select-for-update-with-examples-and-tests-caff09414766
+    # Somehow implementing that approach the other database is just empty.
+    # I guess I'm just too stupid to implement that.
+    # Note: Since Django 2.2 you have to define in this class:
+    # databases = "__all__"

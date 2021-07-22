@@ -6,6 +6,7 @@ import docker.errors
 import dateutil.parser
 import statemachine.exceptions
 from bgjobs.models import LOG_LEVEL_DEBUG
+from django.conf import settings
 
 from django.db import transaction
 from django.utils import timezone
@@ -25,6 +26,7 @@ from containers.models import (
     PROCESS_TASK,
     PROCESS_DOCKER,
     LOG_LEVEL_WARNING,
+    ContainerActionLock,
 )
 from containers.statemachines import (
     ContainerMachine,
@@ -98,6 +100,7 @@ def container_task(_self, job_id):
                 user=user,
                 level=LOG_LEVEL_ERROR,
             )
+
             with transaction.atomic():
                 job.container.refresh_from_db()
                 job.container.container_id = ""
@@ -123,6 +126,7 @@ def container_task(_self, job_id):
                 user=user,
                 level=LOG_LEVEL_ERROR,
             )
+
             with transaction.atomic():
                 container.refresh_from_db()
                 container.state = STATE_FAILED
@@ -139,11 +143,24 @@ def container_task(_self, job_id):
                 level=LOG_LEVEL_ERROR,
             )
 
+        except ContainerActionLock.CoolDown:
+            job.add_log_entry(
+                f"Action not performed: {job.action} (cool-down)",
+                level=LOG_LEVEL_WARNING,
+            )
+            container.log_entries.create(
+                text=f"Action not performed: {job.action}. Cool-down is active ({settings.KIOSC_DOCKER_ACTION_MIN_DELAY}s)",
+                process=PROCESS_TASK,
+                user=user,
+                level=LOG_LEVEL_WARNING,
+            )
+
         except Exception as e:
             # Catch all exceptions that are not coming from Docker
             job.add_log_entry(
                 f"Action failed: {job.action}", level=LOG_LEVEL_ERROR
             )
+
             for line in traceback.format_exc().split("\n"):
                 container.log_entries.create(
                     text=line,
@@ -151,12 +168,16 @@ def container_task(_self, job_id):
                     user=user,
                     level=LOG_LEVEL_DEBUG,
                 )
+
             container.log_entries.create(
-                text=f"Action failed: {job.action} ({e})",
+                text="Action failed: {}{}".format(
+                    job.action, f" ({str(e)})" if str(e) else ""
+                ),
                 process=PROCESS_TASK,
                 user=user,
                 level=LOG_LEVEL_ERROR,
             )
+
             with transaction.atomic():
                 container.refresh_from_db()
                 container.state = STATE_FAILED

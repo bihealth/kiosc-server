@@ -122,7 +122,6 @@ class ActionSwitch:
         else:
             raise RuntimeError(f"Action restart not allowed in state {state}")
 
-    @transaction.atomic
     def do(self, action, state):
         f = self._switches.get(action)
 
@@ -139,7 +138,21 @@ class ActionSwitch:
         if self.tl_event:
             self.tl_event.set_status("OK", "action succeeded")
 
-        f(state)
+        action_locks = self.cm.container.action_lock.all()
+
+        if action_locks.count() == 0:
+            self.cm.container.action_lock.create(action=action)
+
+        elif action_locks.count() == 1:
+            action_locks.first().lock(action)
+
+        else:
+            raise RuntimeError(
+                f"Maximal one lock per container expected, got {action_locks.count()}"
+            )
+
+        with transaction.atomic():
+            f(state)
 
 
 class ContainerMachine(StateMachine):

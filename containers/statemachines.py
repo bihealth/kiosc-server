@@ -341,7 +341,11 @@ class ContainerMachine(StateMachine):
                 self.container.container_port: self.container.host_port
             }
 
-        environment = dict(self.container.environment)
+        environment = (
+            dict(self.container.environment)
+            if self.container.environment
+            else {}
+        )
         url_prefix = reverse(
             "containers:proxy",
             kwargs={

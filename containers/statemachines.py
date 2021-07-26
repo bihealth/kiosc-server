@@ -3,6 +3,7 @@ import shlex
 import docker
 from django.conf import settings
 from django.db import transaction
+from django.urls import reverse
 from django.utils import timezone
 from docker.types import Ulimit
 from statemachine import StateMachine, State
@@ -340,11 +341,26 @@ class ContainerMachine(StateMachine):
                 self.container.container_port: self.container.host_port
             }
 
+        environment = dict(self.container.environment)
+        url_prefix = reverse(
+            "containers:proxy",
+            kwargs={
+                "container": self.container.sodar_uuid,
+                "path": self.container.container_path or "",
+            },
+        )
+
+        for key, value in environment.items():
+            if "__KIOSC_URL_PREFIX__" in value:
+                environment[key] = value.replace(
+                    "__KIOSC_URL_PREFIX__", url_prefix
+                )
+
         # Create container
         container_info = self.cli.create_container(
             detach=True,
             image=self.container.image_id,
-            environment=self.container.environment,
+            environment=environment,
             command=shlex.split(self.container.command)
             if self.container.command
             else None,

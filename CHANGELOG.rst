@@ -45,6 +45,7 @@ Containers
 - Detail page now allows for managing the container (#72)
 - Extended container logs with stack trace in case of unknown error
 - Added ``ContainerActionLock`` model to throttle actions performed on a container (#75)
+- Accepting ``__KIOSC_URL_PREFIX__`` in the ``environment`` field, being replaced by the reverse proxy url
 
 v0.1.3 (2021-06-09)
 ===================

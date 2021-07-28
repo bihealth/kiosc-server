@@ -72,4 +72,10 @@ urlpatterns = [
         view=views.ContainerTemplateProjectCopyView.as_view(),
         name="project-copy",
     ),
+    # Ajax views
+    url(
+        regex=r"^ajax/get-containertemplate$",
+        view=views.ContainerTemplateSelectorApiView.as_view(),
+        name="ajax-get-containertemplate",
+    ),
 ]

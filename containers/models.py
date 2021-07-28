@@ -13,6 +13,11 @@ from projectroles.models import Project
 
 
 #: Django user model.
+from containertemplates.models import (
+    ContainerTemplateProject,
+    ContainerTemplateSite,
+)
+
 AUTH_USER_MODEL = getattr(settings, "AUTH_USER_MODEL", "auth.User")
 
 #: Token for 'created' state of container.
@@ -150,6 +155,25 @@ class Container(models.Model):
 
     class Meta:
         ordering = ("-date_created",)
+        constraints = [
+            models.CheckConstraint(
+                name="%(app_label)s_%(class)s_site_or_project_or_null_template",
+                check=(
+                    models.Q(
+                        containertemplateproject__isnull=False,
+                        containertemplatesite__isnull=True,
+                    )
+                    | models.Q(
+                        containertemplateproject__isnull=True,
+                        containertemplatesite__isnull=False,
+                    )
+                    | models.Q(
+                        containertemplateproject__isnull=True,
+                        containertemplatesite__isnull=True,
+                    )
+                ),
+            )
+        ]
 
     #: DateTime of container creation.
     date_created = models.DateTimeField(
@@ -278,6 +302,26 @@ class Container(models.Model):
         blank=False,
         null=False,
         default=5,
+    )
+
+    #: Link to ``ContainerTemplateSite`` (optional)
+    containertemplatesite = models.ForeignKey(
+        ContainerTemplateSite,
+        related_name="containers",
+        help_text="Link to site-wide container template",
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+    )
+
+    #: Link to ``ContainerTemplateProject`` (optional)
+    containertemplateproject = models.ForeignKey(
+        ContainerTemplateProject,
+        related_name="containers",
+        help_text="Link to project-wide container template",
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
     )
 
     def __str__(self):

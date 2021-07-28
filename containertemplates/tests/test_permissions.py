@@ -302,5 +302,38 @@ class TestContainerTemplateProjectPermissions(TestProjectPermissionBase):
             self.user_no_roles,
             self.anonymous,
         ]
-        self.assert_response(url, good_users, 200)
-        self.assert_response(url, bad_users, 302)
+        self.assert_response(
+            url,
+            good_users,
+            302,
+            redirect_user=reverse(
+                "containertemplates:project-list",
+                kwargs={"project": self.project.sodar_uuid},
+            ),
+            method="POST",
+        )
+        self.assert_response(url, bad_users, 302, method="POST")
+
+    def test_containertemplate_ajax_get(self):
+        """Test permissions for the ``containertemplates:ajax-get-containertemplate`` view."""
+        url = reverse(
+            "containertemplates:ajax-get-containertemplate",
+        )
+        containertemplate = ContainerTemplateSiteFactory()
+        data = {
+            "containertemplate_id": containertemplate.id,
+            "site_or_project": "site",
+        }
+        good_users = [
+            self.superuser,
+            self.owner_as.user,
+            self.delegate_as.user,
+            self.contributor_as.user,
+            self.guest_as.user,
+            self.user_no_roles,
+        ]
+        bad_users = [
+            self.anonymous,
+        ]
+        self.assert_response(url, good_users, 200, method="POST", data=data)
+        self.assert_response(url, bad_users, 302, method="POST", data=data)

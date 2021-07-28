@@ -22,6 +22,7 @@ from containers.models import (
     STATE_EXITED,
 )
 from containers.tests.helpers import TestBase
+from containertemplates.forms import ContainerTemplateSelectorForm
 
 
 responses = Responses("requests.packages.urllib3")
@@ -91,8 +92,11 @@ class TestContainerCreateView(TestBase):
                     kwargs={"project": self.project.sodar_uuid},
                 )
             )
-
             self.assertEqual(response.status_code, 200)
+            self.assertIsInstance(
+                response.context["containertemplate_form"],
+                ContainerTemplateSelectorForm,
+            )
 
     @override_settings(KIOSC_NETWORK_MODE="host")
     def test_post_success_min_fields_mode_host(self):

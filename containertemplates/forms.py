@@ -1,3 +1,5 @@
+from itertools import chain
+
 from django import forms
 
 from containertemplates.models import (
@@ -46,40 +48,15 @@ class ContainerTemplateProjectForm(forms.ModelForm):
         self.fields["project"].widget = forms.HiddenInput()
 
 
-class CustomLabelModelChoiceField(forms.ModelChoiceField):
-    """Custom ModelChoiceField class for modified labels"""
-
-    def label_from_instance(self, obj):
-        return obj.get_display_name()
-
-
-class ContainerTemplateSiteToProjectCopyForm(forms.Form):
+class ContainerTemplateSelectorForm(forms.Form):
     """Form for copying a site-wide containertemplate to a project."""
 
     #: Source template to copy
-    source = CustomLabelModelChoiceField(
-        queryset=ContainerTemplateSite.objects.all(),
-        widget=forms.Select(attrs={"class": "form-control"}),
-    )
-
-    #: Define whether source is site-wide or project-wide container template
-    site_or_project = forms.CharField(
-        initial="site", widget=forms.HiddenInput()
-    )
-
-
-class ContainerTemplateProjectToProjectCopyForm(forms.Form):
-    """Form for copying a project-wide containertemplate to a project."""
-
-    #: Source template to copy
-    source = CustomLabelModelChoiceField(
-        queryset=ContainerTemplateProject.objects.none(),
-        widget=forms.Select(attrs={"class": "form-control"}),
-    )
-
-    #: Define whether source is site-wide or project-wide container template
-    site_or_project = forms.CharField(
-        initial="project", widget=forms.HiddenInput()
+    source = forms.ChoiceField(
+        choices=[],
+        widget=forms.Select(
+            attrs={"class": "form-control", "style": "width: 400px"}
+        ),
     )
 
     def __init__(self, *args, **kwargs):
@@ -87,13 +64,21 @@ class ContainerTemplateProjectToProjectCopyForm(forms.Form):
 
         super().__init__(*args, **kwargs)
 
-        if user.is_superuser:
-            self.fields[
-                "source"
-            ].queryset = ContainerTemplateProject.objects.all()
-        else:
-            self.fields[
-                "source"
-            ].queryset = ContainerTemplateProject.objects.filter(
+        queryset_site = ContainerTemplateSite.objects.all()
+        queryset_project = ContainerTemplateProject.objects.all()
+
+        if not user.is_superuser:
+            queryset_project = queryset_project.filter(
                 project__roles__user=user
             )
+
+        choices_project = [
+            (f"project:{obj.id}", f"[Project-wide] {obj.get_display_name()}")
+            for obj in queryset_project
+        ]
+        choices_site = [
+            (f"site:{obj.id}", f"[Site-wide] {obj.get_display_name()}")
+            for obj in queryset_site
+        ]
+
+        self.fields["source"].choices = chain(choices_site, choices_project)

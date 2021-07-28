@@ -19,17 +19,23 @@
   <h3>Container Templates <small class="text-muted">project-wide</small></h3>
     <div class="ml-auto">
       {% if can_duplicate_containertemplate %}
-        <a href="{% url 'containertemplates:project-copy' project=project.sodar_uuid %}"
-           class="btn btn-secondary" role="button">
-          <i class="iconify" data-icon="octicon:duplicate-16"></i>
-          Copy Container Template
-        </a>
+        <form method="post" action="{% url 'containertemplates:project-copy' project=project.sodar_uuid %}">
+          {% csrf_token %}
+          <div class="input-group">
+            {{ template_copy_form.source }}
+            <div class="input-group-append">
+              <button type="submit" class="btn btn-primary">
+                <i class="iconify" data-icon="octicon:duplicate-16"></i> Copy
+              </button>
+            </div>
+          </div>
+        </form>
       {% endif %}
       {% if can_create_containertemplate %}
         <a href="{% url 'containertemplates:project-create' project=project.sodar_uuid %}"
            class="btn btn-primary" role="button">
           <i class="iconify" data-icon="mdi:plus-circle"></i>
-          Create Container Template
+          Create
         </a>
       {% endif %}
     </div>

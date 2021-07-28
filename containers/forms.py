@@ -12,6 +12,8 @@ class ContainerForm(forms.ModelForm):
         fields = [
             "container_port",
             "container_path",
+            "containertemplatesite",
+            "containertemplateproject",
             "heartbeat_url",
             "host_port",
             "timeout",
@@ -28,6 +30,8 @@ class ContainerForm(forms.ModelForm):
         super().__init__(*args, **kwargs)
         # Hide project field
         self.fields["project"].widget = forms.HiddenInput()
+        self.fields["containertemplatesite"].widget = forms.HiddenInput()
+        self.fields["containertemplateproject"].widget = forms.HiddenInput()
 
         # Hide host port if in docker-shared mode
         if settings.KIOSC_NETWORK_MODE == "docker-shared":

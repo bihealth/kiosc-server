@@ -7,10 +7,7 @@ from urllib3_mock import Responses
 from django.forms import model_to_dict
 from django.urls import reverse
 
-from containertemplates.forms import (
-    ContainerTemplateSiteToProjectCopyForm,
-    ContainerTemplateProjectToProjectCopyForm,
-)
+from containertemplates.forms import ContainerTemplateSelectorForm
 from containertemplates.models import (
     ContainerTemplateSite,
     ContainerTemplateProject,
@@ -508,6 +505,10 @@ class TestContainerTemplateProjectListView(TestBase):
 
             self.assertEqual(response.status_code, 200)
             self.assertEqual(len(response.context["object_list"]), 0)
+            self.assertIsInstance(
+                response.context.get("template_copy_form"),
+                ContainerTemplateSelectorForm,
+            )
 
     def test_get_success_list_one_item(self):
         self.create_one_containertemplateproject()
@@ -988,26 +989,6 @@ class TestContainerTemplateProjectCopyView(TestBase):
         super().setUp()
         self.create_one_containertemplatesite()
         self.create_four_containertemplates_in_two_projects()
-        self.create_fake_uuid()
-
-    def test_get_success(self):
-        with self.login(self.superuser):
-            response = self.client.get(
-                reverse(
-                    "containertemplates:project-copy",
-                    kwargs={"project": self.project.sodar_uuid},
-                )
-            )
-
-            self.assertEqual(response.status_code, 200)
-            self.assertIsInstance(
-                response.context.get("site_to_project_copy_form"),
-                ContainerTemplateSiteToProjectCopyForm,
-            )
-            self.assertIsInstance(
-                response.context.get("project_to_project_copy_form"),
-                ContainerTemplateProjectToProjectCopyForm,
-            )
 
     def test_post_success_site_wide(self):
         with self.login(self.superuser):
@@ -1018,8 +999,7 @@ class TestContainerTemplateProjectCopyView(TestBase):
                     kwargs={"project": self.project.sodar_uuid},
                 ),
                 {
-                    "source": self.containertemplatesite1.pk,
-                    "site_or_project": "site",
+                    "source": f"site:{self.containertemplatesite1.pk}",
                 },
             )
 
@@ -1065,8 +1045,7 @@ class TestContainerTemplateProjectCopyView(TestBase):
                     kwargs={"project": self.project.sodar_uuid},
                 ),
                 {
-                    "source": self.containertemplateproject1_project2.pk,
-                    "site_or_project": "project",
+                    "source": f"project:{self.containertemplateproject1_project2.pk}",
                 },
             )
 
@@ -1100,8 +1079,7 @@ class TestContainerTemplateProjectCopyView(TestBase):
                     kwargs={"project": self.project.sodar_uuid},
                 ),
                 {
-                    "source": 0,
-                    "site_or_project": "non_existent",
+                    "source": "non_existent:0",
                 },
             )
 
@@ -1125,8 +1103,7 @@ class TestContainerTemplateProjectCopyView(TestBase):
                     kwargs={"project": self.project.sodar_uuid},
                 ),
                 {
-                    "source": 999,
-                    "site_or_project": "site",
+                    "source": "site:999",
                 },
             )
 
@@ -1150,8 +1127,7 @@ class TestContainerTemplateProjectCopyView(TestBase):
                     kwargs={"project": self.project.sodar_uuid},
                 ),
                 {
-                    "source": 999,
-                    "site_or_project": "project",
+                    "source": "project:999",
                 },
             )
 
@@ -1165,4 +1141,145 @@ class TestContainerTemplateProjectCopyView(TestBase):
             self.assertEqual(
                 str(list(get_messages(response.wsgi_request))[0]),
                 "Source template not found!",
+            )
+
+
+class TestContainerTemplateSelectorApiView(TestBase):
+    """Tests for ``ContainerTemplateSelectorApiView``."""
+
+    def setUp(self):
+        super().setUp()
+        self.create_one_containertemplatesite()
+        self.create_one_containertemplateproject()
+
+    def test_post_site(self):
+        with self.login(self.superuser):
+            expected = model_to_dict(
+                self.containertemplatesite1,
+                exclude=["sodar_uuid", "title", "description"],
+            )
+            response = self.client.post(
+                reverse(
+                    "containertemplates:ajax-get-containertemplate",
+                ),
+                {
+                    "containertemplate_id": self.containertemplatesite1.id,
+                    "site_or_project": "site",
+                },
+            )
+
+            self.assertEqual(response.json(), expected)
+
+    def test_post_project(self):
+        with self.login(self.superuser):
+            expected = model_to_dict(
+                self.containertemplateproject1,
+                exclude=[
+                    "sodar_uuid",
+                    "title",
+                    "description",
+                    "project",
+                    "containertemplatesite",
+                ],
+            )
+            response = self.client.post(
+                reverse(
+                    "containertemplates:ajax-get-containertemplate",
+                ),
+                {
+                    "containertemplate_id": self.containertemplateproject1.id,
+                    "site_or_project": "project",
+                },
+            )
+
+            self.assertEqual(response.json(), expected)
+
+    def test_post_non_existent_category(self):
+        with self.login(self.superuser):
+            response = self.client.post(
+                reverse(
+                    "containertemplates:ajax-get-containertemplate",
+                ),
+                {
+                    "containertemplate_id": self.containertemplateproject1.id,
+                    "site_or_project": "non_existent",
+                },
+            )
+
+            self.assertEqual(response.status_code, 500)
+            self.assertEqual(
+                response.json(),
+                {
+                    "msg": "Missing or invalid `site_or_project`. Only `site` or `project` allowed."
+                },
+            )
+
+    def test_post_missing_site_or_project(self):
+        with self.login(self.superuser):
+            response = self.client.post(
+                reverse(
+                    "containertemplates:ajax-get-containertemplate",
+                ),
+                {
+                    "containertemplate_id": self.containertemplatesite1.id,
+                },
+            )
+
+            self.assertEqual(response.status_code, 500)
+            self.assertEqual(
+                response.json(),
+                {
+                    "msg": "Missing or invalid `site_or_project`. Only `site` or `project` allowed."
+                },
+            )
+
+    def test_post_missing_containertemplate_id(self):
+        with self.login(self.superuser):
+            response = self.client.post(
+                reverse(
+                    "containertemplates:ajax-get-containertemplate",
+                ),
+                {
+                    "site_or_project": "site",
+                },
+            )
+
+            self.assertEqual(response.status_code, 500)
+            self.assertEqual(
+                response.json(), {"msg": "Missing `containertemplate_id`"}
+            )
+
+    def test_post_project_non_existent_id(self):
+        with self.login(self.superuser):
+            response = self.client.post(
+                reverse(
+                    "containertemplates:ajax-get-containertemplate",
+                ),
+                {
+                    "containertemplate_id": 999,
+                    "site_or_project": "project",
+                },
+            )
+
+            self.assertEqual(response.status_code, 500)
+            self.assertEqual(
+                response.json(),
+                {"msg": "No ContainerTemplateProject with id 999"},
+            )
+
+    def test_post_site_non_existent_id(self):
+        with self.login(self.superuser):
+            response = self.client.post(
+                reverse(
+                    "containertemplates:ajax-get-containertemplate",
+                ),
+                {
+                    "containertemplate_id": 999,
+                    "site_or_project": "site",
+                },
+            )
+
+            self.assertEqual(response.status_code, 500)
+            self.assertEqual(
+                response.json(), {"msg": "No ContainerTemplateSite with id 999"}
             )

@@ -33,6 +33,7 @@ Containertemplates
 - Renamed ``ContainerTemplate`` model to ``ContainerTemplateSite`` (#31)
 - View and forms to copy site-wide and project-wide container template (#32)
 - Added optional foreign key ``containertemplatesite`` to ``ContainerTemplateProject`` model (#32)
+- Added AJAX view to get values of a site- or project-wide containertemplate (#33)
 
 Containers
 ----------
@@ -46,6 +47,8 @@ Containers
 - Extended container logs with stack trace in case of unknown error
 - Added ``ContainerActionLock`` model to throttle actions performed on a container (#75)
 - Accepting ``__KIOSC_URL_PREFIX__`` in the ``environment`` field, being replaced by the reverse proxy url
+- Added fuctionality to copy values from a site- or project-wide containertemplate to the container form (#33)
+
 
 v0.1.3 (2021-06-09)
 ===================

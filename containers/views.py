@@ -38,6 +38,9 @@ from containers.models import (
     STATE_RUNNING,
 )
 from containers.tasks import container_task
+from containertemplates.forms import (
+    ContainerTemplateSelectorForm,
+)
 
 
 APP_NAME = "containers"
@@ -55,6 +58,13 @@ class ContainerCreateView(
     permission_required = "containers.create_container"
     template_name = "containers/container_form.html"
     form_class = ContainerForm
+
+    def get_context_data(self, *args, **kwargs):
+        context = super().get_context_data(*args, **kwargs)
+        context["containertemplate_form"] = ContainerTemplateSelectorForm(
+            auto_id="containertemplate_%s", user=self.request.user
+        )
+        return context
 
     def get_initial(self):
         """Set hidden project field."""

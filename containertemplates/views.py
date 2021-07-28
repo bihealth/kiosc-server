@@ -2,6 +2,7 @@
 from django.contrib import messages
 from django.db import transaction
 from django.forms import model_to_dict
+from django.http import JsonResponse
 from django.shortcuts import redirect
 from django.urls import reverse
 from django.views import View
@@ -11,7 +12,6 @@ from django.views.generic import (
     UpdateView,
     ListView,
     DetailView,
-    TemplateView,
 )
 from django.views.generic.detail import SingleObjectMixin
 from projectroles.plugins import get_backend_api
@@ -25,8 +25,7 @@ from projectroles.views import (
 from containertemplates.forms import (
     ContainerTemplateSiteForm,
     ContainerTemplateProjectForm,
-    ContainerTemplateSiteToProjectCopyForm,
-    ContainerTemplateProjectToProjectCopyForm,
+    ContainerTemplateSelectorForm,
 )
 from containertemplates.models import (
     ContainerTemplateSite,
@@ -378,6 +377,13 @@ class ContainerTemplateProjectListView(
     slug_url_kwarg = "project"
     slug_field = "sodar_uuid"
 
+    def get_context_data(self, *args, **kwargs):
+        context = super().get_context_data(*args, **kwargs)
+        context["template_copy_form"] = ContainerTemplateSelectorForm(
+            user=self.request.user
+        )
+        return context
+
 
 class ContainerTemplateProjectDetailView(
     LoginRequiredMixin,
@@ -472,24 +478,13 @@ class ContainerTemplateProjectCopyView(
     LoggedInPermissionMixin,
     ProjectPermissionMixin,
     ProjectContextMixin,
-    TemplateView,
+    View,
 ):
     """View for copying a project-wide containertemplate."""
 
     permission_required = "containertemplates.project_duplicate"
     slug_url_kwarg = "project"
     slug_field = "sodar_uuid"
-    template_name = "containertemplates/project_copy.html"
-
-    def get_context_data(self, *args, **kwargs):
-        context = super().get_context_data(*args, **kwargs)
-        context[
-            "site_to_project_copy_form"
-        ] = ContainerTemplateSiteToProjectCopyForm()
-        context[
-            "project_to_project_copy_form"
-        ] = ContainerTemplateProjectToProjectCopyForm(user=self.request.user)
-        return context
 
     def post(self, request, *args, **kwargs):
         project = self.get_project()
@@ -501,8 +496,12 @@ class ContainerTemplateProjectCopyView(
             )
         )
 
-        source_id = request.POST.get("source")
-        site_or_project = request.POST.get("site_or_project")
+        source = request.POST.get("source")
+
+        if not source:
+            return _redirect
+
+        site_or_project, source_id = source.split(":")
 
         if site_or_project == "site":
             model = ContainerTemplateSite
@@ -587,3 +586,68 @@ class ContainerTemplateProjectCopyView(
             )
 
             return _redirect
+
+
+class ContainerTemplateSelectorApiView(LoginRequiredMixin, View):
+    """Class for returning containertemplate values."""
+
+    def post(self, *args, **kwargs):
+        containertemplate_id = self.request.POST.get("containertemplate_id")
+        site_or_project = self.request.POST.get("site_or_project")
+
+        # TODO check if user is allowed to access project
+
+        if not containertemplate_id:
+            return JsonResponse(
+                {"msg": "Missing `containertemplate_id`"}, status=500
+            )
+
+        if site_or_project not in (
+            "site",
+            "project",
+        ):
+            return JsonResponse(
+                {
+                    "msg": "Missing or invalid `site_or_project`. Only `site` or `project` allowed."
+                },
+                status=500,
+            )
+
+        if site_or_project == "site":
+            try:
+                obj = ContainerTemplateSite.objects.get(id=containertemplate_id)
+
+            except ContainerTemplateSite.DoesNotExist:
+                return JsonResponse(
+                    {
+                        "msg": f"No ContainerTemplateSite with id {containertemplate_id}"
+                    },
+                    status=500,
+                )
+
+        else:
+            try:
+                obj = ContainerTemplateProject.objects.get(
+                    id=containertemplate_id
+                )
+
+            except ContainerTemplateProject.DoesNotExist:
+                return JsonResponse(
+                    {
+                        "msg": f"No ContainerTemplateProject with id {containertemplate_id}"
+                    },
+                    status=500,
+                )
+
+        return JsonResponse(
+            model_to_dict(
+                obj,
+                exclude=[
+                    "sodar_uuid",
+                    "containertemplatesite",
+                    "title",
+                    "description",
+                    "project",
+                ],
+            )
+        )

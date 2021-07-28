@@ -14,6 +14,14 @@ from containers.models import (
     STATE_PAUSED,
 )
 from containers.tests.factories import ProjectFactory, ContainerFactory
+from containertemplates.models import (
+    ContainerTemplateSite,
+    ContainerTemplateProject,
+)
+from containertemplates.tests.factories import (
+    ContainerTemplateSiteFactory,
+    ContainerTemplateProjectFactory,
+)
 
 
 class TestBase(TestCase):
@@ -46,6 +54,14 @@ class TestBase(TestCase):
         self.container2 = ContainerFactory(project=self.project)
         self.assertEqual(Container.objects.count(), 2)
         self.assertEqual(self.container2.state, STATE_INITIAL)
+
+    def create_containertemplates(self):
+        """Create one containertemplatesite."""
+        self.containertemplatesite1 = ContainerTemplateSiteFactory()
+        self.assertEqual(ContainerTemplateSite.objects.count(), 1)
+
+        self.containertemplateproject1 = ContainerTemplateProjectFactory()
+        self.assertEqual(ContainerTemplateProject.objects.count(), 1)
 
     def create_fake_uuid(self):
         """Create a fake UUID."""

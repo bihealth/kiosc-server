@@ -2,6 +2,7 @@
 import json
 from datetime import timedelta
 
+from django.db import IntegrityError
 from django.forms import model_to_dict
 from django.urls import reverse
 from django.utils import timezone
@@ -33,6 +34,7 @@ class TestContainerModel(TestBase):
     def setUp(self):
         super().setUp()
         self.create_one_container()
+        self.create_containertemplates()
         self.data = {
             "repository": "repository",
             "tag": "tag",
@@ -49,6 +51,8 @@ class TestContainerModel(TestBase):
             "command": None,
             "container_id": None,
             "container_path": None,
+            "containertemplatesite": None,
+            "containertemplateproject": None,
             "heartbeat_url": None,
             "host_port": None,
             "environment": None,
@@ -70,6 +74,8 @@ class TestContainerModel(TestBase):
             "command": None,
             "container_id": None,
             "container_path": None,
+            "containertemplatesite": None,
+            "containertemplateproject": None,
             "heartbeat_url": None,
             "host_port": None,
             "environment_secret_keys": None,
@@ -81,6 +87,67 @@ class TestContainerModel(TestBase):
             "max_retries": container.max_retries,
         }
         self.assertEqual(model_to_dict(container), expected)
+
+    def test_initialization_with_containertemplatesite(self):
+        self.data.update({"containertemplatesite": self.containertemplatesite1})
+        container = Container.objects.create(**self.data)
+        expected = {
+            **self.data,
+            "command": None,
+            "container_id": None,
+            "container_path": None,
+            "containertemplatesite": self.containertemplatesite1.id,
+            "containertemplateproject": None,
+            "heartbeat_url": None,
+            "host_port": None,
+            "environment": None,
+            "environment_secret_keys": None,
+            "image_id": None,
+            "date_last_status_update": None,
+            "project": self.project.pk,
+            "id": container.id,
+            "sodar_uuid": container.sodar_uuid,
+            "max_retries": container.max_retries,
+        }
+        self.assertEqual(model_to_dict(container), expected)
+
+    def test_initialization_with_containertemplateproject(self):
+        self.data.update(
+            {"containertemplateproject": self.containertemplateproject1}
+        )
+        container = Container.objects.create(**self.data)
+        expected = {
+            **self.data,
+            "command": None,
+            "container_id": None,
+            "container_path": None,
+            "containertemplatesite": None,
+            "containertemplateproject": self.containertemplateproject1.id,
+            "heartbeat_url": None,
+            "host_port": None,
+            "environment": None,
+            "environment_secret_keys": None,
+            "image_id": None,
+            "date_last_status_update": None,
+            "project": self.project.pk,
+            "id": container.id,
+            "sodar_uuid": container.sodar_uuid,
+            "max_retries": container.max_retries,
+        }
+        self.assertEqual(model_to_dict(container), expected)
+
+    def test_initialization_with_containertemplatesite_and_containertemplateproject(
+        self,
+    ):
+        self.data.update(
+            {
+                "containertemplatesite": self.containertemplatesite1,
+                "containertemplateproject": self.containertemplateproject1,
+            }
+        )
+
+        with self.assertRaises(IntegrityError):
+            Container.objects.create(**self.data)
 
     def test___str__(self):
         self.assertEqual(

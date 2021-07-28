@@ -16,6 +16,22 @@
 </div>
 
 <div class="container-fluid sodar-page-container">
+  <div class="input-group mb-3">
+    <div class="input-group-prepend">
+      <span class="input-group-text">Container Template</span>
+    </div>
+    {{ containertemplate_form.source }}
+    <div class="input-group-append">
+      <button
+          id="containertemplate_submit"
+          type="submit"
+          class="btn btn-primary"
+          onclick="getTemplate()"
+          data-url="{% url 'containertemplates:ajax-get-containertemplate' %}">
+        <i class="iconify" data-icon="mdi:download"></i> Get site-wide template
+      </button>
+    </div>
+  </div>
   <form method="post" enctype="multipart/form-data">
     {% csrf_token %}
     {{ form | crispy }}
@@ -34,3 +50,40 @@
 </div>
 
 {% endblock projectroles_extend %}
+
+{% block javascript %}
+  {{ block.super }}
+  <script>
+  function getTemplate() {
+      var btn = $("#containertemplate_submit")
+      var src = $("#containertemplate_source")
+      var values = src.val().split(":")
+      var site_or_project = values[0]
+      var containertemplate_id = values[1]
+
+      $.ajax({
+          url: btn.data("url"),
+          type: 'POST',
+          dataType: 'json',
+          data: {
+              csrfmiddlewaretoken: $('input[name="csrfmiddlewaretoken"]').val(),
+              containertemplate_id: containertemplate_id,
+              site_or_project: site_or_project
+          },
+          success: function(data) {
+              $.each(data, function(key, value) {
+                  if (key === "id") {
+                      $("#id_containertemplate" + site_or_project).val(value);
+                  }
+                  else if (key === "environment") {
+                      $("#id_" + key).val(JSON.stringify(value));
+                  }
+                  else {
+                      $("#id_" + key).val(value);
+                  }
+              })
+          }
+      });
+  }
+  </script>
+{% endblock javascript %}

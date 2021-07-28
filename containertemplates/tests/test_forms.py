@@ -3,8 +3,7 @@
 from containertemplates.forms import (
     ContainerTemplateSiteForm,
     ContainerTemplateProjectForm,
-    ContainerTemplateProjectToProjectCopyForm,
-    ContainerTemplateSiteToProjectCopyForm,
+    ContainerTemplateSelectorForm,
 )
 from containertemplates.tests.helpers import TestBase
 
@@ -84,67 +83,102 @@ class TestContainerTemplateProjectForm(TestBase):
         self.assertEqual(form.errors[key], ["This field is required."])
 
 
-class TestContainerTemplateSiteToProjectCopyForm(TestBase):
-    """Tests for ``ContainerTemplateSiteToProjectCopyForm``."""
+class TestContainerTemplateSelectorForm(TestBase):
+    """Tests for ``ContainerTemplateSelectorForm``."""
 
     def setUp(self):
         super().setUp()
 
         self.create_two_containertemplatesites()
-        self.form_data = {
-            "source": self.containertemplatesite1.id,
-            "site_or_project": "site",
-        }
-
-    def test_form_valid(self):
-        form = ContainerTemplateSiteToProjectCopyForm(self.form_data)
-        self.assertTrue(form.is_valid())
-        self.assertEqual(
-            list(form.fields["source"].queryset),
-            [
-                self.containertemplatesite2,
-                self.containertemplatesite1,
-            ],
-        )
-
-
-class TestContainerTemplateProjectToProjectCopyForm(TestBase):
-    """Tests for ``ContainerTemplateProjectToProjectCopyForm``."""
-
-    def setUp(self):
-        super().setUp()
-
         self.create_four_containertemplates_in_two_projects()
         self.assign_user_to_project("contributor", self.project2)
-        self.form_data = {
-            "source": self.containertemplateproject2_project2.id,
-            "site_or_project": "project",
+        self.form_data_site = {
+            "source": f"site:{self.containertemplatesite1.id}",
+        }
+        self.form_data_project = {
+            "source": f"project:{self.containertemplateproject2_project2.id}",
         }
 
-    def test_form_valid_as_contributor(self):
-        form = ContainerTemplateProjectToProjectCopyForm(
-            self.form_data, user=self.user_contributor
+    def test_form_valid_site_as_contributor(self):
+        form = ContainerTemplateSelectorForm(
+            self.form_data_site, user=self.user_contributor
         )
         self.assertTrue(form.is_valid())
-        self.assertEqual(
-            list(form.fields["source"].queryset),
+
+    def test_form_valid_project_as_contributor(self):
+        form = ContainerTemplateSelectorForm(
+            self.form_data_project, user=self.user_contributor
+        )
+        self.assertTrue(form.is_valid())
+
+    def test_form_choices_as_contributor(self):
+        form = ContainerTemplateSelectorForm(
+            self.form_data_project, user=self.user_contributor
+        )
+        self.assertListEqual(
+            form.fields["source"].choices,
             [
-                self.containertemplateproject2_project2,
-                self.containertemplateproject1_project2,
+                (
+                    f"site:{self.containertemplatesite2.id}",
+                    f"[Site-wide] {self.containertemplatesite2.get_display_name()}",
+                ),
+                (
+                    f"site:{self.containertemplatesite1.id}",
+                    f"[Site-wide] {self.containertemplatesite1.get_display_name()}",
+                ),
+                (
+                    f"project:{self.containertemplateproject2_project2.id}",
+                    f"[Project-wide] {self.containertemplateproject2_project2.get_display_name()}",
+                ),
+                (
+                    f"project:{self.containertemplateproject1_project2.id}",
+                    f"[Project-wide] {self.containertemplateproject1_project2.get_display_name()}",
+                ),
             ],
         )
 
-    def test_form_valid_as_superuser(self):
-        form = ContainerTemplateProjectToProjectCopyForm(
-            self.form_data, user=self.superuser
+    def test_form_valid_site_as_superuser(self):
+        form = ContainerTemplateSelectorForm(
+            self.form_data_site, user=self.superuser
         )
         self.assertTrue(form.is_valid())
-        self.assertEqual(
-            list(form.fields["source"].queryset),
+
+    def test_form_valid_project_as_superuser(self):
+        form = ContainerTemplateSelectorForm(
+            self.form_data_project, user=self.superuser
+        )
+        self.assertTrue(form.is_valid())
+
+    def test_form_choices_as_superuser(self):
+        form = ContainerTemplateSelectorForm(
+            self.form_data_project, user=self.superuser
+        )
+        self.assertListEqual(
+            form.fields["source"].choices,
             [
-                self.containertemplateproject2_project2,
-                self.containertemplateproject1_project2,
-                self.containertemplateproject2,
-                self.containertemplateproject1,
+                (
+                    f"site:{self.containertemplatesite2.id}",
+                    f"[Site-wide] {self.containertemplatesite2.get_display_name()}",
+                ),
+                (
+                    f"site:{self.containertemplatesite1.id}",
+                    f"[Site-wide] {self.containertemplatesite1.get_display_name()}",
+                ),
+                (
+                    f"project:{self.containertemplateproject2_project2.id}",
+                    f"[Project-wide] {self.containertemplateproject2_project2.get_display_name()}",
+                ),
+                (
+                    f"project:{self.containertemplateproject1_project2.id}",
+                    f"[Project-wide] {self.containertemplateproject1_project2.get_display_name()}",
+                ),
+                (
+                    f"project:{self.containertemplateproject2.id}",
+                    f"[Project-wide] {self.containertemplateproject2.get_display_name()}",
+                ),
+                (
+                    f"project:{self.containertemplateproject1.id}",
+                    f"[Project-wide] {self.containertemplateproject1.get_display_name()}",
+                ),
             ],
         )

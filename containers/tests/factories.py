@@ -34,7 +34,9 @@ class ContainerFactory(factory.django.DjangoModelFactory):
     class Meta:
         model = Container
 
-    repository = "repository1"
+    title = factory.Sequence(lambda n: "Container %i" % n)
+    description = "Some description"
+    repository = factory.Sequence(lambda n: "repository%i" % n)
     tag = "latest"
     project = factory.SubFactory(ProjectFactory)
     image_id = ""
@@ -48,6 +50,8 @@ class ContainerFactory(factory.django.DjangoModelFactory):
     environment = {}
     environment_secret_keys = ""
     command = ""
+    containertemplatesite = None
+    containertemplateproject = None
 
 
 class ContainerBackgroundJobFactory(factory.django.DjangoModelFactory):

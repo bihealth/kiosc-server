@@ -155,6 +155,7 @@ class Container(models.Model):
 
     class Meta:
         ordering = ("-date_created",)
+        unique_together = ("project", "title")
         constraints = [
             models.CheckConstraint(
                 name="%(app_label)s_%(class)s_site_or_project_or_null_template",
@@ -324,11 +325,24 @@ class Container(models.Model):
         blank=True,
     )
 
+    #: Title of the container
+    title = models.CharField(
+        max_length=512,
+        help_text="Title of the container.",
+    )
+
+    #: Description of the container
+    description = models.TextField(
+        help_text="Description of the container.",
+        blank=True,
+        null=True,
+    )
+
     def __str__(self):
-        return f"{self.get_repos_full()} [{self.state}]"
+        return f"{self.title} [{self.state}]"
 
     def __repr__(self):
-        return f"Container({self.get_repos_full()})"
+        return f"Container({self.title}, {self.state})"
 
     def get_repos_full(self):
         tag = f":{self.tag}" if self.tag else ""
@@ -346,7 +360,7 @@ class Container(models.Model):
         return localtime(self.date_modified).strftime("%Y-%m-%d %H:%M")
 
     def get_display_name(self):
-        return self.get_repos_full()
+        return self.title
 
 
 class ContainerBackgroundJob(JobModelMessageContextManagerMixin, models.Model):

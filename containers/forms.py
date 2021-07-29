@@ -10,6 +10,10 @@ class ContainerForm(forms.ModelForm):
     class Meta:
         model = Container
         fields = [
+            "title",
+            "description",
+            "repository",
+            "tag",
             "container_port",
             "container_path",
             "containertemplatesite",
@@ -21,8 +25,6 @@ class ContainerForm(forms.ModelForm):
             "environment_secret_keys",
             "command",
             "project",
-            "repository",
-            "tag",
             "max_retries",
         ]
 

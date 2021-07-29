@@ -1156,7 +1156,7 @@ class TestContainerTemplateSelectorApiView(TestBase):
         with self.login(self.superuser):
             expected = model_to_dict(
                 self.containertemplatesite1,
-                exclude=["sodar_uuid", "title", "description"],
+                exclude=["sodar_uuid"],
             )
             response = self.client.post(
                 reverse(
@@ -1176,8 +1176,6 @@ class TestContainerTemplateSelectorApiView(TestBase):
                 self.containertemplateproject1,
                 exclude=[
                     "sodar_uuid",
-                    "title",
-                    "description",
                     "project",
                     "containertemplatesite",
                 ],

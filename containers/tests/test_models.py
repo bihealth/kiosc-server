@@ -36,6 +36,7 @@ class TestContainerModel(TestBase):
         self.create_one_container()
         self.create_containertemplates()
         self.data = {
+            "title": "Container",
             "repository": "repository",
             "tag": "tag",
             "project": self.project,
@@ -48,6 +49,7 @@ class TestContainerModel(TestBase):
         container = Container.objects.create(**self.data)
         expected = {
             **self.data,
+            "description": None,
             "command": None,
             "container_id": None,
             "container_path": None,
@@ -66,11 +68,18 @@ class TestContainerModel(TestBase):
         }
         self.assertEqual(model_to_dict(container), expected)
 
+    def test_initialization_title_unique(self):
+        Container.objects.create(**self.data)
+
+        with self.assertRaises(IntegrityError):
+            Container.objects.create(**self.data)
+
     def test_initialization_with_json_field(self):
         self.data.update({"environment": json.loads('{"test": 1}')})
         container = Container.objects.create(**self.data)
         expected = {
             **self.data,
+            "description": None,
             "command": None,
             "container_id": None,
             "container_path": None,
@@ -93,6 +102,7 @@ class TestContainerModel(TestBase):
         container = Container.objects.create(**self.data)
         expected = {
             **self.data,
+            "description": None,
             "command": None,
             "container_id": None,
             "container_path": None,
@@ -118,6 +128,7 @@ class TestContainerModel(TestBase):
         container = Container.objects.create(**self.data)
         expected = {
             **self.data,
+            "description": None,
             "command": None,
             "container_id": None,
             "container_path": None,
@@ -153,7 +164,7 @@ class TestContainerModel(TestBase):
         self.assertEqual(
             str(self.container1),
             "{} [{}]".format(
-                self.container1.get_repos_full(),
+                self.container1.title,
                 self.container1.state,
             ),
         )
@@ -161,8 +172,9 @@ class TestContainerModel(TestBase):
     def test___repr__(self):
         self.assertEqual(
             repr(self.container1),
-            "Container({})".format(
-                self.container1.get_repos_full(),
+            "Container({}, {})".format(
+                self.container1.title,
+                self.container1.state,
             ),
         )
 
@@ -185,18 +197,7 @@ class TestContainerModel(TestBase):
 
     def test_get_display_name(self):
         self.assertEqual(
-            self.container1.get_display_name(),
-            "{}:{}".format(
-                self.container1.repository,
-                self.container1.tag,
-            ),
-        )
-
-    def test_get_display_name_no_tag(self):
-        self.container1.tag = ""
-        self.container1.save()
-        self.assertEqual(
-            self.container1.get_display_name(), self.container1.repository
+            self.container1.get_display_name(), self.container1.title
         )
 
     def test_get_date_created(self):

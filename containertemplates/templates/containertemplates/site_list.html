@@ -37,8 +37,8 @@
              id="kiosc-containertemplate-table">
         <thead>
           <tr>
-            <th>Name</th>
-            <th>Repository</th>
+            <th>Title</th>
+            <th>Repository:Tag</th>
             <th>Date Created</th>
             <th></th>
           </tr>
@@ -47,7 +47,7 @@
           {% for obj in object_list %}
             <tr>
               <td><a href="{% url 'containertemplates:site-detail' containertemplatesite=obj.sodar_uuid %}">{{ obj }}</a></td>
-              <td>{{ obj.repository }}</td>
+              <td>{{ obj.get_repos_full }}</td>
               <td>{{ obj.date_created }}</td>
               <td class="text-right">
                 <div class="btn-group sodar-list-btn-group pull-right">

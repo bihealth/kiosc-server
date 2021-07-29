@@ -84,6 +84,33 @@ class TestContainerListView(TestBase):
 class TestContainerCreateView(TestBase):
     """Tests for ``ContainerCreateView``."""
 
+    def setUp(self):
+        super().setUp()
+        self.create_containertemplates()
+        self.post_data_min_shared = {
+            "title": "Title",
+            "environment": '{"test": 1}',
+            "repository": "repository",
+            "tag": "tag",
+            "container_port": 80,
+            "timeout": 60,
+            "project": self.project.pk,
+            "max_retries": 10,
+        }
+        self.post_data_min_host = {
+            **self.post_data_min_shared,
+            "host_port": 8000,
+        }
+        self.post_data_all = {
+            **self.post_data_min_host,
+            "description": "some description",
+            "container_path": "some/path",
+            "heartbeat_url": "https://heartbeat.url",
+            "environment_secret_keys": "test",
+            "command": "some command",
+            "containertemplatesite": self.containertemplatesite1.pk,
+        }
+
     def test_get_success(self):
         with self.login(self.superuser):
             response = self.client.get(
@@ -100,24 +127,13 @@ class TestContainerCreateView(TestBase):
 
     @override_settings(KIOSC_NETWORK_MODE="host")
     def test_post_success_min_fields_mode_host(self):
-        post_data = {
-            "environment": '{"test": 1}',
-            "repository": "repository",
-            "tag": "tag",
-            "container_port": 80,
-            "host_port": 8000,
-            "timeout": 60,
-            "project": self.project.pk,
-            "max_retries": 10,
-        }
-
         with self.login(self.superuser):
             response = self.client.post(
                 reverse(
                     "containers:create",
                     kwargs={"project": self.project.sodar_uuid},
                 ),
-                post_data,
+                self.post_data_min_host,
             )
 
             self.assertEqual(Container.objects.count(), 1)
@@ -132,32 +148,25 @@ class TestContainerCreateView(TestBase):
                 ),
             )
 
-            post_data["environment"] = json.loads(post_data["environment"])
-            result = model_to_dict(container, fields=post_data.keys())
+            self.post_data_min_host["environment"] = json.loads(
+                self.post_data_min_host["environment"]
+            )
+            result = model_to_dict(
+                container, fields=self.post_data_min_host.keys()
+            )
 
             # Assert updated properties
-            self.assertDictEqual(result, post_data)
+            self.assertDictEqual(result, self.post_data_min_host)
 
     @override_settings(KIOSC_NETWORK_MODE="docker-shared")
     def test_post_success_min_fields_mode_docker_shared(self):
-        post_data = {
-            "environment": '{"test": 1}',
-            "repository": "repository",
-            "tag": "tag",
-            "container_port": 80,
-            "host_port": 8000,
-            "timeout": 60,
-            "project": self.project.pk,
-            "max_retries": 10,
-        }
-
         with self.login(self.superuser):
             response = self.client.post(
                 reverse(
                     "containers:create",
                     kwargs={"project": self.project.sodar_uuid},
                 ),
-                post_data,
+                self.post_data_min_shared,
             )
 
             self.assertEqual(Container.objects.count(), 1)
@@ -172,35 +181,24 @@ class TestContainerCreateView(TestBase):
                 ),
             )
 
-            post_data["environment"] = json.loads(post_data["environment"])
-            result = model_to_dict(container, fields=post_data.keys())
+            self.post_data_min_shared["environment"] = json.loads(
+                self.post_data_min_shared["environment"]
+            )
+            result = model_to_dict(
+                container, fields=self.post_data_min_shared.keys()
+            )
 
             # Assert updated properties
-            self.assertDictEqual(result, post_data)
+            self.assertDictEqual(result, self.post_data_min_shared)
 
     def test_post_success_all_fields(self):
-        post_data = {
-            "environment": '{"test": 1}',
-            "repository": "repository",
-            "tag": "tag",
-            "container_port": 80,
-            "host_port": 8000,
-            "timeout": 60,
-            "project": self.project.pk,
-            "container_path": "some/path",
-            "heartbeat_url": "https://heartbeat.url",
-            "environment_secret_keys": "test",
-            "command": "some command",
-            "max_retries": 10,
-        }
-
         with self.login(self.superuser):
             response = self.client.post(
                 reverse(
                     "containers:create",
                     kwargs={"project": self.project.sodar_uuid},
                 ),
-                post_data,
+                self.post_data_all,
             )
 
             self.assertEqual(Container.objects.count(), 1)
@@ -215,11 +213,13 @@ class TestContainerCreateView(TestBase):
                 ),
             )
 
-            post_data["environment"] = json.loads(post_data["environment"])
-            result = model_to_dict(container, fields=post_data.keys())
+            self.post_data_all["environment"] = json.loads(
+                self.post_data_all["environment"]
+            )
+            result = model_to_dict(container, fields=self.post_data_all.keys())
 
             # Assert updated properties
-            self.assertDictEqual(result, post_data)
+            self.assertDictEqual(result, self.post_data_all)
 
 
 class TestContainerDeleteView(TestBase):
@@ -293,6 +293,21 @@ class TestContainerUpdateView(TestBase):
         super().setUp()
         self.create_one_container()
         self.create_fake_uuid()
+        self.post_data_shared = {
+            "title": "Title Update",
+            "description": "updated description",
+            "environment": '{"updated": 1234}',
+            "repository": "another_repository",
+            "tag": "another_tag",
+            "container_port": self.container1.container_port + 100,
+            "timeout": self.container1.timeout + 60,
+            "project": self.project.pk,
+            "max_retries": 12,
+        }
+        self.post_data_host = {
+            **self.post_data_shared,
+            "host_port": self.container1.host_port + 100,
+        }
 
     def test_get_success(self):
         with self.login(self.superuser):
@@ -318,24 +333,13 @@ class TestContainerUpdateView(TestBase):
 
     @override_settings(KIOSC_NETWORK_MODE="host")
     def test_post_success_updated_initial_mode_host(self):
-        post_data = {
-            "environment": '{"updated": 1234}',
-            "repository": "another_repository",
-            "tag": "another_tag",
-            "container_port": self.container1.container_port + 100,
-            "host_port": self.container1.host_port + 100,
-            "timeout": self.container1.timeout + 60,
-            "project": self.project.pk,
-            "max_retries": 12,
-        }
-
         with self.login(self.superuser):
             response = self.client.post(
                 reverse(
                     "containers:update",
                     kwargs={"container": self.container1.sodar_uuid},
                 ),
-                post_data,
+                self.post_data_host,
             )
 
             # Get updated object
@@ -349,31 +353,25 @@ class TestContainerUpdateView(TestBase):
                 ),
             )
 
-            post_data["environment"] = json.loads(post_data["environment"])
-            result = model_to_dict(self.container1, fields=post_data.keys())
+            self.post_data_host["environment"] = json.loads(
+                self.post_data_host["environment"]
+            )
+            result = model_to_dict(
+                self.container1, fields=self.post_data_host.keys()
+            )
 
             # Assert updated properties
-            self.assertDictEqual(result, post_data)
+            self.assertDictEqual(result, self.post_data_host)
 
     @override_settings(KIOSC_NETWORK_MODE="docker-shared")
     def test_post_success_updated_initial_mode_docker_shared(self):
-        post_data = {
-            "environment": '{"updated": 1234}',
-            "repository": "another_repository",
-            "tag": "another_tag",
-            "container_port": self.container1.container_port + 100,
-            "timeout": self.container1.timeout + 60,
-            "project": self.project.pk,
-            "max_retries": 12,
-        }
-
         with self.login(self.superuser):
             response = self.client.post(
                 reverse(
                     "containers:update",
                     kwargs={"container": self.container1.sodar_uuid},
                 ),
-                post_data,
+                self.post_data_shared,
             )
 
             # Get updated object
@@ -387,11 +385,15 @@ class TestContainerUpdateView(TestBase):
                 ),
             )
 
-            post_data["environment"] = json.loads(post_data["environment"])
-            result = model_to_dict(self.container1, fields=post_data.keys())
+            self.post_data_shared["environment"] = json.loads(
+                self.post_data_shared["environment"]
+            )
+            result = model_to_dict(
+                self.container1, fields=self.post_data_shared.keys()
+            )
 
             # Assert updated properties
-            self.assertDictEqual(result, post_data)
+            self.assertDictEqual(result, self.post_data_shared)
 
     @override_settings(KIOSC_NETWORK_MODE="host")
     @patch("containers.tasks.container_task.delay")
@@ -399,24 +401,13 @@ class TestContainerUpdateView(TestBase):
         self.container1.state = STATE_RUNNING
         self.container1.save()
 
-        post_data = {
-            "environment": '{"updated": 1234}',
-            "repository": "another_repository",
-            "tag": "another_tag",
-            "container_port": self.container1.container_port + 100,
-            "host_port": self.container1.container_port + 100,
-            "timeout": self.container1.timeout + 60,
-            "project": self.project.pk,
-            "max_retries": 12,
-        }
-
         with self.login(self.superuser):
             response = self.client.post(
                 reverse(
                     "containers:update",
                     kwargs={"container": self.container1.sodar_uuid},
                 ),
-                post_data,
+                self.post_data_host,
             )
 
             # Get updated object
@@ -432,11 +423,15 @@ class TestContainerUpdateView(TestBase):
                 target_status_code=302,
             )
 
-            post_data["environment"] = json.loads(post_data["environment"])
-            result = model_to_dict(self.container1, fields=post_data.keys())
+            self.post_data_host["environment"] = json.loads(
+                self.post_data_host["environment"]
+            )
+            result = model_to_dict(
+                self.container1, fields=self.post_data_host.keys()
+            )
 
             # Assert updated properties
-            self.assertDictEqual(result, post_data)
+            self.assertDictEqual(result, self.post_data_host)
 
             # Assert job call
             mock.assert_called()
@@ -452,23 +447,13 @@ class TestContainerUpdateView(TestBase):
         self.container1.state = STATE_RUNNING
         self.container1.save()
 
-        post_data = {
-            "environment": '{"updated": 1234}',
-            "repository": "another_repository",
-            "tag": "another_tag",
-            "container_port": self.container1.container_port + 100,
-            "timeout": self.container1.timeout + 60,
-            "project": self.project.pk,
-            "max_retries": 12,
-        }
-
         with self.login(self.superuser):
             response = self.client.post(
                 reverse(
                     "containers:update",
                     kwargs={"container": self.container1.sodar_uuid},
                 ),
-                post_data,
+                self.post_data_shared,
             )
 
             # Get updated object
@@ -484,11 +469,15 @@ class TestContainerUpdateView(TestBase):
                 target_status_code=302,
             )
 
-            post_data["environment"] = json.loads(post_data["environment"])
-            result = model_to_dict(self.container1, fields=post_data.keys())
+            self.post_data_shared["environment"] = json.loads(
+                self.post_data_shared["environment"]
+            )
+            result = model_to_dict(
+                self.container1, fields=self.post_data_shared.keys()
+            )
 
             # Assert updated properties
-            self.assertDictEqual(result, post_data)
+            self.assertDictEqual(result, self.post_data_shared)
 
             # Assert job call
             mock.assert_called()
@@ -504,24 +493,13 @@ class TestContainerUpdateView(TestBase):
         self.container1.state = STATE_PAUSED
         self.container1.save()
 
-        post_data = {
-            "environment": '{"updated": 1234}',
-            "repository": "another_repository",
-            "tag": "another_tag",
-            "container_port": self.container1.container_port + 100,
-            "host_port": self.container1.host_port + 100,
-            "timeout": self.container1.timeout + 60,
-            "project": self.project.pk,
-            "max_retries": 12,
-        }
-
         with self.login(self.superuser):
             response = self.client.post(
                 reverse(
                     "containers:update",
                     kwargs={"container": self.container1.sodar_uuid},
                 ),
-                post_data,
+                self.post_data_host,
             )
 
             # Get updated object
@@ -537,11 +515,15 @@ class TestContainerUpdateView(TestBase):
                 target_status_code=302,
             )
 
-            post_data["environment"] = json.loads(post_data["environment"])
-            result = model_to_dict(self.container1, fields=post_data.keys())
+            self.post_data_host["environment"] = json.loads(
+                self.post_data_host["environment"]
+            )
+            result = model_to_dict(
+                self.container1, fields=self.post_data_host.keys()
+            )
 
             # Assert updated properties
-            self.assertDictEqual(result, post_data)
+            self.assertDictEqual(result, self.post_data_host)
 
             # Assert job call
             mock.assert_called()
@@ -557,23 +539,13 @@ class TestContainerUpdateView(TestBase):
         self.container1.state = STATE_PAUSED
         self.container1.save()
 
-        post_data = {
-            "environment": '{"updated": 1234}',
-            "repository": "another_repository",
-            "tag": "another_tag",
-            "container_port": self.container1.container_port + 100,
-            "timeout": self.container1.timeout + 60,
-            "project": self.project.pk,
-            "max_retries": 12,
-        }
-
         with self.login(self.superuser):
             response = self.client.post(
                 reverse(
                     "containers:update",
                     kwargs={"container": self.container1.sodar_uuid},
                 ),
-                post_data,
+                self.post_data_shared,
             )
 
             # Get updated object
@@ -589,11 +561,15 @@ class TestContainerUpdateView(TestBase):
                 target_status_code=302,
             )
 
-            post_data["environment"] = json.loads(post_data["environment"])
-            result = model_to_dict(self.container1, fields=post_data.keys())
+            self.post_data_shared["environment"] = json.loads(
+                self.post_data_shared["environment"]
+            )
+            result = model_to_dict(
+                self.container1, fields=self.post_data_shared.keys()
+            )
 
             # Assert updated properties
-            self.assertDictEqual(result, post_data)
+            self.assertDictEqual(result, self.post_data_shared)
 
             # Assert job call
             mock.assert_called()
@@ -604,23 +580,13 @@ class TestContainerUpdateView(TestBase):
             self.assertEqual(bg_job.action, ACTION_RESTART)
 
     def test_post_non_existent(self):
-        post_data = {
-            "environment": '{"updated": 1234}',
-            "repository": "another_repository",
-            "tag": "another_tag",
-            "container_port": 443,
-            "timeout": 99,
-            "project": self.project.pk,
-            "max_retries": 10,
-        }
-
         with self.login(self.superuser):
             response = self.client.post(
                 reverse(
                     "containers:update",
                     kwargs={"container": self.fake_uuid},
                 ),
-                post_data,
+                self.post_data_host,
             )
 
             self.assertEqual(response.status_code, 404)

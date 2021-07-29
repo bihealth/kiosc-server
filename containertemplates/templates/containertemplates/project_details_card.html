@@ -8,14 +8,20 @@
 <table class="table sodar-card-table" id="kiosc-containertemplates-details-table">
   <thead>
     <tr>
-      <th>Container Template</th>
+      <th>Title</th>
+      <th>Repository:Tag</th>
     </tr>
   </thead>
   <tbody>
     {% for containertemplate in project.containertemplates.all %}
       <tr>
         <td class="pl-4">
-          <a href="{% url 'containertemplates:project-detail' containertemplateproject=containertemplate.sodar_uuid %}">{{ containertemplate }}</a>
+          <a href="{% url 'containertemplates:project-detail' containertemplateproject=containertemplate.sodar_uuid %}">
+            {{ containertemplate.title }}
+          </a>
+        </td>
+        <td>
+          {{ containertemplate.get_repos_full }}
         </td>
       </tr>
     {% endfor %}

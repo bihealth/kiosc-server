@@ -11,7 +11,9 @@ class TestContainerForm(TestBase):
 
     def setUp(self):
         super().setUp()
+        self.create_containertemplates()
         self.form_data_min_mode_docker_shared = {
+            "title": "Title",
             "repository": "repository",
             "tag": "tag",
             "container_port": 80,
@@ -25,11 +27,14 @@ class TestContainerForm(TestBase):
         }
         self.form_data_all = {
             **self.form_data_min_mode_host,
+            "description": "some description",
             "container_path": "some/path",
             "heartbeat_url": "https://heartbeat.url",
             "environment": '{"test": 1}',
             "environment_secret_keys": "test",
             "command": "some command",
+            "containertemplatesite": self.containertemplatesite1,
+            "containertemplateproject": None,
         }
 
     @override_settings(KIOSC_NETWORK_MODE="docker-shared")
@@ -88,6 +93,14 @@ class TestContainerForm(TestBase):
         form = ContainerForm(self.form_data_min_mode_host)
         self.assertEqual(form.errors[key], ["This field is required."])
 
+    @override_settings(KIOSC_NETWORK_MODE="host")
+    def test_missing_field_title(self):
+        key = "title"
+        self.form_data_min_mode_host.pop(key)
+        form = ContainerForm(self.form_data_min_mode_host)
+        self.assertEqual(form.errors[key], ["This field is required."])
+
+    @override_settings(KIOSC_NETWORK_MODE="host")
     def test_environment_secret_keys_matching(self):
         self.form_data_all.update(
             {
@@ -98,6 +111,7 @@ class TestContainerForm(TestBase):
         form = ContainerForm(self.form_data_all)
         self.assertTrue(form.is_valid())
 
+    @override_settings(KIOSC_NETWORK_MODE="host")
     def test_environment_secret_keys_mismatching(self):
         self.form_data_all.update(
             {

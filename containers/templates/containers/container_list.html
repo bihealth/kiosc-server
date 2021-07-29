@@ -1,6 +1,7 @@
 {# Projectroles dependency #}
 {% extends 'projectroles/project_base.html' %}
 {% load projectroles_common_tags %}
+{% load container_tags %}
 {% load static %}
 {% load rules %}
 
@@ -41,9 +42,12 @@
              id="kiosc-container-table">
         <thead>
           <tr>
-            <th>Repository</th>
+            <th>Title</th>
+            <th>Repository:Tag</th>
+            {% if network_mode == "host" %}
+              <th>Host Port</th>
+            {% endif %}
             <th>Date Created</th>
-            <th>Port</th>
             <th>State</th>
             <th></th>
           </tr>
@@ -51,12 +55,13 @@
         <tbody>
           {% for container in object_list %}
             <tr>
-              <td><a href="{% url 'containers:detail' container=container.sodar_uuid %}">{{ container.repository }}</a></td>
+              <td><a href="{% url 'containers:detail' container=container.sodar_uuid %}">{{ container.title }}</a></td>
+              <td>{{ container.get_repos_full }}</td>
+              {% if network_mode == "host" %}
+                <td>{{ container.host_port }}</td>
+              {% endif %}
               <td>{{ container.date_created }}</td>
-              <td>
-                {{ container.container_port }}{% if network_mode == "host" %}:{{ container.host_port }}{% endif %}
-              </td>
-              <td>{{ container.state }}</td>
+              <td><strong class="{{ container.state|colorize_state }}">{{ container.state }}</strong></td>
               <td class="text-right">
                 <div class="btn-group sodar-list-btn-group pull-right">
                   {% if container.state == "running" %}

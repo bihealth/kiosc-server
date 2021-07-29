@@ -15,6 +15,7 @@ General
 - Added site-wide apps to menu (#30)
 - Migrated to SODAR core v0.10.3
 - Celery production settings which prevented workers from receiving jobs
+- UI improvements (#81)
 
 Containertemplates
 ------------------
@@ -48,6 +49,7 @@ Containers
 - Added ``ContainerActionLock`` model to throttle actions performed on a container (#75)
 - Accepting ``__KIOSC_URL_PREFIX__`` in the ``environment`` field, being replaced by the reverse proxy url
 - Added fuctionality to copy values from a site- or project-wide containertemplate to the container form (#33)
+- Added title and description to ``Container`` model (#81)
 
 
 v0.1.3 (2021-06-09)

@@ -5,13 +5,13 @@
 {% load crispy_forms_filters %}
 
 {% block title %}
-  Container Template {{ object.sodar_uuid }}
+  Site-wide Container Template - {{ object.title }}
 {% endblock title %}
 
 {% block projectroles %}
 
 <div class="row sodar-subtitle-container">
-  <h3>Container <small class="text-muted">{{ object.sodar_uuid }}</small></h3>
+  <h3>Container Template <small class="text-muted">{{ object.title }}</small></h3>
   <div class="ml-auto">
     <a role="button" class="btn btn-secondary"
       href="{% url "containertemplates:site-list" %}">
@@ -26,6 +26,10 @@
     <div class="card-body">
       <p class="card-text">
         <dl class="row">
+          <dt class="col-sm-3">SODAR UUID</dt>
+          <dd class="col-sm-9">{{ object.sodar_uuid }}</dd>
+        </dl>
+        <dl class="row">
           <dt class="col-sm-3">Date Created</dt>
           <dd class="col-sm-9">{{ object.get_date_created }}</dd>
         </dl>
@@ -34,17 +38,21 @@
           <dd class="col-sm-9">{{ object.get_date_modified }}</dd>
         </dl>
         <dl class="row">
-          <dt class="col-sm-3">Repository</dt>
-          <dd class="col-sm-9">{{ object.repository }}</dd>
+          <dt class="col-sm-3">Repository:Tag</dt>
+          <dd class="col-sm-9">{{ object.get_repos_full }}</dd>
         </dl>
+        {% if object.container_port %}
         <dl class="row">
           <dt class="col-sm-3">Container Port</dt>
           <dd class="col-sm-9">{{ object.container_port }}</dd>
         </dl>
+        {% endif %}
+        {% if object.container_path %}
         <dl class="row">
           <dt class="col-sm-3">Container Path</dt>
           <dd class="col-sm-9">{{ object.container_path }}</dd>
         </dl>
+        {% endif %}
       </p>
     </div>
   </div>

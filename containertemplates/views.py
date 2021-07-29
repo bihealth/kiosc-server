@@ -645,8 +645,6 @@ class ContainerTemplateSelectorApiView(LoginRequiredMixin, View):
                 exclude=[
                     "sodar_uuid",
                     "containertemplatesite",
-                    "title",
-                    "description",
                     "project",
                 ],
             )

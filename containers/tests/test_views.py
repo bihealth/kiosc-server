@@ -254,9 +254,10 @@ class TestContainerDeleteView(TestBase):
             self.assertEqual(response.status_code, 404)
             self.assertEqual(Container.objects.count(), 1)
 
-    def test_post_success_deleted(self):
+    @patch("containers.tasks.container_task.run")
+    def test_delete_success_deleted(self, mock):
         with self.login(self.superuser):
-            response = self.client.post(
+            response = self.client.delete(
                 reverse(
                     "containers:delete",
                     kwargs={"container": self.container1.sodar_uuid},
@@ -272,10 +273,11 @@ class TestContainerDeleteView(TestBase):
             )
 
             self.assertEqual(Container.objects.count(), 0)
+            mock.assert_called()
 
-    def test_post_non_existent(self):
+    def test_delete_non_existent(self):
         with self.login(self.superuser):
-            response = self.client.post(
+            response = self.client.delete(
                 reverse(
                     "containers:delete",
                     kwargs={"container": self.fake_uuid},

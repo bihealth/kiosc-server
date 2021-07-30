@@ -26,6 +26,7 @@ from containers.models import (
     ACTION_RESTART,
     ACTION_PAUSE,
     ACTION_UNPAUSE,
+    ACTION_DELETE,
 )
 
 
@@ -40,6 +41,7 @@ ACTION_TO_EXPECTED_STATE = {
     ACTION_STOP: STATE_EXITED,
     ACTION_PAUSE: STATE_PAUSED,
     ACTION_UNPAUSE: STATE_RUNNING,
+    ACTION_DELETE: STATE_DELETING,
 }
 
 
@@ -61,6 +63,7 @@ class ActionSwitch:
             ACTION_PAUSE: self._pause,
             ACTION_UNPAUSE: self._unpause,
             ACTION_RESTART: self._restart,
+            ACTION_DELETE: self._delete,
         }
 
     def _start(self, state):
@@ -122,6 +125,44 @@ class ActionSwitch:
 
         else:
             raise RuntimeError(f"Action restart not allowed in state {state}")
+
+    def _delete(self, state):
+        if state == STATE_INITIAL:
+            # nothing to delete
+            pass
+
+        elif state == STATE_RUNNING:
+            self.cm.stop_running()
+            self.cm.delete()
+            self.cm.delete_success()
+
+        elif state == STATE_PAUSED:
+            self.cm.stop_paused()
+            self.cm.delete()
+            self.cm.delete_success()
+
+        elif state == STATE_EXITED:
+            self.cm.delete()
+            self.cm.delete_success()
+
+        elif state == STATE_FAILED:
+            self.cm.delete()
+            self.cm.delete_success()
+
+        elif state == STATE_CREATED:
+            self.cm.delete()
+            self.cm.delete_success()
+
+        elif state == STATE_DEAD:
+            self.cm.delete()
+            self.cm.delete_success()
+
+        elif state == STATE_PULLING:
+            self.cm.delete()
+            self.cm.delete_success()
+
+        else:
+            raise RuntimeError(f"Action delete not allowed in state {state}")
 
     def do(self, action, state):
         f = self._switches.get(action)
@@ -466,14 +507,16 @@ class ContainerMachine(StateMachine):
         )
         self.job.add_log_entry("Deleting container")
         self.container.state = STATE_DELETING
+        self.container.save()
 
         # Removing container and erasing container_id
         self.cli.remove_container(self.container.container_id)
+
+    def on_delete_success(self):
         self.container.state = STATE_DELETED
         self.container.container_id = None
         self.container.save()
 
-    def on_delete_success(self):
         self.container.log_entries.create(
             text="Deleting succeeded",
             process=PROCESS_TASK,

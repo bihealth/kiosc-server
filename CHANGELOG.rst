@@ -50,6 +50,7 @@ Containers
 - Accepting ``__KIOSC_URL_PREFIX__`` in the ``environment`` field, being replaced by the reverse proxy url
 - Added fuctionality to copy values from a site- or project-wide containertemplate to the container form (#33)
 - Added title and description to ``Container`` model (#81)
+- Delete action added that stops and deletes Docker containers and not just the container database object (#63)
 
 
 v0.1.3 (2021-06-09)

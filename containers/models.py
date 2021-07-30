@@ -85,6 +85,9 @@ ACTION_PAUSE = "pause"
 #: Background job action for unpausing a container.
 ACTION_UNPAUSE = "unpause"
 
+#: Background job action for deleting a container.
+ACTION_DELETE = "delete"
+
 #: Background job action choices.
 ACTION_CHOICES = [
     (ACTION_START, ACTION_START),
@@ -92,6 +95,7 @@ ACTION_CHOICES = [
     (ACTION_STOP, ACTION_STOP),
     (ACTION_PAUSE, ACTION_PAUSE),
     (ACTION_UNPAUSE, ACTION_UNPAUSE),
+    (ACTION_DELETE, ACTION_DELETE),
 ]
 
 #: Log level info.

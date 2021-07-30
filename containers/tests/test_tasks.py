@@ -21,6 +21,8 @@ from containers.models import (
     STATE_PAUSED,
     ACTION_UNPAUSE,
     ACTION_START,
+    ACTION_DELETE,
+    STATE_DELETED,
 )
 from containers.tasks import (
     container_task,
@@ -686,6 +688,181 @@ class TestContainerTask(TestBase):
         unpause.assert_called_once_with(self.container1.container_id)
         remove_container.assert_not_called()
 
+    @patch("docker.api.client.APIClient.remove_container")
+    @patch("docker.api.client.APIClient.unpause")
+    @patch("docker.api.client.APIClient.pause")
+    @patch("docker.api.client.APIClient.stop")
+    @patch("docker.api.client.APIClient.start")
+    @patch("docker.api.client.APIClient.pull")
+    @patch("docker.api.client.APIClient.inspect_container")
+    @patch("docker.api.client.APIClient.inspect_image")
+    @patch("docker.api.client.APIClient.create_host_config")
+    @patch("docker.api.client.APIClient.create_networking_config")
+    @patch("docker.api.client.APIClient.create_endpoint_config")
+    @patch("docker.api.client.APIClient.create_container")
+    def test_delete_initial_mocked(
+        self,
+        create_container,
+        create_endpoint_config,
+        create_networking_config,
+        create_host_config,
+        inspect_image,
+        inspect_container,
+        pull,
+        start,
+        stop,
+        pause,
+        unpause,
+        remove_container,
+    ):
+        # Prepare
+        container_id = DockerMock.create_container.get("Id")
+        self.bg_job.action = ACTION_DELETE
+        self.bg_job.save()
+        self.container1.image_id = DockerMock.inspect_image.get("Id")
+        self.container1.container_id = container_id
+        self.container1.state = STATE_INITIAL
+        self.container1.save()
+
+        # Run
+        container_task(job_id=self.bg_job.pk)
+
+        # Assert objects
+        self.container1.refresh_from_db()
+        self.assertEqual(self.container1.state, STATE_INITIAL)
+
+        # Assert mocks
+        create_container.assert_not_called()
+        create_host_config.assert_not_called()
+        create_networking_config.assert_not_called()
+        create_endpoint_config.assert_not_called()
+        inspect_image.assert_not_called()
+        inspect_container.assert_not_called()
+        pull.assert_not_called()
+        start.assert_not_called()
+        stop.assert_not_called()
+        pause.assert_not_called()
+        unpause.assert_not_called()
+        remove_container.not_called()
+
+    @patch("docker.api.client.APIClient.remove_container")
+    @patch("docker.api.client.APIClient.unpause")
+    @patch("docker.api.client.APIClient.pause")
+    @patch("docker.api.client.APIClient.stop")
+    @patch("docker.api.client.APIClient.start")
+    @patch("docker.api.client.APIClient.pull")
+    @patch("docker.api.client.APIClient.inspect_container")
+    @patch("docker.api.client.APIClient.inspect_image")
+    @patch("docker.api.client.APIClient.create_host_config")
+    @patch("docker.api.client.APIClient.create_networking_config")
+    @patch("docker.api.client.APIClient.create_endpoint_config")
+    @patch("docker.api.client.APIClient.create_container")
+    def test_delete_running_mocked(
+        self,
+        create_container,
+        create_endpoint_config,
+        create_networking_config,
+        create_host_config,
+        inspect_image,
+        inspect_container,
+        pull,
+        start,
+        stop,
+        pause,
+        unpause,
+        remove_container,
+    ):
+        # Prepare
+        container_id = DockerMock.create_container.get("Id")
+        self.bg_job.action = ACTION_DELETE
+        self.bg_job.save()
+        self.container1.image_id = DockerMock.inspect_image.get("Id")
+        self.container1.container_id = container_id
+        self.container1.state = STATE_RUNNING
+        self.container1.save()
+        create_container.side_effect = [DockerMock.create_container]
+        create_host_config.side_effect = [DockerMock.create_host_config]
+        inspect_container.side_effect = [DockerMock.inspect_container_stopped]
+        inspect_image.side_effect = [DockerMock.inspect_image]
+
+        # Run
+        container_task(job_id=self.bg_job.pk)
+
+        # Assert objects
+        self.container1.refresh_from_db()
+        self.assertEqual(self.container1.state, STATE_DELETED)
+
+        # Assert mocks
+        create_container.assert_not_called()
+        create_host_config.assert_not_called()
+        create_networking_config.assert_not_called()
+        create_endpoint_config.assert_not_called()
+        inspect_image.assert_not_called()
+        inspect_container.assert_called_once_with(container_id)
+        pull.assert_not_called()
+        start.assert_not_called()
+        stop.assert_called_once_with(container_id)
+        pause.assert_not_called()
+        unpause.assert_not_called()
+        remove_container.assert_called_once_with(container_id)
+
+    @patch("docker.api.client.APIClient.remove_container")
+    @patch("docker.api.client.APIClient.unpause")
+    @patch("docker.api.client.APIClient.pause")
+    @patch("docker.api.client.APIClient.stop")
+    @patch("docker.api.client.APIClient.start")
+    @patch("docker.api.client.APIClient.pull")
+    @patch("docker.api.client.APIClient.inspect_container")
+    @patch("docker.api.client.APIClient.inspect_image")
+    @patch("docker.api.client.APIClient.create_host_config")
+    @patch("docker.api.client.APIClient.create_networking_config")
+    @patch("docker.api.client.APIClient.create_endpoint_config")
+    @patch("docker.api.client.APIClient.create_container")
+    def test_delete_exited_mocked(
+        self,
+        create_container,
+        create_endpoint_config,
+        create_networking_config,
+        create_host_config,
+        inspect_image,
+        inspect_container,
+        pull,
+        start,
+        stop,
+        pause,
+        unpause,
+        remove_container,
+    ):
+        # Prepare
+        container_id = DockerMock.create_container.get("Id")
+        self.bg_job.action = ACTION_DELETE
+        self.bg_job.save()
+        self.container1.image_id = DockerMock.inspect_image.get("Id")
+        self.container1.container_id = container_id
+        self.container1.state = STATE_EXITED
+        self.container1.save()
+
+        # Run
+        container_task(job_id=self.bg_job.pk)
+
+        # Assert objects
+        self.container1.refresh_from_db()
+        self.assertEqual(self.container1.state, STATE_DELETED)
+
+        # Assert mocks
+        create_container.assert_not_called()
+        create_host_config.assert_not_called()
+        create_networking_config.assert_not_called()
+        create_endpoint_config.assert_not_called()
+        inspect_image.assert_not_called()
+        inspect_container.assert_not_called()
+        pull.assert_not_called()
+        start.assert_not_called()
+        stop.assert_not_called()
+        pause.assert_not_called()
+        unpause.assert_not_called()
+        remove_container.assert_called_once_with(container_id)
+
     @tag("docker-server")
     @override_settings(KIOSC_DOCKER_ACTION_MIN_DELAY=0)
     def test_start_stop(self):
@@ -791,6 +968,36 @@ class TestContainerTask(TestBase):
             STATE_RUNNING,
         )
         self.assertEqual(self.container1.state, STATE_RUNNING)
+
+    @tag("docker-server")
+    @override_settings(KIOSC_DOCKER_ACTION_MIN_DELAY=0)
+    def test_start_delete(self):
+        self.container1.repository = "brndnmtthws/nginx-echo-headers"
+        self.container1.tag = "latest"
+        self.container1.save()
+
+        # Start
+        container_task(job_id=self.bg_job.pk)
+        self.container1.refresh_from_db()
+        self.assertEqual(
+            self.cli.inspect_container(self.container1.container_id)
+            .get("State")
+            .get("Status"),
+            STATE_RUNNING,
+        )
+        self.assertEqual(self.container1.state, STATE_RUNNING)
+        container_id = self.container1.container_id
+
+        # Delete
+        self.bg_job.action = ACTION_DELETE
+        self.bg_job.save()
+        container_task(job_id=self.bg_job.pk)
+        self.container1.refresh_from_db()
+        self.assertIsNone(self.container1.container_id)
+        self.assertEqual(self.container1.state, STATE_DELETED)
+
+        with self.assertRaises(docker.errors.NotFound):
+            self.cli.inspect_container(container_id)
 
 
 class TestPollDockerStatusAndLogsTask(TestBase):

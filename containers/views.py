@@ -3,7 +3,7 @@ from django.conf import settings
 from django.contrib import messages
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.db import transaction
-from django.shortcuts import redirect, get_object_or_404
+from django.shortcuts import redirect
 from django.urls import reverse
 from django.views import View
 from django.views.generic import (
@@ -13,7 +13,7 @@ from django.views.generic import (
     CreateView,
     ListView,
 )
-from django.views.generic.detail import BaseDetailView
+from django.views.generic.detail import SingleObjectMixin
 from projectroles.plugins import get_backend_api
 from projectroles.views import (
     LoggedInPermissionMixin,
@@ -28,14 +28,17 @@ from containers.models import (
     ContainerBackgroundJob,
     ACTION_START,
     ACTION_STOP,
-    PROCESS_OBJECT,
-    PROCESS_ACTION,
-    PROCESS_PROXY,
     ACTION_PAUSE,
     ACTION_UNPAUSE,
     ACTION_RESTART,
+    ACTION_DELETE,
+    PROCESS_OBJECT,
+    PROCESS_ACTION,
+    PROCESS_PROXY,
     STATE_PAUSED,
     STATE_RUNNING,
+    STATE_DELETED,
+    STATE_INITIAL,
 )
 from containers.tasks import container_task
 from containertemplates.forms import (
@@ -129,8 +132,56 @@ class ContainerDeleteView(
 
     def delete(self, request, *args, **kwargs):
         timeline = get_backend_api("timeline_backend")
-        obj = self.get_object()
+        container = self.get_object()
         project = self.get_project()
+
+        bg_job = BackgroundJob.objects.create(
+            name="Delete container",
+            project=project,
+            job_type=ContainerBackgroundJob.spec_name,
+            user=request.user,
+        )
+        job = ContainerBackgroundJob.objects.create(
+            action=ACTION_DELETE,
+            project=project,
+            container=container,
+            bg_job=bg_job,
+        )
+
+        # Add container log entry
+        container.log_entries.create(
+            text="Delete",
+            process=PROCESS_ACTION,
+            user=request.user,
+        )
+
+        # No async task
+        container_task(job_id=job.id)
+        container.refresh_from_db()
+
+        if container.state not in (STATE_INITIAL, STATE_DELETED):
+            # Add timeline event
+            if timeline:
+                timeline.add_event(
+                    project=project,
+                    app_name=APP_NAME,
+                    user=request.user,
+                    event_name="delete_container",
+                    description=f"deleting of {container.get_display_name()} failed",
+                    status_type="FAILED",
+                )
+
+            messages.error(
+                request,
+                f"Failed deleting container {container.get_display_name()}",
+            )
+
+            return redirect(
+                reverse(
+                    "containers:list",
+                    kwargs={"project": project.sodar_uuid},
+                )
+            )
 
         # Add timeline event
         if timeline:
@@ -139,7 +190,7 @@ class ContainerDeleteView(
                 app_name=APP_NAME,
                 user=request.user,
                 event_name="delete_container",
-                description=f"deleted {obj.get_display_name()}",
+                description=f"deleted {container.get_display_name()}",
                 status_type="OK",
             )
 
@@ -250,6 +301,7 @@ class ContainerStartView(
     LoggedInPermissionMixin,
     ProjectPermissionMixin,
     ProjectContextMixin,
+    SingleObjectMixin,
     View,
 ):
     """View for starting a container."""
@@ -263,9 +315,7 @@ class ContainerStartView(
         with transaction.atomic():
             project = self.get_project()
             user = request.user
-            container = get_object_or_404(
-                Container, sodar_uuid=kwargs.get("container")
-            )
+            container = self.get_object()
             bg_job = BackgroundJob.objects.create(
                 name="Start container",
                 project=project,
@@ -292,7 +342,7 @@ class ContainerStartView(
         return redirect(
             reverse(
                 "containers:detail",
-                kwargs={"container": kwargs.get("container")},
+                kwargs={"container": container.sodar_uuid},
             )
         )
 
@@ -302,6 +352,7 @@ class ContainerStopView(
     LoggedInPermissionMixin,
     ProjectPermissionMixin,
     ProjectContextMixin,
+    SingleObjectMixin,
     View,
 ):
     """View for stopping a container."""
@@ -314,15 +365,12 @@ class ContainerStopView(
     def get(self, request, *args, **kwargs):
         with transaction.atomic():
             project = self.get_project()
-            user = request.user
-            container = get_object_or_404(
-                Container, sodar_uuid=kwargs.get("container")
-            )
+            container = self.get_object()
             bg_job = BackgroundJob.objects.create(
-                name="Start container",
+                name="Stop container",
                 project=project,
                 job_type=ContainerBackgroundJob.spec_name,
-                user=user,
+                user=request.user,
             )
             job = ContainerBackgroundJob.objects.create(
                 action=ACTION_STOP,
@@ -335,7 +383,7 @@ class ContainerStopView(
             container.log_entries.create(
                 text="Stop",
                 process=PROCESS_ACTION,
-                user=self.request.user,
+                user=request.user,
             )
 
             # Schedule task
@@ -344,7 +392,7 @@ class ContainerStopView(
         return redirect(
             reverse(
                 "containers:detail",
-                kwargs={"container": kwargs.get("container")},
+                kwargs={"container": container.sodar_uuid},
             )
         )
 
@@ -354,6 +402,7 @@ class ContainerPauseView(
     LoggedInPermissionMixin,
     ProjectPermissionMixin,
     ProjectContextMixin,
+    SingleObjectMixin,
     View,
 ):
     """View for pausing a container."""
@@ -367,9 +416,7 @@ class ContainerPauseView(
         with transaction.atomic():
             project = self.get_project()
             user = request.user
-            container = get_object_or_404(
-                Container, sodar_uuid=kwargs.get("container")
-            )
+            container = self.get_object()
             bg_job = BackgroundJob.objects.create(
                 name="Pause container",
                 project=project,
@@ -396,7 +443,7 @@ class ContainerPauseView(
         return redirect(
             reverse(
                 "containers:detail",
-                kwargs={"container": kwargs.get("container")},
+                kwargs={"container": container.sodar_uuid},
             )
         )
 
@@ -406,6 +453,7 @@ class ContainerUnpauseView(
     LoggedInPermissionMixin,
     ProjectPermissionMixin,
     ProjectContextMixin,
+    SingleObjectMixin,
     View,
 ):
     """View for unpausing a container."""
@@ -419,9 +467,7 @@ class ContainerUnpauseView(
         with transaction.atomic():
             project = self.get_project()
             user = request.user
-            container = get_object_or_404(
-                Container, sodar_uuid=kwargs.get("container")
-            )
+            container = self.get_object()
             bg_job = BackgroundJob.objects.create(
                 name="Unpause container",
                 project=project,
@@ -448,7 +494,7 @@ class ContainerUnpauseView(
         return redirect(
             reverse(
                 "containers:detail",
-                kwargs={"container": kwargs.get("container")},
+                kwargs={"container": container.sodar_uuid},
             )
         )
 
@@ -458,6 +504,7 @@ class ContainerRestartView(
     LoggedInPermissionMixin,
     ProjectPermissionMixin,
     ProjectContextMixin,
+    SingleObjectMixin,
     View,
 ):
     """View for restarting a container."""
@@ -471,9 +518,7 @@ class ContainerRestartView(
         with transaction.atomic():
             project = self.get_project()
             user = request.user
-            container = get_object_or_404(
-                Container, sodar_uuid=kwargs.get("container")
-            )
+            container = self.get_object()
             bg_job = BackgroundJob.objects.create(
                 name="Restart container",
                 project=project,
@@ -500,7 +545,7 @@ class ContainerRestartView(
         return redirect(
             reverse(
                 "containers:detail",
-                kwargs={"container": kwargs.get("container")},
+                kwargs={"container": container.sodar_uuid},
             )
         )
 
@@ -510,6 +555,7 @@ class ContainerProxyLobbyView(
     LoggedInPermissionMixin,
     ProjectPermissionMixin,
     ProjectContextMixin,
+    SingleObjectMixin,
     View,
 ):
     """View for proxy lobby."""
@@ -533,9 +579,7 @@ class ContainerProxyLobbyView(
         with transaction.atomic():
             project = self.get_project()
             user = request.user
-            container = get_object_or_404(
-                Container, sodar_uuid=kwargs.get("container")
-            )
+            container = self.get_object()
 
             if container.state == STATE_RUNNING:
                 return _redirect
@@ -584,7 +628,8 @@ class ReverseProxyView(
     LoggedInPermissionMixin,
     ProjectPermissionMixin,
     ProjectContextMixin,
-    BaseDetailView,
+    SingleObjectMixin,
+    View,
 ):
     """View for reverse proxy."""
 

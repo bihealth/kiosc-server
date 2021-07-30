@@ -192,9 +192,9 @@ class TestContainerTemplateSiteDeleteView(TestBase):
             self.assertEqual(response.status_code, 404)
             self.assertEqual(ContainerTemplateSite.objects.count(), 1)
 
-    def test_post_success_deleted(self):
+    def test_delete_success_deleted(self):
         with self.login(self.superuser):
-            response = self.client.post(
+            response = self.client.delete(
                 reverse(
                     "containertemplates:site-delete",
                     kwargs={
@@ -212,9 +212,9 @@ class TestContainerTemplateSiteDeleteView(TestBase):
 
             self.assertEqual(ContainerTemplateSite.objects.count(), 0)
 
-    def test_post_non_existent(self):
+    def test_delete_non_existent(self):
         with self.login(self.superuser):
-            response = self.client.post(
+            response = self.client.delete(
                 reverse(
                     "containertemplates:site-delete",
                     kwargs={"containertemplatesite": self.fake_uuid},

@@ -5,6 +5,7 @@ from django.urls import reverse
 from projectroles.tests.test_permissions import TestProjectPermissionBase
 from urllib3_mock import Responses
 
+from containers.models import STATE_RUNNING
 from containers.tests.factories import ContainerFactory
 
 
@@ -229,6 +230,9 @@ class TestContainerPermissions(TestProjectPermissionBase):
     def test_proxy(self):
         """Test permissions for the ``proxy`` view."""
 
+        self.container.state = STATE_RUNNING
+        self.container.save()
+
         def request_callback(request):
             return 200, {}, "abc".encode("utf-8")
 
@@ -258,6 +262,9 @@ class TestContainerPermissions(TestProjectPermissionBase):
     @patch("containers.tasks.container_task.delay")
     def test_proxy_lobby(self, mock):
         """Test permissions for the ``proxy-lobby`` view."""
+
+        self.container.state = STATE_RUNNING
+        self.container.save()
 
         def request_callback(request):
             return 200, {}, "abc".encode("utf-8")

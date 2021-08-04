@@ -28,3 +28,6 @@ black==21.6b0
 
 # Mock library for urllib3
 urllib3-mock==0.3.3
+
+django-redis==4.11.0
+redis>=2.10.5

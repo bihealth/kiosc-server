@@ -65,6 +65,7 @@ class TestContainerModel(TestBase):
             "id": container.id,
             "sodar_uuid": container.sodar_uuid,
             "max_retries": container.max_retries,
+            "inactivity_threshold": container.inactivity_threshold,
         }
         self.assertEqual(model_to_dict(container), expected)
 
@@ -94,6 +95,7 @@ class TestContainerModel(TestBase):
             "id": container.id,
             "sodar_uuid": container.sodar_uuid,
             "max_retries": container.max_retries,
+            "inactivity_threshold": container.inactivity_threshold,
         }
         self.assertEqual(model_to_dict(container), expected)
 
@@ -118,6 +120,7 @@ class TestContainerModel(TestBase):
             "id": container.id,
             "sodar_uuid": container.sodar_uuid,
             "max_retries": container.max_retries,
+            "inactivity_threshold": container.inactivity_threshold,
         }
         self.assertEqual(model_to_dict(container), expected)
 
@@ -144,6 +147,7 @@ class TestContainerModel(TestBase):
             "id": container.id,
             "sodar_uuid": container.sodar_uuid,
             "max_retries": container.max_retries,
+            "inactivity_threshold": container.inactivity_threshold,
         }
         self.assertEqual(model_to_dict(container), expected)
 

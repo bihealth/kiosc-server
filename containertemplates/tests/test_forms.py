@@ -28,6 +28,7 @@ class TestContainerTemplateSiteForm(TestBase):
             "heartbeat_url": "https://heartbeat.url",
             "environment_secret_keys": "test",
             "command": "some command",
+            "inactivity_threshold": 20,
         }
 
     def test_min_fields(self):
@@ -66,6 +67,7 @@ class TestContainerTemplateProjectForm(TestBase):
             "heartbeat_url": "https://heartbeat.url",
             "environment_secret_keys": "test",
             "command": "some command",
+            "inactivity_threshold": 20,
         }
 
     def test_min_fields(self):

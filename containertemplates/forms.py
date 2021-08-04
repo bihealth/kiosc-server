@@ -20,6 +20,7 @@ fields = [
     "repository",
     "tag",
     "max_retries",
+    "inactivity_threshold",
 ]
 
 

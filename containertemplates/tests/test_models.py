@@ -22,7 +22,7 @@ class TestContainerTemplateSiteModel(TestBase):
         }
 
     def test_initialization(self):
-        container = ContainerTemplateSite.objects.create(**self.data)
+        containertemplate = ContainerTemplateSite.objects.create(**self.data)
         expected = {
             **self.data,
             "repository": None,
@@ -35,11 +35,12 @@ class TestContainerTemplateSiteModel(TestBase):
             "container_path": None,
             "heartbeat_url": None,
             "environment_secret_keys": None,
-            "id": container.id,
-            "sodar_uuid": container.sodar_uuid,
-            "max_retries": container.max_retries,
+            "id": containertemplate.id,
+            "sodar_uuid": containertemplate.sodar_uuid,
+            "max_retries": containertemplate.max_retries,
+            "inactivity_threshold": containertemplate.inactivity_threshold,
         }
-        self.assertEqual(model_to_dict(container), expected)
+        self.assertEqual(model_to_dict(containertemplate), expected)
 
     def test___str__(self):
         self.assertEqual(
@@ -139,7 +140,7 @@ class TestContainerTemplateProjectModel(TestBase):
         }
 
     def test_initialization(self):
-        container = ContainerTemplateProject.objects.create(**self.data)
+        containertemplate = ContainerTemplateProject.objects.create(**self.data)
         expected = {
             **self.data,
             "containertemplatesite": None,
@@ -153,12 +154,13 @@ class TestContainerTemplateProjectModel(TestBase):
             "container_path": None,
             "heartbeat_url": None,
             "environment_secret_keys": None,
-            "id": container.id,
-            "sodar_uuid": container.sodar_uuid,
-            "max_retries": container.max_retries,
+            "id": containertemplate.id,
+            "sodar_uuid": containertemplate.sodar_uuid,
+            "max_retries": containertemplate.max_retries,
             "project": self.project.pk,
+            "inactivity_threshold": containertemplate.inactivity_threshold,
         }
-        self.assertEqual(model_to_dict(container), expected)
+        self.assertEqual(model_to_dict(containertemplate), expected)
 
     def test___str__(self):
         self.assertEqual(

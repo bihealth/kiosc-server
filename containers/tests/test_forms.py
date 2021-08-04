@@ -20,6 +20,7 @@ class TestContainerForm(TestBase):
             "timeout": 60,
             "project": self.project,
             "max_retries": 10,
+            "inactivity_threshold": 20,
         }
         self.form_data_min_mode_host = {
             **self.form_data_min_mode_docker_shared,
@@ -96,6 +97,20 @@ class TestContainerForm(TestBase):
     @override_settings(KIOSC_NETWORK_MODE="host")
     def test_missing_field_title(self):
         key = "title"
+        self.form_data_min_mode_host.pop(key)
+        form = ContainerForm(self.form_data_min_mode_host)
+        self.assertEqual(form.errors[key], ["This field is required."])
+
+    @override_settings(KIOSC_NETWORK_MODE="host")
+    def test_missing_field_max_retries(self):
+        key = "max_retries"
+        self.form_data_min_mode_host.pop(key)
+        form = ContainerForm(self.form_data_min_mode_host)
+        self.assertEqual(form.errors[key], ["This field is required."])
+
+    @override_settings(KIOSC_NETWORK_MODE="host")
+    def test_missing_field_inactivity_threshold(self):
+        key = "inactivity_threshold"
         self.form_data_min_mode_host.pop(key)
         form = ContainerForm(self.form_data_min_mode_host)
         self.assertEqual(form.errors[key], ["This field is required."])

@@ -1,4 +1,4 @@
-from bgjobs.models import BackgroundJob
+from bgjobs.models import BackgroundJob, LOG_LEVEL_DEBUG
 from django.conf import settings
 from django.contrib import messages
 from django.contrib.auth.mixins import LoginRequiredMixin
@@ -21,6 +21,7 @@ from projectroles.views import (
     ProjectPermissionMixin,
 )
 from revproxy.views import ProxyView
+from urllib3.exceptions import NewConnectionError
 
 from containers.forms import ContainerForm
 from containers.models import (
@@ -39,6 +40,7 @@ from containers.models import (
     STATE_RUNNING,
     STATE_DELETED,
     STATE_INITIAL,
+    LOG_LEVEL_ERROR,
 )
 from containers.tasks import container_task
 from containertemplates.forms import (
@@ -47,6 +49,7 @@ from containertemplates.forms import (
 
 
 APP_NAME = "containers"
+CELERY_SUBMIT_COUNTDOWN = 0.5
 
 
 class ContainerCreateView(
@@ -337,7 +340,9 @@ class ContainerStartView(
             )
 
             # Schedule task
-            container_task.delay(job_id=job.id)
+            container_task.apply_async(
+                kwargs={"job_id": job.id}, countdown=CELERY_SUBMIT_COUNTDOWN
+            )
 
         return redirect(
             reverse(
@@ -387,7 +392,9 @@ class ContainerStopView(
             )
 
             # Schedule task
-            container_task.delay(job_id=job.id)
+            container_task.apply_async(
+                kwargs={"job_id": job.id}, countdown=CELERY_SUBMIT_COUNTDOWN
+            )
 
         return redirect(
             reverse(
@@ -438,7 +445,9 @@ class ContainerPauseView(
             )
 
             # Schedule task
-            container_task.delay(job_id=job.id)
+            container_task.apply_async(
+                kwargs={"job_id": job.id}, countdown=CELERY_SUBMIT_COUNTDOWN
+            )
 
         return redirect(
             reverse(
@@ -489,7 +498,9 @@ class ContainerUnpauseView(
             )
 
             # Schedule task
-            container_task.delay(job_id=job.id)
+            container_task.apply_async(
+                kwargs={"job_id": job.id}, countdown=CELERY_SUBMIT_COUNTDOWN
+            )
 
         return redirect(
             reverse(
@@ -540,7 +551,9 @@ class ContainerRestartView(
             )
 
             # Schedule task
-            container_task.delay(job_id=job.id)
+            container_task.apply_async(
+                kwargs={"job_id": job.id}, countdown=CELERY_SUBMIT_COUNTDOWN
+            )
 
         return redirect(
             reverse(
@@ -611,8 +624,8 @@ class ContainerProxyLobbyView(
                 user=self.request.user,
             )
 
-            # Schedule task
-            container_task.delay(job_id=job.id)
+            # Execute task synchronously because of the redirect
+            container_task(job_id=job.id)
 
         return _redirect
 
@@ -654,6 +667,12 @@ class ReverseProxyView(
             )
         )
 
+        if not container.state == STATE_RUNNING:
+            messages.error(
+                request, f"Container '{container.title}' not running."
+            )
+            return _redirect
+
         if settings.KIOSC_NETWORK_MODE == "host":
             if container.host_port:
                 upstream = f"http://localhost:{container.host_port}"
@@ -682,6 +701,21 @@ class ReverseProxyView(
         try:
             return proxy_view.dispatch(request, *args, **kwargs)
 
-        except Exception as e:
-            messages.error(request, e)
+        except NewConnectionError as e:
+            container.log_entries.create(
+                text=str(e),
+                process=PROCESS_PROXY,
+                user=request.user,
+                level=LOG_LEVEL_DEBUG,
+            )
+            container.log_entries.create(
+                text=f"Access {upstream} failed",
+                process=PROCESS_PROXY,
+                user=request.user,
+                level=LOG_LEVEL_ERROR,
+            )
+            messages.error(
+                request,
+                f"Web-interface of container '{container.title}' not reachable.",
+            )
             return _redirect

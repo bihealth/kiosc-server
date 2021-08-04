@@ -26,6 +26,7 @@ class ContainerForm(forms.ModelForm):
             "command",
             "project",
             "max_retries",
+            "inactivity_threshold",
         ]
 
     def __init__(self, *args, **kwargs):

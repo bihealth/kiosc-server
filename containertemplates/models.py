@@ -1,5 +1,6 @@
 import uuid
 
+from django.conf import settings
 from django.db import models
 from django.db.models import JSONField
 from django.urls import reverse
@@ -119,6 +120,14 @@ class ContainerTemplateBase(models.Model):
         blank=True,
         null=True,
         default=5,
+    )
+
+    #: Number of days the container can run without proxy access
+    inactivity_threshold = models.IntegerField(
+        help_text="Number of days the container is allowed to run without proxy access.",
+        blank=True,
+        null=True,
+        default=settings.KIOSC_DOCKER_MAX_INACTIVITY,
     )
 
     def __str__(self):

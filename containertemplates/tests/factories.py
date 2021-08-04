@@ -36,6 +36,8 @@ class ContainerTemplateFactoryBase(factory.django.DjangoModelFactory):
     environment = "{}"
     environment_secret_keys = ""
     command = ""
+    inactivity_threshold = 7
+    max_retries = 5
 
 
 class ContainerTemplateSiteFactory(ContainerTemplateFactoryBase):

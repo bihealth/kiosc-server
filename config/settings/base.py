@@ -630,3 +630,5 @@ KIOSC_DOCKER_NETWORK = env.str("KIOSC_DOCKER_NETWORK", "kiosc-net")
 KIOSC_DOCKER_WEB_SERVER = env.str("KIOSC_DOCKER_WEB_SERVER", "kiosc-web")
 #: Min delay in seconds for container actions.
 KIOSC_DOCKER_ACTION_MIN_DELAY = env.int("KIOSC_DOCKER_ACTION_MIN_DELAY", 1)
+#: Max threshold for inactive running docker containers in days.
+KIOSC_DOCKER_MAX_INACTIVITY = env.int("KIOSC_DOCKER_MAX_INACTIVITY", 7)

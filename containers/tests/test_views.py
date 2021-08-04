@@ -20,8 +20,10 @@ from containers.models import (
     STATE_RUNNING,
     STATE_PAUSED,
     STATE_EXITED,
+    STATE_DELETED,
 )
 from containers.tests.helpers import TestBase
+from containers.views import CELERY_SUBMIT_COUNTDOWN
 from containertemplates.forms import ContainerTemplateSelectorForm
 
 
@@ -96,6 +98,7 @@ class TestContainerCreateView(TestBase):
             "timeout": 60,
             "project": self.project.pk,
             "max_retries": 10,
+            "inactivity_threshold": 20,
         }
         self.post_data_min_host = {
             **self.post_data_min_shared,
@@ -254,8 +257,7 @@ class TestContainerDeleteView(TestBase):
             self.assertEqual(response.status_code, 404)
             self.assertEqual(Container.objects.count(), 1)
 
-    @patch("containers.tasks.container_task.run")
-    def test_delete_success_deleted(self, mock):
+    def test_delete_success_initial(self):
         with self.login(self.superuser):
             response = self.client.delete(
                 reverse(
@@ -273,6 +275,38 @@ class TestContainerDeleteView(TestBase):
             )
 
             self.assertEqual(Container.objects.count(), 0)
+            self.assertEqual(ContainerBackgroundJob.objects.count(), 0)
+
+    @patch("containers.tasks.container_task.run")
+    def test_delete_success_running(self, mock):
+        self.container1.state = STATE_RUNNING
+        self.container1.save()
+
+        def _mock_delete(job_id):
+            job = ContainerBackgroundJob.objects.get(id=job_id)
+            job.container.state = STATE_DELETED
+            job.container.save()
+
+        mock.side_effect = _mock_delete
+
+        with self.login(self.superuser):
+            response = self.client.delete(
+                reverse(
+                    "containers:delete",
+                    kwargs={"container": self.container1.sodar_uuid},
+                )
+            )
+
+            self.assertRedirects(
+                response,
+                reverse(
+                    "containers:list",
+                    kwargs={"project": self.project.sodar_uuid},
+                ),
+            )
+
+            self.assertEqual(Container.objects.count(), 0)
+            self.assertEqual(ContainerBackgroundJob.objects.count(), 0)
             mock.assert_called()
 
     def test_delete_non_existent(self):
@@ -305,6 +339,7 @@ class TestContainerUpdateView(TestBase):
             "timeout": self.container1.timeout + 60,
             "project": self.project.pk,
             "max_retries": 12,
+            "inactivity_threshold": 20,
         }
         self.post_data_host = {
             **self.post_data_shared,
@@ -398,7 +433,7 @@ class TestContainerUpdateView(TestBase):
             self.assertDictEqual(result, self.post_data_shared)
 
     @override_settings(KIOSC_NETWORK_MODE="host")
-    @patch("containers.tasks.container_task.delay")
+    @patch("containers.tasks.container_task.apply_async")
     def test_post_success_updated_running_mode_host(self, mock):
         self.container1.state = STATE_RUNNING
         self.container1.save()
@@ -435,16 +470,18 @@ class TestContainerUpdateView(TestBase):
             # Assert updated properties
             self.assertDictEqual(result, self.post_data_host)
 
-            # Assert job call
-            mock.assert_called()
-
             # Assert background job
             self.assertEqual(ContainerBackgroundJob.objects.count(), 1)
             bg_job = ContainerBackgroundJob.objects.first()
             self.assertEqual(bg_job.action, ACTION_RESTART)
 
+            # Assert job call
+            mock.assert_called_with(
+                kwargs={"job_id": bg_job.pk}, countdown=CELERY_SUBMIT_COUNTDOWN
+            )
+
     @override_settings(KIOSC_NETWORK_MODE="docker-shared")
-    @patch("containers.tasks.container_task.delay")
+    @patch("containers.tasks.container_task.apply_async")
     def test_post_success_updated_running_mode_docker_shared(self, mock):
         self.container1.state = STATE_RUNNING
         self.container1.save()
@@ -481,16 +518,18 @@ class TestContainerUpdateView(TestBase):
             # Assert updated properties
             self.assertDictEqual(result, self.post_data_shared)
 
-            # Assert job call
-            mock.assert_called()
-
             # Assert background job
             self.assertEqual(ContainerBackgroundJob.objects.count(), 1)
             bg_job = ContainerBackgroundJob.objects.first()
             self.assertEqual(bg_job.action, ACTION_RESTART)
 
+            # Assert job call
+            mock.assert_called_with(
+                kwargs={"job_id": bg_job.pk}, countdown=CELERY_SUBMIT_COUNTDOWN
+            )
+
     @override_settings(KIOSC_NETWORK_MODE="host")
-    @patch("containers.tasks.container_task.delay")
+    @patch("containers.tasks.container_task.apply_async")
     def test_post_success_updated_paused_mode_host(self, mock):
         self.container1.state = STATE_PAUSED
         self.container1.save()
@@ -527,16 +566,16 @@ class TestContainerUpdateView(TestBase):
             # Assert updated properties
             self.assertDictEqual(result, self.post_data_host)
 
-            # Assert job call
-            mock.assert_called()
-
             # Assert background job
             self.assertEqual(ContainerBackgroundJob.objects.count(), 1)
             bg_job = ContainerBackgroundJob.objects.first()
             self.assertEqual(bg_job.action, ACTION_RESTART)
+            mock.assert_called_with(
+                kwargs={"job_id": bg_job.pk}, countdown=CELERY_SUBMIT_COUNTDOWN
+            )
 
     @override_settings(KIOSC_NETWORK_MODE="docker-shared")
-    @patch("containers.tasks.container_task.delay")
+    @patch("containers.tasks.container_task.apply_async")
     def test_post_success_updated_paused_mode_docker_shared(self, mock):
         self.container1.state = STATE_PAUSED
         self.container1.save()
@@ -573,13 +612,15 @@ class TestContainerUpdateView(TestBase):
             # Assert updated properties
             self.assertDictEqual(result, self.post_data_shared)
 
-            # Assert job call
-            mock.assert_called()
-
             # Assert background job
             self.assertEqual(ContainerBackgroundJob.objects.count(), 1)
             bg_job = ContainerBackgroundJob.objects.first()
             self.assertEqual(bg_job.action, ACTION_RESTART)
+
+            # Assert job call
+            mock.assert_called_with(
+                kwargs={"job_id": bg_job.pk}, countdown=CELERY_SUBMIT_COUNTDOWN
+            )
 
     def test_post_non_existent(self):
         with self.login(self.superuser):
@@ -634,7 +675,7 @@ class TestContainerStartView(TestBase):
         self.create_one_container()
         self.create_fake_uuid()
 
-    @patch("containers.tasks.container_task.delay")
+    @patch("containers.tasks.container_task.apply_async")
     def test_get_success(self, mock):
         with self.login(self.superuser):
             response = self.client.get(
@@ -645,7 +686,6 @@ class TestContainerStartView(TestBase):
             )
 
             self.assertEqual(ContainerBackgroundJob.objects.count(), 1)
-
             job = ContainerBackgroundJob.objects.first()
 
             self.assertRedirects(
@@ -657,7 +697,9 @@ class TestContainerStartView(TestBase):
             )
             self.assertEqual(job.action, ACTION_START)
             self.assertEqual(job.container, self.container1)
-            mock.assert_called_with(job_id=job.pk)
+            mock.assert_called_with(
+                kwargs={"job_id": job.pk}, countdown=CELERY_SUBMIT_COUNTDOWN
+            )
 
     def test_get_non_existent(self):
         with self.login(self.superuser):
@@ -679,7 +721,7 @@ class TestContainerStopView(TestBase):
         self.create_one_container()
         self.create_fake_uuid()
 
-    @patch("containers.tasks.container_task.delay")
+    @patch("containers.tasks.container_task.apply_async")
     def test_get_success(self, mock):
         with self.login(self.superuser):
             response = self.client.get(
@@ -702,7 +744,9 @@ class TestContainerStopView(TestBase):
             )
             self.assertEqual(job.action, ACTION_STOP)
             self.assertEqual(job.container, self.container1)
-            mock.assert_called_with(job_id=job.pk)
+            mock.assert_called_with(
+                kwargs={"job_id": job.pk}, countdown=CELERY_SUBMIT_COUNTDOWN
+            )
 
     def test_get_non_existent(self):
         with self.login(self.superuser):
@@ -724,7 +768,7 @@ class TestContainerRestartView(TestBase):
         self.create_one_container()
         self.create_fake_uuid()
 
-    @patch("containers.tasks.container_task.delay")
+    @patch("containers.tasks.container_task.apply_async")
     def test_get_success(self, mock):
         with self.login(self.superuser):
             response = self.client.get(
@@ -747,7 +791,9 @@ class TestContainerRestartView(TestBase):
             )
             self.assertEqual(job.action, ACTION_RESTART)
             self.assertEqual(job.container, self.container1)
-            mock.assert_called_with(job_id=job.pk)
+            mock.assert_called_with(
+                kwargs={"job_id": job.pk}, countdown=CELERY_SUBMIT_COUNTDOWN
+            )
 
     def test_get_non_existent(self):
         with self.login(self.superuser):
@@ -769,7 +815,7 @@ class TestContainerPauseView(TestBase):
         self.create_one_container()
         self.create_fake_uuid()
 
-    @patch("containers.tasks.container_task.delay")
+    @patch("containers.tasks.container_task.apply_async")
     def test_get_success(self, mock):
         with self.login(self.superuser):
             response = self.client.get(
@@ -792,7 +838,9 @@ class TestContainerPauseView(TestBase):
             )
             self.assertEqual(job.action, ACTION_PAUSE)
             self.assertEqual(job.container, self.container1)
-            mock.assert_called_with(job_id=job.pk)
+            mock.assert_called_with(
+                kwargs={"job_id": job.pk}, countdown=CELERY_SUBMIT_COUNTDOWN
+            )
 
     def test_get_non_existent(self):
         with self.login(self.superuser):
@@ -814,7 +862,7 @@ class TestContainerUnpauseView(TestBase):
         self.create_one_container()
         self.create_fake_uuid()
 
-    @patch("containers.tasks.container_task.delay")
+    @patch("containers.tasks.container_task.apply_async")
     def test_get_success(self, mock):
         with self.login(self.superuser):
             response = self.client.get(
@@ -837,7 +885,9 @@ class TestContainerUnpauseView(TestBase):
             )
             self.assertEqual(job.action, ACTION_UNPAUSE)
             self.assertEqual(job.container, self.container1)
-            mock.assert_called_with(job_id=job.pk)
+            mock.assert_called_with(
+                kwargs={"job_id": job.pk}, countdown=CELERY_SUBMIT_COUNTDOWN
+            )
 
     def test_get_non_existent(self):
         with self.login(self.superuser):
@@ -862,6 +912,9 @@ class TestReverseProxyView(TestBase):
     @override_settings(KIOSC_NETWORK_MODE="host")
     @responses.activate
     def test_get_success_mode_host(self):
+        self.container1.state = STATE_RUNNING
+        self.container1.save()
+
         with self.login(self.superuser):
 
             def request_callback(request):
@@ -893,6 +946,7 @@ class TestReverseProxyView(TestBase):
     @responses.activate
     def test_get_success_mode_host_host_port_missing(self):
         self.container1.host_port = None
+        self.container1.state = STATE_RUNNING
         self.container1.save()
 
         with self.login(self.superuser):
@@ -930,6 +984,9 @@ class TestReverseProxyView(TestBase):
     @override_settings(KIOSC_NETWORK_MODE="docker-shared")
     @responses.activate
     def test_get_success_mode_docker_shared(self):
+        self.container1.state = STATE_RUNNING
+        self.container1.save()
+
         with self.login(self.superuser):
 
             def request_callback(request):
@@ -960,9 +1017,11 @@ class TestReverseProxyView(TestBase):
     @override_settings(KIOSC_NETWORK_MODE="host")
     @responses.activate
     def test_get_success_with_path_mode_host(self):
+        self.container1.state = STATE_RUNNING
+        self.container1.container_path = "this/is/some/path"
+        self.container1.save()
+
         with self.login(self.superuser):
-            self.container1.container_path = "this/is/some/path"
-            self.container1.save()
 
             def request_callback(request):
                 return 200, {}, "abc".encode("utf-8")
@@ -994,6 +1053,7 @@ class TestReverseProxyView(TestBase):
     def test_get_success_with_path_mode_docker_shared(self):
         with self.login(self.superuser):
             self.container1.container_path = "this/is/some/path"
+            self.container1.state = STATE_RUNNING
             self.container1.save()
 
             def request_callback(request):
@@ -1122,7 +1182,7 @@ class TestContainerProxyLobbyView(TestBase):
             )
 
     @override_settings(KIOSC_NETWORK_MODE="host")
-    @patch("containers.tasks.container_task.delay")
+    @patch("containers.tasks.container_task.run")
     @responses.activate
     def test_get_success_paused_with_path(self, mock):
         with self.login(self.superuser):
@@ -1137,6 +1197,13 @@ class TestContainerProxyLobbyView(TestBase):
                 "GET", container_url, callback=request_callback
             )
 
+            def _mock_start(job_id):
+                job = ContainerBackgroundJob.objects.get(id=job_id)
+                job.container.state = STATE_RUNNING
+                job.container.save()
+
+            mock.side_effect = _mock_start
+
             response = self.client.get(
                 reverse(
                     "containers:proxy-lobby",
@@ -1144,7 +1211,7 @@ class TestContainerProxyLobbyView(TestBase):
                         "container": self.container1.sodar_uuid,
                         "path": self.container1.container_path,
                     },
-                )
+                ),
             )
 
             self.assertRedirects(
@@ -1166,7 +1233,7 @@ class TestContainerProxyLobbyView(TestBase):
             mock.assert_called_once_with(job_id=bg_job.id)
 
     @override_settings(KIOSC_NETWORK_MODE="host")
-    @patch("containers.tasks.container_task.delay")
+    @patch("containers.tasks.container_task.run")
     @responses.activate
     def test_get_success_stopped_with_path(self, mock):
         with self.login(self.superuser):
@@ -1180,6 +1247,13 @@ class TestContainerProxyLobbyView(TestBase):
             responses.add_callback(
                 "GET", container_url, callback=request_callback
             )
+
+            def _mock_start(job_id):
+                job = ContainerBackgroundJob.objects.get(id=job_id)
+                job.container.state = STATE_RUNNING
+                job.container.save()
+
+            mock.side_effect = _mock_start
 
             response = self.client.get(
                 reverse(

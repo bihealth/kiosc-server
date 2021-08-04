@@ -5,7 +5,8 @@ import docker
 import docker.errors
 import dateutil.parser
 import statemachine.exceptions
-from bgjobs.models import LOG_LEVEL_DEBUG
+from bgjobs.models import LOG_LEVEL_DEBUG, BackgroundJob
+from celery.schedules import crontab
 from django.conf import settings
 
 from django.db import transaction
@@ -27,6 +28,10 @@ from containers.models import (
     PROCESS_DOCKER,
     LOG_LEVEL_WARNING,
     ContainerActionLock,
+    PROCESS_PROXY,
+    STATE_RUNNING,
+    STATE_PAUSED,
+    ACTION_STOP,
 )
 from containers.statemachines import (
     ContainerMachine,
@@ -185,6 +190,68 @@ def container_task(_self, job_id):
 
 
 @app.task(bind=True)
+def stop_inactive_containers(_self):
+    cli = connect_docker()
+
+    for container in Container.objects.all():
+        if not container.container_id:
+            continue
+
+        # Check if container exists
+        try:
+            data = cli.inspect_container(container.container_id)
+
+        except docker.errors.NotFound:
+            continue
+
+        else:
+            state = data.get("State", {}).get("Status")
+
+            if not state or state not in (STATE_RUNNING, STATE_PAUSED):
+                continue
+
+            # Get latest proxy entry
+            obj = (
+                container.log_entries.filter(process=PROCESS_PROXY)
+                .order_by("-date_created")
+                .first()
+            )
+
+            if obj:
+                last_access = obj.date_created
+
+            else:
+                continue
+
+            threshold = last_access + timedelta(
+                days=min(
+                    container.inactivity_threshold,
+                    settings.KIOSC_DOCKER_MAX_INACTIVITY,
+                )
+            )
+
+            if threshold < timezone.now():
+                bg_job = BackgroundJob.objects.create(
+                    name="Stop container",
+                    project=container.project,
+                    job_type=ContainerBackgroundJob.spec_name,
+                    user=User.objects.get(
+                        username=settings.PROJECTROLES_DEFAULT_ADMIN
+                    ),
+                )
+                job = ContainerBackgroundJob.objects.create(
+                    action=ACTION_STOP,
+                    project=container.project,
+                    container=container,
+                    bg_job=bg_job,
+                )
+
+                container_task.apply_async(
+                    kwargs={"job_id": job.id}, countdown=0.5
+                )
+
+
+@app.task(bind=True)
 def poll_docker_status_and_logs(_self):
     cli = connect_docker()
 
@@ -305,7 +372,10 @@ def sync_container_state_with_last_user_action(_self):
 @app.on_after_finalize.connect
 def setup_periodic_tasks(sender, **_kwargs):
     """Register periodic tasks"""
-    sender.add_periodic_task(60, sig=poll_docker_status_and_logs.s())
+    sender.add_periodic_task(30, sig=poll_docker_status_and_logs.s())
     sender.add_periodic_task(
-        300, sig=sync_container_state_with_last_user_action.s()
+        60, sig=sync_container_state_with_last_user_action.s()
+    )
+    sender.add_periodic_task(
+        crontab(hour=1, minute=11), sig=stop_inactive_containers.s()
     )

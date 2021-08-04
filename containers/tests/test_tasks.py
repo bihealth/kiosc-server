@@ -1,6 +1,7 @@
 """Test container tasks."""
 import time
 from datetime import timedelta
+from unittest import mock
 from unittest.mock import patch, call
 
 import docker.errors
@@ -23,6 +24,8 @@ from containers.models import (
     ACTION_START,
     ACTION_DELETE,
     STATE_DELETED,
+    PROCESS_PROXY,
+    ContainerBackgroundJob,
 )
 from containers.tasks import (
     container_task,
@@ -30,6 +33,7 @@ from containers.tasks import (
     poll_docker_status_and_logs,
     sync_container_state_with_last_user_action,
     DEFAULT_GRACE_PERIOD_CONTAINER_STATUS,
+    stop_inactive_containers,
 )
 from containers.tests.factories import (
     ContainerBackgroundJobFactory,
@@ -1923,3 +1927,307 @@ class TestSyncContainerStateWithLastUserActionTask(TestBase):
         self.bg_job.refresh_from_db()
         self.assertEqual(self.bg_job.retries, 1)
         self.assertEqual(self.container1.state, STATE_RUNNING)
+
+
+class TestStopInactiveContainers(TestBase):
+    """Tests for ``stop_inactive_containers`` task."""
+
+    def setUp(self):
+        super().setUp()
+        self.cli = connect_docker()
+        self.create_one_container()
+        self.container1.container_id = DockerMock.create_container.get("Id")
+        self.container1.image_id = DockerMock.inspect_image.get("Id")
+        self.container1.save()
+
+    @patch("docker.api.client.APIClient.remove_container")
+    @patch("docker.api.client.APIClient.unpause")
+    @patch("docker.api.client.APIClient.pause")
+    @patch("docker.api.client.APIClient.stop")
+    @patch("docker.api.client.APIClient.start")
+    @patch("docker.api.client.APIClient.pull")
+    @patch("docker.api.client.APIClient.inspect_container")
+    @patch("docker.api.client.APIClient.inspect_image")
+    @patch("docker.api.client.APIClient.create_host_config")
+    @patch("docker.api.client.APIClient.create_container")
+    def test_no_container_id(
+        self,
+        create_container,
+        create_host_config,
+        inspect_image,
+        inspect_container,
+        pull,
+        start,
+        stop,
+        pause,
+        unpause,
+        remove_container,
+    ):
+        self.assertEqual(self.container1.state, STATE_INITIAL)
+        inspect_container.side_effect = docker.errors.NotFound("x")
+
+        # Run
+        stop_inactive_containers()
+
+        # Assert mocks
+        create_container.assert_not_called()
+        create_host_config.assert_not_called()
+        inspect_image.assert_not_called()
+        inspect_container.assert_called_once_with(self.container1.container_id)
+        pull.assert_not_called()
+        start.assert_not_called()
+        stop.assert_not_called()
+        pause.assert_not_called()
+        unpause.assert_not_called()
+        remove_container.assert_not_called()
+
+        # Assert objects
+        self.assertEqual(ContainerBackgroundJob.objects.count(), 0)
+
+    @patch("docker.api.client.APIClient.remove_container")
+    @patch("docker.api.client.APIClient.unpause")
+    @patch("docker.api.client.APIClient.pause")
+    @patch("docker.api.client.APIClient.stop")
+    @patch("docker.api.client.APIClient.start")
+    @patch("docker.api.client.APIClient.pull")
+    @patch("docker.api.client.APIClient.inspect_container")
+    @patch("docker.api.client.APIClient.inspect_image")
+    @patch("docker.api.client.APIClient.create_host_config")
+    @patch("docker.api.client.APIClient.create_container")
+    def test_no_state(
+        self,
+        create_container,
+        create_host_config,
+        inspect_image,
+        inspect_container,
+        pull,
+        start,
+        stop,
+        pause,
+        unpause,
+        remove_container,
+    ):
+        self.assertEqual(self.container1.state, STATE_INITIAL)
+        inspect_container.side_effect = [DockerMock.inspect_container_no_info]
+
+        # Run
+        stop_inactive_containers()
+
+        # Assert mocks
+        create_container.assert_not_called()
+        create_host_config.assert_not_called()
+        inspect_image.assert_not_called()
+        inspect_container.assert_called_once_with(self.container1.container_id)
+        pull.assert_not_called()
+        start.assert_not_called()
+        stop.assert_not_called()
+        pause.assert_not_called()
+        unpause.assert_not_called()
+        remove_container.assert_not_called()
+
+        # Assert objects
+        self.assertEqual(ContainerBackgroundJob.objects.count(), 0)
+
+    @patch("docker.api.client.APIClient.remove_container")
+    @patch("docker.api.client.APIClient.unpause")
+    @patch("docker.api.client.APIClient.pause")
+    @patch("docker.api.client.APIClient.stop")
+    @patch("docker.api.client.APIClient.start")
+    @patch("docker.api.client.APIClient.pull")
+    @patch("docker.api.client.APIClient.inspect_container")
+    @patch("docker.api.client.APIClient.inspect_image")
+    @patch("docker.api.client.APIClient.create_host_config")
+    @patch("docker.api.client.APIClient.create_container")
+    def test_state_exited(
+        self,
+        create_container,
+        create_host_config,
+        inspect_image,
+        inspect_container,
+        pull,
+        start,
+        stop,
+        pause,
+        unpause,
+        remove_container,
+    ):
+        self.container1.state = STATE_EXITED
+        self.container1.save()
+
+        inspect_container.side_effect = [DockerMock.inspect_container_stopped]
+
+        # Run
+        stop_inactive_containers()
+
+        # Assert mocks
+        create_container.assert_not_called()
+        create_host_config.assert_not_called()
+        inspect_image.assert_not_called()
+        inspect_container.assert_called_once_with(self.container1.container_id)
+        pull.assert_not_called()
+        start.assert_not_called()
+        stop.assert_not_called()
+        pause.assert_not_called()
+        unpause.assert_not_called()
+        remove_container.assert_not_called()
+
+        # Assert objects
+        self.assertEqual(ContainerBackgroundJob.objects.count(), 0)
+
+    @patch("docker.api.client.APIClient.remove_container")
+    @patch("docker.api.client.APIClient.unpause")
+    @patch("docker.api.client.APIClient.pause")
+    @patch("docker.api.client.APIClient.stop")
+    @patch("docker.api.client.APIClient.start")
+    @patch("docker.api.client.APIClient.pull")
+    @patch("docker.api.client.APIClient.inspect_container")
+    @patch("docker.api.client.APIClient.inspect_image")
+    @patch("docker.api.client.APIClient.create_host_config")
+    @patch("docker.api.client.APIClient.create_container")
+    def test_no_last_access(
+        self,
+        create_container,
+        create_host_config,
+        inspect_image,
+        inspect_container,
+        pull,
+        start,
+        stop,
+        pause,
+        unpause,
+        remove_container,
+    ):
+        # Prepare
+        inspect_container.side_effect = [DockerMock.inspect_container_started]
+
+        # Run
+        stop_inactive_containers()
+
+        # Assert mocks
+        create_container.assert_not_called()
+        create_host_config.assert_not_called()
+        inspect_image.assert_not_called()
+        inspect_container.assert_called_once_with(self.container1.container_id)
+        pull.assert_not_called()
+        start.assert_not_called()
+        stop.assert_not_called()
+        pause.assert_not_called()
+        unpause.assert_not_called()
+        remove_container.assert_not_called()
+
+        # Assert objects
+        self.assertEqual(ContainerBackgroundJob.objects.count(), 0)
+
+    @patch("docker.api.client.APIClient.remove_container")
+    @patch("docker.api.client.APIClient.unpause")
+    @patch("docker.api.client.APIClient.pause")
+    @patch("docker.api.client.APIClient.stop")
+    @patch("docker.api.client.APIClient.start")
+    @patch("docker.api.client.APIClient.pull")
+    @patch("docker.api.client.APIClient.inspect_container")
+    @patch("docker.api.client.APIClient.inspect_image")
+    @patch("docker.api.client.APIClient.create_host_config")
+    @patch("docker.api.client.APIClient.create_container")
+    def test_last_access_below_threshold(
+        self,
+        create_container,
+        create_host_config,
+        inspect_image,
+        inspect_container,
+        pull,
+        start,
+        stop,
+        pause,
+        unpause,
+        remove_container,
+    ):
+        # Prepare
+        self.container1.log_entries.create(
+            text="Accessing", process=PROCESS_PROXY, user=self.superuser
+        )
+        self.container1.inactivity_threshold = 1
+        self.container1.save()
+        inspect_container.side_effect = [DockerMock.inspect_container_started]
+
+        # Run
+        stop_inactive_containers()
+
+        # Assert mocks
+        create_container.assert_not_called()
+        create_host_config.assert_not_called()
+        inspect_image.assert_not_called()
+        inspect_container.assert_called_once_with(self.container1.container_id)
+        pull.assert_not_called()
+        start.assert_not_called()
+        stop.assert_not_called()
+        pause.assert_not_called()
+        unpause.assert_not_called()
+        remove_container.assert_not_called()
+
+        # Assert objects
+        self.assertEqual(ContainerBackgroundJob.objects.count(), 0)
+
+    @override_settings(PROJECTROLES_DEFAULT_ADMIN="superuser")
+    @patch("docker.api.client.APIClient.remove_container")
+    @patch("docker.api.client.APIClient.unpause")
+    @patch("docker.api.client.APIClient.pause")
+    @patch("docker.api.client.APIClient.stop")
+    @patch("docker.api.client.APIClient.start")
+    @patch("docker.api.client.APIClient.pull")
+    @patch("docker.api.client.APIClient.inspect_container")
+    @patch("docker.api.client.APIClient.inspect_image")
+    @patch("docker.api.client.APIClient.create_host_config")
+    @patch("docker.api.client.APIClient.create_container")
+    def test_last_access_above_threshold(
+        self,
+        create_container,
+        create_host_config,
+        inspect_image,
+        inspect_container,
+        pull,
+        start,
+        stop,
+        pause,
+        unpause,
+        remove_container,
+    ):
+        # Prepare
+        mock_now = timezone.now() - timedelta(days=2)
+
+        with mock.patch(
+            "django.utils.timezone.now", mock.Mock(return_value=mock_now)
+        ):
+            self.container1.log_entries.create(
+                text="Accessing",
+                process=PROCESS_PROXY,
+                user=self.superuser,
+            )
+
+        self.container1.state = STATE_RUNNING
+        self.container1.inactivity_threshold = 1
+        self.container1.save()
+
+        inspect_container.side_effect = [
+            DockerMock.inspect_container_started,
+            DockerMock.inspect_container_stopped,
+        ]
+
+        # Run
+        stop_inactive_containers()
+
+        # Assert mocks
+        create_container.assert_not_called()
+        create_host_config.assert_not_called()
+        inspect_image.assert_not_called()
+        inspect_container.assert_has_calls(
+            [call(self.container1.container_id)] * 2
+        )
+        pull.assert_not_called()
+        start.assert_not_called()
+        stop.assert_called_once_with(self.container1.container_id)
+        pause.assert_not_called()
+        unpause.assert_not_called()
+        remove_container.assert_not_called()
+
+        # Assert objects
+        self.assertEqual(ContainerBackgroundJob.objects.count(), 1)

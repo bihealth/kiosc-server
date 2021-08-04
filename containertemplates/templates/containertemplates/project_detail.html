@@ -21,14 +21,14 @@
 </div>
 
 <div class="container-fluid sodar-page-container">
-  {% if object.description %}
-    <div class="card">
-      <div class="card-header"><h4>Description</h4></div>
-      <div class="card-body">
-        <p class="card-text mb-3">{{ object.description }}</p>
-      </div>
+  <div class="card">
+    <div class="card-header"><h4>Description</h4></div>
+    <div class="card-body">
+      <p class="card-text mb-3">
+        {{ object.description|default:"<em class='text-muted'>No description.</em>" }}
+      </p>
     </div>
-  {% endif %}
+  </div>
   <div class="card">
     <div class="card-header"><h4>Details</h4></div>
     <div class="card-body">
@@ -68,18 +68,54 @@
           <dt class="col-sm-3">Repository:Tag</dt>
           <dd class="col-sm-9">{{ object.get_repos_full }}</dd>
         </dl>
-        {% if object.container_port %}
         <dl class="row">
           <dt class="col-sm-3">Container Port</dt>
-          <dd class="col-sm-9">{{ object.container_port }}</dd>
+          <dd class="col-sm-9">
+            {{ object.container_port|default:"<em class='text-muted'>no value</em>" }}
+          </dd>
         </dl>
-        {% endif %}
-        {% if object.container_path %}
         <dl class="row">
           <dt class="col-sm-3">Container Path</dt>
-          <dd class="col-sm-9">{{ object.container_path }}</dd>
+          <dd class="col-sm-9">
+            {{ object.container_path|default:"<em class='text-muted'>no value</em>" }}
+          </dd>
         </dl>
-        {% endif %}
+        <dl class="row">
+          <dt class="col-sm-3">Heartbeat URL</dt>
+          <dd class="col-sm-9">
+            {{ object.heartbeat_url|default:"<em class='text-muted'>no value</em>" }}
+          </dd>
+        </dl>
+        <dl class="row">
+          <dt class="col-sm-3">Timeout [s]</dt>
+          <dd class="col-sm-9">
+            {{ object.timeout|default:"<em class='text-muted'>no value</em>" }}
+          </dd>
+        </dl>
+        <dl class="row">
+          <dt class="col-sm-3">Environment</dt>
+          <dd class="col-sm-9">
+            {{ object.environment|default:"<em class='text-muted'>no value</em>" }}
+          </dd>
+        </dl>
+        <dl class="row">
+          <dt class="col-sm-3">Environment Secret Keys</dt>
+          <dd class="col-sm-9">
+            {{ object.environment_secret_keys|default:"<em class='text-muted'>no value</em>" }}
+          </dd>
+        </dl>
+        <dl class="row">
+          <dt class="col-sm-3">Max Retries</dt>
+          <dd class="col-sm-9">
+            {{ object.max_retries|default:"<em class='text-muted'>no value</em>" }}
+          </dd>
+        </dl>
+        <dl class="row">
+          <dt class="col-sm-3">Inactivity Threshold [days]</dt>
+          <dd class="col-sm-9">
+            {{ object.inactivity_threshold|default:"<em class='text-muted'>no value</em>" }}
+          </dd>
+        </dl>
       </p>
     </div>
   </div>

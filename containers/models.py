@@ -342,6 +342,14 @@ class Container(models.Model):
         null=True,
     )
 
+    #: Number of days the container can run without proxy access
+    inactivity_threshold = models.IntegerField(
+        help_text="Number of days the container is allowed to run without proxy access.",
+        blank=False,
+        null=False,
+        default=settings.KIOSC_DOCKER_MAX_INACTIVITY,
+    )
+
     def __str__(self):
         return f"{self.title} [{self.state}]"
 

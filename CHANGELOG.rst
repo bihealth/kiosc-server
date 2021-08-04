@@ -16,6 +16,7 @@ General
 - Migrated to SODAR core v0.10.3
 - Celery production settings which prevented workers from receiving jobs
 - UI improvements (#81)
+- Added setting ``KIOSC_DOCKER_MAX_INACTIVITY`` to set maximal inactivity timespan (#62)
 
 Containertemplates
 ------------------
@@ -35,6 +36,7 @@ Containertemplates
 - View and forms to copy site-wide and project-wide container template (#32)
 - Added optional foreign key ``containertemplatesite`` to ``ContainerTemplateProject`` model (#32)
 - Added AJAX view to get values of a site- or project-wide containertemplate (#33)
+- Added field ``inactivity_threshold`` to ``ContainerTemplateBase`` model to adjust inactivity timespan X (#62)
 
 Containers
 ----------
@@ -51,6 +53,10 @@ Containers
 - Added fuctionality to copy values from a site- or project-wide containertemplate to the container form (#33)
 - Added title and description to ``Container`` model (#81)
 - Delete action added that stops and deletes Docker containers and not just the container database object (#63)
+- Adjusted proxy lobby view to start containers asynchronously (#62)
+- Added more checks and differientated error messages to proxy view (#62)
+- Added periodic task running once a day to stop running containers when not accessed for timespan X (#62)
+- Added field ``inactivity_threshold`` to ``Container`` model to adjust inactivity timespan X (#62)
 
 
 v0.1.3 (2021-06-09)

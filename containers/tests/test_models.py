@@ -19,6 +19,7 @@ from containers.models import (
     PROCESS_OBJECT,
     ACTION_START,
     ContainerActionLock,
+    MASKED_KEYWORD,
 )
 from containers.tests.factories import (
     ContainerLogEntryFactory,
@@ -223,6 +224,19 @@ class TestContainerModel(TestBase):
                 "containers:detail",
                 kwargs={"container": self.container1.sodar_uuid},
             ),
+        )
+
+    def test_get_environment_masked(self):
+        self.container1.environment = {
+            "secret": "sshhh",
+            "not_so_secret": "lalala",
+        }
+        self.container1.environment_secret_keys = "secret"
+        self.container1.save()
+
+        self.assertEqual(
+            self.container1.get_environment_masked(),
+            {"secret": MASKED_KEYWORD, "not_so_secret": "lalala"},
         )
 
 

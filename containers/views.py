@@ -216,6 +216,18 @@ class ContainerUpdateView(
     slug_url_kwarg = "container"
     slug_field = "sodar_uuid"
 
+    def get_initial(self):
+        initial = super().get_initial()
+        initial["environment"] = self.object.get_environment_masked()
+        return initial
+
+    def get_context_data(self, *args, **kwargs):
+        context = super().get_context_data(*args, **kwargs)
+        context["containertemplate_form"] = ContainerTemplateSelectorForm(
+            auto_id="containertemplate_%s", user=self.request.user
+        )
+        return context
+
     def get_success_url(self):
         if self.object.state not in (STATE_RUNNING, STATE_PAUSED):
             return super().get_success_url()

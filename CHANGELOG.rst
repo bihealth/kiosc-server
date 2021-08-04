@@ -37,6 +37,7 @@ Containertemplates
 - Added optional foreign key ``containertemplatesite`` to ``ContainerTemplateProject`` model (#32)
 - Added AJAX view to get values of a site- or project-wide containertemplate (#33)
 - Added field ``inactivity_threshold`` to ``ContainerTemplateBase`` model to adjust inactivity timespan X (#62)
+- Removed ``environment_secret_keys`` field from ``ContainerTemplateBase`` model as they should not be allowed in templates (#83)
 
 Containers
 ----------
@@ -57,6 +58,7 @@ Containers
 - Added more checks and differientated error messages to proxy view (#62)
 - Added periodic task running once a day to stop running containers when not accessed for timespan X (#62)
 - Added field ``inactivity_threshold`` to ``Container`` model to adjust inactivity timespan X (#62)
+- Fixed environment secret key feature that still showed the values of the secret keys (#83)
 
 
 v0.1.3 (2021-06-09)

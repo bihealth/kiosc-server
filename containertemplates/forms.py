@@ -15,7 +15,6 @@ fields = [
     "heartbeat_url",
     "timeout",
     "environment",
-    "environment_secret_keys",
     "command",
     "repository",
     "tag",

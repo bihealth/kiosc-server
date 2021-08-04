@@ -101,14 +101,6 @@ class ContainerTemplateBase(models.Model):
         null=True,
     )
 
-    #: List if keys that when defined in ``environment`` are set but no displayed.
-    environment_secret_keys = models.CharField(
-        max_length=512,
-        help_text="Comma-separated list of keys in the environment that are set but not read (use for tokens/keys).",
-        blank=True,
-        null=True,
-    )
-
     #: The command to execute.
     command = models.TextField(
         help_text="The command to execute", blank=True, null=True

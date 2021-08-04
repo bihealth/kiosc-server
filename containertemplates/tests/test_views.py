@@ -124,7 +124,6 @@ class TestContainerTemplateSiteCreateView(TestBase):
             "timeout": 60,
             "container_path": "some/path",
             "heartbeat_url": "https://heartbeat.url",
-            "environment_secret_keys": "test",
             "command": "some command",
             "max_retries": 10,
         }
@@ -304,7 +303,6 @@ class TestContainerTemplateSiteUpdateView(TestBase):
             "timeout": self.containertemplatesite1.timeout + 60,
             "container_path": "updated/path",
             "heartbeat_url": "https://updated.url",
-            "environment_secret_keys": "updated",
             "command": "updated command",
             "max_retries": 13,
         }
@@ -608,7 +606,6 @@ class TestContainerTemplateProjectCreateView(TestBase):
             "timeout": 60,
             "container_path": "some/path",
             "heartbeat_url": "https://heartbeat.url",
-            "environment_secret_keys": "test",
             "command": "some command",
             "max_retries": 10,
         }
@@ -793,7 +790,6 @@ class TestContainerTemplateProjectUpdateView(TestBase):
             "timeout": self.containertemplateproject1.timeout + 60,
             "container_path": "updated/path",
             "heartbeat_url": "https://updated.url",
-            "environment_secret_keys": "updated",
             "command": "updated command",
             "max_retries": 13,
         }

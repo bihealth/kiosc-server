@@ -21,6 +21,7 @@ from containers.models import (
     STATE_PAUSED,
     STATE_EXITED,
     STATE_DELETED,
+    MASKED_KEYWORD,
 )
 from containers.tests.helpers import TestBase
 from containers.views import CELERY_SUBMIT_COUNTDOWN
@@ -356,6 +357,31 @@ class TestContainerUpdateView(TestBase):
             )
 
             self.assertEqual(response.status_code, 200)
+            self.assertIsInstance(
+                response.context["containertemplate_form"],
+                ContainerTemplateSelectorForm,
+            )
+
+    def test_get_success_environment_masked(self):
+        self.container1.environment = {
+            "secret": "sshhh",
+            "not_so_secret": "lalala",
+        }
+        self.container1.environment_secret_keys = "secret"
+        self.container1.save()
+
+        with self.login(self.superuser):
+            response = self.client.get(
+                reverse(
+                    "containers:update",
+                    kwargs={"container": self.container1.sodar_uuid},
+                )
+            )
+
+            self.assertEqual(
+                response.context["form"]["environment"].value(),
+                '{"secret": "%s", "not_so_secret": "lalala"}' % MASKED_KEYWORD,
+            )
 
     def test_get_non_existent(self):
         with self.login(self.superuser):
@@ -393,6 +419,60 @@ class TestContainerUpdateView(TestBase):
             self.post_data_host["environment"] = json.loads(
                 self.post_data_host["environment"]
             )
+            result = model_to_dict(
+                self.container1, fields=self.post_data_host.keys()
+            )
+
+            # Assert updated properties
+            self.assertDictEqual(result, self.post_data_host)
+
+    @override_settings(KIOSC_NETWORK_MODE="host")
+    def test_post_success_updated_initial_mode_host_masked_environment(self):
+        environment_db = {
+            "secret": "sshhh",
+            "not_so_secret": "lalala",
+            "secret_to_update": "psssst",
+        }
+        environment_post = {
+            "secret": MASKED_KEYWORD,
+            "not_so_secret": "lalala",
+            "secret_to_update": "updated",
+        }
+        environment_expected = {
+            "secret": "sshhh",
+            "not_so_secret": "lalala",
+            "secret_to_update": "updated",
+        }
+
+        self.container1.environment = environment_db
+        self.container1.environment_secret_keys = "secret,secret_to_update"
+        self.container1.save()
+        self.post_data_host["environment"] = json.dumps(environment_post)
+        self.post_data_host[
+            "environment_secret_keys"
+        ] = self.container1.environment_secret_keys
+
+        with self.login(self.superuser):
+            response = self.client.post(
+                reverse(
+                    "containers:update",
+                    kwargs={"container": self.container1.sodar_uuid},
+                ),
+                self.post_data_host,
+            )
+
+            # Get updated object
+            self.container1.refresh_from_db()
+
+            self.assertRedirects(
+                response,
+                reverse(
+                    "containers:detail",
+                    kwargs={"container": self.container1.sodar_uuid},
+                ),
+            )
+
+            self.post_data_host["environment"] = environment_expected
             result = model_to_dict(
                 self.container1, fields=self.post_data_host.keys()
             )

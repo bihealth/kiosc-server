@@ -138,6 +138,9 @@ PROCESS_CHOICES = [
     (PROCESS_ACTION, PROCESS_ACTION),
 ]
 
+#: Keyword used to hide secret environment variables
+MASKED_KEYWORD = "<masked>"
+
 
 class JobModelMessageContextManagerMixin(JobModelMessageMixin):
     @contextlib.contextmanager
@@ -373,6 +376,19 @@ class Container(models.Model):
 
     def get_display_name(self):
         return self.title
+
+    def get_environment_masked(self):
+        if not self.environment or not self.environment_secret_keys:
+            return self.environment
+
+        secret_keys = [
+            x.strip() for x in self.environment_secret_keys.split(",")
+        ]
+
+        return {
+            key: (MASKED_KEYWORD if key in secret_keys else value)
+            for key, value in self.environment.items()
+        }
 
 
 class ContainerBackgroundJob(JobModelMessageContextManagerMixin, models.Model):

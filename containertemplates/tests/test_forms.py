@@ -26,7 +26,6 @@ class TestContainerTemplateSiteForm(TestBase):
             "max_retries": 10,
             "container_path": "some/path",
             "heartbeat_url": "https://heartbeat.url",
-            "environment_secret_keys": "test",
             "command": "some command",
             "inactivity_threshold": 20,
         }
@@ -65,7 +64,6 @@ class TestContainerTemplateProjectForm(TestBase):
             "max_retries": 10,
             "container_path": "some/path",
             "heartbeat_url": "https://heartbeat.url",
-            "environment_secret_keys": "test",
             "command": "some command",
             "inactivity_threshold": 20,
         }

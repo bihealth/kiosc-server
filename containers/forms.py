@@ -1,7 +1,7 @@
 from django import forms
 from django.conf import settings
 
-from containers.models import Container
+from containers.models import Container, MASKED_KEYWORD
 
 
 class ContainerForm(forms.ModelForm):
@@ -47,10 +47,9 @@ class ContainerForm(forms.ModelForm):
     def clean(self):
         """Override to check for secret keys in the environment."""
         cleaned_data = super().clean()
-        environment = cleaned_data.get("environment")
+        environment = cleaned_data.get("environment", {})
         secret_keys = cleaned_data.get("environment_secret_keys")
 
-        # This error is already caught
         if not environment:
             return
 
@@ -64,12 +63,16 @@ class ContainerForm(forms.ModelForm):
             secret_keys = [key.strip() for key in secret_keys.split(",")]
 
             for key in secret_keys:
-                if key not in environment.keys():
+                if key not in environment:
                     self.add_error(
                         "environment_secret_keys",
                         f'Secret key "{key}" is not in environment!',
                     )
                     return
+
+                # Keep the old value if the masked keyword is preserved
+                if environment[key] == MASKED_KEYWORD:
+                    environment[key] = self.instance.environment[key]
 
             cleaned_data["environment_secret_keys"] = ",".join(secret_keys)
 

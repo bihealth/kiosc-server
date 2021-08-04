@@ -1,6 +1,7 @@
 """Tests for the ``forms`` module."""
 
 from containers.forms import ContainerForm
+from containers.models import MASKED_KEYWORD
 from containers.tests.helpers import TestBase
 
 from django.test import override_settings
@@ -48,6 +49,7 @@ class TestContainerForm(TestBase):
         form = ContainerForm(self.form_data_min_mode_host)
         self.assertTrue(form.is_valid())
 
+    @override_settings(KIOSC_NETWORK_MODE="host")
     def test_all_fields(self):
         form = ContainerForm(self.form_data_all)
         self.assertTrue(form.is_valid())
@@ -139,3 +141,65 @@ class TestContainerForm(TestBase):
             form.errors["environment_secret_keys"],
             ['Secret key "not_an_env_key" is not in environment!'],
         )
+
+    @override_settings(KIOSC_NETWORK_MODE="host")
+    def test_environment_no_json(self):
+        self.form_data_all.update(
+            {
+                "environment": "abc",
+            }
+        )
+        form = ContainerForm(self.form_data_all)
+        self.assertEqual(
+            form.errors["environment"],
+            ["Enter a valid JSON."],
+        )
+
+    @override_settings(KIOSC_NETWORK_MODE="host")
+    def test_environment_no_dict(self):
+        self.form_data_all.update(
+            {
+                "environment": '["some", "list"]',
+            }
+        )
+        form = ContainerForm(self.form_data_all)
+        self.assertEqual(
+            form.errors["environment"],
+            ["Environment must be a dictionary!"],
+        )
+
+    @override_settings(KIOSC_NETWORK_MODE="host")
+    def test_environment_keep_masked_keyword(self):
+        self.create_one_container()
+        self.container1.environment = {"secret": "ssshh"}
+        self.container1.environment_secret_keys = "secret"
+        self.container1.save()
+
+        self.form_data_all.update(
+            {
+                "environment": '{"secret": "%s"}' % MASKED_KEYWORD,
+                "environment_secret_keys": "secret",
+            }
+        )
+        form = ContainerForm(self.form_data_all, instance=self.container1)
+        self.assertTrue(form.is_valid())
+        self.assertEqual(
+            form.cleaned_data["environment"], self.container1.environment
+        )
+
+    @override_settings(KIOSC_NETWORK_MODE="host")
+    def test_environment_set_new_value(self):
+        self.create_one_container()
+        self.container1.environment = {"secret": "old"}
+        self.container1.environment_secret_keys = "secret"
+        self.container1.save()
+
+        self.form_data_all.update(
+            {
+                "environment": '{"secret": "new"}',
+                "environment_secret_keys": "secret",
+            }
+        )
+        form = ContainerForm(self.form_data_all, instance=self.container1)
+        self.assertTrue(form.is_valid())
+        self.assertEqual(form.cleaned_data["environment"], {"secret": "new"})

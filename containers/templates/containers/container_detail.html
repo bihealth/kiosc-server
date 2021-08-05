@@ -205,6 +205,25 @@
             {{ object.inactivity_threshold|default:"<em class='text-muted'>no value</em>" }}
           </dd>
         </dl>
+        {% if object.containertemplatesite %}
+        <dl class="row">
+          <dt class="col-sm-3">Link to site-wide template</dt>
+          <dd class="col-sm-9">
+            <a href="{{ object.containertemplatesite.get_absolute_url }}">
+              {{ object.containertemplatesite }}
+            </a>
+          </dd>
+        </dl>
+        {% elif object.containertemplateproject %}
+        <dl class="row">
+          <dt class="col-sm-3">Link to project-wide template</dt>
+          <dd class="col-sm-9">
+            <a href="{{ object.containertemplateproject.get_absolute_url }}">
+              {{ object.containertemplateproject }}
+            </a>
+          </dd>
+        </dl>
+        {% endif %}
         <dl class="row">
           <dt class="col-sm-3">State</dt>
           <dd class="col-sm-9">

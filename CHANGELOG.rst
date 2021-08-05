@@ -40,6 +40,7 @@ Containertemplates
 - Added AJAX view to get values of a site- or project-wide containertemplate (#33)
 - Added field ``inactivity_threshold`` to ``ContainerTemplateBase`` model to adjust inactivity timespan X (#62)
 - Removed ``environment_secret_keys`` field from ``ContainerTemplateBase`` model as they should not be allowed in templates (#83)
+- Updated detail page concerning links between site- and project-wide templates (#85)
 
 Containers
 ----------
@@ -62,6 +63,7 @@ Containers
 - Added field ``inactivity_threshold`` to ``Container`` model to adjust inactivity timespan X (#62)
 - Fixed environment secret key feature that still showed the values of the secret keys (#83)
 - Fixed bug in statemachine that prevented users from deleteing failed containers
+- Updated detail page concerning links to templates (#85)
 
 
 v0.1.3 (2021-06-09)

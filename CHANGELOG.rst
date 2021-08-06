@@ -17,6 +17,7 @@ General
 - Celery production settings which prevented workers from receiving jobs
 - UI improvements (#81)
 - Added setting ``KIOSC_DOCKER_MAX_INACTIVITY`` to set maximal inactivity timespan (#62)
+- Replacing ``gunicorn`` with ``daphne``
 
 Containertemplates
 ------------------
@@ -59,6 +60,7 @@ Containers
 - Added periodic task running once a day to stop running containers when not accessed for timespan X (#62)
 - Added field ``inactivity_threshold`` to ``Container`` model to adjust inactivity timespan X (#62)
 - Fixed environment secret key feature that still showed the values of the secret keys (#83)
+- Fixed bug in statemachine that prevented users from deleteing failed containers
 
 
 v0.1.3 (2021-06-09)

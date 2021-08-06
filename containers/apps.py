@@ -11,7 +11,7 @@ class ContainersConfig(AppConfig):
 
     def ready(self):
         if (
-            sys.argv[0].endswith("gunicorn")
+            sys.argv[0].endswith(("daphne", "gunicorn"))
             and settings.KIOSC_NETWORK_MODE == "docker-shared"
         ):
             from containers.statemachines import connect_docker

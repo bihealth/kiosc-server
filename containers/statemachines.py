@@ -1,6 +1,8 @@
 import shlex
 
 import docker
+import docker.errors
+
 from django.conf import settings
 from django.db import transaction
 from django.urls import reverse
@@ -123,6 +125,12 @@ class ActionSwitch:
             self.cm.pull_deleted()
             self.cm.start_pulled()
 
+        elif state == STATE_EXITED:
+            self.cm.delete()
+            self.cm.delete_success()
+            self.cm.pull_deleted()
+            self.cm.start_pulled()
+
         else:
             raise RuntimeError(f"Action restart not allowed in state {state}")
 
@@ -146,19 +154,19 @@ class ActionSwitch:
             self.cm.delete_success()
 
         elif state == STATE_FAILED:
-            self.cm.delete()
+            self.cm.delete_failed()
             self.cm.delete_success()
 
         elif state == STATE_CREATED:
-            self.cm.delete()
+            self.cm.delete_created()
             self.cm.delete_success()
 
         elif state == STATE_DEAD:
-            self.cm.delete()
+            self.cm.delete_dead()
             self.cm.delete_success()
 
         elif state == STATE_PULLING:
-            self.cm.delete()
+            self.cm.delete_pulling()
             self.cm.delete_success()
 
         else:
@@ -269,6 +277,18 @@ class ContainerMachine(StateMachine):
 
     #: Transition when successfully finishing deleting a container (no action).
     delete_success = deleting.to(deleted)
+
+    #: Transition when deleting a failed container (action: delete).
+    delete_failed = failed.to(deleting)
+
+    #: Transition when deleting a created container (action: delete).
+    delete_created = created.to(deleting)
+
+    #: Transition when deleting a dead container (action: delete).
+    delete_dead = dead.to(deleting)
+
+    #: Transition when deleting a pulled container (action: delete).
+    delete_pulling = pulling.to(deleting)
 
     #: Transition when a newly created container failed to start (no action).
     failed_start = pulling.to(created)
@@ -510,7 +530,34 @@ class ContainerMachine(StateMachine):
         self.container.save()
 
         # Removing container and erasing container_id
-        self.cli.remove_container(self.container.container_id)
+        try:
+            self.cli.remove_container(self.container.container_id)
+
+        except docker.errors.NullResource:
+            self.container.log_entries.create(
+                text="Empty container ID, don't know what to delete. Continuing.",
+                process=PROCESS_TASK,
+                user=self.user,
+            )
+
+        except docker.errors.NotFound:
+            self.container.log_entries.create(
+                text=f"Container with {self.container.container_id} not found, nothing to delete",
+                process=PROCESS_TASK,
+                user=self.user,
+            )
+
+    def on_delete_failed(self):
+        self.on_delete()
+
+    def on_delete_created(self):
+        self.on_delete()
+
+    def on_delete_dead(self):
+        self.on_delete()
+
+    def on_delete_pulling(self):
+        self.on_delete()
 
     def on_delete_success(self):
         self.container.state = STATE_DELETED

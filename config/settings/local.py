@@ -87,6 +87,6 @@ ENABLED_BACKEND_PLUGINS = ["timeline_backend", "example_backend_app"]
 
 
 # http://docs.celeryproject.org/en/latest/userguide/configuration.html#task-always-eager
-CELERY_TASK_ALWAYS_EAGER = False
+CELERY_TASK_ALWAYS_EAGER = True
 # http://docs.celeryproject.org/en/latest/userguide/configuration.html#task-eager-propagates
-CELERY_TASK_EAGER_PROPAGATES = False
+CELERY_TASK_EAGER_PROPAGATES = True

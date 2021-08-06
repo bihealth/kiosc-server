@@ -1,7 +1,8 @@
 from django.conf.urls import url
 from django.views.decorators.csrf import csrf_exempt
 
-from . import views, consumers
+from . import views
+
 
 app_name = "containers"
 
@@ -67,11 +68,4 @@ urlpatterns = [
         view=views.ContainerProxyLobbyView.as_view(),
         name="proxy-lobby",
     ),
-]
-
-websocket_urlpatterns = [
-    url(
-        (r"^containers/proxy/(?P<container>[0-9a-f-]+)/(?P<path>.*)$"),
-        consumers.TunnelConsumer,
-    )
 ]

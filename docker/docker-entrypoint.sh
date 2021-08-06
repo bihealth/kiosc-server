@@ -4,7 +4,7 @@ set -euo pipefail
 
 # Commands:
 #
-#   asgi            -- run daphne with Django WSGI
+#   wsgi            -- run gunicorn with Django WSGI
 #   celeryd         -- run celery worker
 #   celerybeat      -- run celerybeat daemon
 #
@@ -26,8 +26,10 @@ set -euo pipefail
 #                      default: 0.0.0.0
 #   HTTP_PORT       -- port
 #                      default: 8080
-#   DAPHNE_TIMEOUT  -- application timeout
-#                      default: 600
+#   LOG_LEVEL       -- logging verbosity
+#                      default: info
+#   GUNICORN_TIMEOUT -- timeout for gunicorn workers in seconds
+#                       default: 600
 
 APP_DIR=${APP_DIR-/usr/src/app}
 CELERY_QUEUES=${CELERY_QUEUES-default,query,import}
@@ -38,7 +40,7 @@ export PYTHONUNBUFFERED=${PYTHONUNBUFFERED-1}
 HTTP_HOST=${HTTP_HOST-0.0.0.0}
 HTTP_PORT=${HTTP_PORT-8080}
 LOG_LEVEL=${LOG_LEVEL-info}
-DAPHNE_TIMEOUT=${DAPHNE_TIMEOUT-600}
+GUNICORN_TIMEOUT=${GUNICORN_TIMEOUT-600}
 
 if [[ "$NO_WAIT" -ne 1 ]]; then
   /usr/local/bin/wait
@@ -51,16 +53,18 @@ if [[ "$NO_WAIT" -ne 1 ]]; then
   fi
 fi
 
-if [[ "$1" == asgi ]]; then
+if [[ "$1" == wsgi ]]; then
   cd $APP_DIR
 
   python manage.py migrate
 
-  exec daphne \
-    --bind "$HTTP_HOST" \
-    --port "$HTTP_PORT" \
-    --application-close-timeout "$DAPHNE_TIMEOUT" \
-    config.asgi:application
+  exec gunicorn \
+    --access-logfile - \
+    --error-logfile - \
+    --log-level "$LOG_LEVEL" \
+    --bind "$HTTP_HOST:$HTTP_PORT" \
+    --timeout "$GUNICORN_TIMEOUT" \
+    config.wsgi
 elif [[ "$1" == celeryd ]]; then
   cd $APP_DIR
 

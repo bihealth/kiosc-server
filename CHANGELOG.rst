@@ -18,6 +18,7 @@ General
 - UI improvements (#81)
 - Added setting ``KIOSC_DOCKER_MAX_INACTIVITY`` to set maximal inactivity timespan (#62)
 - Replacing ``gunicorn`` with ``daphne``
+- Enabled websockets via channels in daphne
 
 Containertemplates
 ------------------

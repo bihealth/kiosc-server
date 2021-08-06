@@ -8,12 +8,13 @@ https://docs.djangoproject.com/en/3.2/howto/deployment/asgi/
 """
 
 import django
+django.setup()
+
 
 from channels.auth import AuthMiddlewareStack
 from channels.routing import ProtocolTypeRouter, URLRouter
 
 # Needs to be loaded before importing from apps
-django.setup()
 
 import containers.urls
 

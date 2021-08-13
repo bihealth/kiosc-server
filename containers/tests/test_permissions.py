@@ -101,7 +101,7 @@ class TestContainerPermissions(TestProjectPermissionBase):
         self.assert_response(url, good_users, 200)
         self.assert_response(url, bad_users, 302)
 
-    @patch("containers.tasks.container_task.delay")
+    @patch("containers.tasks.container_task.apply_async")
     def test_container_start(self, mock):
         """Test permissions for the ``start`` view."""
         url = reverse(
@@ -125,8 +125,9 @@ class TestContainerPermissions(TestProjectPermissionBase):
             ),
         )
         self.assert_response(url, bad_users, 302)
+        mock.assert_called()
 
-    @patch("containers.tasks.container_task.delay")
+    @patch("containers.tasks.container_task.apply_async")
     def test_container_stop(self, mock):
         """Test permissions for the ``stop`` view."""
         url = reverse(
@@ -150,8 +151,9 @@ class TestContainerPermissions(TestProjectPermissionBase):
             ),
         )
         self.assert_response(url, bad_users, 302)
+        mock.assert_called()
 
-    @patch("containers.tasks.container_task.delay")
+    @patch("containers.tasks.container_task.apply_async")
     def test_container_restart(self, mock):
         """Test permissions for the ``restart`` view."""
         url = reverse(
@@ -175,8 +177,9 @@ class TestContainerPermissions(TestProjectPermissionBase):
             ),
         )
         self.assert_response(url, bad_users, 302)
+        mock.assert_called()
 
-    @patch("containers.tasks.container_task.delay")
+    @patch("containers.tasks.container_task.apply_async")
     def test_container_pause(self, mock):
         """Test permissions for the ``pause`` view."""
         url = reverse(
@@ -200,8 +203,9 @@ class TestContainerPermissions(TestProjectPermissionBase):
             ),
         )
         self.assert_response(url, bad_users, 302)
+        mock.assert_called()
 
-    @patch("containers.tasks.container_task.delay")
+    @patch("containers.tasks.container_task.apply_async")
     def test_container_unpause(self, mock):
         """Test permissions for the ``unpause`` view."""
         url = reverse(
@@ -225,6 +229,7 @@ class TestContainerPermissions(TestProjectPermissionBase):
             ),
         )
         self.assert_response(url, bad_users, 302)
+        mock.assert_called()
 
     @responses.activate
     def test_proxy(self):
@@ -259,8 +264,7 @@ class TestContainerPermissions(TestProjectPermissionBase):
         self.assert_response(url, good_users, 200)
         self.assert_response(url, bad_users, 302)
 
-    @patch("containers.tasks.container_task.delay")
-    def test_proxy_lobby(self, mock):
+    def test_proxy_lobby(self):
         """Test permissions for the ``proxy-lobby`` view."""
 
         self.container.state = STATE_RUNNING

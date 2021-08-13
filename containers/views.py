@@ -133,6 +133,7 @@ class ContainerDeleteView(
             kwargs={"project": self.object.project.sodar_uuid},
         )
 
+    @transaction.atomic
     def delete(self, request, *args, **kwargs):
         timeline = get_backend_api("timeline_backend")
         container = self.get_object()
@@ -326,35 +327,34 @@ class ContainerStartView(
     slug_url_kwarg = "container"
     slug_field = "sodar_uuid"
 
+    @transaction.atomic
     def get(self, request, *args, **kwargs):
-        with transaction.atomic():
-            project = self.get_project()
-            user = request.user
-            container = self.get_object()
-            bg_job = BackgroundJob.objects.create(
-                name="Start container",
-                project=project,
-                job_type=ContainerBackgroundJob.spec_name,
-                user=user,
-            )
-            job = ContainerBackgroundJob.objects.create(
-                action=ACTION_START,
-                project=project,
-                container=container,
-                bg_job=bg_job,
-            )
+        project = self.get_project()
+        container = self.get_object()
+        bg_job = BackgroundJob.objects.create(
+            name="Start container",
+            project=project,
+            job_type=ContainerBackgroundJob.spec_name,
+            user=request.user,
+        )
+        job = ContainerBackgroundJob.objects.create(
+            action=ACTION_START,
+            project=project,
+            container=container,
+            bg_job=bg_job,
+        )
 
-            # Add container log entry
-            container.log_entries.create(
-                text="Starting",
-                process=PROCESS_ACTION,
-                user=self.request.user,
-            )
+        # Add container log entry
+        container.log_entries.create(
+            text="Start",
+            process=PROCESS_ACTION,
+            user=request.user,
+        )
 
-            # Schedule task
-            container_task.apply_async(
-                kwargs={"job_id": job.id}, countdown=CELERY_SUBMIT_COUNTDOWN
-            )
+        # Schedule task
+        container_task.apply_async(
+            kwargs={"job_id": job.id}, countdown=CELERY_SUBMIT_COUNTDOWN
+        )
 
         return redirect(
             reverse(
@@ -379,34 +379,34 @@ class ContainerStopView(
     slug_url_kwarg = "container"
     slug_field = "sodar_uuid"
 
+    @transaction.atomic
     def get(self, request, *args, **kwargs):
-        with transaction.atomic():
-            project = self.get_project()
-            container = self.get_object()
-            bg_job = BackgroundJob.objects.create(
-                name="Stop container",
-                project=project,
-                job_type=ContainerBackgroundJob.spec_name,
-                user=request.user,
-            )
-            job = ContainerBackgroundJob.objects.create(
-                action=ACTION_STOP,
-                project=project,
-                container=container,
-                bg_job=bg_job,
-            )
+        project = self.get_project()
+        container = self.get_object()
+        bg_job = BackgroundJob.objects.create(
+            name="Stop container",
+            project=project,
+            job_type=ContainerBackgroundJob.spec_name,
+            user=request.user,
+        )
+        job = ContainerBackgroundJob.objects.create(
+            action=ACTION_STOP,
+            project=project,
+            container=container,
+            bg_job=bg_job,
+        )
 
-            # Add container log entry
-            container.log_entries.create(
-                text="Stop",
-                process=PROCESS_ACTION,
-                user=request.user,
-            )
+        # Add container log entry
+        container.log_entries.create(
+            text="Stop",
+            process=PROCESS_ACTION,
+            user=request.user,
+        )
 
-            # Schedule task
-            container_task.apply_async(
-                kwargs={"job_id": job.id}, countdown=CELERY_SUBMIT_COUNTDOWN
-            )
+        # Schedule task
+        container_task.apply_async(
+            kwargs={"job_id": job.id}, countdown=CELERY_SUBMIT_COUNTDOWN
+        )
 
         return redirect(
             reverse(
@@ -431,35 +431,34 @@ class ContainerPauseView(
     slug_url_kwarg = "container"
     slug_field = "sodar_uuid"
 
+    @transaction.atomic
     def get(self, request, *args, **kwargs):
-        with transaction.atomic():
-            project = self.get_project()
-            user = request.user
-            container = self.get_object()
-            bg_job = BackgroundJob.objects.create(
-                name="Pause container",
-                project=project,
-                job_type=ContainerBackgroundJob.spec_name,
-                user=user,
-            )
-            job = ContainerBackgroundJob.objects.create(
-                action=ACTION_PAUSE,
-                project=project,
-                container=container,
-                bg_job=bg_job,
-            )
+        project = self.get_project()
+        container = self.get_object()
+        bg_job = BackgroundJob.objects.create(
+            name="Pause container",
+            project=project,
+            job_type=ContainerBackgroundJob.spec_name,
+            user=request.user,
+        )
+        job = ContainerBackgroundJob.objects.create(
+            action=ACTION_PAUSE,
+            project=project,
+            container=container,
+            bg_job=bg_job,
+        )
 
-            # Add container log entry
-            container.log_entries.create(
-                text="Pause",
-                process=PROCESS_ACTION,
-                user=self.request.user,
-            )
+        # Add container log entry
+        container.log_entries.create(
+            text="Pause",
+            process=PROCESS_ACTION,
+            user=request.user,
+        )
 
-            # Schedule task
-            container_task.apply_async(
-                kwargs={"job_id": job.id}, countdown=CELERY_SUBMIT_COUNTDOWN
-            )
+        # Schedule task
+        container_task.apply_async(
+            kwargs={"job_id": job.id}, countdown=CELERY_SUBMIT_COUNTDOWN
+        )
 
         return redirect(
             reverse(
@@ -484,35 +483,34 @@ class ContainerUnpauseView(
     slug_url_kwarg = "container"
     slug_field = "sodar_uuid"
 
+    @transaction.atomic
     def get(self, request, *args, **kwargs):
-        with transaction.atomic():
-            project = self.get_project()
-            user = request.user
-            container = self.get_object()
-            bg_job = BackgroundJob.objects.create(
-                name="Unpause container",
-                project=project,
-                job_type=ContainerBackgroundJob.spec_name,
-                user=user,
-            )
-            job = ContainerBackgroundJob.objects.create(
-                action=ACTION_UNPAUSE,
-                project=project,
-                container=container,
-                bg_job=bg_job,
-            )
+        project = self.get_project()
+        container = self.get_object()
+        bg_job = BackgroundJob.objects.create(
+            name="Unpause container",
+            project=project,
+            job_type=ContainerBackgroundJob.spec_name,
+            user=request.user,
+        )
+        job = ContainerBackgroundJob.objects.create(
+            action=ACTION_UNPAUSE,
+            project=project,
+            container=container,
+            bg_job=bg_job,
+        )
 
-            # Add container log entry
-            container.log_entries.create(
-                text="Unpause",
-                process=PROCESS_ACTION,
-                user=self.request.user,
-            )
+        # Add container log entry
+        container.log_entries.create(
+            text="Unpause",
+            process=PROCESS_ACTION,
+            user=request.user,
+        )
 
-            # Schedule task
-            container_task.apply_async(
-                kwargs={"job_id": job.id}, countdown=CELERY_SUBMIT_COUNTDOWN
-            )
+        # Schedule task
+        container_task.apply_async(
+            kwargs={"job_id": job.id}, countdown=CELERY_SUBMIT_COUNTDOWN
+        )
 
         return redirect(
             reverse(
@@ -537,35 +535,34 @@ class ContainerRestartView(
     slug_url_kwarg = "container"
     slug_field = "sodar_uuid"
 
+    @transaction.atomic
     def get(self, request, *args, **kwargs):
-        with transaction.atomic():
-            project = self.get_project()
-            user = request.user
-            container = self.get_object()
-            bg_job = BackgroundJob.objects.create(
-                name="Restart container",
-                project=project,
-                job_type=ContainerBackgroundJob.spec_name,
-                user=user,
-            )
-            job = ContainerBackgroundJob.objects.create(
-                action=ACTION_RESTART,
-                project=project,
-                container=container,
-                bg_job=bg_job,
-            )
+        project = self.get_project()
+        container = self.get_object()
+        bg_job = BackgroundJob.objects.create(
+            name="Restart container",
+            project=project,
+            job_type=ContainerBackgroundJob.spec_name,
+            user=request.user,
+        )
+        job = ContainerBackgroundJob.objects.create(
+            action=ACTION_RESTART,
+            project=project,
+            container=container,
+            bg_job=bg_job,
+        )
 
-            # Add container log entry
-            container.log_entries.create(
-                text="Restart",
-                process=PROCESS_ACTION,
-                user=self.request.user,
-            )
+        # Add container log entry
+        container.log_entries.create(
+            text="Restart",
+            process=PROCESS_ACTION,
+            user=request.user,
+        )
 
-            # Schedule task
-            container_task.apply_async(
-                kwargs={"job_id": job.id}, countdown=CELERY_SUBMIT_COUNTDOWN
-            )
+        # Schedule task
+        container_task.apply_async(
+            kwargs={"job_id": job.id}, countdown=CELERY_SUBMIT_COUNTDOWN
+        )
 
         return redirect(
             reverse(
@@ -590,6 +587,7 @@ class ContainerProxyLobbyView(
     slug_url_kwarg = "container"
     slug_field = "sodar_uuid"
 
+    @transaction.atomic
     def get(self, request, *args, **kwargs):
         _redirect = redirect(
             reverse(
@@ -601,43 +599,41 @@ class ContainerProxyLobbyView(
             )
         )
 
-        with transaction.atomic():
-            project = self.get_project()
-            user = request.user
-            container = self.get_object()
+        project = self.get_project()
+        container = self.get_object()
 
-            if container.state == STATE_RUNNING:
-                return _redirect
+        if container.state == STATE_RUNNING:
+            return _redirect
 
-            elif container.state == STATE_PAUSED:
-                action = ACTION_UNPAUSE
+        elif container.state == STATE_PAUSED:
+            action = ACTION_UNPAUSE
 
-            else:
-                action = ACTION_START
+        else:
+            action = ACTION_START
 
-            bg_job = BackgroundJob.objects.create(
-                name="Proxy lobby",
-                project=project,
-                job_type=ContainerBackgroundJob.spec_name,
-                user=user,
-            )
+        bg_job = BackgroundJob.objects.create(
+            name="Proxy lobby",
+            project=project,
+            job_type=ContainerBackgroundJob.spec_name,
+            user=request.user,
+        )
 
-            job = ContainerBackgroundJob.objects.create(
-                action=action,
-                project=project,
-                container=container,
-                bg_job=bg_job,
-            )
+        job = ContainerBackgroundJob.objects.create(
+            action=action,
+            project=project,
+            container=container,
+            bg_job=bg_job,
+        )
 
-            # Add container log entry
-            container.log_entries.create(
-                text="Proxy lobby",
-                process=PROCESS_ACTION,
-                user=self.request.user,
-            )
+        # Add container log entry
+        container.log_entries.create(
+            text="Proxy lobby",
+            process=PROCESS_ACTION,
+            user=request.user,
+        )
 
-            # Execute task synchronously because of the redirect
-            container_task(job_id=job.id)
+        # Execute task synchronously because of the redirect
+        container_task(job_id=job.id)
 
         return _redirect
 

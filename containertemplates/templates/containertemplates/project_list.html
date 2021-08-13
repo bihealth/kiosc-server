@@ -15,21 +15,18 @@
 {% has_perm "containertemplates.project_delete" request.user project as can_delete_containertemplate %}
 {% has_perm "containertemplates.project_duplicate" request.user project as can_duplicate_containertemplate %}
 
-<div class="row sodar-subtitle-container">
-  <h3>Container Templates <small class="text-muted">project-wide</small></h3>
-    <div class="ml-auto">
+<form method="post" action="{% url 'containertemplates:project-copy' project=project.sodar_uuid %}" class="form-inline">
+  <div class="row sodar-subtitle-container w-100">
+    <h3>Container Templates <small class="text-muted">project-wide</small></h3>
+    <div class="ml-auto input-group">
       {% if can_duplicate_containertemplate %}
-        <form method="post" action="{% url 'containertemplates:project-copy' project=project.sodar_uuid %}">
-          {% csrf_token %}
-          <div class="input-group">
-            {{ template_copy_form.source }}
-            <div class="input-group-append">
-              <button type="submit" class="btn btn-primary">
-                <i class="iconify" data-icon="octicon:duplicate-16"></i> Copy
-              </button>
-            </div>
-          </div>
-        </form>
+        {% csrf_token %}
+        {{ template_copy_form.source }}
+        <div class="input-group-append mr-2">
+          <button type="submit" class="btn btn-primary">
+            <i class="iconify" data-icon="octicon:duplicate-16"></i> Copy
+          </button>
+        </div>
       {% endif %}
       {% if can_create_containertemplate %}
         <a href="{% url 'containertemplates:project-create' project=project.sodar_uuid %}"
@@ -39,7 +36,8 @@
         </a>
       {% endif %}
     </div>
-</div>
+  </div>
+</form>
 
 <div class="container-fluid sodar-page-container">
 

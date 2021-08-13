@@ -1,13 +1,12 @@
 from django.conf.urls import url
 from django.views.decorators.csrf import csrf_exempt
 
-from . import views, consumers
-
+from . import views, consumers, views_api
 
 app_name = "containers"
 
 
-urlpatterns = [
+ui_urlpatterns = [
     url(
         regex=r"^(?P<project>[0-9a-f-]+)$",
         view=views.ContainerListView.as_view(),
@@ -70,9 +69,44 @@ urlpatterns = [
     ),
 ]
 
+api_urlpatterns = [
+    url(
+        regex=r"^api/(?P<project>[0-9a-f-]+)$",
+        view=views_api.ContainerListAPIView.as_view(),
+        name="api-list",
+    ),
+    url(
+        regex=r"^api/detail/(?P<container>[0-9a-f-]+)$",
+        view=views_api.ContainerDetailAPIView.as_view(),
+        name="api-detail",
+    ),
+    url(
+        regex=r"^api/create/(?P<project>[0-9a-f-]+)$",
+        view=views_api.ContainerCreateAPIView.as_view(),
+        name="api-create",
+    ),
+    url(
+        regex=r"^api/delete/(?P<container>[0-9a-f-]+)$",
+        view=views_api.ContainerDeleteAPIView.as_view(),
+        name="api-delete",
+    ),
+    url(
+        regex=r"^api/start/(?P<container>[0-9a-f-]+)$",
+        view=views_api.ContainerStartAPIView.as_view(),
+        name="api-start",
+    ),
+    url(
+        regex=r"^api/stop/(?P<container>[0-9a-f-]+)$",
+        view=views_api.ContainerStopAPIView.as_view(),
+        name="api-stop",
+    ),
+]
+
 websocket_urlpatterns = [
     url(
         (r"^containers/proxy/(?P<container>[0-9a-f-]+)/(?P<path>.*)$"),
         consumers.TunnelConsumer,
     )
 ]
+
+urlpatterns = ui_urlpatterns + api_urlpatterns

@@ -24,24 +24,7 @@ from containertemplates.tests.factories import (
 )
 
 
-class TestBase(TestCase):
-    """Test base class providing one project and a superuser."""
-
-    def setUp(self):
-        super().setUp()
-
-        # Show full diff
-        self.maxDiff = None
-
-        # Setup project
-        self.project = ProjectFactory()
-
-        # Setup superuser
-        self.superuser = self.make_user("superuser")
-        self.superuser.is_staff = True
-        self.superuser.is_superuser = True
-        self.superuser.save()
-
+class TestContainerCreationMixin:
     def create_one_container(self):
         """Create one container assigned to the project."""
         self.container1 = ContainerFactory(project=self.project)
@@ -66,6 +49,25 @@ class TestBase(TestCase):
     def create_fake_uuid(self):
         """Create a fake UUID."""
         self.fake_uuid = uuid.uuid4()
+
+
+class TestBase(TestContainerCreationMixin, TestCase):
+    """Test base class providing one project and a superuser."""
+
+    def setUp(self):
+        super().setUp()
+
+        # Show full diff
+        self.maxDiff = None
+
+        # Setup project
+        self.project = ProjectFactory()
+
+        # Setup superuser
+        self.superuser = self.make_user("superuser")
+        self.superuser.is_staff = True
+        self.superuser.is_superuser = True
+        self.superuser.save()
 
 
 def log_entry1():

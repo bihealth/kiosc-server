@@ -237,7 +237,6 @@ class TestContainerDeleteAPIView(TestContainerCreationMixin, TestAPIViewsBase):
         mock.assert_called()
 
     def test_delete_non_existent(self):
-        # TODO might change with new sodar version?
         response = self.request_knox(
             reverse(
                 "containers:api-delete",
@@ -246,7 +245,7 @@ class TestContainerDeleteAPIView(TestContainerCreationMixin, TestAPIViewsBase):
             method="DELETE",
         )
 
-        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+        self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
         self.assertEqual(Container.objects.count(), 1)
 
 
@@ -282,7 +281,6 @@ class TestContainerDetailAPIView(TestContainerCreationMixin, TestAPIViewsBase):
         self.assertEqual(response.json(), expected)
 
     def test_get_non_existent(self):
-        # TODO this might change with the ne wsodar core version?
         response = self.request_knox(
             reverse(
                 "containers:api-detail",
@@ -290,7 +288,7 @@ class TestContainerDetailAPIView(TestContainerCreationMixin, TestAPIViewsBase):
             )
         )
 
-        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+        self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
 
 
 class TestContainerStartAPIView(TestContainerCreationMixin, TestAPIViewsBase):
@@ -322,7 +320,6 @@ class TestContainerStartAPIView(TestContainerCreationMixin, TestAPIViewsBase):
         )
 
     def test_get_non_existent(self):
-        # TODO might change with new sodar core version
         response = self.request_knox(
             reverse(
                 "containers:api-start",
@@ -330,7 +327,7 @@ class TestContainerStartAPIView(TestContainerCreationMixin, TestAPIViewsBase):
             )
         )
 
-        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+        self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
 
 
 class TestContainerStopAPIView(TestContainerCreationMixin, TestAPIViewsBase):
@@ -362,7 +359,6 @@ class TestContainerStopAPIView(TestContainerCreationMixin, TestAPIViewsBase):
         )
 
     def test_get_non_existent(self):
-        # TODO might change with new sodar core version
         response = self.request_knox(
             reverse(
                 "containers:api-stop",
@@ -370,4 +366,4 @@ class TestContainerStopAPIView(TestContainerCreationMixin, TestAPIViewsBase):
             )
         )
 
-        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+        self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)

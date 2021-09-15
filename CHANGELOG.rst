@@ -5,6 +5,17 @@ Changelog for the **Kiosc** Django app package.
 Loosely follows the `Keep a Changelog <http://keepachangelog.com/en/1.0.0/>`_ guidelines.
 
 
+v0.3.0 (2021-09-15)
+===================
+
+Container
+---------
+
+- Added REST API view for creating/listing a container (#40)
+- Added REST API view for starting/stopping a container (#41)
+- Added REST API view for deleting a container (#42)
+- Migrated to SODAR core v0.10.4
+
 v0.2.0 (2021-08-09)
 ===================
 

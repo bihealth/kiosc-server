@@ -3,7 +3,7 @@ from django.urls import reverse
 from projectroles.models import SODAR_CONSTANTS
 from projectroles.plugins import SiteAppPluginPoint, ProjectAppPluginPoint
 
-from containers.urls import urlpatterns
+from containertemplates.urls import urlpatterns
 from containertemplates.models import ContainerTemplateProject
 
 

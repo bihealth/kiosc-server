@@ -90,6 +90,7 @@ LOCAL_APPS = [
     "kiosc.users.apps.UsersConfig",
     "containers.apps.ContainersConfig",
     "containertemplates.apps.ContainertemplatesConfig",
+    "kioscadmin.apps.KioscAdminConfig",
 ]
 
 INSTALLED_APPS = DJANGO_APPS + THIRD_PARTY_APPS + LOCAL_APPS

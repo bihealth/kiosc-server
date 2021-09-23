@@ -1,0 +1,286 @@
+{% extends 'projectroles/base.html' %}
+{% load container_tags %}
+{% load projectroles_common_tags %}
+{% load static %}
+{% load rules %}
+
+{% get_django_setting 'KIOSK_NETWORK_MODE' as network_mode %}
+
+{% block title %}
+  Kiosc Administrator
+{% endblock title %}
+
+{% block projectroles %}
+
+<div class="row sodar-subtitle-container">
+  <h3>Kiosc Administrator</h3>
+</div>
+
+<div class="container-fluid sodar-page-container">
+
+<nav>
+  <div class="nav nav-tabs" id="nav-tab" role="tablist">
+    <a class="nav-link active" id="nav-container-tab" data-toggle="tab" href="#nav-containers" role="tab" aria-controls="nav-container" aria-selected="true">Containers</a>
+    <a class="nav-link" id="nav-not-in-kiosc-tab" data-toggle="tab" href="#nav-not-in-kiosc" role="tab" aria-controls="nav-not-in-kiosc" aria-selected="false">Not in Kiosc</a>
+    <a class="nav-link" id="nav-docker-entities-tab" data-toggle="tab" href="#nav-docker-entities" role="tab" aria-controls="nav-docker-entities" aria-selected="false">Other Docker Entities</a>
+  </div>
+</nav>
+
+<div class="tab-content" id="nav-tabContent">
+<div class="tab-pane fade show active" id="nav-containers" role="tabpanel" aria-labelledby="nav-containers-tab">
+
+<div class="card" id="kiosc-admin-container-list">
+  <div class="card-header">
+    <h4>Complete Container List</h4>
+  </div>
+  <div class="card-body p-0">
+  {% if object_list.count > 0 %}
+    <table class="table table-striped sodar-card-table"
+           id="kiosc-admin-container-table">
+      <thead>
+        <tr>
+          <th>Project / Title</th>
+          <th>Repository:Tag</th>
+          {% if network_mode == "host" %}
+            <th>Host Port</th>
+          {% endif %}
+          <th>Date Created</th>
+          <th>State</th>
+          <th></th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for container in object_list %}
+          <tr>
+            <td><a href="{% url 'containers:detail' container=container.sodar_uuid %}">{{ container.project.title }} / {{ container.title }}</a></td>
+            <td>{{ container.get_repos_full }}</td>
+            {% if network_mode == "host" %}
+              <td>{{ container.host_port }}</td>
+            {% endif %}
+            <td>{{ container.date_created }}</td>
+            <td><strong class="{{ container.state|colorize_state }}">{{ container.state }}</strong></td>
+            <td class="text-right">
+              <div class="btn-group sodar-list-btn-group pull-right">
+                {% if container.state == "running" %}
+                  <a href="{% url 'containers:proxy' container=container.sodar_uuid path=container.path %}"
+                      class="btn btn-primary sodar-list-dropdown" target="_blank"
+                      data-toggle="tooltip" data-placement="top" title="Open app">
+                    <i class="iconify" data-icon="mdi:eye"></i>
+                  </a>
+                {% else %}
+                  <a href="{% url 'containers:proxy-lobby' container=container.sodar_uuid path=container.path %}"
+                      class="btn btn-outline-secondary sodar-list-dropdown" target="_blank"
+                      data-toggle="tooltip" data-placement="top" title="App not running">
+                    <i class="iconify" data-icon="mdi:eye-off"></i>
+                  </a>
+                {% endif %}
+                <button class="btn btn-secondary dropdown-toggle sodar-list-dropdown"
+                        type="button" data-toggle="dropdown" aria-expanded="false">
+                  <i class="iconify" data-icon="mdi:cog"></i>
+                </button>
+                <div class="dropdown-menu dropdown-menu-right">
+                  {% if container.state == "running" %}
+                    <a class="dropdown-item"
+                       href="{% url 'containers:stop' container=container.sodar_uuid %}">
+                      <i class="iconify" data-icon="mdi:stop"></i> Stop
+                    </a>
+                    <a class="dropdown-item"
+                       href="{% url 'containers:pause' container=container.sodar_uuid %}">
+                      <i class="iconify" data-icon="mdi:pause"></i> Pause
+                    </a>
+                    <a class="dropdown-item"
+                       href="{% url 'containers:restart' container=container.sodar_uuid %}">
+                      <i class="iconify" data-icon="mdi:restart"></i> Restart
+                    </a>
+                  {% elif container.state == "paused" %}
+                    <a class="dropdown-item"
+                       href="{% url 'containers:stop' container=container.sodar_uuid %}">
+                      <i class="iconify" data-icon="mdi:stop"></i> Stop
+                    </a>
+                    <a class="dropdown-item"
+                       href="{% url 'containers:unpause' container=container.sodar_uuid %}">
+                      <i class="iconify" data-icon="mdi:play"></i> Unpause
+                    </a>
+                  {% else %}
+                    <a class="dropdown-item"
+                       href="{% url 'containers:start' container=container.sodar_uuid %}">
+                      <i class="iconify" data-icon="mdi:play"></i> Start
+                    </a>
+                  {% endif %}
+                  <a class="dropdown-item"
+                     href="{% url 'containers:update' container=container.sodar_uuid %}">
+                    <i class="iconify" data-icon="mdi:lead-pencil"></i> Update
+                  </a>
+                  <a class="dropdown-item text-danger"
+                     href="{% url 'containers:delete' container=container.sodar_uuid %}">
+                    <i class="iconify" data-icon="mdi:close-thick"></i> Delete
+                  </a>
+                </div>
+              </div>
+            </td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+    {% else %}
+      <div class="alert alert-info" id="kiosc-container-alert">
+        No containers yet.
+      </div>
+    {% endif %}
+  </div>
+  {% if is_paginated %}
+    {% include 'projectroles/_pagination.html' with pg_small=False %}
+  {% endif %}
+</div>
+
+</div>
+<div class="tab-pane fade" id="nav-not-in-kiosc" role="tabpanel" aria-labelledby="nav-not-in-kiosc-tab">
+
+<div class="card" id="kiosc-admin-not-in-kiosc-list">
+  <div class="card-header">
+    <h4>Docker Containers not present in Kiosc</h4>
+  </div>
+  <div class="card-body p-0">
+    <table class="table table-striped sodar-card-table"
+           id="kiosc-admin-not-in-kiosc-table">
+      <thead>
+        <tr>
+          <th>ID</th>
+          <th>Name</th>
+          <th>Image</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for container in not_in_kiosc %}
+          <tr
+            {% if "kiosc-docker-compose" in container.name %}
+              class="text-muted"
+            {% endif %}
+          >
+            <td style="max-width: 200px">
+              <div class="sodar-overflow-container">
+                {{ container.id }}
+              </div>
+            </td>
+            <td>{{ container.name }}</td>
+            <td>{{ container.image }}</td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+</div>
+<div class="tab-pane fade" id="nav-docker-entities" role="tabpanel" aria-labelledby="nav-docker-entities-tab">
+
+<div class="card" id="kiosc-admin-network-list">
+  <div class="card-header">
+    <h4>Docker networks</h4>
+  </div>
+  <div class="card-body p-0">
+    <table class="table table-striped sodar-card-table"
+           id="kiosc-admin-network-table">
+      <thead>
+        <tr>
+          <th>ID</th>
+          <th>Name</th>
+          <th>Driver</th>
+          <th>Containers</th>
+          <th>Subnet</th>
+          <th>Gateway</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for network in networks %}
+          <tr>
+            <td style="max-width: 200px">
+              <div class="sodar-overflow-container">
+                {{ network.id }}
+              </div>
+            </td>
+            <td>{{ network.name }}</td>
+            <td>{{ network.driver }}</td>
+            <td>
+              <ul class="list-unstyled">
+              {% for container in network.containers %}
+                <li data-toggle="tooltip" title="{{ container.id }}">
+                  {{ container.name }}&emsp;<span class="text-muted small">{{ container.ip }}</span>
+                </li>
+              {% empty %}
+                <li class="text-muted font-italic">No containers</li>
+              {% endfor %}
+              </ul>
+            </td>
+            <td>{{ network.subnet|default:"<span class='text-muted font-italic'>No subnet</span>" }}</td>
+            <td>{{ network.gateway|default:"<span class='text-muted font-italic'>No gateway</span>" }}</td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<div class="card" id="kiosc-admin-image-list">
+  <div class="card-header">
+    <h4>Docker images</h4>
+  </div>
+  <div class="card-body p-0">
+    <table class="table table-striped sodar-card-table"
+           id="kiosc-admin-image-table">
+      <thead>
+        <tr>
+          <th>ID</th>
+          <th>Repository</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for image in images %}
+          <tr>
+            <td style="max-width: 200px">
+              <div class="sodar-overflow-container">
+                {{ image.id }}
+              </div>
+            </td>
+            <td>{{ image.repos }}</td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<div class="card" id="kiosc-admin-volumes-list">
+  <div class="card-header">
+    <h4>Docker volumes</h4>
+  </div>
+  <div class="card-body p-0">
+    <table class="table table-striped sodar-card-table"
+           id="kiosc-admin-volume-table">
+      <thead>
+        <tr>
+          <th>Name</th>
+          <th>Mountpoint</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for volume in volumes %}
+          <tr>
+            <td style="max-width: 200px">
+              <div class="sodar-overflow-container">
+                {{ volume.name }}
+              </div>
+            </td>
+            <td>{{ volume.mountpoint }}</td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+</div>
+</div>
+
+</div>
+{% endblock projectroles %}

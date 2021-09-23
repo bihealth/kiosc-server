@@ -54,6 +54,8 @@ urlpatterns = [
     url(r"^containers/", include("containers.urls")),
     # Containertemplates URLs
     url(r"^containertemplates/", include("containertemplates.urls")),
+    # Admin URLs
+    url(r"^kioscadmin/", include("kioscadmin.urls")),
     # Iconify icon URLs
     url(r"^icons/", include("dj_iconify.urls")),
     # These are the SAML2 related URLs. You can change "^saml2_auth/" regex to

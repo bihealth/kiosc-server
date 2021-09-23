@@ -15,6 +15,13 @@ General
 - Migrated to SODAR core v0.10.5 (#97)
 - Fixed menu notches display bug (#97)
 
+Kioscadmin
+----------
+
+- Added view for overall container and Docker information (#37)
+- Added commands ``stop_unused``, ``remove_stopped`` and ``stop_all`` (#37)
+- Moved container maintenance tasks from ``Container`` app to ``Kioscadmin`` app (#37)
+
 
 v0.3.0 (2021-09-15)
 ===================

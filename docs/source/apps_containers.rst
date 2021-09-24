@@ -24,34 +24,10 @@ Detail
 
 Click on the title of a container to access its details and the logs.
 
-Environment Variables
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-You can specify environment variables using JSON syntax (the
-``environment`` text area in the container update form). Top-level
-JSON names become the environmental variables visible by the app launched
-in the container.
-
-```
-{
-"id":"My container",
-"list":[ "A", "B", "C" ]
-}
-```
-
-Given the above example, two environment variables will be defined: `id`
-and `list`.  The contents of `id` will be `My container`; the contents of
-`list` will be `[ 'A', 'B', 'C' ]`. Note that the double quotes will be
-changed to single quotes!
-
-These variables can then be used in the web app of the
-container, and can be used to specify e.g. data source for the container
-web app.
-
 Environment & Environment Secret Keys
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Names of sensitive variables can be entered in the "Environment Secret Keys" field. 
+Names of sensitive environment variables can be entered in the ``Environment secret keys`` field. 
 
 If you have set an ``environment`` and registered ``environment_secret_keys``,
 the value of the corresponding items in the environment dictionary are displayed in Kiosc
@@ -123,7 +99,7 @@ a new container object. This does not create a Docker container yet but
 only gathers information. The actual Docker container is created when
 starting the container.
 
-Container Templates
+Container templates
 ^^^^^^^^^^^^^^^^^^^
 
 To make use of the container templates, select a template from the
@@ -136,37 +112,35 @@ template.
 ...
 
 Container path
-^^^^^^^^^^^^^^^^^^^
+^^^^^^^^^^^^^^
 
-[ XXX: explain why one would want to set up the container path ]
+The container path is the folder structure appended to the web address of
+the container.
 
-Timeout [s]
-^^^^^^^^^^^^^^^^^^^
+Timeout
+^^^^^^^
 
-[ XXX: explain what this is used for by kiosc; the description is "Interval
-in seconds for any Docker action to be performed." but that is not helpful ]
+The timeout is set in seconds and is set as the time limit for any Docker
+action (start/stop/etc..) to complete.
 
 Heartbeat URL
-^^^^^^^^^^^^^^^^^^^
+^^^^^^^^^^^^^
 
 The heartbeat URL can be used to check whether the container app runs
-correctly. [ XXX: describe how this URL should look like – relative to
-kiosc? relative to docker? (e.g. localhost:8080, or
-kiosc.bihealth.org/containers/proxy/xxxxxx/heartbeat.html ?)]
+correctly. (TODO: how does it look like?)
 
 Max retries
-^^^^^^^^^^^^^^^^^^^^^^^^^^^
+^^^^^^^^^^^
 
 Maximal number of retries for an action in case of failure. If an action
-(e.g. starting container) fails, it will be retried this many times.
+(e.g. starting a container) fails, it will be retried this many times.
 
-Inactivity Threshold [days]
-^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Inactivity threshold
+^^^^^^^^^^^^^^^^^^^^
 
 Number of days the container is allowed to run without proxy access.
+If this threshold is hit, the container will be stopped.
 
-[ XXX: describe what happens when the threshold is done. Is it stopped?
-paused? ]
 
 Controls
 --------

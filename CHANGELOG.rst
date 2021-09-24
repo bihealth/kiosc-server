@@ -11,7 +11,7 @@ Head (unreleased)
 General
 -------
 
-- Added manual (#97)
+- Added manual (#97, #99)
 - Migrated to SODAR core v0.10.5 (#97)
 - Fixed menu notches display bug (#97)
 

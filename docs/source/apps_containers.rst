@@ -109,7 +109,35 @@ entered will be overwritten. The prefix ``[Site-wide]`` or ``[Project-wide]``
 indicates whether this template is either a site-wide or a project-wide
 template.
 
-...
+Environment
+^^^^^^^^^^^
+
+Environment variables can be specified using a JSON dictionary.
+Top-level keys in the dictionary become the environmental variables visible to the app launched
+in the container::
+
+
+    {
+        "ID": "My container",
+        "LIST": [ "A", "B", "C" ]
+    }
+
+
+Given the above example, two environment variables will be defined: ``ID``
+and ``LIST``.  The contents of ``ID`` will be ``My container``; the contents of
+``LIST`` will be ``[ 'A', 'B', 'C' ]``. Note that the double quotes will be
+changed to single quotes.
+
+These variables are available to the web app of the container,
+and can be used to specify e.g. a data source or other parameters
+for the container web app.
+
+Environment secret keys
+^^^^^^^^^^^^^^^^^^^^^^^
+
+Environment secret keys is a comma-separated list of sensitive keys to environment variables that have to
+have a corresponding key defined in the JSON dictionary in the ``environment`` field.
+Those variables will be masked when editing them or viewing the details of the container.
 
 Container path
 ^^^^^^^^^^^^^^

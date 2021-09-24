@@ -61,6 +61,16 @@ Kiosc is NOT
 
     administration_periodic_tasks
 
+.. toctree::
+    :maxdepth: 2
+    :caption: REST API
+    :name: rest_api
+    :hidden:
+    :titlesonly:
+
+    rest_api_overview
+    rest_api_containers
+
 Indices and tables
 ==================
 

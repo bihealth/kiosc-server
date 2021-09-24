@@ -5,19 +5,19 @@ Welcome to the Kiosc documentation!
 
 Kiosc is a web application to control Docker containers that run a webserver.
 
-It was conceived to facilitate presenting analysis results interactively (but not limited to that)
+It was conceived to facilitate presenting analysis results interactively (but is not limited to that)
 by running Docker images that are constricting any application that offers a web interface.
 Any image can be loaded, and Kiosc manages the access to the web interface of the application.
 
 What Kiosc is and what it is not
 --------------------------------
 
-Kiosc is
+Kiosc is a web interface for
 
-- a web interface to load Docker images and create containers from it,
-- for controlling the state of Docker containers,
-- for controlling access to containers based on the user management provided by SODAR,
-- for providing access to the web interface running in a container.
+- loading Docker images and creating containers from it,
+- controlling the state of Docker containers,
+- controlling access to containers based on the user management provided by SODAR,
+- providing access to the app running in a container.
 
 Kiosc is NOT
 

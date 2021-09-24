@@ -4,9 +4,10 @@ Containers
 ==========
 
 Container objects hold the information to create and afterwards to control the underlying
-Docker containers. All information the user enters is used during creation of the
-container. They also hold information about the current state and the logs reported
-by any process associated with the container.
+Docker containers. All information the user enters is used during the creation of the
+container (which happens when the container is started). They also hold information
+about the current state and include the logs reported by any process associated
+with the container.
 
 .. contents::
 
@@ -26,10 +27,13 @@ Click on the title of a container to access its details and the logs.
 Environment & Environment Secret Keys
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Names of sensitive environment variables can be entered in the ``Environment secret keys`` field.
+
 If you have set an ``environment`` and registered ``environment_secret_keys``,
-the value of the corresponding items in the environment dictionary are displayed
+the value of the corresponding items in the environment dictionary are displayed in Kiosc
 as ``<masked>``, indicating that they are available to the system but
-are not displayed for security reasons.
+are not displayed for security reasons. However, they will still be visible
+in plain in the container environment.
 
 State
 ^^^^^
@@ -95,7 +99,7 @@ a new container object. This does not create a Docker container yet but
 only gathers information. The actual Docker container is created when
 starting the container.
 
-Container Templates
+Container templates
 ^^^^^^^^^^^^^^^^^^^
 
 To make use of the container templates, select a template from the
@@ -105,7 +109,66 @@ entered will be overwritten. The prefix ``[Site-wide]`` or ``[Project-wide]``
 indicates whether this template is either a site-wide or a project-wide
 template.
 
-...
+Environment
+^^^^^^^^^^^
+
+Environment variables can be specified using a JSON dictionary.
+Top-level keys in the dictionary become the environmental variables visible to the app launched
+in the container::
+
+
+    {
+        "ID": "My container",
+        "LIST": [ "A", "B", "C" ]
+    }
+
+
+Given the above example, two environment variables will be defined: ``ID``
+and ``LIST``.  The contents of ``ID`` will be ``My container``; the contents of
+``LIST`` will be ``[ 'A', 'B', 'C' ]``. Note that the double quotes will be
+changed to single quotes.
+
+These variables are available to the web app of the container,
+and can be used to specify e.g. a data source or other parameters
+for the container web app.
+
+Environment secret keys
+^^^^^^^^^^^^^^^^^^^^^^^
+
+Environment secret keys is a comma-separated list of sensitive keys to environment variables that have to
+have a corresponding key defined in the JSON dictionary in the ``environment`` field.
+Those variables will be masked when editing them or viewing the details of the container.
+
+Container path
+^^^^^^^^^^^^^^
+
+The container path is the folder structure appended to the web address of
+the container.
+
+Timeout
+^^^^^^^
+
+The timeout is set in seconds and is set as the time limit for any Docker
+action (start/stop/etc..) to complete.
+
+Heartbeat URL
+^^^^^^^^^^^^^
+
+The heartbeat URL can be used to check whether the container app runs
+correctly. (TODO: how does it look like?)
+
+Max retries
+^^^^^^^^^^^
+
+Maximal number of retries for an action in case of failure. If an action
+(e.g. starting a container) fails, it will be retried this many times.
+
+Inactivity threshold
+^^^^^^^^^^^^^^^^^^^^
+
+Number of days the container is allowed to run without proxy access.
+If this threshold is hit, the container will be stopped.
+
 
 Controls
 --------
@@ -119,9 +182,9 @@ while in the list this is presented by the cog icon only.
 Start
 ^^^^^
 
-Start an existing Docker container and create the Docker container
-first from the Docker image. If the image isn't yet cached, it is pulled.
-An existing container is wiped before performing the starting action.
+Create a container from a Docker image and start it.  If the image isn't
+yet cached, it is pulled from the specified repository.  An existing
+container is always wiped before performing the starting action.
 
 Internally, the following cadence is performed::
 

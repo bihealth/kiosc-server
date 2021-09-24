@@ -18,10 +18,14 @@ Find the ``Container Templates`` icon in the left-hand menu to open the Containe
 app. This will list all available container templates and offers the menus to
 create, update and delete templates.
 
+Note that the new templates will be visible in all your project on the
+KIOSC site.
+
 Detail
 ------
 
-Click on the title of a container template in the overview to enter the details of a container template,
+Click on the title of a container template in the overview to enter the details of a container template.
+These are the same details that need to be provided when creating a container.
 
 Create
 ------

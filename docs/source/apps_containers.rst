@@ -5,7 +5,7 @@ Containers
 
 Container objects hold the information to create and afterwards to control the underlying
 Docker containers. All information the user enters is used during the creation of the
-container (when the container is "started"). They also hold information
+container (which happens when the container is started). They also hold information
 about the current state and include the logs reported by any process associated
 with the container.
 

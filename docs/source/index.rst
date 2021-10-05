@@ -41,6 +41,7 @@ Kiosc is NOT
 
     introduction_overview
     introduction_installation
+    introduction_user_stories
 
 .. toctree::
     :maxdepth: 2

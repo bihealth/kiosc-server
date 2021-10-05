@@ -8,7 +8,7 @@ the periodic tasks in return influence the user experience.
 
 They are designed to keep the Docker containers consistent
 with the information the user enters into the web interface,
-and to fetch logs and informations from the Docker containers.
+and to fetch logs and information from the Docker containers.
 
 .. contents::
 

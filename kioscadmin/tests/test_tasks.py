@@ -1,11 +1,11 @@
-"""Test container tasks."""
+"""Test kioscadmin tasks."""
+
 from datetime import timedelta
 from unittest import mock
 from unittest.mock import patch, call
 
 import docker.errors
 from django.conf import settings
-from django.test import override_settings
 from django.utils import timezone
 
 from containers.models import (
@@ -1207,7 +1207,6 @@ class TestStopInactiveContainers(TestBase):
         # Assert objects
         self.assertEqual(ContainerBackgroundJob.objects.count(), 0)
 
-    @override_settings(PROJECTROLES_DEFAULT_ADMIN="superuser")
     @patch("docker.api.client.APIClient.remove_container")
     @patch("docker.api.client.APIClient.unpause")
     @patch("docker.api.client.APIClient.pause")

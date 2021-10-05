@@ -1,6 +1,7 @@
 """Helpers for the container tests."""
 import uuid
 import dateutil.parser
+from django.conf import settings
 
 from django.utils import dateformat
 from test_plus.test import TestCase
@@ -64,7 +65,7 @@ class TestBase(TestContainerCreationMixin, TestCase):
         self.project = ProjectFactory()
 
         # Setup superuser
-        self.superuser = self.make_user("superuser")
+        self.superuser = self.make_user(settings.PROJECTROLES_DEFAULT_ADMIN)
         self.superuser.is_staff = True
         self.superuser.is_superuser = True
         self.superuser.save()
@@ -124,3 +125,40 @@ class DockerMock:
     ).encode("utf-8")
     logs_no_date = log_entry1_no_date().encode("utf-8")
     logs_since = "\n".join([log_entry2()[1], log_entry3()[1]]).encode("utf-8")
+
+    networks = [
+        {
+            "Id": "abcdef",
+        }
+    ]
+    inspect_network = {
+        "Name": "network1",
+        "Id": "abcdef",
+        "Driver": "host",
+        "IPAM": {
+            "Config": [{"Subnet": "172.17.0.0/16", "Gateway": "172.17.0.1"}]
+        },
+        "Containers": {
+            "9": {
+                "Name": "container1",
+                "IPv4Address": "172.17.0.5/16",
+            },
+        },
+    }
+    images = [
+        {
+            "Id": "sha256:abcdef",
+            "RepoTags": ["docker.io/category/project:1.0.0"],
+        }
+    ]
+    volumes = {
+        "Volumes": [
+            {
+                "Mountpoint": "/var/lib/docker/volumes/volume1",
+                "Name": "abcdef",
+            }
+        ]
+    }
+    containers = [
+        {"Id": "abcedf", "Names": ["/container1"], "Image": "sha256:abcdef"}
+    ]

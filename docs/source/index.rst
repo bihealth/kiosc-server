@@ -59,6 +59,8 @@ Kiosc is NOT
     :hidden:
     :titlesonly:
 
+    administration_overview
+    administration_commands
     administration_periodic_tasks
 
 .. toctree::

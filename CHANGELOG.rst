@@ -22,6 +22,7 @@ Kioscadmin
 - Added commands ``stop_unused``, ``remove_stopped`` and ``stop_all`` (#37)
 - Moved container maintenance tasks from ``Container`` app to ``Kioscadmin`` app (#37)
 - Added tests for commands, views and tasks (#108)
+- Added documentation (#109)
 
 
 v0.3.0 (2021-09-15)

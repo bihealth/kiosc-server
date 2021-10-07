@@ -3,7 +3,6 @@
 Installation
 ============
 
-
 In the ``config/settings/base.py`` file, the following
 properties are set that can be set by setting the
 corresponding environment variable.

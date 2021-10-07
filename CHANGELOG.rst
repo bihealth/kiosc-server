@@ -15,6 +15,7 @@ General
 - Migrated to SODAR core v0.10.5 (#97)
 - Fixed menu notches display bug (#97)
 - Added user story to documentation for a guest user that wants to view the web interface provided by the container (#103)
+- Extended documentation with a cookbook section containing examples on container creation (#116)
 
 Kioscadmin
 ----------

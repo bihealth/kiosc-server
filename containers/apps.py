@@ -67,7 +67,11 @@ class ContainersConfig(AppConfig):
                 raise Exception("Container found, but has no ID")
 
             try:
-                cli.connect_container_to_network(container_id, network_id)
+                cli.connect_container_to_network(
+                    container_id,
+                    network_id,
+                    aliases=[settings.KIOSC_DOCKER_WEB_SERVER],
+                )
 
             except docker.errors.APIError as e:
                 if e.response.status_code == 403:

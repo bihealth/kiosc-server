@@ -26,8 +26,8 @@ The difference is that in the crossed-out state Kiosc tries to start the
 container before accessing the web interface which might take some time
 while in the running state the web interface will be displayed immediately.
 
-Create a container running (a) ...
-----------------------------------
+Create a container running ...
+------------------------------
 
 To create a container switch to the **Containers** app and
 select **Create Container**. This will be the starting point
@@ -41,14 +41,15 @@ on the top right of the details page. Open the dropdown
 menu by clicking the cog icon and select **Start**, or click
 the crossed-out eye icon to start and access the container directly.
 
-Shiny application (using environment variables)
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Shiny (using environment variables)
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 *For this tutorial we provide you with a pre-build*
 `Docker image with a Shiny application <https://github.com/bihealth/kiosc-example-shiny/>`_.
 *Use the linked repository as a base to create your own Docker image.*
 
-In this example application you can learn how environment variables are set.
+This example sets up a simple Shiny application loading the popular iris dataset.
+The data set is loaded by setting the ``dataset`` variable in the environment.
 Fill out the following fields and click **Create**:
 
 ==================  ==================================================================
@@ -69,29 +70,62 @@ Imagine that inside the container the following lines will be performed upon sta
     $ export title="Kiosc Shiny App example"
     $ export dataset=iris
 
-The data is loaded into the container by setting the environmental variable ``dataset``.
-
-Dash Application
-^^^^^^^^^^^^^^^^
+Dash (using environment variables)
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 *For this tutorial we provide you with a pre-build*
 `Docker image with a Dash application <https://github.com/bihealth/kiosc-example-dash/>`_.
 *Use the linked repository as a base to create your own Docker image.*
 
-Fill out the following fields and click **Create**:
+In this example we are running a Dash application. As we are behind
+a reverse proxy, the Dash application needs some tweaks to make it load
+all scripts and stylesheets into the container when started. The Dash
+application was extended by accepting an environmental variable named
+``PUBLIC_URL_PREFIX``, and for this to work, you have to set up this
+environment variable and set it to the value ``__KIOSC_URL_PREFIX__``.
+This acts as a place holder that is substituted with the path to the
+container how it is known to the outside. Fill out the following fields and click **Create**:
 
 ==================  ==================================================================
 **Title**           *Set a unique title that helps you identify the container easily.*
 **Repository**      ``ghcr.io/bihealth/kiosc-example-dash``
-**Tag**             ``master``
+**Tag**             ``main-0``
 **Container Port**  ``8050``
+**Environment**     ``{"PUBLIC_URL_PREFIX": "__KIOSC_URL_PREFIX__"}``
+==================  ==================================================================
+
+The **Environment** field should contain a `JSON object literal <https://www.w3schools.com/js/js_json_objects.asp>`_,
+which corresponds to a Python dictionary with the exception that only double quotes are allowed, or nothing.
+
+The value in the **Environment** field will be transformed and passed to the environment of
+the container. In the above example, the Docker container will hold two environment variables.
+Imagine that inside the container the following lines will be performed upon start::
+
+    $ export PUBLIC_URL_PREFIX=containers/proxy/abcdef123...
+
+seaPiper
+^^^^^^^^
+
+*For this tutorial we provide you with a pre-build*
+`Docker image with a Dash application <https://github.com/bihealth/kiosc-seapiper-demo/>`_.
+*Use the linked repository as a base to create your own Docker image.*
+
+seaPiper is based on Shiny. Fill out the following fields and click **Create**:
+
+==================  ==================================================================
+**Title**           *Set a unique title that helps you identify the container easily.*
+**Repository**      ``ghcr.io/bihealth/kiosc-seapiper-demo``
+**Tag**             ``latest``
+**Container Port**  ``8080``
 ==================  ==================================================================
 
 cellxgene (using a command)
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-In this example application you can learn how the command is used.
-Fill out the following fields and click **Create**:
+This example takes a publicly available container and passes a command that is run
+when starting the container. In this case, the cellxgene application is started
+immediately when running the container. The data is loaded by passing the data
+URL to the command. Fill out the following fields and click **Create**:
 
 ==================  ==================================================================
 **Title**           *Set a unique title that helps you identify the container easily.*
@@ -101,7 +135,35 @@ Fill out the following fields and click **Create**:
 **Command**         ``cellxgene launch https://cellxgene-example-data.czi.technology/pbmc3k.h5ad -p 8050 --host 0.0.0.0 --verbose``
 ==================  ==================================================================
 
-This example takes a publicly available container and passes a command that is run
-when starting the container. In this case, the cellxgene application is started
-immediately when running the container. The data is loaded by passing the data
-URL to the command.
+ScElvis (using a command and environment variables)
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+This example sets up the ScElvis. ScElvis is based on Dash.
+For this to work, you have to set up two environment variables,
+``SCELVIS_URL_PREFIX`` helps the application alter the URL path
+to load scripts and style sheets into the container and
+``SCELIVS_DATA_URL`` sets the data that is to be loaded into the
+container. Fill out the following fields and click **Create**:
+
+==================  ==================================================================
+**Title**           *Set a unique title that helps you identify the container easily.*
+**Repository**      ``ghcr.io/bihealth/scelvis``
+**Tag**             ``v0.8.6``
+**Container Port**  ``8050``
+**Environment**     ``{"SCELVIS_URL_PREFIX": "__KIOSC_URL_PREFIX__", "SCELVIS_DATA_SOURCES": "https://cellxgene-example-data.czi.technology/pbmc3k.h5ad"}``
+**Command**         ``scelvis launch``
+==================  ==================================================================
+
+The **Environment** field should contain a `JSON object literal <https://www.w3schools.com/js/js_json_objects.asp>`_,
+which corresponds to a Python dictionary with the exception that only double quotes are allowed, or nothing.
+
+The value in the **Environment** field will be transformed and passed to the environment of
+the container. In the above example, the Docker container will hold two environment variables.
+Imagine that inside the container the following lines will be performed upon start::
+
+    $ export SCELVIS_URL_PREFIX=containers/proxy/abcdef123...
+    $ export SCELVIS_DATA_SOURCES=https://cellxgene-example-data.czi.technology/pbmc3k.h5ad
+
+
+
+github.com/bihealth/kiosc-seapiper-demo/

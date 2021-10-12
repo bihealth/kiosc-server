@@ -1,3 +1,14 @@
+import logging
+from ipaddress import ip_address
+from wsgiref.util import FileWrapper
+
+from django.http import (
+    HttpResponse,
+    HttpResponseBadRequest,
+    HttpResponseNotFound,
+    HttpResponseForbidden,
+)
+
 from bgjobs.models import BackgroundJob, LOG_LEVEL_DEBUG
 from django.conf import settings
 from django.contrib import messages
@@ -14,6 +25,9 @@ from django.views.generic import (
     ListView,
 )
 from django.views.generic.detail import SingleObjectMixin
+
+from filesfolders.models import File, FileData
+from filesfolders.views import storage
 from projectroles.plugins import get_backend_api
 from projectroles.views import (
     LoggedInPermissionMixin,
@@ -23,7 +37,7 @@ from projectroles.views import (
 from revproxy.views import ProxyView
 from urllib3.exceptions import NewConnectionError
 
-from containers.forms import ContainerForm
+from containers.forms import ContainerForm, FileSelectorForm
 from containers.models import (
     Container,
     ContainerBackgroundJob,
@@ -48,6 +62,8 @@ from containertemplates.forms import (
 )
 
 
+logger = logging.getLogger(__name__)
+
 APP_NAME = "containers"
 CELERY_SUBMIT_COUNTDOWN = 0.5
 
@@ -70,6 +86,7 @@ class ContainerCreateView(
         context["containertemplate_form"] = ContainerTemplateSelectorForm(
             auto_id="containertemplate_%s", user=self.request.user
         )
+        context["files_form"] = FileSelectorForm(project=self.get_project())
         return context
 
     def get_initial(self):
@@ -227,6 +244,7 @@ class ContainerUpdateView(
         context["containertemplate_form"] = ContainerTemplateSelectorForm(
             auto_id="containertemplate_%s", user=self.request.user
         )
+        context["files_form"] = FileSelectorForm(project=self.get_project())
         return context
 
     def get_success_url(self):
@@ -727,3 +745,68 @@ class ReverseProxyView(
                 f"Web-interface of container '{container.title}' not reachable.",
             )
             return _redirect
+
+
+class FileServeView(View):
+    """View for serving file to a container.
+
+    Code mostly copied from ``filesfolders.views.FileServeView``.
+    """
+
+    def get(self, *args, **kwargs):
+        """GET request to return the file as attachment"""
+
+        # Get File object
+        try:
+            file = File.objects.get(sodar_uuid=kwargs["file"])
+
+        except File.DoesNotExist:
+            return HttpResponseNotFound()
+
+        # Check access
+        for k in (
+            "HTTP_X_FORWARDED_FOR",
+            "X_FORWARDED_FOR",
+            "FORWARDED",
+            "REMOTE_ADDR",
+        ):
+            v = self.request.META.get(k)
+            if v:
+                client_ip = ip_address(v.split(",")[0])
+                break
+
+        else:  # Can't fetch client ip address
+            logger.error("Requester is unknown. Can't check permissions.")
+            return HttpResponseForbidden()  # can't identify requester
+
+        try:
+            Container.objects.get(
+                project=file.project,
+                container_ip=client_ip,
+            )
+        except Container.DoesNotExist:
+            logger.error(
+                "Container with IP {} does not belong to the project {} the file {} is in. Access denied!".format(
+                    client_ip, file.project.sodar_uuid, file.name
+                )
+            )
+            return HttpResponseForbidden()  # no permission
+
+        # Get corresponding FileData object with file content
+        try:
+            file_data = FileData.objects.get(file_name=file.file.name)
+
+        except FileData.DoesNotExist:
+            return HttpResponseNotFound()
+
+        # Open file for serving
+        try:
+            file_content = storage.open(file_data.file_name)
+
+        except Exception:
+            return HttpResponseBadRequest()
+
+        # Return file as attachment
+        return HttpResponse(
+            FileWrapper(file_content), content_type=file_data.content_type
+        )

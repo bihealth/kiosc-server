@@ -33,8 +33,6 @@ urlpatterns = [
     url(r"^project/", include("projectroles.urls")),
     # Timeline URLs
     url(r"^timeline/", include("timeline.urls")),
-    # Filesfolders URLs
-    url(r"^files/", include("filesfolders.urls")),
     # django-db-file-storage URLs (obfuscated for users)
     # TODO: Change the URL to something obfuscated (e.g. random string)
     url(r"^CHANGE-ME/", include("db_file_storage.urls")),
@@ -74,6 +72,9 @@ urlpatterns = [
     # The following line will replace the default admin user logout with the signout page (optional)
     # url(r'^sso/admin/logout/$', django_saml2_auth.views.signout),
 ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
+
+if settings.KIOSC_EMBEDDED_FILES:
+    urlpatterns.append(url(r"^files/", include("filesfolders.urls")))
 
 if settings.DEBUG:
     # This allows the error pages to be debugged during development, just visit

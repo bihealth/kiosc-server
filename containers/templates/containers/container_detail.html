@@ -158,6 +158,12 @@
           </dl>
         {% endif %}
         <dl class="row">
+          <dt class="col-sm-3">Container IP</dt>
+          <dd class="col-sm-9">
+            {{ object.container_ip|default:"<em class='text-muted'>no value</em>" }}
+          </dd>
+        </dl>
+        <dl class="row">
           <dt class="col-sm-3">Container Port</dt>
           <dd class="col-sm-9">
             {{ object.container_port|default:"<em class='text-muted'>no value</em>" }}
@@ -182,9 +188,23 @@
           </dd>
         </dl>
         <dl class="row">
+          <dt class="col-sm-3">Command</dt>
+          <dd class="col-sm-9">
+            {% if object.command %}
+              <code>{{ object.command }}</code>
+            {% else %}
+              <em class='text-muted'>no value</em>
+            {% endif %}
+          </dd>
+        </dl>
+        <dl class="row">
           <dt class="col-sm-3">Environment</dt>
           <dd class="col-sm-9">
-            {{ object.get_environment_masked|default:"<em class='text-muted'>no value</em>" }}
+            {% if object.get_environment_masked %}
+              <pre>{{ object.get_environment_masked|pretty_json }}</pre>
+            {% else %}
+              <em class="text-muted">no value</em>
+            {% endif %}
           </dd>
         </dl>
         <dl class="row">

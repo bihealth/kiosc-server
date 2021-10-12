@@ -16,6 +16,13 @@ General
 - Fixed menu notches display bug (#97)
 - Added user story to documentation for a guest user that wants to view the web interface provided by the container (#103)
 - Extended documentation with a cookbook section containing examples on container creation (#116)
+- Activated filesfolders app (#112)
+
+Container
+---------
+
+- Added file serve view for internal access for containers (#112)
+- Added ``container_ip`` field to ``Container`` model (#112)
 
 Kioscadmin
 ----------

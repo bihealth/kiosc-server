@@ -39,7 +39,7 @@ app_settings = AppSettingAPI()
 logger = logging.getLogger(__name__)
 
 # Increase the timeout for communication with Docker daemon.
-APP_NAME = "kioscadmin"
+APP_NAME = "containers"
 DEFAULT_GRACE_PERIOD_CONTAINER_STATUS = 180
 
 # SODAR constants

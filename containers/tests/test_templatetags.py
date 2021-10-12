@@ -1,5 +1,7 @@
 """Tests for the ``templatetags`` module."""
-from test_plus.plugin import TestCase
+import json
+
+from test_plus.test import TestCase
 
 from containers.models import (
     STATE_INITIAL,
@@ -7,7 +9,7 @@ from containers.models import (
     STATE_FAILED,
     STATE_EXITED,
 )
-from containers.templatetags.container_tags import colorize_state
+from containers.templatetags.container_tags import colorize_state, pretty_json
 
 
 class TestContainerTags(TestCase):
@@ -27,3 +29,25 @@ class TestContainerTags(TestCase):
 
     def test_colorize_state_unknown(self):
         self.assertEqual(colorize_state("unknown"), "text-dark")
+
+    def test_pretty_json_empty(self):
+        data = "{}"
+        expected = "{}"
+        self.assertEqual(pretty_json(json.loads(data)), expected)
+
+    def test_pretty_json_short(self):
+        data = '{"key": "value"}'
+        expected = """{
+    "key": "value"
+}"""
+        self.assertEqual(pretty_json(json.loads(data)), expected)
+
+    def test_pretty_json_long(self):
+        data = '{"key1": "value1", "key2": "value2", "key3": "value3", "key4": "value4"}'
+        expected = """{
+    "key1": "value1",
+    "key2": "value2",
+    "key3": "value3",
+    "key4": "value4"
+}"""
+        self.assertEqual(pretty_json(json.loads(data)), expected)

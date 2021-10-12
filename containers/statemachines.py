@@ -341,7 +341,14 @@ class ContainerMachine(StateMachine):
 
         if container_info.get("State"):
             self.container.state = container_info.get("State").get("Status")
-            self.container.save()
+
+        self.container.container_ip = (
+            container_info.get("NetworkSettings", {})
+            .get("Networks", {})
+            .get(settings.KIOSC_DOCKER_NETWORK, {})
+            .get("IPAddress")
+        )
+        self.container.save()
 
     def on_pull(self):
         # Pulling image

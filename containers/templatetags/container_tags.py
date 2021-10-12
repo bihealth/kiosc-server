@@ -1,3 +1,5 @@
+import json
+
 from django import template
 
 from containers.models import (
@@ -20,3 +22,8 @@ def colorize_state(state):
         STATE_EXITED: "text-secondary",
     }
     return colormap.get(state, "text-dark")
+
+
+@register.filter
+def pretty_json(obj):
+    return json.dumps(obj, indent=4, sort_keys=True)

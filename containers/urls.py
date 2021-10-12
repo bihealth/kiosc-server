@@ -67,6 +67,11 @@ ui_urlpatterns = [
         view=views.ContainerProxyLobbyView.as_view(),
         name="proxy-lobby",
     ),
+    url(
+        regex=r"^file/serve/(?P<file>[0-9a-f-]+)$",
+        view=views.FileServeView.as_view(),
+        name="file-serve",
+    ),
 ]
 
 api_urlpatterns = [

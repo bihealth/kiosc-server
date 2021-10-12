@@ -26,7 +26,7 @@ from containers.models import (
 from containers.tests.helpers import TestBase
 from containers.views import CELERY_SUBMIT_COUNTDOWN
 from containertemplates.forms import ContainerTemplateSelectorForm
-
+from filesfolders.tests.test_models import FileMixin
 
 responses = Responses("requests.packages.urllib3")
 
@@ -1376,3 +1376,68 @@ class TestContainerProxyLobbyView(TestBase):
             )
 
             self.assertEqual(response.status_code, 404)
+
+
+SECRET = "7dqq83clo2iyhg29hifbor56og6911r5"
+
+
+class TestFileServeView(FileMixin, TestBase):
+    """Tests for ``FileServeView``."""
+
+    def setUp(self):
+        super().setUp()
+
+        self.create_one_container()
+        self.create_fake_uuid()
+
+        # Init file content
+        self.file_content = bytes("content".encode("utf-8"))
+
+        # Init file
+        self.file = self._make_file(
+            name="file.txt",
+            file_name="file.txt",
+            file_content=self.file_content,
+            project=self.project,
+            folder=None,
+            owner=self.superuser,
+            description="",
+            public_url=True,
+            secret=SECRET,
+        )
+
+    @override_settings(KIOSC_NETWORK_MODE="docker-shared")
+    def test_serve_valid_requester(self):
+        header = {"REMOTE_ADDR": self.container1.container_ip}
+
+        with self.login(self.superuser):
+            response = self.client.get(
+                reverse(
+                    "containers:file-serve",
+                    kwargs={
+                        "file": self.file.sodar_uuid,
+                    },
+                ),
+                **header,
+            )
+
+        self.assertEqual(response.status_code, 200, msg=response.content)
+        self.assertEqual(response.content, self.file_content)
+
+    @override_settings(KIOSC_NETWORK_MODE="docker-shared")
+    def test_serve_invalid_requester(self):
+        header = {"REMOTE_ADDR": "8.8.8.8"}
+
+        with self.login(self.superuser):
+            response = self.client.get(
+                reverse(
+                    "containers:file-serve",
+                    kwargs={
+                        "file": self.file.sodar_uuid,
+                    },
+                ),
+                **header,
+            )
+
+        self.assertEqual(response.status_code, 403, msg=response.content)
+        self.assertEqual(response.content, b"")

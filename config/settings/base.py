@@ -34,6 +34,9 @@ if READ_DOT_ENV_FILE:
 # Hosts/domain names that are valid for this site
 ALLOWED_HOSTS = env.list("DJANGO_ALLOWED_HOSTS", default=["*"])
 
+KIOSC_EMBEDDED_FILES = env.bool("KIOSC_EMBEDDED_FILES", default=True)
+
+
 # APP CONFIGURATION
 # ------------------------------------------------------------------------------
 DJANGO_APPS = [
@@ -56,7 +59,6 @@ THIRD_PARTY_APPS = [
     "rest_framework",  # For API views
     "knox",  # For token auth
     "docs",  # For the online user documentation/manual
-    "db_file_storage",  # For filesfolders
     "dal",  # For user search combo box
     "dal_select2",
     # TODO: Add other third party apps here
@@ -64,8 +66,6 @@ THIRD_PARTY_APPS = [
     "projectroles.apps.ProjectrolesConfig",
     # SODAR Timeline app
     "timeline.apps.TimelineConfig",
-    # SODAR Filesfolders app
-    "filesfolders.apps.FilesfoldersConfig",
     # SODAR Background Jobs app
     "bgjobs.apps.BgjobsConfig",
     # User Profile site app
@@ -83,6 +83,13 @@ THIRD_PARTY_APPS = [
     # NOTE: Only enable if used in your site
     # 'sodarcache.apps.SodarcacheConfig',
 ]
+
+if KIOSC_EMBEDDED_FILES:
+    THIRD_PARTY_APPS += [
+        # SODAR Filesfolders app
+        "filesfolders.apps.FilesfoldersConfig",
+        "db_file_storage",  # For filesfolders
+    ]
 
 # Project apps
 LOCAL_APPS = [

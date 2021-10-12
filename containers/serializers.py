@@ -17,6 +17,7 @@ class ContainerSerializer(SODARProjectModelSerializer):
             "tag",
             "image_id",
             "container_id",
+            "container_ip",
             "container_port",
             "container_path",
             "heartbeat_url",

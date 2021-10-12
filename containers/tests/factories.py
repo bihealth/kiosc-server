@@ -41,6 +41,7 @@ class ContainerFactory(factory.django.DjangoModelFactory):
     project = factory.SubFactory(ProjectFactory)
     image_id = ""
     container_id = "abcdefghijklmnopqrstuvwxyz"
+    container_ip = "172.16.0.2"
     container_port = 80
     container_path = ""
     heartbeat_url = ""

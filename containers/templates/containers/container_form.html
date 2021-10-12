@@ -34,7 +34,43 @@
   </div>
   <form method="post" enctype="multipart/form-data">
     {% csrf_token %}
-    {{ form | crispy }}
+    {# Non-field errors #}
+    {{ form.non_field_errors }}
+    {# Invisible fields #}
+    {{ form.project }}
+    {{ form.containertemplatesite }}
+    {{ form.containertemplateproject }}
+    {# Fields #}
+    {{ form.title|as_crispy_field }}
+    {{ form.description|as_crispy_field }}
+    {{ form.repository|as_crispy_field }}
+    {{ form.tag|as_crispy_field }}
+    {{ form.container_port|as_crispy_field }}
+    {{ form.container_path|as_crispy_field }}
+    {{ form.heartbeat_url|as_crispy_field }}
+    {{ form.host_port|as_crispy_field }}
+    {{ form.timeout|as_crispy_field }}
+    {{ form.environment|as_crispy_field }}
+    {{ form.environment_secret_keys|as_crispy_field }}
+    {{ form.max_retries|as_crispy_field }}
+    {{ form.inactivity_threshold|as_crispy_field }}
+    <div class="input-group mb-3">
+      <div class="input-group-prepend">
+        <span class="input-group-text">Files</span>
+      </div>
+      {{ files_form.file_url }}
+      <div class="input-group-append">
+        <button
+            id="file_url_insert"
+            type="submit"
+            class="btn btn-primary"
+            onclick="insertFileUrl()"
+        >
+          <i class="iconify" data-icon="mdi:file"></i> Insert
+        </button>
+      </div>
+    </div>
+    {{ form.command|as_crispy_field }}
     <div class="row">
       <div class="btn-group ml-auto">
         <a role="button" class="btn btn-secondary"
@@ -84,6 +120,13 @@
               })
           }
       });
+  }
+
+  function insertFileUrl() {
+      let value = $("#id_file_url").val();
+      let insert_to = $("#id_command");
+
+      insert_to.append(" " + value);
   }
   </script>
 {% endblock javascript %}

@@ -1,7 +1,9 @@
 from django import forms
 from django.conf import settings
+from django.urls import reverse
 
 from containers.models import Container, MASKED_KEYWORD
+from filesfolders.models import File
 
 
 class ContainerForm(forms.ModelForm):
@@ -77,3 +79,40 @@ class ContainerForm(forms.ModelForm):
             cleaned_data["environment_secret_keys"] = ",".join(secret_keys)
 
         return cleaned_data
+
+
+class FileSelectorForm(forms.Form):
+    """Form for selecting files from the filesfolders app."""
+
+    #: File URL to insert
+    file_url = forms.ChoiceField(
+        choices=[],
+        widget=forms.Select(
+            attrs={"class": "form-control", "style": "width: 400px"}
+        ),
+    )
+
+    def __init__(self, *args, **kwargs):
+        project = kwargs.pop("project")
+
+        super().__init__(*args, **kwargs)
+
+        def get_link(obj):
+            return "http://{}:8080{}".format(
+                settings.KIOSC_DOCKER_WEB_SERVER,
+                reverse(
+                    "containers:file-serve", kwargs={"file": obj.sodar_uuid}
+                ),
+            )
+
+        queryset = File.objects.filter(project=project)
+
+        self.fields["file_url"].choices = [
+            (
+                get_link(obj),
+                "{}{}".format(
+                    obj.folder.get_path()[4:] if obj.folder else "/", obj.name
+                ),
+            )
+            for obj in queryset
+        ]

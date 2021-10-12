@@ -235,6 +235,11 @@ class Container(models.Model):
         max_length=128, help_text="Container ID", blank=True, null=True
     )
 
+    #: The internal IP of the Docker container (when running).
+    container_ip = models.CharField(
+        max_length=16, help_text="Container IP", blank=True, null=True
+    )
+
     #: The port within the Docker container to listen on.
     container_port = models.IntegerField(
         default=80,

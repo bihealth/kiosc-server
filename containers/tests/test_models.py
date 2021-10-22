@@ -393,6 +393,19 @@ class TestContainerLogEntry(TestBase):
             ContainerLogEntry.objects.get_date_last_docker_log(),
         )
 
+    def test_containerlogentrymanager_get_logs_as_str(self):
+        self.assertEqual(
+            "\n".join(
+                [
+                    str(self.log_entry_docker1),
+                    str(self.log_entry_docker2),
+                    str(self.log_entry),
+                    str(self.log_entry_no_user),
+                ]
+            ),
+            ContainerLogEntry.objects.get_logs_as_str(),
+        )
+
 
 class TestContainerActionLock(TransactionTestCase):
     """Tests for the ``ContainerActionLock`` model."""

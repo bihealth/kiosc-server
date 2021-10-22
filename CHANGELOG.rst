@@ -23,6 +23,7 @@ Container
 
 - Added file serve view for internal access for containers (#112)
 - Added ``container_ip`` field to ``Container`` model (#112)
+- Added AJAX functionality to dynamically load state and logs of a container in list and detail views (#122)
 
 Kioscadmin
 ----------

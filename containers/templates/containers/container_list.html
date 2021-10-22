@@ -54,36 +54,33 @@
         </thead>
         <tbody>
           {% for container in object_list %}
-            <tr>
+            <tr data-url="{% url "containers:ajax-get-dynamic-details" container=container.sodar_uuid %}" data-uuid="{{ container.sodar_uuid }}">
               <td><a href="{% url 'containers:detail' container=container.sodar_uuid %}">{{ container.title }}</a></td>
               <td>{{ container.get_repos_full }}</td>
               {% if network_mode == "host" %}
                 <td>{{ container.host_port }}</td>
               {% endif %}
               <td>{{ container.date_created }}</td>
-              <td><strong class="{{ container.state|colorize_state }}">{{ container.state }}</strong></td>
+              <td><strong class="{{ container.state|colorize_state }}" id="id_state_{{ container.sodar_uuid  }}">{{ container.state }}</strong></td>
               <td class="text-right">
                 <div class="btn-group sodar-list-btn-group pull-right">
-                  {% if container.state == "running" %}
-                    <a href="{% url 'containers:proxy' container=container.sodar_uuid path=container.path %}"
-                        class="btn btn-primary sodar-list-dropdown" target="_blank"
-                        data-toggle="tooltip" data-placement="top" title="Open app">
-                      <i class="iconify" data-icon="mdi:eye"></i>
-                    </a>
-                  {% else %}
-                    <a href="{% url 'containers:proxy-lobby' container=container.sodar_uuid path=container.path %}"
-                        class="btn btn-outline-secondary sodar-list-dropdown" target="_blank"
-                        data-toggle="tooltip" data-placement="top" title="App not running">
-                      <i class="iconify" data-icon="mdi:eye-off"></i>
-                    </a>
-                  {% endif %}
+                  <a id="id_proxy_running_{{ container.sodar_uuid }}" {% if not container.state == "running" %}style="display: none;" {% endif %} href="{% url 'containers:proxy' container=container.sodar_uuid path=container.path %}"
+                      class="btn btn-primary sodar-list-dropdown" target="_blank"
+                      data-toggle="tooltip" data-placement="top" title="Open app">
+                    <i class="iconify" data-icon="mdi:eye"></i>
+                  </a>
+                  <a id="id_proxy_not_running_{{ container.sodar_uuid }}" {% if container.state == "running" %}style="display: none;" {% endif %} href="{% url 'containers:proxy-lobby' container=container.sodar_uuid path=container.path %}"
+                      class="btn btn-outline-secondary sodar-list-dropdown" target="_blank"
+                      data-toggle="tooltip" data-placement="top" title="App not running">
+                    <i class="iconify" data-icon="mdi:eye-off"></i>
+                  </a>
                   {% if can_start_container or can_stop_container or can_pause_container or can_unpause_container or can_edit_container or can_delete_container %}
                     <button class="btn btn-secondary dropdown-toggle sodar-list-dropdown"
                             type="button" data-toggle="dropdown" aria-expanded="false">
                       <i class="iconify" data-icon="mdi:cog"></i>
                     </button>
                     <div class="dropdown-menu dropdown-menu-right">
-                      {% if container.state == "running" %}
+                      <div id="id_menu_running_{{ container.sodar_uuid }}" {% if not container.state == "running" %}style="display: none;"{% endif %}>
                         {% if can_start_container %}
                           <a class="dropdown-item"
                              href="{% url 'containers:stop' container=container.sodar_uuid %}">
@@ -102,7 +99,8 @@
                             <i class="iconify" data-icon="mdi:restart"></i> Restart
                           </a>
                         {% endif %}
-                      {% elif container.state == "paused" %}
+                      </div>
+                      <div id="id_menu_paused_{{ container.sodar_uuid }}" {% if not container.state == "paused" %}style="display: none;"{% endif %}>
                         {% if can_stop_container %}
                           <a class="dropdown-item"
                              href="{% url 'containers:stop' container=container.sodar_uuid %}">
@@ -115,14 +113,15 @@
                             <i class="iconify" data-icon="mdi:play"></i> Unpause
                           </a>
                         {% endif %}
-                      {% else %}
+                      </div>
+                      <div id="id_menu_not_running_{{ container.sodar_uuid }}" {% if container.state == "running" or container.state == "paused" %}style="display: none;"{% endif %}>
                         {% if can_start_container %}
                           <a class="dropdown-item"
                              href="{% url 'containers:start' container=container.sodar_uuid %}">
                             <i class="iconify" data-icon="mdi:play"></i> Start
                           </a>
                         {% endif %}
-                      {% endif %}
+                      </div>
                       {% if can_edit_container %}
                         <a class="dropdown-item"
                            href="{% url 'containers:update' container=container.sodar_uuid %}">
@@ -156,4 +155,56 @@
 </div>
 
 {% endblock projectroles_extend %}
-\
+
+{% block javascript %}
+    {{ block.super }}
+    <script>
+    $(document).ready(function () {
+        setInterval(getDynamicDetails, 30000);
+    });
+
+    function getDynamicDetails() {
+        $("#kiosc-container-table > tbody > tr").each(function(i, e) {
+            $.ajax({
+                url: $(e).data("url"),
+                success: function(data) {
+                    var uuid = $(e).data("uuid");
+                    var state = $("#id_state_" + uuid);
+                    var value = data["state"];
+
+                    state.removeClass();
+                    state.addClass(data["state_color"]);
+                    state.text(value);
+
+                    var proxy_not_running = $("#id_proxy_not_running_" + uuid);
+                    var proxy_running = $("#id_proxy_running_" + uuid);
+                    var menu_not_running = $("#id_menu_not_running_" + uuid);
+                    var menu_paused = $("#id_menu_paused_" + uuid);
+                    var menu_running = $("#id_menu_running_" + uuid);
+
+                    proxy_not_running.hide();
+                    proxy_running.hide();
+                    menu_not_running.hide();
+                    menu_paused.hide();
+                    menu_running.hide();
+
+                    if (value === "running") {
+                        menu_running.show();
+                        proxy_running.show();
+                    }
+
+                    else if (value === "paused") {
+                        menu_paused.show();
+                        proxy_not_running.show();
+                    }
+
+                    else {
+                        menu_not_running.show();
+                        proxy_not_running.show();
+                    }
+                }
+            });
+        });
+    }
+    </script>
+{% endblock javascript %}

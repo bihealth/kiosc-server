@@ -72,6 +72,12 @@ ui_urlpatterns = [
         view=views.FileServeView.as_view(),
         name="file-serve",
     ),
+    # Ajax views
+    url(
+        regex=r"^ajax/get-dynamic-details/(?P<container>[0-9a-f-]+)$",
+        view=views.ContainerGetDynamicDetailsApiView.as_view(),
+        name="ajax-get-dynamic-details",
+    ),
 ]
 
 api_urlpatterns = [

@@ -7,6 +7,7 @@ from django.http import (
     HttpResponseBadRequest,
     HttpResponseNotFound,
     HttpResponseForbidden,
+    JsonResponse,
 )
 
 from bgjobs.models import BackgroundJob, LOG_LEVEL_DEBUG
@@ -26,6 +27,7 @@ from django.views.generic import (
 )
 from django.views.generic.detail import SingleObjectMixin
 
+from containers.templatetags.container_tags import colorize_state, state_bell
 from filesfolders.models import File, FileData
 from filesfolders.views import storage
 from projectroles.plugins import get_backend_api
@@ -324,7 +326,7 @@ class ContainerDetailView(
 
     def get_context_data(self, *args, **kwargs):
         context = super().get_context_data(*args, **kwargs)
-        context["logs"] = self.get_object().log_entries.merge_order(
+        context["logs"] = self.get_object().log_entries.get_logs_as_str(
             user=self.request.user
         )
         return context
@@ -810,3 +812,39 @@ class FileServeView(View):
         return HttpResponse(
             FileWrapper(file_content), content_type=file_data.content_type
         )
+
+
+class ContainerGetDynamicDetailsApiView(
+    LoggedInPermissionMixin,
+    LoginRequiredMixin,
+    SingleObjectMixin,
+    View,
+):
+    """AJAX view for getting Docker status and logs of a container."""
+
+    permission_required = "containers.view_container"
+    model = Container
+    slug_url_kwarg = "container"
+    slug_field = "sodar_uuid"
+
+    def get(self, *args, **kwargs):
+        container = self.get_object()
+        last_job = container.containerbackgroundjob.last()
+        last_action = last_job.action if last_job else None
+
+        response = {
+            "state": container.state,
+            "state_color": colorize_state(container.state),
+            "state_bell": state_bell(container.state, last_action),
+            "logs": container.log_entries.get_logs_as_str(
+                user=self.request.user
+            ),
+            "container_id": container.container_id,
+            "container_ip": container.container_ip,
+            "date_last_docker_log": container.log_entries.get_date_last_docker_log(),
+        }
+
+        if last_job:
+            response["retries"] = last_job.retries
+
+        return JsonResponse(response)

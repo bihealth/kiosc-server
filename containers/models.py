@@ -466,6 +466,10 @@ class ContainerLogEntryManager(models.Manager):
             else a.date_created,
         )
 
+    def get_logs_as_str(self, *args, **kwargs):
+        logs = self.merge_order(*args, **kwargs)
+        return "\n".join([str(log) for log in logs])
+
     def get_date_last_docker_log(self, *args, **kwargs):
         obj = (
             self.get_queryset()

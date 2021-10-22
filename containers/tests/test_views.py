@@ -3,6 +3,7 @@ import json
 from unittest.mock import patch
 
 from django.contrib.messages import get_messages
+from django.utils import timezone
 from urllib3_mock import Responses
 
 from django.forms import model_to_dict
@@ -22,6 +23,13 @@ from containers.models import (
     STATE_EXITED,
     STATE_DELETED,
     MASKED_KEYWORD,
+    PROCESS_DOCKER,
+    ContainerLogEntry,
+)
+from containers.templatetags.container_tags import colorize_state
+from containers.tests.factories import (
+    ContainerBackgroundJobFactory,
+    ContainerLogEntryFactory,
 )
 from containers.tests.helpers import TestBase
 from containers.views import CELERY_SUBMIT_COUNTDOWN
@@ -1441,3 +1449,168 @@ class TestFileServeView(FileMixin, TestBase):
 
         self.assertEqual(response.status_code, 403, msg=response.content)
         self.assertEqual(response.content, b"")
+
+
+class TestContainerGetDynamicDetailsApiView(TestBase):
+    """Tests for ``ContainerGetDynamicDetailsApiView``."""
+
+    def test_get_container_no_job(self):
+        self.create_one_container()
+
+        with self.login(self.superuser):
+            response = self.client.get(
+                reverse(
+                    "containers:ajax-get-dynamic-details",
+                    kwargs={"container": self.container1.sodar_uuid},
+                )
+            )
+
+            expected = {
+                "state": self.container1.state,
+                "state_color": colorize_state(self.container1.state),
+                "state_bell": "",
+                "logs": "",
+                "container_id": self.container1.container_id,
+                "container_ip": self.container1.container_ip,
+                "date_last_docker_log": None,
+            }
+
+            self.assertEqual(response.json(), expected)
+
+    def test_get_no_container(self):
+        self.create_fake_uuid()
+
+        with self.login(self.superuser):
+            response = self.client.get(
+                reverse(
+                    "containers:ajax-get-dynamic-details",
+                    kwargs={"container": self.fake_uuid},
+                )
+            )
+
+            self.assertEqual(response.status_code, 404)
+
+    def test_get_container_with_job(self):
+        self.create_one_container()
+        self.job = ContainerBackgroundJobFactory(
+            project=self.project, user=self.superuser, container=self.container1
+        )
+
+        with self.login(self.superuser):
+            response = self.client.get(
+                reverse(
+                    "containers:ajax-get-dynamic-details",
+                    kwargs={"container": self.container1.sodar_uuid},
+                )
+            )
+
+            expected = {
+                "state": self.container1.state,
+                "state_color": colorize_state(self.container1.state),
+                "state_bell": "",
+                "logs": "",
+                "container_id": self.container1.container_id,
+                "container_ip": self.container1.container_ip,
+                "date_last_docker_log": None,
+                "retries": 0,
+            }
+
+            self.assertEqual(response.json(), expected)
+
+    def test_get_container_with_job_and_logs(self):
+        self.create_one_container()
+        self.job = ContainerBackgroundJobFactory(
+            project=self.project, user=self.superuser, container=self.container1
+        )
+        self.log_entry = ContainerLogEntryFactory(
+            container=self.container1, user=self.superuser
+        )
+
+        with self.login(self.superuser):
+            response = self.client.get(
+                reverse(
+                    "containers:ajax-get-dynamic-details",
+                    kwargs={"container": self.container1.sodar_uuid},
+                )
+            )
+
+            expected = {
+                "state": self.container1.state,
+                "state_color": colorize_state(self.container1.state),
+                "state_bell": "",
+                "logs": str(self.log_entry),
+                "container_id": self.container1.container_id,
+                "container_ip": self.container1.container_ip,
+                "date_last_docker_log": None,
+                "retries": 0,
+            }
+
+            self.assertEqual(response.json(), expected)
+
+    def test_get_container_with_job_and_multiline_logs(self):
+        self.create_one_container()
+        self.job = ContainerBackgroundJobFactory(
+            project=self.project, user=self.superuser, container=self.container1
+        )
+        self.log_entry1 = ContainerLogEntryFactory(
+            container=self.container1, user=self.superuser
+        )
+        self.log_entry2 = ContainerLogEntryFactory(
+            container=self.container1, user=self.superuser
+        )
+
+        with self.login(self.superuser):
+            response = self.client.get(
+                reverse(
+                    "containers:ajax-get-dynamic-details",
+                    kwargs={"container": self.container1.sodar_uuid},
+                )
+            )
+
+            expected = {
+                "state": self.container1.state,
+                "state_color": colorize_state(self.container1.state),
+                "state_bell": "",
+                "logs": "{}\n{}".format(
+                    str(self.log_entry1), str(self.log_entry2)
+                ),
+                "container_id": self.container1.container_id,
+                "container_ip": self.container1.container_ip,
+                "date_last_docker_log": None,
+                "retries": 0,
+            }
+
+            self.assertEqual(response.json(), expected)
+
+    def test_get_container_with_job_and_docker_logs(self):
+        self.create_one_container()
+        self.job = ContainerBackgroundJobFactory(
+            project=self.project, user=self.superuser, container=self.container1
+        )
+        self.log_entry = ContainerLogEntryFactory(
+            container=self.container1,
+            user=self.superuser,
+            process=PROCESS_DOCKER,
+            date_docker_log=timezone.now(),
+        )
+
+        with self.login(self.superuser):
+            response = self.client.get(
+                reverse(
+                    "containers:ajax-get-dynamic-details",
+                    kwargs={"container": self.container1.sodar_uuid},
+                )
+            )
+
+            expected = {
+                "state": self.container1.state,
+                "state_color": colorize_state(self.container1.state),
+                "state_bell": "",
+                "logs": str(self.log_entry),
+                "container_id": self.container1.container_id,
+                "container_ip": self.container1.container_ip,
+                "date_last_docker_log": ContainerLogEntry.objects.get_date_last_docker_log(),
+                "retries": 0,
+            }
+
+            self.assertEqual(response.json(), expected)

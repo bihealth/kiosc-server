@@ -164,6 +164,10 @@ Imagine that inside the container the following lines will be performed upon sta
     $ export SCELVIS_URL_PREFIX=containers/proxy/abcdef123...
     $ export SCELVIS_DATA_SOURCES=https://cellxgene-example-data.czi.technology/pbmc3k.h5ad
 
+In addition to the user defined variables, the ``title``, ``description`` and
+``container_port`` are also exposed as environment variables to the Docker container
+(as ``TITLE``, ``DESCRIPTION`` and ``CONTAINER_PORT`` respectively)::
 
-
-github.com/bihealth/kiosc-seapiper-demo/
+    $ export TITLE="Some unique title"
+    $ export DESCRIPTION="Some description"
+    $ export CONTAINER_PORT=8050

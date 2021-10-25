@@ -116,12 +116,10 @@ Environment variables can be specified using a JSON dictionary.
 Top-level keys in the dictionary become the environmental variables visible to the app launched
 in the container::
 
-
     {
         "ID": "My container",
         "LIST": [ "A", "B", "C" ]
     }
-
 
 Given the above example, two environment variables will be defined: ``ID``
 and ``LIST``.  The contents of ``ID`` will be ``My container``; the contents of
@@ -131,6 +129,19 @@ changed to single quotes.
 These variables are available to the web app of the container,
 and can be used to specify e.g. a data source or other parameters
 for the container web app.
+
+In addition to the user defined variables, the ``title``, ``description`` and
+``container_port`` are also exposed as environment variables to the Docker container
+(as ``TITLE``, ``DESCRIPTION`` and ``CONTAINER_PORT`` respectively).
+The complete list looks like this::
+
+    {
+        "ID": "My container",
+        "LIST": [ "A", "B", "C" ],
+        "TITLE": "Some title",
+        "DESCRIPTION": "Some description",
+        "CONTAINER_PORT": 8080,
+    }
 
 Environment secret keys
 ^^^^^^^^^^^^^^^^^^^^^^^

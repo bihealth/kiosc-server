@@ -428,6 +428,14 @@ class ContainerMachine(StateMachine):
                     "__KIOSC_URL_PREFIX__", url_prefix
                 )
 
+        environment.update(
+            {
+                "CONTAINER_PORT": self.container.container_port,
+                "TITLE": self.container.title,
+                "DESCRIPTION": self.container.description or "",
+            }
+        )
+
         # Create container
         container_info = self.cli.create_container(
             detach=True,

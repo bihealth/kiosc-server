@@ -801,6 +801,14 @@ class TestSyncContainerStateWithLastUserActionTask(TestBase):
             DockerMock.inspect_container_started,
         ]
         inspect_image.side_effect = [DockerMock.inspect_image]
+        environment = dict(self.container1.environment)
+        environment.update(
+            {
+                "CONTAINER_PORT": self.container1.container_port,
+                "TITLE": self.container1.title,
+                "DESCRIPTION": self.container1.description,
+            }
+        )
 
         # Run
         sync_container_state_with_last_user_action()
@@ -809,7 +817,7 @@ class TestSyncContainerStateWithLastUserActionTask(TestBase):
         create_container.assert_called_once_with(
             detach=True,
             image=self.container1.image_id,
-            environment=self.container1.environment,
+            environment=environment,
             command=self.container1.command or None,
             ports=[self.container1.container_port],
             host_config=None,

@@ -87,6 +87,14 @@ class TestContainerTask(TestBase):
         create_host_config.side_effect = [DockerMock.create_host_config]
         inspect_container.side_effect = [DockerMock.inspect_container_started]
         inspect_image.side_effect = [DockerMock.inspect_image]
+        environment = dict(self.container1.environment)
+        environment.update(
+            {
+                "CONTAINER_PORT": self.container1.container_port,
+                "TITLE": self.container1.title,
+                "DESCRIPTION": self.container1.description,
+            }
+        )
 
         # Run
         container_task(job_id=self.bg_job.pk)
@@ -99,7 +107,7 @@ class TestContainerTask(TestBase):
         create_container.assert_called_once_with(
             detach=True,
             image=self.container1.image_id,
-            environment=self.container1.environment,
+            environment=environment,
             command=self.container1.command or None,
             ports=[self.container1.container_port],
             host_config=None,
@@ -169,6 +177,14 @@ class TestContainerTask(TestBase):
         create_endpoint_config.side_effect = [DockerMock.create_endpoint_config]
         inspect_container.side_effect = [DockerMock.inspect_container_started]
         inspect_image.side_effect = [DockerMock.inspect_image]
+        environment = dict(self.container1.environment)
+        environment.update(
+            {
+                "CONTAINER_PORT": self.container1.container_port,
+                "TITLE": self.container1.title,
+                "DESCRIPTION": self.container1.description,
+            }
+        )
 
         # Run
         container_task(job_id=self.bg_job.pk)
@@ -181,7 +197,7 @@ class TestContainerTask(TestBase):
         create_container.assert_called_once_with(
             detach=True,
             image=self.container1.image_id,
-            environment=self.container1.environment,
+            environment=environment,
             command=self.container1.command or None,
             ports=[self.container1.container_port],
             host_config=None,
@@ -258,6 +274,14 @@ class TestContainerTask(TestBase):
         create_endpoint_config.side_effect = [DockerMock.create_endpoint_config]
         inspect_container.side_effect = [DockerMock.inspect_container_started]
         inspect_image.side_effect = [DockerMock.inspect_image]
+        environment = dict(self.container1.environment)
+        environment.update(
+            {
+                "CONTAINER_PORT": self.container1.container_port,
+                "TITLE": self.container1.title,
+                "DESCRIPTION": self.container1.description,
+            }
+        )
 
         # Run
         container_task(job_id=self.bg_job.pk)
@@ -274,7 +298,7 @@ class TestContainerTask(TestBase):
         create_container.assert_called_once_with(
             detach=True,
             image=self.container1.image_id,
-            environment=self.container1.environment,
+            environment=environment,
             command=self.container1.command or None,
             ports=[self.container1.container_port],
             host_config=None,
@@ -354,6 +378,14 @@ class TestContainerTask(TestBase):
             DockerMock.inspect_container_stopped,
         ]
         inspect_image.side_effect = [DockerMock.inspect_image]
+        environment = dict(self.container1.environment)
+        environment.update(
+            {
+                "CONTAINER_PORT": self.container1.container_port,
+                "TITLE": self.container1.title,
+                "DESCRIPTION": self.container1.description,
+            }
+        )
 
         # Run
         container_task(job_id=self.bg_job.pk)
@@ -368,7 +400,7 @@ class TestContainerTask(TestBase):
         create_container.assert_called_once_with(
             detach=True,
             image=self.container1.image_id,
-            environment=self.container1.environment,
+            environment=environment,
             command=self.container1.command or None,
             ports=[self.container1.container_port],
             host_config=None,
@@ -437,7 +469,6 @@ class TestContainerTask(TestBase):
         self.container1.container_id = DockerMock.create_container.get("Id")
         self.container1.state = STATE_RUNNING
         self.container1.save()
-        create_container.side_effect = [DockerMock.create_container]
         create_host_config.side_effect = [DockerMock.create_host_config]
         inspect_container.side_effect = [DockerMock.inspect_container_stopped]
         inspect_image.side_effect = [DockerMock.inspect_image]
@@ -504,6 +535,14 @@ class TestContainerTask(TestBase):
             DockerMock.inspect_container_started,
         ]
         inspect_image.side_effect = [DockerMock.inspect_image]
+        environment = dict(self.container1.environment)
+        environment.update(
+            {
+                "CONTAINER_PORT": self.container1.container_port,
+                "TITLE": self.container1.title,
+                "DESCRIPTION": self.container1.description,
+            }
+        )
 
         # Run
         container_task(job_id=self.bg_job.pk)
@@ -516,7 +555,7 @@ class TestContainerTask(TestBase):
         create_container.assert_called_once_with(
             detach=True,
             image=self.container1.image_id,
-            environment=self.container1.environment,
+            environment=environment,
             command=self.container1.command or None,
             ports=[self.container1.container_port],
             host_config=None,
@@ -585,10 +624,7 @@ class TestContainerTask(TestBase):
         self.container1.container_id = DockerMock.create_container.get("Id")
         self.container1.state = STATE_RUNNING
         self.container1.save()
-        create_container.side_effect = [DockerMock.create_container]
-        create_host_config.side_effect = [DockerMock.create_host_config]
         inspect_container.side_effect = [DockerMock.inspect_container_paused]
-        inspect_image.side_effect = [DockerMock.inspect_image]
 
         # Run
         container_task(job_id=self.bg_job.pk)
@@ -645,10 +681,7 @@ class TestContainerTask(TestBase):
         self.container1.container_id = DockerMock.create_container.get("Id")
         self.container1.state = STATE_PAUSED
         self.container1.save()
-        create_container.side_effect = [DockerMock.create_container]
-        create_host_config.side_effect = [DockerMock.create_host_config]
         inspect_container.side_effect = [DockerMock.inspect_container_started]
-        inspect_image.side_effect = [DockerMock.inspect_image]
 
         # Run
         container_task(job_id=self.bg_job.pk)
@@ -763,10 +796,7 @@ class TestContainerTask(TestBase):
         self.container1.container_id = container_id
         self.container1.state = STATE_RUNNING
         self.container1.save()
-        create_container.side_effect = [DockerMock.create_container]
-        create_host_config.side_effect = [DockerMock.create_host_config]
         inspect_container.side_effect = [DockerMock.inspect_container_stopped]
-        inspect_image.side_effect = [DockerMock.inspect_image]
 
         # Run
         container_task(job_id=self.bg_job.pk)

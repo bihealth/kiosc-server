@@ -88,7 +88,10 @@ class ContainerCreateView(
         context["containertemplate_form"] = ContainerTemplateSelectorForm(
             auto_id="containertemplate_%s", user=self.request.user
         )
-        context["files_form"] = FileSelectorForm(project=self.get_project())
+
+        if settings.KIOSC_EMBEDDED_FILES:
+            context["files_form"] = FileSelectorForm(project=self.get_project())
+
         return context
 
     def get_initial(self):
@@ -246,7 +249,10 @@ class ContainerUpdateView(
         context["containertemplate_form"] = ContainerTemplateSelectorForm(
             auto_id="containertemplate_%s", user=self.request.user
         )
-        context["files_form"] = FileSelectorForm(project=self.get_project())
+
+        if settings.KIOSC_EMBEDDED_FILES:
+            context["files_form"] = FileSelectorForm(project=self.get_project())
+
         return context
 
     def get_success_url(self):

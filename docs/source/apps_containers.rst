@@ -168,6 +168,15 @@ Heartbeat URL
 The heartbeat URL can be used to check whether the container app runs
 correctly. (TODO: how does it look like?)
 
+Files
+^^^^^
+
+This dropdown provides the files that were uploaded to Kiosc via the ``Small Files``
+app to the project the current container is created in.
+
+To get the internal link to the file the container then can access, click ``Insert``
+and the link will be appended to the ``command`` field.
+
 Max retries
 ^^^^^^^^^^^
 

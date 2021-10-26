@@ -52,6 +52,7 @@ Kiosc is NOT
 
     apps_containers
     apps_containertemplates
+    apps_filesfolders
 
 .. toctree::
     :maxdepth: 2

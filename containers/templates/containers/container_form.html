@@ -10,6 +10,7 @@
 
 {% block projectroles_extend %}
 
+{% get_django_setting 'KIOSC_EMBEDDED_FILES' as filesfolders_active %}
 
 <div class="container-fluid sodar-subtitle-container">
   <h3>{% if object.pk %}Update{% else %}Create{% endif %} Docker container</h3>
@@ -54,22 +55,24 @@
     {{ form.environment_secret_keys|as_crispy_field }}
     {{ form.max_retries|as_crispy_field }}
     {{ form.inactivity_threshold|as_crispy_field }}
-    <div class="input-group mb-3">
-      <div class="input-group-prepend">
-        <span class="input-group-text">Files</span>
+    {% if filesfolders_active %}
+      <div class="input-group mb-3">
+        <div class="input-group-prepend">
+          <span class="input-group-text">Files</span>
+        </div>
+        {{ files_form.file_url }}
+        <div class="input-group-append">
+          <button
+              id="file_url_insert"
+              type="button"
+              class="btn btn-primary"
+              onclick="insertFileUrl()"
+          >
+            <i class="iconify" data-icon="mdi:file"></i> Insert
+          </button>
+        </div>
       </div>
-      {{ files_form.file_url }}
-      <div class="input-group-append">
-        <button
-            id="file_url_insert"
-            type="submit"
-            class="btn btn-primary"
-            onclick="insertFileUrl()"
-        >
-          <i class="iconify" data-icon="mdi:file"></i> Insert
-        </button>
-      </div>
-    </div>
+    {% endif %}
     {{ form.command|as_crispy_field }}
     <div class="row">
       <div class="btn-group ml-auto">
@@ -124,9 +127,14 @@
 
   function insertFileUrl() {
       let value = $("#id_file_url").val();
-      let insert_to = $("#id_command");
+      let insert_into = $("#id_command");
 
-      insert_to.append(" " + value);
+      var cursor_pos = insert_into.prop('selectionStart');
+      var v = insert_into.val();
+      var text_before = v.substring(0, cursor_pos);
+      var text_after  = v.substring(cursor_pos, v.length);
+
+      insert_into.val(text_before + value + text_after);
   }
   </script>
 {% endblock javascript %}

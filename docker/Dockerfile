@@ -70,7 +70,7 @@ RUN cd /usr/src/app && \
     DJANGO_SECRET_KEY=for-build-only \
     DJANGO_SETTINGS_MODULE=config.settings.production \
     DATABASE_URL=postgres://kiosc:kiosc@fake/kiosc \
-    python manage.py geticons -c octicon
+    python manage.py geticons -c octicon eos-icons
 
 # Prepare static files
 RUN cd /usr/src/app && \

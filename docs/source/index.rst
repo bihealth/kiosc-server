@@ -41,6 +41,8 @@ Kiosc is NOT
 
     introduction_overview
     introduction_installation
+    introduction_interface
+    introduction_roles
     introduction_cookbook
 
 .. toctree::

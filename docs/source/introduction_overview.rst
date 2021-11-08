@@ -3,6 +3,9 @@
 Overview
 ========
 
+.. image:: figures/introduction/overview/logo.png
+  :alt: Logo
+
 General Idea
 ------------
 

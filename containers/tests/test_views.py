@@ -1424,6 +1424,7 @@ class TestFileServeView(FileMixin, TestBase):
                     "containers:file-serve",
                     kwargs={
                         "file": self.file.sodar_uuid,
+                        "filename": self.file.name,
                     },
                 ),
                 **header,
@@ -1442,6 +1443,7 @@ class TestFileServeView(FileMixin, TestBase):
                     "containers:file-serve",
                     kwargs={
                         "file": self.file.sodar_uuid,
+                        "filename": self.file.name,
                     },
                 ),
                 **header,

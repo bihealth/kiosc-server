@@ -29,9 +29,16 @@ while in the running state the web interface will be displayed immediately.
 Create a container running ...
 ------------------------------
 
-To create a container switch to the **Containers** app and
-select **Create Container**. This will be the starting point
+To create a container switch to the **Containers** app
+
+.. image:: figures/apps/containers/menu.png
+  :alt: Container app
+
+and select **Create Container**. This will be the starting point
 for the following tutorials.
+
+.. image:: figures/apps/containers/overview_create.png
+  :alt: Project overview
 
 After the creation of the container you will be redirected
 the details of the container. The state will be set to
@@ -43,6 +50,9 @@ the crossed-out eye icon to start and access the container directly.
 
 Shiny (using environment variables)
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+.. image:: figures/introduction/cookbook/proxy_shiny.png
+  :alt: Shiny proxy
 
 *For this tutorial we provide you with a pre-build*
 `Docker image with a Shiny application <https://github.com/bihealth/kiosc-example-shiny/>`_.
@@ -72,6 +82,9 @@ Imagine that inside the container the following lines will be performed upon sta
 
 Dash (using environment variables)
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+.. image:: figures/introduction/cookbook/proxy_dash.png
+  :alt: Dash proxy
 
 *For this tutorial we provide you with a pre-build*
 `Docker image with a Dash application <https://github.com/bihealth/kiosc-example-dash/>`_.
@@ -106,8 +119,11 @@ Imagine that inside the container the following lines will be performed upon sta
 seaPiper
 ^^^^^^^^
 
+.. image:: figures/introduction/cookbook/proxy_seapiper.png
+  :alt: seaPiper proxy
+
 *For this tutorial we provide you with a pre-build*
-`Docker image with a Dash application <https://github.com/bihealth/kiosc-seapiper-demo/>`_.
+`Docker image with a seaPiper application <https://github.com/bihealth/kiosc-seapiper-demo/>`_.
 *Use the linked repository as a base to create your own Docker image.*
 
 seaPiper is based on Shiny. Fill out the following fields and click **Create**:
@@ -122,6 +138,9 @@ seaPiper is based on Shiny. Fill out the following fields and click **Create**:
 cellxgene (using a command)
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+.. image:: figures/introduction/cookbook/proxy_cellxgene.png
+  :alt: cellxgene proxy
+
 This example takes a publicly available container and passes a command that is run
 when starting the container. In this case, the cellxgene application is started
 immediately when running the container. The data is loaded by passing the data
@@ -130,13 +149,52 @@ URL to the command. Fill out the following fields and click **Create**:
 ==================  ==================================================================
 **Title**           *Set a unique title that helps you identify the container easily.*
 **Repository**      ``quay.io/biocontainers/cellxgene``
-**Tag**             ``0.16.7--py_0``
+**Tag**             ``1.0.0--pyhdfd78af_0``
 **Container Port**  ``8050``
 **Command**         ``cellxgene launch https://cellxgene-example-data.czi.technology/pbmc3k.h5ad -p 8050 --host 0.0.0.0 --verbose``
 ==================  ==================================================================
 
+cellxgene (using a command with small files)
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+.. image:: figures/introduction/cookbook/proxy_cellxgene.png
+  :alt: cellxgene proxy
+
+This example is the same as above but using a file uploaded to Kiosc.
+A command to copy-and-paste can't be provided as the link to the file
+depend on the UUID that is randomly created. To get the file into Kiosc,
+download the file from the official server and upload it to Kiosc:
+
+1. Download `example data <https://cellxgene-example-data.czi.technology/pbmc3k.h5ad>`_.
+2. Go to a Kiosc project and select the :ref:`Small Files app <apps_filesfolders>`.
+3. Upload the ``pbmc3k.h5ad`` file. It is now available during container creation.
+
+Now continue with the container creation. To make use of the uploaded file, when
+inserting the command, place the cursor at the mentioned position in the command,
+select the file and click *Insert*.
+
+.. image:: figures/introduction/cookbook/file_insert.png
+  :alt: Insert file
+
+This will place a link at the cursor position.
+
+.. image:: figures/introduction/cookbook/file_inserted.png
+  :alt: Inserted file
+
+==================  ==================================================================
+**Title**           *Set a unique title that helps you identify the container easily.*
+**Repository**      ``quay.io/biocontainers/cellxgene``
+**Tag**             ``1.0.0--pyhdfd78af_0``
+**Container Port**  ``8050``
+**Command**         ``cellxgene launch <PLACE_CURSOR_HERE_BEFORE_INSERTING_FILE> -p 8050 --host 0.0.0.0 --verbose``
+**Files**           ``/pbmc3k.h5ad``
+==================  ==================================================================
+
 ScElvis (using a command and environment variables)
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+.. image:: figures/introduction/cookbook/proxy_scelvis.png
+  :alt: ScElvis proxy
 
 This example sets up the ScElvis. ScElvis is based on Dash.
 For this to work, you have to set up two environment variables,
@@ -151,7 +209,7 @@ container. Fill out the following fields and click **Create**:
 **Tag**             ``v0.8.6``
 **Container Port**  ``8050``
 **Environment**     ``{"SCELVIS_URL_PREFIX": "__KIOSC_URL_PREFIX__", "SCELVIS_DATA_SOURCES": "https://cellxgene-example-data.czi.technology/pbmc3k.h5ad"}``
-**Command**         ``scelvis launch``
+**Command**         ``scelvis run``
 ==================  ==================================================================
 
 The **Environment** field should contain a `JSON object literal <https://www.w3schools.com/js/js_json_objects.asp>`_,

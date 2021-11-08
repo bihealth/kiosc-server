@@ -88,10 +88,11 @@ class KioscAdminView(
         images = []
 
         for image in cli.images():
+            repotags = image.get("RepoTags")
             images.append(
                 {
                     "id": image.get("Id"),
-                    "repos": image.get("RepoTags", [""])[0],
+                    "repos": repotags[0] if repotags else "",
                 }
             )
 

@@ -5,8 +5,8 @@ Changelog for the **Kiosc** Django app package.
 Loosely follows the `Keep a Changelog <http://keepachangelog.com/en/1.0.0/>`_ guidelines.
 
 
-Head (unreleased)
-=================
+v0.4.0 (2021-11-08)
+===================
 
 General
 -------
@@ -17,6 +17,8 @@ General
 - Added user story to documentation for a guest user that wants to view the web interface provided by the container (#103)
 - Extended documentation with a cookbook section containing examples on container creation (#116)
 - Activated filesfolders app (#112)
+- Added figures to manual (#118)
+- Increased max file upload size to 50 MB (#118)
 
 Container
 ---------

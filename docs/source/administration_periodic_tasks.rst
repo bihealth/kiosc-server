@@ -44,3 +44,11 @@ This task stops inactive containers that were not accessed by the
 proxy for a defined period of time. This can be set by the user
 for each container individually, but there is maximum of 7 days.
 If the user omits the setting, it defaults to the 7 days maximum.
+
+Synchronize with upstream SODAR instance (if configured)
+--------------------------------------------------------
+
+*Runs every five minutes.*
+
+This task synchronizes the projects and users with the upstream
+SODAR instance. Only if this site is in target mode.

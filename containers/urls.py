@@ -68,7 +68,7 @@ ui_urlpatterns = [
         name="proxy-lobby",
     ),
     url(
-        regex=r"^file/serve/(?P<file>[0-9a-f-]+)$",
+        regex=r"^file/serve/(?P<file>[0-9a-f-]+)/(?P<filename>.*)$",
         view=views.FileServeView.as_view(),
         name="file-serve",
     ),

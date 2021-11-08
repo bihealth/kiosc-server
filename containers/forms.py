@@ -101,7 +101,8 @@ class FileSelectorForm(forms.Form):
             return "http://{}:8080{}".format(
                 settings.KIOSC_DOCKER_WEB_SERVER,
                 reverse(
-                    "containers:file-serve", kwargs={"file": obj.sodar_uuid}
+                    "containers:file-serve",
+                    kwargs={"file": obj.sodar_uuid, "filename": obj.name},
                 ),
             )
 

@@ -18,6 +18,8 @@ urlpatterns = [
         TemplateView.as_view(template_name="pages/about.html"),
         name="about",
     ),
+    # Admin URLs - most occur before Django Admin, otherwise urls will be matched by that.
+    url(r"^kioscadmin/", include("kioscadmin.urls")),
     # Django Admin, use {% url 'admin:index' %}
     url(settings.ADMIN_URL, admin.site.urls),
     # Login and logout
@@ -52,8 +54,6 @@ urlpatterns = [
     url(r"^containers/", include("containers.urls")),
     # Containertemplates URLs
     url(r"^containertemplates/", include("containertemplates.urls")),
-    # Admin URLs
-    url(r"^kioscadmin/", include("kioscadmin.urls")),
     # Iconify icon URLs
     url(r"^icons/", include("dj_iconify.urls")),
     # These are the SAML2 related URLs. You can change "^saml2_auth/" regex to

@@ -1174,10 +1174,7 @@ class TestReverseProxyView(TestBase):
             response = self.client.get(
                 reverse(
                     "containers:proxy",
-                    kwargs={
-                        "container": self.fake_uuid,
-                        "path": "",
-                    },
+                    kwargs={"container": self.fake_uuid, "path": ""},
                 )
             )
 
@@ -1376,10 +1373,7 @@ class TestContainerProxyLobbyView(TestBase):
             response = self.client.get(
                 reverse(
                     "containers:proxy-lobby",
-                    kwargs={
-                        "container": self.fake_uuid,
-                        "path": "",
-                    },
+                    kwargs={"container": self.fake_uuid, "path": ""},
                 )
             )
 

@@ -85,11 +85,7 @@ class TestPollDockerStatusAndLogsTask(TestBase):
         ]
         self.assertEqual(
             logs,
-            [
-                log_entry1()[1][31:],
-                log_entry2()[1][31:],
-                log_entry3()[1][31:],
-            ],
+            [log_entry1()[1][31:], log_entry2()[1][31:], log_entry3()[1][31:]],
         )
 
         # Assert mocks
@@ -125,11 +121,7 @@ class TestPollDockerStatusAndLogsTask(TestBase):
         ]
         self.assertEqual(
             logs,
-            [
-                "Docker log has no timestamp! ({})".format(
-                    log_entry1_no_date()
-                ),
-            ],
+            ["Docker log has no timestamp! ({})".format(log_entry1_no_date())],
         )
 
         # Assert mocks
@@ -181,11 +173,7 @@ class TestPollDockerStatusAndLogsTask(TestBase):
         ]
         self.assertEqual(
             logs,
-            [
-                log_entry1()[1][31:],
-                log_entry2()[1][31:],
-                log_entry3()[1][31:],
-            ],
+            [log_entry1()[1][31:], log_entry2()[1][31:], log_entry3()[1][31:]],
         )
 
         # Assert mocks

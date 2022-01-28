@@ -12,3 +12,4 @@ redis>=2.10.5
 # WSGI Handler
 gevent==1.4.0
 daphne==2.5.0
+uvicorn==0.17.1

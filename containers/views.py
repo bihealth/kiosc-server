@@ -59,9 +59,7 @@ from containers.models import (
     LOG_LEVEL_ERROR,
 )
 from containers.tasks import container_task
-from containertemplates.forms import (
-    ContainerTemplateSelectorForm,
-)
+from containertemplates.forms import ContainerTemplateSelectorForm
 
 
 logger = logging.getLogger(__name__)
@@ -265,9 +263,7 @@ class ContainerUpdateView(
         )
         return reverse(
             "containers:restart",
-            kwargs={
-                "container": self.object.sodar_uuid,
-            },
+            kwargs={"container": self.object.sodar_uuid},
         )
 
     def form_valid(self, form):
@@ -695,9 +691,7 @@ class ReverseProxyView(
         _redirect = redirect(
             reverse(
                 "containers:list",
-                kwargs={
-                    "project": container.project.sodar_uuid,
-                },
+                kwargs={"project": container.project.sodar_uuid},
             )
         )
 

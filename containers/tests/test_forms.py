@@ -144,11 +144,7 @@ class TestContainerForm(TestBase):
 
     @override_settings(KIOSC_NETWORK_MODE="host")
     def test_environment_no_json(self):
-        self.form_data_all.update(
-            {
-                "environment": "abc",
-            }
-        )
+        self.form_data_all.update({"environment": "abc"})
         form = ContainerForm(self.form_data_all)
         self.assertEqual(
             form.errors["environment"],
@@ -157,11 +153,7 @@ class TestContainerForm(TestBase):
 
     @override_settings(KIOSC_NETWORK_MODE="host")
     def test_environment_no_dict(self):
-        self.form_data_all.update(
-            {
-                "environment": '["some", "list"]',
-            }
-        )
+        self.form_data_all.update({"environment": '["some", "list"]'})
         form = ContainerForm(self.form_data_all)
         self.assertEqual(
             form.errors["environment"],

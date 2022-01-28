@@ -33,10 +33,11 @@ class KioscAdminView(
                     Container.objects.get(container_id=container_id)
 
                 except Container.DoesNotExist:
+                    names = container.get("Names")
                     not_in_kiosc.append(
                         {
                             "id": container_id,
-                            "name": container.get("Names", [""])[0].lstrip("/"),
+                            "name": names[0].lstrip("/") if names else "",
                             "image": container.get("Image"),
                         }
                     )

@@ -423,7 +423,7 @@ class ContainerMachine(StateMachine):
         )
 
         for key, value in environment.items():
-            if "__KIOSC_URL_PREFIX__" in value:
+            if isinstance(value, str) and "__KIOSC_URL_PREFIX__" in value:
                 environment[key] = value.replace(
                     "__KIOSC_URL_PREFIX__", url_prefix
                 )

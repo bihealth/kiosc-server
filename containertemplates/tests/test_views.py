@@ -23,11 +23,7 @@ class TestContainerTemplateSiteListView(TestBase):
 
     def test_get_success_list_empty(self):
         with self.login(self.superuser):
-            response = self.client.get(
-                reverse(
-                    "containertemplates:site-list",
-                )
-            )
+            response = self.client.get(reverse("containertemplates:site-list"))
 
             self.assertEqual(response.status_code, 200)
             self.assertEqual(len(response.context["object_list"]), 0)
@@ -36,11 +32,7 @@ class TestContainerTemplateSiteListView(TestBase):
         self.create_one_containertemplatesite()
 
         with self.login(self.superuser):
-            response = self.client.get(
-                reverse(
-                    "containertemplates:site-list",
-                )
-            )
+            response = self.client.get(reverse("containertemplates:site-list"))
 
             self.assertEqual(response.status_code, 200)
 
@@ -53,11 +45,7 @@ class TestContainerTemplateSiteListView(TestBase):
         self.create_two_containertemplatesites()
 
         with self.login(self.superuser):
-            response = self.client.get(
-                reverse(
-                    "containertemplates:site-list",
-                )
-            )
+            response = self.client.get(reverse("containertemplates:site-list"))
 
             self.assertEqual(response.status_code, 200)
 
@@ -74,9 +62,7 @@ class TestContainerTemplateSiteCreateView(TestBase):
     def test_get_success(self):
         with self.login(self.superuser):
             response = self.client.get(
-                reverse(
-                    "containertemplates:site-create",
-                )
+                reverse("containertemplates:site-create")
             )
 
             self.assertEqual(response.status_code, 200)
@@ -88,10 +74,7 @@ class TestContainerTemplateSiteCreateView(TestBase):
 
         with self.login(self.superuser):
             response = self.client.post(
-                reverse(
-                    "containertemplates:site-create",
-                ),
-                post_data,
+                reverse("containertemplates:site-create"), post_data
             )
 
             self.assertEqual(ContainerTemplateSite.objects.count(), 1)
@@ -130,10 +113,7 @@ class TestContainerTemplateSiteCreateView(TestBase):
 
         with self.login(self.superuser):
             response = self.client.post(
-                reverse(
-                    "containertemplates:site-create",
-                ),
-                post_data,
+                reverse("containertemplates:site-create"), post_data
             )
 
             self.assertEqual(ContainerTemplateSite.objects.count(), 1)
@@ -203,10 +183,7 @@ class TestContainerTemplateSiteDeleteView(TestBase):
             )
 
             self.assertRedirects(
-                response,
-                reverse(
-                    "containertemplates:site-list",
-                ),
+                response, reverse("containertemplates:site-list")
             )
 
             self.assertEqual(ContainerTemplateSite.objects.count(), 0)
@@ -419,10 +396,7 @@ class TestContainerTemplateSiteDuplicateView(TestBase):
             )
 
             self.assertRedirects(
-                response,
-                reverse(
-                    "containertemplates:site-list",
-                ),
+                response, reverse("containertemplates:site-list")
             )
             self.assertEqual(ContainerTemplateSite.objects.count(), 2)
             dup_obj = ContainerTemplateSite.objects.get(
@@ -994,9 +968,7 @@ class TestContainerTemplateProjectCopyView(TestBase):
                     "containertemplates:project-copy",
                     kwargs={"project": self.project.sodar_uuid},
                 ),
-                {
-                    "source": f"site:{self.containertemplatesite1.pk}",
-                },
+                {"source": f"site:{self.containertemplatesite1.pk}"},
             )
 
             self.assertEqual(ContainerTemplateProject.objects.count(), 5)
@@ -1020,17 +992,12 @@ class TestContainerTemplateProjectCopyView(TestBase):
             )
             self.assertEqual(orig, copy)
             self.assertEqual(
-                copy_obj.title,
-                f"{self.containertemplatesite1.title} (Copy)",
+                copy_obj.title, f"{self.containertemplatesite1.title} (Copy)"
             )
             self.assertEqual(
-                copy_obj.containertemplatesite,
-                self.containertemplatesite1,
+                copy_obj.containertemplatesite, self.containertemplatesite1
             )
-            self.assertEqual(
-                copy_obj.project,
-                self.project,
-            )
+            self.assertEqual(copy_obj.project, self.project)
 
     def test_post_success_project_wide(self):
         with self.login(self.superuser):
@@ -1062,10 +1029,7 @@ class TestContainerTemplateProjectCopyView(TestBase):
                 copy_obj.title,
                 f"{self.containertemplateproject1_project2.title} (Copy)",
             )
-            self.assertEqual(
-                copy_obj.project,
-                self.project,
-            )
+            self.assertEqual(copy_obj.project, self.project)
 
     def test_post_non_existent_mode(self):
         with self.login(self.superuser):
@@ -1074,9 +1038,7 @@ class TestContainerTemplateProjectCopyView(TestBase):
                     "containertemplates:project-copy",
                     kwargs={"project": self.project.sodar_uuid},
                 ),
-                {
-                    "source": "non_existent:0",
-                },
+                {"source": "non_existent:0"},
             )
 
             self.assertRedirects(
@@ -1098,9 +1060,7 @@ class TestContainerTemplateProjectCopyView(TestBase):
                     "containertemplates:project-copy",
                     kwargs={"project": self.project.sodar_uuid},
                 ),
-                {
-                    "source": "site:999",
-                },
+                {"source": "site:999"},
             )
 
             self.assertRedirects(
@@ -1122,9 +1082,7 @@ class TestContainerTemplateProjectCopyView(TestBase):
                     "containertemplates:project-copy",
                     kwargs={"project": self.project.sodar_uuid},
                 ),
-                {
-                    "source": "project:999",
-                },
+                {"source": "project:999"},
             )
 
             self.assertRedirects(
@@ -1151,13 +1109,10 @@ class TestContainerTemplateSelectorApiView(TestBase):
     def test_post_site(self):
         with self.login(self.superuser):
             expected = model_to_dict(
-                self.containertemplatesite1,
-                exclude=["sodar_uuid"],
+                self.containertemplatesite1, exclude=["sodar_uuid"]
             )
             response = self.client.post(
-                reverse(
-                    "containertemplates:ajax-get-containertemplate",
-                ),
+                reverse("containertemplates:ajax-get-containertemplate"),
                 {
                     "containertemplate_id": self.containertemplatesite1.id,
                     "site_or_project": "site",
@@ -1170,16 +1125,10 @@ class TestContainerTemplateSelectorApiView(TestBase):
         with self.login(self.superuser):
             expected = model_to_dict(
                 self.containertemplateproject1,
-                exclude=[
-                    "sodar_uuid",
-                    "project",
-                    "containertemplatesite",
-                ],
+                exclude=["sodar_uuid", "project", "containertemplatesite"],
             )
             response = self.client.post(
-                reverse(
-                    "containertemplates:ajax-get-containertemplate",
-                ),
+                reverse("containertemplates:ajax-get-containertemplate"),
                 {
                     "containertemplate_id": self.containertemplateproject1.id,
                     "site_or_project": "project",
@@ -1191,9 +1140,7 @@ class TestContainerTemplateSelectorApiView(TestBase):
     def test_post_non_existent_category(self):
         with self.login(self.superuser):
             response = self.client.post(
-                reverse(
-                    "containertemplates:ajax-get-containertemplate",
-                ),
+                reverse("containertemplates:ajax-get-containertemplate"),
                 {
                     "containertemplate_id": self.containertemplateproject1.id,
                     "site_or_project": "non_existent",
@@ -1211,12 +1158,8 @@ class TestContainerTemplateSelectorApiView(TestBase):
     def test_post_missing_site_or_project(self):
         with self.login(self.superuser):
             response = self.client.post(
-                reverse(
-                    "containertemplates:ajax-get-containertemplate",
-                ),
-                {
-                    "containertemplate_id": self.containertemplatesite1.id,
-                },
+                reverse("containertemplates:ajax-get-containertemplate"),
+                {"containertemplate_id": self.containertemplatesite1.id},
             )
 
             self.assertEqual(response.status_code, 500)
@@ -1230,12 +1173,8 @@ class TestContainerTemplateSelectorApiView(TestBase):
     def test_post_missing_containertemplate_id(self):
         with self.login(self.superuser):
             response = self.client.post(
-                reverse(
-                    "containertemplates:ajax-get-containertemplate",
-                ),
-                {
-                    "site_or_project": "site",
-                },
+                reverse("containertemplates:ajax-get-containertemplate"),
+                {"site_or_project": "site"},
             )
 
             self.assertEqual(response.status_code, 500)
@@ -1246,13 +1185,8 @@ class TestContainerTemplateSelectorApiView(TestBase):
     def test_post_project_non_existent_id(self):
         with self.login(self.superuser):
             response = self.client.post(
-                reverse(
-                    "containertemplates:ajax-get-containertemplate",
-                ),
-                {
-                    "containertemplate_id": 999,
-                    "site_or_project": "project",
-                },
+                reverse("containertemplates:ajax-get-containertemplate"),
+                {"containertemplate_id": 999, "site_or_project": "project"},
             )
 
             self.assertEqual(response.status_code, 500)
@@ -1264,13 +1198,8 @@ class TestContainerTemplateSelectorApiView(TestBase):
     def test_post_site_non_existent_id(self):
         with self.login(self.superuser):
             response = self.client.post(
-                reverse(
-                    "containertemplates:ajax-get-containertemplate",
-                ),
-                {
-                    "containertemplate_id": 999,
-                    "site_or_project": "site",
-                },
+                reverse("containertemplates:ajax-get-containertemplate"),
+                {"containertemplate_id": 999, "site_or_project": "site"},
             )
 
             self.assertEqual(response.status_code, 500)

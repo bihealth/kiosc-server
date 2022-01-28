@@ -30,6 +30,8 @@ set -euo pipefail
 #                      default: info
 #   DAPHNE_TIMEOUT  -- timeout for daphne workers in seconds
 #                      default: 600
+#   UVICORN_WORKERS -- number of workers for uvicorn
+#                      default: 4
 
 APP_DIR=${APP_DIR-/usr/src/app}
 CELERY_QUEUES=${CELERY_QUEUES-default,query,import}
@@ -41,6 +43,7 @@ HTTP_HOST=${HTTP_HOST-0.0.0.0}
 HTTP_PORT=${HTTP_PORT-8080}
 LOG_LEVEL=${LOG_LEVEL-info}
 DAPHNE_TIMEOUT=${DAPHNE_TIMEOUT-600}
+UVICORN_WORKERS=${UVICORN_WORKERS-4}
 
 if [[ "$NO_WAIT" -ne 1 ]]; then
   /usr/local/bin/wait
@@ -58,10 +61,10 @@ if [[ "$1" == asgi ]]; then
 
   python manage.py migrate
 
-  exec daphne \
-    --bind "$HTTP_HOST" \
+  exec uvicorn \
+    --host "$HTTP_HOST" \
     --port "$HTTP_PORT" \
-    --application-close-timeout "$DAPHNE_TIMEOUT" \
+    --workers "$UVICORN_WORKERS" \
     config.asgi:application
 elif [[ "$1" == celeryd ]]; then
   cd $APP_DIR

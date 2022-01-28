@@ -5,6 +5,20 @@ Changelog for the **Kiosc** Django app package.
 Loosely follows the `Keep a Changelog <http://keepachangelog.com/en/1.0.0/>`_ guidelines.
 
 
+HEAD (unreleased)
+=================
+
+General
+-------
+
+- Replaced Daphne with uvicorn and enabled multiple workers for performance optimization (#132)
+
+Kioscadmin
+----------
+
+- Fixed broken kioscadmin url (#132)
+
+
 v0.4.0 (2021-11-08)
 ===================
 

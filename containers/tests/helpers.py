@@ -74,8 +74,11 @@ class TestBase(TestContainerCreationMixin, TestCase):
 def log_entry1():
     """First log entry."""
     dt = dateutil.parser.parse("2021-01-01 01:01:01.000001+00:00")
-    return dt, "{} 2021/01/01 10:00:00 [info] Log entry 1".format(
-        dateformat.format(dt.replace(tzinfo=None), "c") + "000Z"
+    return (
+        dt,
+        "{} 2021/01/01 10:00:00 [info] Log entry 1".format(
+            dateformat.format(dt.replace(tzinfo=None), "c") + "000Z"
+        ),
     )
 
 
@@ -87,16 +90,22 @@ def log_entry1_no_date():
 def log_entry2():
     """Second log entry, same second but different millisecond."""
     dt = dateutil.parser.parse("2021-01-01 01:01:01.500001+00:00")
-    return dt, "{} 2021/01/01 10:00:00 [info] Log entry 2".format(
-        dateformat.format(dt.replace(tzinfo=None), "c") + "000Z"
+    return (
+        dt,
+        "{} 2021/01/01 10:00:00 [info] Log entry 2".format(
+            dateformat.format(dt.replace(tzinfo=None), "c") + "000Z"
+        ),
     )
 
 
 def log_entry3():
     """Third log entry happening the next second"""
     dt = dateutil.parser.parse("2021-01-01 01:01:02.000001+00:00")
-    return dt, "{} 2021/01/01 10:00:01 [info] Log entry 3".format(
-        dateformat.format(dt.replace(tzinfo=None), "c") + "000Z"
+    return (
+        dt,
+        "{} 2021/01/01 10:00:01 [info] Log entry 3".format(
+            dateformat.format(dt.replace(tzinfo=None), "c") + "000Z"
+        ),
     )
 
 
@@ -126,11 +135,7 @@ class DockerMock:
     logs_no_date = log_entry1_no_date().encode("utf-8")
     logs_since = "\n".join([log_entry2()[1], log_entry3()[1]]).encode("utf-8")
 
-    networks = [
-        {
-            "Id": "abcdef",
-        }
-    ]
+    networks = [{"Id": "abcdef"}]
     inspect_network = {
         "Name": "network1",
         "Id": "abcdef",
@@ -139,10 +144,7 @@ class DockerMock:
             "Config": [{"Subnet": "172.17.0.0/16", "Gateway": "172.17.0.1"}]
         },
         "Containers": {
-            "9": {
-                "Name": "container1",
-                "IPv4Address": "172.17.0.5/16",
-            },
+            "9": {"Name": "container1", "IPv4Address": "172.17.0.5/16"},
         },
     }
     images = [
@@ -153,10 +155,7 @@ class DockerMock:
     ]
     volumes = {
         "Volumes": [
-            {
-                "Mountpoint": "/var/lib/docker/volumes/volume1",
-                "Name": "abcdef",
-            }
+            {"Mountpoint": "/var/lib/docker/volumes/volume1", "Name": "abcdef"}
         ]
     }
     containers = [

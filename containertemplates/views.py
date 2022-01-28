@@ -37,9 +37,7 @@ APP_NAME = "containertemplates"
 
 
 class ContainerTemplateSiteCreateView(
-    LoginRequiredMixin,
-    LoggedInPermissionMixin,
-    CreateView,
+    LoginRequiredMixin, LoggedInPermissionMixin, CreateView
 ):
     """View for creating a site-wide containertemplate."""
 
@@ -84,13 +82,8 @@ class ContainerTemplateSiteDeleteView(
     slug_field = "sodar_uuid"
 
     def get_success_url(self):
-        messages.success(
-            self.request,
-            "ContainerTemplate deleted.",
-        )
-        return reverse(
-            "containertemplates:site-list",
-        )
+        messages.success(self.request, "ContainerTemplate deleted.")
+        return reverse("containertemplates:site-list")
 
     def delete(self, request, *args, **kwargs):
         timeline = get_backend_api("timeline_backend")
@@ -111,9 +104,7 @@ class ContainerTemplateSiteDeleteView(
 
 
 class ContainerTemplateSiteUpdateView(
-    LoginRequiredMixin,
-    LoggedInPermissionMixin,
-    UpdateView,
+    LoginRequiredMixin, LoggedInPermissionMixin, UpdateView
 ):
     """View for updating a site-wide ContainerTemplate."""
 
@@ -147,9 +138,7 @@ class ContainerTemplateSiteUpdateView(
 
 
 class ContainerTemplateSiteListView(
-    LoginRequiredMixin,
-    LoggedInPermissionMixin,
-    ListView,
+    LoginRequiredMixin, LoggedInPermissionMixin, ListView
 ):
     """View for listing site-wide ContainerTemplates."""
 
@@ -159,9 +148,7 @@ class ContainerTemplateSiteListView(
 
 
 class ContainerTemplateSiteDetailView(
-    LoginRequiredMixin,
-    LoggedInPermissionMixin,
-    DetailView,
+    LoginRequiredMixin, LoggedInPermissionMixin, DetailView
 ):
     """View for details of site-wide containertemplate."""
 
@@ -173,10 +160,7 @@ class ContainerTemplateSiteDetailView(
 
 
 class ContainerTemplateSiteDuplicateView(
-    LoginRequiredMixin,
-    LoggedInPermissionMixin,
-    SingleObjectMixin,
-    View,
+    LoginRequiredMixin, LoggedInPermissionMixin, SingleObjectMixin, View
 ):
     """View for duplicating a site-wide containertemplate."""
 
@@ -201,9 +185,7 @@ class ContainerTemplateSiteDuplicateView(
                     status_type="OK",
                 )
                 tl_event.add_object(
-                    obj=obj,
-                    label="containertemplate",
-                    name=str(obj),
+                    obj=obj, label="containertemplate", name=str(obj)
                 )
 
             data = model_to_dict(obj, exclude=["id", "sodar_uuid"])
@@ -292,10 +274,7 @@ class ContainerTemplateProjectDeleteView(
     slug_field = "sodar_uuid"
 
     def get_success_url(self):
-        messages.success(
-            self.request,
-            "ContainerTemplate deleted.",
-        )
+        messages.success(self.request, "ContainerTemplate deleted.")
         return reverse(
             "containertemplates:project-list",
             kwargs={"project": self.get_project().sodar_uuid},
@@ -437,9 +416,7 @@ class ContainerTemplateProjectDuplicateView(
                     status_type="OK",
                 )
                 tl_event.add_object(
-                    obj=obj,
-                    label="containertemplate",
-                    name=str(obj),
+                    obj=obj, label="containertemplate", name=str(obj)
                 )
 
             data = model_to_dict(obj, exclude=["id", "sodar_uuid", "project"])
@@ -448,8 +425,7 @@ class ContainerTemplateProjectDuplicateView(
             counter = 1
 
             while ContainerTemplateProject.objects.filter(
-                title=title_new,
-                project=obj.project,
+                title=title_new, project=obj.project
             ).exists():
                 counter += 1
                 title_new = f"{title_original} (Duplicate {counter})"
@@ -536,9 +512,7 @@ class ContainerTemplateProjectCopyView(
                     status_type="OK",
                 )
                 tl_event.add_object(
-                    obj=obj,
-                    label="containertemplate",
-                    name=str(obj),
+                    obj=obj, label="containertemplate", name=str(obj)
                 )
 
             data = model_to_dict(obj, exclude=exclude)
@@ -602,10 +576,7 @@ class ContainerTemplateSelectorApiView(LoginRequiredMixin, View):
                 {"msg": "Missing `containertemplate_id`"}, status=500
             )
 
-        if site_or_project not in (
-            "site",
-            "project",
-        ):
+        if site_or_project not in ("site", "project"):
             return JsonResponse(
                 {
                     "msg": "Missing or invalid `site_or_project`. Only `site` or `project` allowed."
@@ -642,10 +613,6 @@ class ContainerTemplateSelectorApiView(LoginRequiredMixin, View):
         return JsonResponse(
             model_to_dict(
                 obj,
-                exclude=[
-                    "sodar_uuid",
-                    "containertemplatesite",
-                    "project",
-                ],
+                exclude=["sodar_uuid", "containertemplatesite", "project"],
             )
         )

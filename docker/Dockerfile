@@ -34,10 +34,10 @@ RUN apt-get update && \
 
 # Install Python dependencies.
 RUN cd /usr/src/app && \
-    pip install --no-cache-dir -r requirements/production.txt && \
-    pip install --no-cache-dir -r requirements/local.txt && \
-    pip install --no-cache-dir -r requirements/ldap.txt && \
-    pip install celery  # appears to be missing
+    pip install --use-deprecated=legacy-resolver --no-cache-dir -r requirements/production.txt && \
+    pip install --use-deprecated=legacy-resolver --no-cache-dir -r requirements/local.txt && \
+    pip install --use-deprecated=legacy-resolver --no-cache-dir -r requirements/ldap.txt && \
+    pip install --use-deprecated=legacy-resolver celery  # appears to be missing
 
 # Download files from CDN.
 RUN mkdir -p /usr/src/app/local-static/local/css && \

@@ -1,6 +1,9 @@
 # Wheel
 wheel==0.36.2
 
+# setuptools
+setuptools<46
+
 # Django
 django>=3.2.5, <3.3
 

@@ -95,4 +95,4 @@ channels_redis==2.4.2
 service_identity==18.1.0
 
 # Websockets
-websockets==7.0
+websockets==10.1

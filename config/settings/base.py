@@ -640,3 +640,9 @@ KIOSC_DOCKER_WEB_SERVER = env.str("KIOSC_DOCKER_WEB_SERVER", "kiosc-web")
 KIOSC_DOCKER_ACTION_MIN_DELAY = env.int("KIOSC_DOCKER_ACTION_MIN_DELAY", 1)
 #: Max threshold for inactive running docker containers in days.
 KIOSC_DOCKER_MAX_INACTIVITY = env.int("KIOSC_DOCKER_MAX_INACTIVITY", 7)
+#: Max log lines allowed for a container
+KIOSC_CONTAINER_MAX_LOG_LINES = env.int("KIOSC_CONTAINER_MAX_LOG_LINES", 10_000)
+#: Max log lines allowed for a container
+KIOSC_CONTAINER_DEFAULT_LOG_LINES = env.int(
+    "KIOSC_CONTAINER_DEFAULT_LOG_LINES", 1000
+)

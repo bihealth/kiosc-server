@@ -27,6 +27,7 @@ from django.views.generic import (
 )
 from django.views.generic.detail import SingleObjectMixin
 
+from config.settings.base import KIOSC_CONTAINER_DEFAULT_LOG_LINES
 from containers.templatetags.container_tags import colorize_state, state_bell
 from filesfolders.models import File, FileData
 from filesfolders.views import storage
@@ -325,13 +326,6 @@ class ContainerDetailView(
     model = Container
     slug_url_kwarg = "container"
     slug_field = "sodar_uuid"
-
-    def get_context_data(self, *args, **kwargs):
-        context = super().get_context_data(*args, **kwargs)
-        context["logs"] = self.get_object().log_entries.get_logs_as_str(
-            user=self.request.user
-        )
-        return context
 
 
 class ContainerStartView(
@@ -837,7 +831,12 @@ class ContainerGetDynamicDetailsApiView(
             "state_color": colorize_state(container.state),
             "state_bell": state_bell(container.state, last_action),
             "logs": container.log_entries.get_logs_as_str(
-                user=self.request.user
+                user=self.request.user,
+                log_lines=int(
+                    self.request.GET.get(
+                        "log_lines", KIOSC_CONTAINER_DEFAULT_LOG_LINES
+                    )
+                ),
             ),
             "container_id": container.container_id,
             "container_ip": container.container_ip,

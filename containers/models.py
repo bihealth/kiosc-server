@@ -9,6 +9,11 @@ from django.db import models, transaction
 from django.urls import reverse
 from django.utils import timezone
 from django.utils.timezone import localtime
+
+from config.settings.base import (
+    KIOSC_CONTAINER_MAX_LOG_LINES,
+    KIOSC_CONTAINER_DEFAULT_LOG_LINES,
+)
 from projectroles.models import Project
 
 
@@ -467,8 +472,16 @@ class ContainerLogEntryManager(models.Manager):
         )
 
     def get_logs_as_str(self, *args, **kwargs):
+        log_lines = kwargs.pop("log_lines", KIOSC_CONTAINER_DEFAULT_LOG_LINES)
         logs = self.merge_order(*args, **kwargs)
-        return "\n".join([str(log) for log in logs])
+        return "\n".join(
+            [
+                str(log)
+                for log in logs[
+                    -min(KIOSC_CONTAINER_MAX_LOG_LINES, log_lines) :
+                ]
+            ]
+        )
 
     def get_date_last_docker_log(self, *args, **kwargs):
         obj = (

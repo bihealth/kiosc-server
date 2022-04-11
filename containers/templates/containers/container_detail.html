@@ -20,6 +20,7 @@
 {% has_perm "containers.pause_container" request.user project as can_pause_container %}
 {% has_perm "containers.unpause_container" request.user project as can_unpause_container %}
 {% get_django_setting "KIOSC_NETWORK_MODE" as network_mode %}
+{% get_django_setting "KIOSC_CONTAINER_DEFAULT_LOG_LINES" as default_log_lines %}
 
 <div class="row sodar-subtitle-container">
   <h3>Container <small class="text-muted">{{ object.title }}</small></h3>
@@ -268,7 +269,26 @@
   </div>
   {% if can_view_logs %}
   <div class="card">
-    <div class="card-header"><h4>Logs</h4></div>
+    <div class="card-header">
+      <div class="row">
+        <div class="col-9">
+          <h4 class="float-left">
+            Logs
+          </h4>
+        </div>
+        <div class="col-3">
+          <div class="input-group">
+            <div class="input-group-prepend">
+              <output class="input-group-text">Log lines</output>
+            </div>
+            <input type="number" class="form-control" id="id_log_lines" value="{{ default_log_lines }}" />
+            <div class="input-group-append">
+              <button type="button" class="btn btn-info" onclick="setLogLinesCookie()">Apply</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
     <div class="card-body">
       <pre id="id_logs" class="p-2 text-light overflow-auto bg-dark border border-dark rounded-lg" style="height: 400px">{{ logs }}</pre>
     </div>
@@ -283,9 +303,27 @@
     {{ block.super }}
     <script>
     $(document).ready(function () {
+        setLogLinesField();
+        getDynamicDetails();
         scrollLogs();
         setInterval(getDynamicDetails, 30000);
     });
+
+    function setLogLinesCookie() {
+        let log_lines = $("#id_log_lines").val();
+        setCookie("log_lines", log_lines);
+        getDynamicDetails();
+    }
+
+    function setLogLinesField() {
+        let log_lines = getCookie("log_lines");
+        if (log_lines === null) {
+            setCookie("log_lines", $("#id_log_lines").val())
+        }
+        else {
+          $("#id_log_lines").val(log_lines);
+        }
+    }
 
     function scrollLogs() {
         var logs = $("#id_logs");
@@ -293,7 +331,7 @@
     }
 
     function getDynamicDetails() {
-        var url = $("#id_details").data("url");
+        var url = $("#id_details").data("url") + "?log_lines=" + getCookie("log_lines");
 
         $.ajax({
             url: url,

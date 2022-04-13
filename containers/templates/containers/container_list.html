@@ -64,12 +64,12 @@
               <td><strong class="{{ container.state|colorize_state }}" id="id_state_{{ container.sodar_uuid  }}">{{ container.state }}</strong></td>
               <td class="text-right">
                 <div class="btn-group sodar-list-btn-group pull-right">
-                  <a id="id_proxy_running_{{ container.sodar_uuid }}" {% if not container.state == "running" %}style="display: none;" {% endif %} href="{% url 'containers:proxy' container=container.sodar_uuid path=container.path %}"
+                  <a id="id_proxy_running_{{ container.sodar_uuid }}" {% if not container.state == "running" %}style="display: none;" {% endif %} href="{% url 'containers:proxy' container=container.sodar_uuid path=container.container_path %}"
                       class="btn btn-primary sodar-list-dropdown" target="_blank"
                       data-toggle="tooltip" data-placement="top" title="Open app">
                     <i class="iconify" data-icon="mdi:eye"></i>
                   </a>
-                  <a id="id_proxy_not_running_{{ container.sodar_uuid }}" {% if container.state == "running" %}style="display: none;" {% endif %} href="{% url 'containers:proxy-lobby' container=container.sodar_uuid path=container.path %}"
+                  <a id="id_proxy_not_running_{{ container.sodar_uuid }}" {% if container.state == "running" %}style="display: none;" {% endif %} href="{% url 'containers:proxy-lobby' container=container.sodar_uuid %}"
                       class="btn btn-outline-secondary sodar-list-dropdown" target="_blank"
                       data-toggle="tooltip" data-placement="top" title="App not running">
                     <i class="iconify" data-icon="mdi:eye-off"></i>

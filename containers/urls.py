@@ -63,7 +63,7 @@ ui_urlpatterns = [
         name="proxy",
     ),
     url(
-        regex=r"^proxy/lobby/(?P<container>[0-9a-f-]+)/(?P<path>.*)$",
+        regex=r"^proxy/lobby/(?P<container>[0-9a-f-]+)$",
         view=views.ContainerProxyLobbyView.as_view(),
         name="proxy-lobby",
     ),

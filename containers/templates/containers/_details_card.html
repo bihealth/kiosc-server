@@ -41,13 +41,13 @@
         <td class="text-right">
           <div class="btn-group sodar-list-btn-group pull-right">
             {% if container.state == "running" %}
-              <a href="{% url 'containers:proxy' container=container.sodar_uuid path=container.path %}"
+              <a href="{% url 'containers:proxy' container=container.sodar_uuid path=container.container_path %}"
                   class="btn btn-primary sodar-list-dropdown" target="_blank"
                   data-toggle="tooltip" data-placement="top" title="Open app">
                 <i class="iconify" data-icon="mdi:eye"></i>
               </a>
             {% else %}
-              <a href="{% url 'containers:proxy-lobby' container=container.sodar_uuid path=container.path %}"
+              <a href="{% url 'containers:proxy-lobby' container=container.sodar_uuid %}"
                   class="btn btn-outline-secondary sodar-list-dropdown" target="_blank"
                   data-toggle="tooltip" data-placement="top" title="App not running">
                 <i class="iconify" data-icon="mdi:eye-off"></i>

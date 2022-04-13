@@ -593,8 +593,7 @@ class ContainerProxyLobbyView(
     LoggedInPermissionMixin,
     ProjectPermissionMixin,
     ProjectContextMixin,
-    SingleObjectMixin,
-    View,
+    DetailView,
 ):
     """View for proxy lobby."""
 
@@ -602,24 +601,23 @@ class ContainerProxyLobbyView(
     model = Container
     slug_url_kwarg = "container"
     slug_field = "sodar_uuid"
+    template_name = "containers/container_proxylobby.html"
 
     @transaction.atomic
     def get(self, request, *args, **kwargs):
-        _redirect = redirect(
-            reverse(
-                "containers:proxy",
-                kwargs={
-                    "container": kwargs.get("container"),
-                    "path": kwargs.get("path"),
-                },
-            )
-        )
-
         project = self.get_project()
         container = self.get_object()
 
         if container.state == STATE_RUNNING:
-            return _redirect
+            return redirect(
+                reverse(
+                    "containers:proxy",
+                    kwargs={
+                        "container": container.sodar_uuid,
+                        "path": container.container_path,
+                    },
+                )
+            )
 
         elif container.state == STATE_PAUSED:
             action = ACTION_UNPAUSE
@@ -648,10 +646,9 @@ class ContainerProxyLobbyView(
             user=request.user,
         )
 
-        # Execute task synchronously because of the redirect
-        container_task(job_id=job.id)
+        container_task.apply_async(kwargs={"job_id": job.id})
 
-        return _redirect
+        return super().get(request, *args, **kwargs)
 
 
 class KioscProxyView(ProxyView):
@@ -811,8 +808,9 @@ class FileServeView(View):
 class ContainerGetDynamicDetailsApiView(
     LoggedInPermissionMixin,
     LoginRequiredMixin,
-    SingleObjectMixin,
-    View,
+    ProjectPermissionMixin,
+    ProjectContextMixin,
+    DetailView,
 ):
     """AJAX view for getting Docker status and logs of a container."""
 
@@ -825,19 +823,22 @@ class ContainerGetDynamicDetailsApiView(
         container = self.get_object()
         last_job = container.containerbackgroundjob.last()
         last_action = last_job.action if last_job else None
+        log_lines = int(
+            self.request.GET.get("log_lines", KIOSC_CONTAINER_DEFAULT_LOG_LINES)
+        )
+        logs = ""
+
+        if log_lines > 0:
+            logs = container.log_entries.get_logs_as_str(
+                user=self.request.user,
+                log_lines=log_lines,
+            )
 
         response = {
             "state": container.state,
             "state_color": colorize_state(container.state),
             "state_bell": state_bell(container.state, last_action),
-            "logs": container.log_entries.get_logs_as_str(
-                user=self.request.user,
-                log_lines=int(
-                    self.request.GET.get(
-                        "log_lines", KIOSC_CONTAINER_DEFAULT_LOG_LINES
-                    )
-                ),
-            ),
+            "logs": logs,
             "container_id": container.container_id,
             "container_ip": container.container_ip,
             "date_last_docker_log": container.log_entries.get_date_last_docker_log(),

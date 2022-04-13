@@ -20,11 +20,11 @@ from containers.models import (
     ACTION_UNPAUSE,
     STATE_RUNNING,
     STATE_PAUSED,
-    STATE_EXITED,
     STATE_DELETED,
     MASKED_KEYWORD,
     PROCESS_DOCKER,
     ContainerLogEntry,
+    STATE_EXITED,
 )
 from containers.templatetags.container_tags import colorize_state
 from containers.tests.factories import (
@@ -1201,7 +1201,6 @@ class TestContainerProxyLobbyView(TestBase):
                     "containers:proxy-lobby",
                     kwargs={
                         "container": self.container1.sodar_uuid,
-                        "path": self.container1.container_path,
                     },
                 ),
             )
@@ -1223,53 +1222,14 @@ class TestContainerProxyLobbyView(TestBase):
                         "path": self.container1.container_path,
                     },
                 ),
-                status_code=302,
-                target_status_code=200,
             )
 
-    @override_settings(KIOSC_NETWORK_MODE="host")
-    @responses.activate
-    def test_get_success_running_with_path(self):
-        with self.login(self.superuser):
-            self.container1.state = STATE_RUNNING
-            self.container1.container_path = "this/is/some/path"
-            self.container1.save()
-
-            def request_callback(request):
-                return 200, {}, "abc".encode("utf-8")
-
-            container_url = f"/{self.container1.container_path}"
-            responses.add_callback(
-                "GET", container_url, callback=request_callback
-            )
-
-            response = self.client.get(
-                reverse(
-                    "containers:proxy-lobby",
-                    kwargs={
-                        "container": self.container1.sodar_uuid,
-                        "path": self.container1.container_path,
-                    },
-                )
-            )
-
-            self.assertRedirects(
-                response,
-                reverse(
-                    "containers:proxy",
-                    kwargs={
-                        "container": self.container1.sodar_uuid,
-                        "path": self.container1.container_path,
-                    },
-                ),
-                status_code=302,
-                target_status_code=200,
-            )
+            self.assertEqual(ContainerBackgroundJob.objects.count(), 0)
 
     @override_settings(KIOSC_NETWORK_MODE="host")
     @patch("containers.tasks.container_task.run")
     @responses.activate
-    def test_get_success_paused_with_path(self, mock):
+    def test_get_success_paused(self, mock):
         with self.login(self.superuser):
             self.container1.state = STATE_PAUSED
             self.container1.save()
@@ -1294,24 +1254,12 @@ class TestContainerProxyLobbyView(TestBase):
                     "containers:proxy-lobby",
                     kwargs={
                         "container": self.container1.sodar_uuid,
-                        "path": self.container1.container_path,
                     },
                 ),
+                follow=True,
             )
 
-            self.assertRedirects(
-                response,
-                reverse(
-                    "containers:proxy",
-                    kwargs={
-                        "container": self.container1.sodar_uuid,
-                        "path": self.container1.container_path,
-                    },
-                ),
-                status_code=302,
-                target_status_code=200,
-            )
-
+            self.assertEqual(response.status_code, 200)
             self.assertEqual(ContainerBackgroundJob.objects.count(), 1)
             bg_job = ContainerBackgroundJob.objects.first()
             self.assertEqual(bg_job.action, ACTION_UNPAUSE)
@@ -1320,7 +1268,7 @@ class TestContainerProxyLobbyView(TestBase):
     @override_settings(KIOSC_NETWORK_MODE="host")
     @patch("containers.tasks.container_task.run")
     @responses.activate
-    def test_get_success_stopped_with_path(self, mock):
+    def test_get_success_stopped(self, mock):
         with self.login(self.superuser):
             self.container1.state = STATE_EXITED
             self.container1.save()
@@ -1345,24 +1293,11 @@ class TestContainerProxyLobbyView(TestBase):
                     "containers:proxy-lobby",
                     kwargs={
                         "container": self.container1.sodar_uuid,
-                        "path": self.container1.container_path,
                     },
                 )
             )
 
-            self.assertRedirects(
-                response,
-                reverse(
-                    "containers:proxy",
-                    kwargs={
-                        "container": self.container1.sodar_uuid,
-                        "path": self.container1.container_path,
-                    },
-                ),
-                status_code=302,
-                target_status_code=200,
-            )
-
+            self.assertEqual(response.status_code, 200)
             self.assertEqual(ContainerBackgroundJob.objects.count(), 1)
             bg_job = ContainerBackgroundJob.objects.first()
             self.assertEqual(bg_job.action, ACTION_START)
@@ -1373,7 +1308,7 @@ class TestContainerProxyLobbyView(TestBase):
             response = self.client.get(
                 reverse(
                     "containers:proxy-lobby",
-                    kwargs={"container": self.fake_uuid, "path": ""},
+                    kwargs={"container": self.fake_uuid},
                 )
             )
 

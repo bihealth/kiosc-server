@@ -24,6 +24,9 @@ Container
 ---------
 
 - Made number of container log lines adjustable, defaults to 1000, overall max value is by default 10000 (#136)
+- Added visual response to proxy lobby when starting a container via the eye icon (#143)
+- Fixed permission rights when fetching container details (#143)
+- Speed improvement when displaying logs (#143)
 
 
 v0.4.0 (2021-11-08)

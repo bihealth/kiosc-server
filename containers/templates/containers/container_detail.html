@@ -26,13 +26,13 @@
   <h3>Container <small class="text-muted">{{ object.title }}</small></h3>
   <div class="ml-auto">
     <div class="btn-group">
-      <a id="id_proxy_running" {% if not container.state == "running" %}style="display: none;" {% endif %}href="{% url 'containers:proxy' container=container.sodar_uuid path=container.path %}"
+      <a id="id_proxy_running" {% if not container.state == "running" %}style="display: none;" {% endif %}href="{% url 'containers:proxy' container=container.sodar_uuid path=container.container_path %}"
           class="btn btn-primary" target="_blank"
           data-toggle="tooltip" data-placement="top" title="Open app">
         <i class="iconify" data-icon="mdi:eye"></i>
         View
       </a>
-      <a id="id_proxy_not_running" {% if container.state == "running" %}style="display: none;" {% endif %}href="{% url 'containers:proxy-lobby' container=container.sodar_uuid path=container.path %}"
+      <a id="id_proxy_not_running" {% if container.state == "running" %}style="display: none;" {% endif %}href="{% url 'containers:proxy-lobby' container=container.sodar_uuid %}"
           class="btn btn-outline-secondary" target="_blank"
           data-toggle="tooltip" data-placement="top" title="App not running">
         <i class="iconify" data-icon="mdi:eye-off"></i>
@@ -279,7 +279,7 @@
         <div class="col-3">
           <div class="input-group">
             <div class="input-group-prepend">
-              <output class="input-group-text">Log lines</output>
+              <span class="input-group-text">Log lines</span>
             </div>
             <input type="number" class="form-control" id="id_log_lines" value="{{ default_log_lines }}" />
             <div class="input-group-append">
@@ -290,7 +290,7 @@
       </div>
     </div>
     <div class="card-body">
-      <pre id="id_logs" class="p-2 text-light overflow-auto bg-dark border border-dark rounded-lg" style="height: 400px">{{ logs }}</pre>
+      <pre id="id_logs" class="p-2 text-light overflow-auto bg-dark border border-dark rounded-lg" style="height: 400px"><i class="iconify" data-icon="eos-icons:bubble-loading"></i> <em>Loading logs ...</em></pre>
     </div>
   </div>
   {% endif %}
@@ -305,7 +305,6 @@
     $(document).ready(function () {
         setLogLinesField();
         getDynamicDetails();
-        scrollLogs();
         setInterval(getDynamicDetails, 30000);
     });
 

@@ -458,7 +458,9 @@ class ContainerLogEntryManager(models.Manager):
         is_superuser = (
             kwargs.pop("user").is_superuser if "user" in kwargs else False
         )
-        qs = self.get_queryset().filter(*args, **kwargs)
+        qs = (
+            self.get_queryset().prefetch_related("user").filter(*args, **kwargs)
+        )
 
         # Show DEBUG level only to superuser
         if not is_superuser:
@@ -472,16 +474,17 @@ class ContainerLogEntryManager(models.Manager):
         )
 
     def get_logs_as_str(self, *args, **kwargs):
-        log_lines = kwargs.pop("log_lines", KIOSC_CONTAINER_DEFAULT_LOG_LINES)
-        logs = self.merge_order(*args, **kwargs)
-        return "\n".join(
-            [
-                str(log)
-                for log in logs[
-                    -min(KIOSC_CONTAINER_MAX_LOG_LINES, log_lines) :
-                ]
-            ]
+        log_lines = int(
+            kwargs.pop("log_lines", KIOSC_CONTAINER_DEFAULT_LOG_LINES)
         )
+
+        if log_lines == 0:
+            return ""
+
+        logs = self.merge_order(*args, **kwargs)[
+            -min(KIOSC_CONTAINER_MAX_LOG_LINES, log_lines) :
+        ]
+        return "\n".join([str(log) for log in logs])
 
     def get_date_last_docker_log(self, *args, **kwargs):
         obj = (
@@ -569,8 +572,13 @@ class ContainerLogEntry(models.Model):
         return self.get_date_docker_log() or self.get_date_created()
 
     def __str__(self):
-        username = self.user.username if self.user else "anonymous"
-        return f"[{self.get_date_order_by()} {self.level.upper()} {username}] ({self.process.capitalize()}) {self.text}"
+        return "[{} {} {}] ({}) {}".format(
+            self.get_date_order_by(),
+            self.level.upper(),
+            self.user.username if self.user else "anonymous",
+            self.process.capitalize(),
+            self.text,
+        )
 
     def __repr__(self):
         return f"ContainerLogEntry({self.container.get_display_name()},{self.get_date_created()})"

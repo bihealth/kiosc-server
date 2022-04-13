@@ -282,7 +282,6 @@ class TestContainerPermissions(TestProjectPermissionBase):
             "containers:proxy-lobby",
             kwargs={
                 "container": self.container.sodar_uuid,
-                "path": self.container.container_path,
             },
         )
         good_users = [

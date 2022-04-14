@@ -646,7 +646,7 @@ class ContainerProxyLobbyView(
             user=request.user,
         )
 
-        container_task.apply_async(kwargs={"job_id": job.id})
+        container_task.apply_async(kwargs={"job_id": job.id}, countdown=0.5)
 
         return super().get(request, *args, **kwargs)
 

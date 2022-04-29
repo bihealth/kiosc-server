@@ -14,6 +14,7 @@ General
 - Replaced Daphne with uvicorn and enabled multiple workers for performance optimization (#132)
 - Updated to ``channels`` version 10.1
 - Forced pip to build with old dependency solver as the new one is buggy
+- Fix broken async small file serving (#147)
 
 Kioscadmin
 ----------

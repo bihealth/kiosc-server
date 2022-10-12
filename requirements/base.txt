@@ -84,7 +84,9 @@ docker==5.0.0
 
 # Django reverse proxy
 # django-revproxy==0.10.0
--e git+https://github.com/TracyWebTech/django-revproxy.git@b9fa8375d03fd68747dcb7273a97c19d788aa51b#egg=django-revproxy
+# NOTE: The following doesn't work anymore
+# -e git+https://github.com/TracyWebTech/django-revproxy.git@b9fa8375d03fd68747dcb7273a97c19d788aa51b#egg=django-revproxy
+-e git+https://github.com/TracyWebTech/django-revproxy.git@9517fc26120e93e1a947f55b9dc571e68178efc0#egg=django-revproxy
 
 # State machine
 python-statemachine==0.8.0

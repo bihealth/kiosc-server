@@ -1,2 +1,5 @@
-{# Remove the following row if you are implementing your own footer #}
-{% extends 'projectroles/_footer.html' %}
+{% load projectroles_common_tags %}
+
+{% get_django_setting 'SITE_TITLE' as site_title %}
+
+Developed by BIH CUBI. {{ site_title }} v{% site_version %}

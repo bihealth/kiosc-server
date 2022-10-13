@@ -76,9 +76,6 @@ THIRD_PARTY_APPS = [
     "siteinfo.apps.SiteinfoConfig",
     # API Tokens site app
     "tokens.apps.TokensConfig",
-    # SODAR Taskflow backend app
-    # NOTE: Only enable if using sodar_taskflow
-    # 'taskflowbackend.apps.TaskflowbackendConfig',
     # SODAR Cache backend app
     # NOTE: Only enable if used in your site
     # 'sodarcache.apps.SodarcacheConfig',
@@ -607,11 +604,6 @@ FILESFOLDERS_LINK_BAD_REQUEST_MSG = "Invalid request"
 
 # Adminalerts app settings
 ADMINALERTS_PAGINATION = 15
-
-
-# Taskflow backend settings
-TASKFLOW_SODAR_SECRET = env.str("TASKFLOW_SODAR_SECRET", "CHANGE ME!")
-TASKFLOW_TEST_MODE = False  # Important! Disallow cleanup() command by default
 
 
 # SODAR constants (uncomment for modifying)

@@ -1,43 +1,44 @@
 # Wheel
-wheel==0.36.2
+wheel==0.37.1
 
 # setuptools
-setuptools<46
+setuptools==65.3.0
 
 # Django
-django>=3.2.5, <3.3
+django>=3.2.16, <3.3
 
 # Configuration
-django-environ>=0.4.5, <0.5
+django-environ==0.9.0
 
 # Forms
-django-crispy-forms>=1.11.2, <1.12
+django-crispy-forms==1.14.0
 
 # Models
-django-model-utils>=4.1.1, <4.2
+django-model-utils==4.2.0
 
 # Password storage
-argon2-cffi>=20.1.0, <20.2
+argon2-cffi==21.3.0
 
 # Python-PostgreSQL Database Adapter
-psycopg2-binary>=2.8.6, <2.9
+psycopg2-binary==2.9.3
 
 # Unicode slugification
-awesome-slugify>=1.6.5, <1.7
+awesome-slugify==1.6.5
 
 # Time zones support
-pytz>=2021.1
+pytz>=2022.2.1
 
 # SVG icon support
-django-iconify==0.1.0.post1
+django-iconify==0.1.1
 
 # Online documentation via django-docs.
-Sphinx>=4.0.2, <4.1
-django-docs>=0.3.1, <0.4
-sphinx-rtd-theme>=0.5.2, <0.6
+docutils==0.17.1
+Sphinx==5.1.1
+django-docs==0.3.1
+sphinx-rtd-theme==1.0.0
 
 # Versioning
-versioneer>=0.19
+versioneer==0.23
 
 ######################
 # Project app imports
@@ -47,45 +48,44 @@ versioneer>=0.19
 -e git+https://github.com/mikkonie/django-plugins.git@42e86e7904e5c09f1da32173862b26843eda5dd8#egg=django-plugins
 
 # Rules for permissions
-rules>=3.0, <3.1
+rules==3.3
 
 # REST framework
-djangorestframework>=3.12.4, <3.13
+djangorestframework==3.13.1
 
 # Keyed list addon for DRF
 -e git+https://github.com/mikkonie/drf-keyed-list.git@b03607b866c5706b0e1ea46a7eeaab6527030734#egg=drf-keyed-list
 
 # Token authentication
-django-rest-knox>=4.1.0, <4.2
+django-rest-knox==4.2.0
 
 # Markdown field support
-markdown>=3.3.4, <3.4
-django-markupfield>=2.0.0, <2.1
-django-pagedown>=2.2.0, <2.3
-mistune>=0.8.4, <0.9
+markdown==3.4.1
+django-markupfield==2.0.1
+django-pagedown==2.2.1
+mistune==2.0.4
 
 # Database file storage for filesfolders
 django-db-file-storage==0.5.5
 
 # Backround Jobs requirements
-celery>=5.1.0, <5.2
+celery==5.2.7
 
 # Django autocomplete light (DAL)
-django-autocomplete-light>=3.8.2, <3.9
+django-autocomplete-light==3.9.4
 
 # SAML2 support for SSO
-django-saml2-auth-ai>=2.1.6, <2.2
+django-saml2-auth-ai==2.1.6
 
 # SODAR Core
--e git+https://github.com/bihealth/sodar_core.git@36ed4605977ce2a7c27c6341238f4c1910953dea#egg=django-sodar-core
+django-sodar-core==0.11.0
+# -e git+https://github.com/bihealth/sodar_core.git@36ed4605977ce2a7c27c6341238f4c1910953dea#egg=django-sodar-core
 
 # Docker
 docker==5.0.0
 
 # Django reverse proxy
 # django-revproxy==0.10.0
-# NOTE: The following doesn't work anymore
-# -e git+https://github.com/TracyWebTech/django-revproxy.git@b9fa8375d03fd68747dcb7273a97c19d788aa51b#egg=django-revproxy
 -e git+https://github.com/TracyWebTech/django-revproxy.git@9517fc26120e93e1a947f55b9dc571e68178efc0#egg=django-revproxy
 
 # State machine

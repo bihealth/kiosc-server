@@ -9,6 +9,7 @@ echo "***********************************************"
 echo "Installing general OS dependencies"
 echo "***********************************************"
 apt-get -y install build-essential
+apt-get -y install python3-dev
 apt-get -y install curl
 
 echo "***********************************************"

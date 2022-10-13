@@ -543,6 +543,15 @@ PROJECTROLES_ALLOW_LOCAL_USERS = env.bool(
     "PROJECTROLES_ALLOW_LOCAL_USERS", False
 )
 
+# Allow unauthenticated users to access public projects if set true
+PROJECTROLES_ALLOW_ANONYMOUS = False
+
+# Enable project modify API
+PROJECTROLES_ENABLE_MODIFY_API = False
+# List of apps for executing project modify API actions in the given order. If
+# not set, backend and project apps will execute in alphabetical order by name.
+PROJECTROLES_MODIFY_API_APPS = []
+
 # General projectroles settings
 PROJECTROLES_DISABLE_CATEGORIES = env.bool(
     "PROJECTROLES_DISABLE_CATEGORIES", False
@@ -567,6 +576,7 @@ PROJECTROLES_INLINE_HEAD_INCLUDE = env.str(
 # PROJECTROLES_DELEGATE_LIMIT = env.int('PROJECTROLES_DELEGATE_LIMIT', 1)
 # Support for viewing the site in "kiosk mode" (under work, experimental)
 # PROJECTROLES_KIOSK_MODE = env.bool('PROJECTROLES_KIOSK_MODE', False)
+# PROJECTROLES_SIDEBAR_ICON_SIZE = env.int('PROJECTROLES_SIDEBAR_ICON_SIZE', 36)
 
 # Warn about unsupported browsers (IE)
 # PROJECTROLES_BROWSER_WARNING = True

@@ -78,7 +78,7 @@ django-autocomplete-light==3.9.4
 django-saml2-auth-ai==2.1.6
 
 # SODAR Core
-django-sodar-core==0.11.0
+django-sodar-core==0.11.1
 # -e git+https://github.com/bihealth/sodar_core.git@36ed4605977ce2a7c27c6341238f4c1910953dea#egg=django-sodar-core
 
 # Docker

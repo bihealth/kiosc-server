@@ -100,7 +100,7 @@ class TestBase(RoleAssignmentMixin, TestCase):
 
     def assign_user_to_project(self, username, project):
         """Assign user to project."""
-        self._make_assignment(
+        self.make_assignment(
             project,
             getattr(self, f"user_{username}"),
             getattr(self, f"role_{username}"),

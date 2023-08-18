@@ -52,6 +52,7 @@ DJANGO_APPS = [
 
 THIRD_PARTY_APPS = [
     "crispy_forms",  # Form layouts
+    "crispy_bootstrap4",
     "rules.apps.AutodiscoverRulesConfig",  # Django rules engine
     "djangoplugins",  # Django plugins
     "pagedown",  # For markdown
@@ -79,6 +80,8 @@ THIRD_PARTY_APPS = [
     # SODAR Cache backend app
     # NOTE: Only enable if used in your site
     # 'sodarcache.apps.SodarcacheConfig',
+    # Admin Alerts site app
+    "appalerts.apps.AppalertsConfig",
 ]
 
 if KIOSC_EMBEDDED_FILES:
@@ -202,10 +205,16 @@ TEMPLATES = [
                 # Site context processors
                 "projectroles.context_processors.urls_processor",
                 "projectroles.context_processors.site_app_processor",
+                "projectroles.context_processors.sidebar_processor",
             ],
         },
     }
 ]
+
+PROJECTROLES_TEMPLATE_INCLUDE_PATH = env.path(
+    "PROJECTROLES_TEMPLATE_INCLUDE_PATH",
+    os.path.join(APPS_DIR, "templates", "include"),
+)
 
 CRISPY_TEMPLATE_PACK = "bootstrap4"
 
@@ -572,7 +581,7 @@ PROJECTROLES_INLINE_HEAD_INCLUDE = env.str(
 # PROJECTROLES_SECRET_LENGTH = 32
 # PROJECTROLES_HELP_HIGHLIGHT_DAYS = 7
 # PROJECTROLES_SEARCH_PAGINATION = 5
-# PROJECTROLES_HIDE_APP_LINKS = env.list('PROJECTROLES_HIDE_APP_LINKS', None, [])  # noqa
+# PROJECTROLES_HIDE_PROJECT_APPS = env.list('PROJECTROLES_HIDE_PROJECT_APPS', None, [])  # noqa
 # PROJECTROLES_DELEGATE_LIMIT = env.int('PROJECTROLES_DELEGATE_LIMIT', 1)
 # Support for viewing the site in "kiosk mode" (under work, experimental)
 # PROJECTROLES_KIOSK_MODE = env.bool('PROJECTROLES_KIOSK_MODE', False)

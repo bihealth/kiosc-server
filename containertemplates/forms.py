@@ -68,9 +68,9 @@ class ContainerTemplateSelectorForm(forms.Form):
         queryset_project = ContainerTemplateProject.objects.all()
 
         if not user.is_superuser:
-            queryset_project = queryset_project.filter(
-                project__roles__user=user
-            )
+            queryset_project = [
+                p for p in queryset_project if p.project.has_role(user)
+            ]
 
         choices_project = [
             (f"project:{obj.id}", f"[Project-wide] {obj.get_display_name()}")

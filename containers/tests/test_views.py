@@ -1331,7 +1331,7 @@ class TestFileServeView(FileMixin, TestBase):
         self.file_content = bytes("content".encode("utf-8"))
 
         # Init file
-        self.file = self._make_file(
+        self.file = self.make_file(
             name="file.txt",
             file_name="file.txt",
             file_content=self.file_content,

@@ -45,7 +45,9 @@ urlpatterns = [
     # User Profile URLs
     url(r"^user/", include("userprofile.urls")),
     # Admin Alerts URLs
-    url(r"^alerts/", include("adminalerts.urls")),
+    url(r"^adminalerts/", include("adminalerts.urls")),
+    # App Alerts URLs
+    url("^appalerts/", include("appalerts.urls")),
     # Site Info URLs
     url(r"^siteinfo/", include("siteinfo.urls")),
     # API Tokens URLs

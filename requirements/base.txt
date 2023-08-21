@@ -86,7 +86,7 @@ django-saml2-auth-ai>=2.1.6, <2.2
 django-sodar-core==0.13.0
 
 # Docker
-docker==5.0.0
+docker>=6.1.0, <7.0
 
 # Django reverse proxy
 # django-revproxy==0.10.0

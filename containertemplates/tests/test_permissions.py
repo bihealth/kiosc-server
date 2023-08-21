@@ -23,11 +23,12 @@ class TestContainerTemplateSitePermissions(TestProjectPermissionBase):
         )
         good_users = [
             self.superuser,
-            self.owner_as.user,
-            self.delegate_as.user,
-            self.contributor_as.user,
-            self.guest_as.user,
+            self.user_owner,
+            self.user_delegate,
+            self.user_contributor,
+            self.user_guest,
             self.user_no_roles,
+            self.user_finder_cat,
         ]
         bad_users = [self.anonymous]
         self.assert_response(url, good_users, 200)
@@ -42,12 +43,13 @@ class TestContainerTemplateSitePermissions(TestProjectPermissionBase):
             self.superuser,
         ]
         bad_users = [
-            self.owner_as.user,
-            self.delegate_as.user,
-            self.contributor_as.user,
-            self.guest_as.user,
+            self.user_owner,
+            self.user_delegate,
+            self.user_contributor,
+            self.user_guest,
             self.user_no_roles,
             self.anonymous,
+            self.user_finder_cat,
         ]
         self.assert_response(url, good_users, 200)
         self.assert_response(url, bad_users, 302)
@@ -64,12 +66,13 @@ class TestContainerTemplateSitePermissions(TestProjectPermissionBase):
             self.superuser,
         ]
         bad_users = [
-            self.owner_as.user,
-            self.delegate_as.user,
-            self.contributor_as.user,
-            self.guest_as.user,
+            self.user_owner,
+            self.user_delegate,
+            self.user_contributor,
+            self.user_guest,
             self.user_no_roles,
             self.anonymous,
+            self.user_finder_cat,
         ]
         self.assert_response(url, good_users, 200)
         self.assert_response(url, bad_users, 302)
@@ -84,11 +87,12 @@ class TestContainerTemplateSitePermissions(TestProjectPermissionBase):
         )
         good_users = [
             self.superuser,
-            self.owner_as.user,
-            self.delegate_as.user,
-            self.contributor_as.user,
-            self.guest_as.user,
+            self.user_owner,
+            self.user_delegate,
+            self.user_contributor,
+            self.user_guest,
             self.user_no_roles,
+            self.user_finder_cat,
         ]
         bad_users = [self.anonymous]
         self.assert_response(url, good_users, 200)
@@ -106,12 +110,13 @@ class TestContainerTemplateSitePermissions(TestProjectPermissionBase):
             self.superuser,
         ]
         bad_users = [
-            self.owner_as.user,
-            self.delegate_as.user,
-            self.contributor_as.user,
-            self.guest_as.user,
+            self.user_owner,
+            self.user_delegate,
+            self.user_contributor,
+            self.user_guest,
             self.user_no_roles,
             self.anonymous,
+            self.user_finder_cat,
         ]
         self.assert_response(url, good_users, 200)
         self.assert_response(url, bad_users, 302)
@@ -128,12 +133,13 @@ class TestContainerTemplateSitePermissions(TestProjectPermissionBase):
             self.superuser,
         ]
         bad_users = [
-            self.owner_as.user,
-            self.delegate_as.user,
-            self.contributor_as.user,
-            self.guest_as.user,
+            self.user_owner,
+            self.user_delegate,
+            self.user_contributor,
+            self.user_guest,
             self.user_no_roles,
             self.anonymous,
+            self.user_finder_cat,
         ]
         self.assert_response(
             url,
@@ -163,12 +169,12 @@ class TestContainerTemplateProjectPermissions(TestProjectPermissionBase):
         )
         good_users = [
             self.superuser,
-            self.owner_as.user,
-            self.delegate_as.user,
-            self.contributor_as.user,
-            self.guest_as.user,
+            self.user_owner,
+            self.user_delegate,
+            self.user_contributor,
+            self.user_guest,
         ]
-        bad_users = [self.user_no_roles, self.anonymous]
+        bad_users = [self.user_no_roles, self.anonymous, self.user_finder_cat]
         self.assert_response(url, good_users, 200)
         self.assert_response(url, bad_users, 302)
 
@@ -180,14 +186,15 @@ class TestContainerTemplateProjectPermissions(TestProjectPermissionBase):
         )
         good_users = [
             self.superuser,
-            self.owner_as.user,
-            self.delegate_as.user,
-            self.contributor_as.user,
+            self.user_owner,
+            self.user_delegate,
+            self.user_contributor,
         ]
         bad_users = [
-            self.guest_as.user,
+            self.user_guest,
             self.user_no_roles,
             self.anonymous,
+            self.user_finder_cat,
         ]
         self.assert_response(url, good_users, 200)
         self.assert_response(url, bad_users, 302)
@@ -202,14 +209,15 @@ class TestContainerTemplateProjectPermissions(TestProjectPermissionBase):
         )
         good_users = [
             self.superuser,
-            self.owner_as.user,
-            self.delegate_as.user,
-            self.contributor_as.user,
+            self.user_owner,
+            self.user_delegate,
+            self.user_contributor,
         ]
         bad_users = [
-            self.guest_as.user,
+            self.user_guest,
             self.user_no_roles,
             self.anonymous,
+            self.user_finder_cat,
         ]
         self.assert_response(url, good_users, 200)
         self.assert_response(url, bad_users, 302)
@@ -224,12 +232,12 @@ class TestContainerTemplateProjectPermissions(TestProjectPermissionBase):
         )
         good_users = [
             self.superuser,
-            self.owner_as.user,
-            self.delegate_as.user,
-            self.contributor_as.user,
-            self.guest_as.user,
+            self.user_owner,
+            self.user_delegate,
+            self.user_contributor,
+            self.user_guest,
         ]
-        bad_users = [self.user_no_roles, self.anonymous]
+        bad_users = [self.user_no_roles, self.anonymous, self.user_finder_cat]
         self.assert_response(url, good_users, 200)
         self.assert_response(url, bad_users, 302)
 
@@ -243,14 +251,15 @@ class TestContainerTemplateProjectPermissions(TestProjectPermissionBase):
         )
         good_users = [
             self.superuser,
-            self.owner_as.user,
-            self.delegate_as.user,
-            self.contributor_as.user,
+            self.user_owner,
+            self.user_delegate,
+            self.user_contributor,
         ]
         bad_users = [
-            self.guest_as.user,
+            self.user_guest,
             self.user_no_roles,
             self.anonymous,
+            self.user_finder_cat,
         ]
         self.assert_response(url, good_users, 200)
         self.assert_response(url, bad_users, 302)
@@ -265,14 +274,15 @@ class TestContainerTemplateProjectPermissions(TestProjectPermissionBase):
         )
         good_users = [
             self.superuser,
-            self.owner_as.user,
-            self.delegate_as.user,
-            self.contributor_as.user,
+            self.user_owner,
+            self.user_delegate,
+            self.user_contributor,
         ]
         bad_users = [
-            self.guest_as.user,
+            self.user_guest,
             self.user_no_roles,
             self.anonymous,
+            self.user_finder_cat,
         ]
         self.assert_response(
             url,
@@ -293,14 +303,15 @@ class TestContainerTemplateProjectPermissions(TestProjectPermissionBase):
         )
         good_users = [
             self.superuser,
-            self.owner_as.user,
-            self.delegate_as.user,
-            self.contributor_as.user,
+            self.user_owner,
+            self.user_delegate,
+            self.user_contributor,
         ]
         bad_users = [
-            self.guest_as.user,
+            self.user_guest,
             self.user_no_roles,
             self.anonymous,
+            self.user_finder_cat,
         ]
         self.assert_response(
             url,
@@ -326,14 +337,13 @@ class TestContainerTemplateProjectPermissions(TestProjectPermissionBase):
         }
         good_users = [
             self.superuser,
-            self.owner_as.user,
-            self.delegate_as.user,
-            self.contributor_as.user,
-            self.guest_as.user,
+            self.user_owner,
+            self.user_delegate,
+            self.user_contributor,
+            self.user_guest,
             self.user_no_roles,
+            self.user_finder_cat,
         ]
-        bad_users = [
-            self.anonymous,
-        ]
+        bad_users = [self.anonymous]
         self.assert_response(url, good_users, 200, method="POST", data=data)
         self.assert_response(url, bad_users, 302, method="POST", data=data)

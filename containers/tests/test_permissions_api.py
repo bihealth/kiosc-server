@@ -30,12 +30,12 @@ class TestContainerAPIPermissions(TestProjectAPIPermissionBase):
         )
         good_users = [
             self.superuser,
-            self.owner_as.user,
-            self.delegate_as.user,
-            self.contributor_as.user,
-            self.guest_as.user,
+            self.user_owner,
+            self.user_delegate,
+            self.user_contributor,
+            self.user_guest,
         ]
-        bad_users = [self.user_no_roles]
+        bad_users = [self.user_no_roles, self.user_finder_cat]
 
         self.assert_response_api(url, good_users, status.HTTP_200_OK, knox=True)
         self.assert_response_api(
@@ -63,11 +63,11 @@ class TestContainerAPIPermissions(TestProjectAPIPermissionBase):
         }
         good_users = [
             self.superuser,
-            self.owner_as.user,
-            self.delegate_as.user,
-            self.contributor_as.user,
+            self.user_owner,
+            self.user_delegate,
+            self.user_contributor,
         ]
-        bad_users = [self.guest_as.user, self.user_no_roles]
+        bad_users = [self.user_guest, self.user_no_roles, self.user_finder_cat]
 
         self.assert_response_api(
             url,
@@ -102,12 +102,12 @@ class TestContainerAPIPermissions(TestProjectAPIPermissionBase):
         )
         good_users = [
             self.superuser,
-            self.owner_as.user,
-            self.delegate_as.user,
-            self.contributor_as.user,
-            self.guest_as.user,
+            self.user_owner,
+            self.user_delegate,
+            self.user_contributor,
+            self.user_guest,
         ]
-        bad_users = [self.user_no_roles]
+        bad_users = [self.user_no_roles, self.user_finder_cat]
         self.assert_response_api(url, good_users, status.HTTP_200_OK, knox=True)
         self.assert_response_api(
             url, bad_users, status.HTTP_403_FORBIDDEN, knox=True
@@ -132,11 +132,11 @@ class TestContainerAPIPermissions(TestProjectAPIPermissionBase):
         )
         good_users = [
             self.superuser,
-            self.owner_as.user,
-            self.delegate_as.user,
-            self.contributor_as.user,
+            self.user_owner,
+            self.user_delegate,
+            self.user_contributor,
         ]
-        bad_users = [self.guest_as.user, self.user_no_roles]
+        bad_users = [self.user_guest, self.user_no_roles, self.user_finder_cat]
 
         self.assert_response_api(
             url,
@@ -169,11 +169,11 @@ class TestContainerAPIPermissions(TestProjectAPIPermissionBase):
         )
         good_users = [
             self.superuser,
-            self.owner_as.user,
-            self.delegate_as.user,
-            self.contributor_as.user,
+            self.user_owner,
+            self.user_delegate,
+            self.user_contributor,
         ]
-        bad_users = [self.guest_as.user, self.user_no_roles]
+        bad_users = [self.user_guest, self.user_no_roles, self.user_finder_cat]
         self.assert_response_api(url, good_users, status.HTTP_200_OK, knox=True)
         self.assert_response_api(
             url, bad_users, status.HTTP_403_FORBIDDEN, knox=True
@@ -192,11 +192,11 @@ class TestContainerAPIPermissions(TestProjectAPIPermissionBase):
         )
         good_users = [
             self.superuser,
-            self.owner_as.user,
-            self.delegate_as.user,
-            self.contributor_as.user,
+            self.user_owner,
+            self.user_delegate,
+            self.user_contributor,
         ]
-        bad_users = [self.guest_as.user, self.user_no_roles]
+        bad_users = [self.user_guest, self.user_no_roles, self.user_finder_cat]
         self.assert_response_api(url, good_users, status.HTTP_200_OK, knox=True)
         self.assert_response_api(
             url, bad_users, status.HTTP_403_FORBIDDEN, knox=True

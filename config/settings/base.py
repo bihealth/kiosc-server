@@ -211,11 +211,6 @@ TEMPLATES = [
     }
 ]
 
-PROJECTROLES_TEMPLATE_INCLUDE_PATH = env.path(
-    "PROJECTROLES_TEMPLATE_INCLUDE_PATH",
-    os.path.join(APPS_DIR, "templates", "include"),
-)
-
 CRISPY_TEMPLATE_PACK = "bootstrap4"
 
 # STATIC FILE CONFIGURATION
@@ -575,6 +570,20 @@ PROJECTROLES_ENABLE_SEARCH = True
 # Inline HTML include to the head element of the base site template
 PROJECTROLES_INLINE_HEAD_INCLUDE = env.str(
     "PROJECTROLES_INLINE_HEAD_INCLUDE", None
+)
+
+
+PROJECTROLES_TEMPLATE_INCLUDE_PATH = env.path(
+    "PROJECTROLES_TEMPLATE_INCLUDE_PATH",
+    os.path.join(APPS_DIR, "templates", "include"),
+)
+
+# Settings for syncing remote projects (interval is in minutes)
+PROJECTROLES_TARGET_SYNC_ENABLE = env.bool(
+    "PROJECTROLES_TARGET_SYNC_ENABLE", default=False
+)
+PROJECTROLES_TARGET_SYNC_INTERVAL = env.int(
+    "PROJECTROLES_TARGET_SYNC_INTERVAL", default=5
 )
 
 # Optional projectroles settings

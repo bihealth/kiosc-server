@@ -1,13 +1,9 @@
-import json
 import logging
-import ssl
-import urllib.request
 from datetime import timedelta
 
 import docker
 import docker.errors
 import dateutil.parser
-from django.urls import reverse
 
 from bgjobs.models import BackgroundJob
 from celery.schedules import crontab
@@ -16,7 +12,7 @@ from django.conf import settings
 from django.utils import timezone
 
 from containers.tasks import container_task
-from projectroles.models import SODAR_CONSTANTS, RemoteSite
+from projectroles.models import SODAR_CONSTANTS
 
 from config.celery import app
 from django.contrib import auth
@@ -40,8 +36,6 @@ from containers.statemachines import (
     connect_docker,
     ACTION_TO_EXPECTED_STATE,
 )
-from projectroles.remote_projects import RemoteProjectAPI
-from projectroles.views_api import CORE_API_MEDIA_TYPE, CORE_API_DEFAULT_VERSION
 
 User = auth.get_user_model()
 app_settings = AppSettingAPI()
@@ -242,77 +236,6 @@ def sync_container_state_with_last_user_action(_self):
                 job.save()
 
 
-@app.task(bind=True)
-def sync_upstream(_self):
-    if getattr(settings, "PROJECTROLES_DISABLE_CATEGORIES", False):
-        logger.info(
-            "Project categories and nesting disabled, " "remote sync disabled"
-        )
-        return
-
-    if settings.PROJECTROLES_SITE_MODE != SITE_MODE_TARGET:
-        logger.error("Site not in TARGET mode, unable to sync")
-        return
-
-    try:
-        site = RemoteSite.objects.get(mode=SITE_MODE_SOURCE)
-
-    except RemoteSite.DoesNotExist:
-        logger.error("No source site defined, unable to sync")
-        return
-
-    if getattr(settings, "PROJECTROLES_ALLOW_LOCAL_USERS", False):
-        logger.info(
-            "PROJECTROLES_ALLOW_LOCAL_USERS=True, will sync "
-            "roles for existing local users"
-        )
-
-    logger.info(
-        'Retrieving data from remote site "{}" ({})..'.format(
-            site.name, site.get_url()
-        )
-    )
-
-    api_url = site.get_url() + reverse(
-        "projectroles:api_remote_get", kwargs={"secret": site.secret}
-    )
-
-    try:
-        api_req = urllib.request.Request(api_url)
-        api_req.add_header(
-            "accept",
-            "{}; version={}".format(
-                CORE_API_MEDIA_TYPE, CORE_API_DEFAULT_VERSION
-            ),
-        )
-        response = urllib.request.urlopen(api_req)
-        remote_data = json.loads(response.read())
-
-    except Exception as ex:
-        helper_text = ""
-        if (
-            isinstance(ex, urllib.error.URLError)
-            and isinstance(ex.reason, ssl.SSLError)
-            and ex.reason.reason == "WRONG_VERSION_NUMBER"
-        ):
-            helper_text = " (most likely server cannot handle HTTPS requests)"
-
-        logger.error(
-            "Unable to retrieve data from remote site: {}{}".format(
-                ex, helper_text
-            )
-        )
-        return
-
-    remote_api = RemoteProjectAPI()
-    try:
-        remote_api.sync_source_data(site, remote_data)
-
-    except Exception as ex:
-        logger.error("Remote sync cancelled with exception: {}".format(ex))
-        return
-
-
 @app.on_after_finalize.connect
 def setup_periodic_tasks(sender, **_kwargs):
     """Register periodic tasks"""
@@ -323,4 +246,3 @@ def setup_periodic_tasks(sender, **_kwargs):
     sender.add_periodic_task(
         crontab(hour=1, minute=11), sig=stop_inactive_containers.s()
     )
-    sender.add_periodic_task(300, sig=sync_upstream.s())

@@ -350,12 +350,21 @@ if ENABLE_LDAP:
         "email": "mail",
     }
 
+    # Temporarily disable cert checking (see issue #1853)
+    ldap.set_option(ldap.OPT_X_TLS_REQUIRE_CERT, ldap.OPT_X_TLS_NEVER)
+
     # Primary LDAP server
     AUTH_LDAP_SERVER_URI = env.str("AUTH_LDAP_SERVER_URI", None)
     AUTH_LDAP_BIND_DN = env.str("AUTH_LDAP_BIND_DN", None)
     AUTH_LDAP_BIND_PASSWORD = env.str("AUTH_LDAP_BIND_PASSWORD", None)
+    AUTH_LDAP_START_TLS = env.str("AUTH_LDAP_START_TLS", False)
+    AUTH_LDAP_CA_CERT_FILE = env.str("AUTH_LDAP_CA_CERT_FILE", None)
     AUTH_LDAP_CONNECTION_OPTIONS = LDAP_DEFAULT_CONN_OPTIONS
-
+    if AUTH_LDAP_CA_CERT_FILE:
+        AUTH_LDAP_CONNECTION_OPTIONS[
+            ldap.OPT_X_TLS_CACERTFILE
+        ] = AUTH_LDAP_CA_CERT_FILE
+        AUTH_LDAP_CONNECTION_OPTIONS[ldap.OPT_X_TLS_NEWCTX] = 0
     AUTH_LDAP_USER_SEARCH = LDAPSearch(
         env.str("AUTH_LDAP_USER_SEARCH_BASE", None),
         ldap.SCOPE_SUBTREE,
@@ -379,7 +388,14 @@ if ENABLE_LDAP:
         AUTH_LDAP2_SERVER_URI = env.str("AUTH_LDAP2_SERVER_URI", None)
         AUTH_LDAP2_BIND_DN = env.str("AUTH_LDAP2_BIND_DN", None)
         AUTH_LDAP2_BIND_PASSWORD = env.str("AUTH_LDAP2_BIND_PASSWORD", None)
+        AUTH_LDAP2_START_TLS = env.str("AUTH_LDAP2_START_TLS", False)
+        AUTH_LDAP2_CA_CERT_FILE = env.str("AUTH_LDAP2_CA_CERT_FILE", None)
         AUTH_LDAP2_CONNECTION_OPTIONS = LDAP_DEFAULT_CONN_OPTIONS
+        if AUTH_LDAP2_CA_CERT_FILE:
+            AUTH_LDAP2_CONNECTION_OPTIONS[
+                ldap.OPT_X_TLS_CACERTFILE
+            ] = AUTH_LDAP2_CA_CERT_FILE
+            AUTH_LDAP2_CONNECTION_OPTIONS[ldap.OPT_X_TLS_NEWCTX] = 0
 
         AUTH_LDAP2_USER_SEARCH = LDAPSearch(
             env.str("AUTH_LDAP2_USER_SEARCH_BASE", None),

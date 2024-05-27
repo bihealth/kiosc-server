@@ -35,7 +35,6 @@ class ContainerListAPIView(
     SODARAPIGenericProjectMixin,
     ListAPIView,
 ):
-
     serializer_class = ContainerSerializer
     permission_required = "containers.view_container"
 
@@ -47,7 +46,6 @@ class ContainerDetailAPIView(
     SODARAPIGenericProjectMixin,
     RetrieveAPIView,
 ):
-
     serializer_class = ContainerSerializer
     lookup_url_kwarg = "container"
     lookup_field = "sodar_uuid"
@@ -58,7 +56,6 @@ class ContainerCreateAPIView(
     SODARAPIGenericProjectMixin,
     CreateAPIView,
 ):
-
     serializer_class = ContainerSerializer
     permission_required = "containers.create_container"
 
@@ -87,7 +84,6 @@ class ContainerDeleteAPIView(
     SODARAPIGenericProjectMixin,
     DestroyAPIView,
 ):
-
     serializer_class = ContainerSerializer
     lookup_url_kwarg = "container"
     lookup_field = "sodar_uuid"
@@ -160,7 +156,6 @@ class ContainerStartAPIView(
     SODARAPIGenericProjectMixin,
     APIView,
 ):
-
     serializer_class = ContainerSerializer
     lookup_url_kwarg = "container"
     lookup_field = "sodar_uuid"
@@ -206,7 +201,6 @@ class ContainerStopAPIView(
     SODARAPIGenericProjectMixin,
     APIView,
 ):
-
     serializer_class = ContainerSerializer
     lookup_url_kwarg = "container"
     lookup_field = "sodar_uuid"

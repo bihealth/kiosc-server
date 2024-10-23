@@ -1,4 +1,4 @@
-from django.conf.urls import url
+from django.urls import path
 
 from . import views
 
@@ -7,8 +7,8 @@ app_name = "kioscadmin"
 
 
 urlpatterns = [
-    url(
-        regex=r"^overview$",
+    path(
+        "overview",
         view=views.KioscAdminView.as_view(),
         name="overview",
     ),

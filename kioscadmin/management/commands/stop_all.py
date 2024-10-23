@@ -1,4 +1,5 @@
 """Django command for stopping all containers."""
+
 import docker.errors
 from django.conf import settings
 from django.core.management.base import BaseCommand

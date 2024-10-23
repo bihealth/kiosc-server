@@ -535,10 +535,10 @@ class ContainerTemplateProjectCopyView(
             else:
                 if data.get("containertemplatesite") is not None:
                     try:
-                        data[
-                            "containertemplatesite"
-                        ] = ContainerTemplateSite.objects.get(
-                            id=data.get("containertemplatesite")
+                        data["containertemplatesite"] = (
+                            ContainerTemplateSite.objects.get(
+                                id=data.get("containertemplatesite")
+                            )
                         )
 
                     except ContainerTemplateSite.DoesNotExist:

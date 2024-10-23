@@ -1,8 +1,8 @@
 """Tests for the container API views."""
+
 from unittest.mock import patch
 
 from rest_framework import status
-from urllib3_mock import Responses
 
 from django.forms import model_to_dict
 from django.urls import reverse
@@ -19,12 +19,10 @@ from containers.models import (
 from containers.tests.helpers import TestContainerCreationMixin
 from containers.views import CELERY_SUBMIT_COUNTDOWN
 from projectroles.models import Project
-from projectroles.tests.test_views_api import TestAPIViewsBase
-
-responses = Responses("requests.packages.urllib3")
+from projectroles.tests.test_views_api import APIViewTestBase
 
 
-class TestContainerListAPIView(TestContainerCreationMixin, TestAPIViewsBase):
+class TestContainerListAPIView(TestContainerCreationMixin, APIViewTestBase):
     """Tests for ``ContainerListAPIView``."""
 
     def test_get_success_list_empty(self):
@@ -97,7 +95,7 @@ class TestContainerListAPIView(TestContainerCreationMixin, TestAPIViewsBase):
         self.assertEqual(response.json(), [container2, container1])
 
 
-class TestContainerCreateAPIView(TestContainerCreationMixin, TestAPIViewsBase):
+class TestContainerCreateAPIView(TestContainerCreationMixin, APIViewTestBase):
     """Tests for ``ContainerCreateAPIView``."""
 
     def setUp(self):
@@ -190,7 +188,7 @@ class TestContainerCreateAPIView(TestContainerCreationMixin, TestAPIViewsBase):
         self.assertDictEqual(result, self.post_data_all)
 
 
-class TestContainerDeleteAPIView(TestContainerCreationMixin, TestAPIViewsBase):
+class TestContainerDeleteAPIView(TestContainerCreationMixin, APIViewTestBase):
     """Tests for ``ContainerDeleteAPIView``."""
 
     def setUp(self):
@@ -249,7 +247,7 @@ class TestContainerDeleteAPIView(TestContainerCreationMixin, TestAPIViewsBase):
         self.assertEqual(Container.objects.count(), 1)
 
 
-class TestContainerDetailAPIView(TestContainerCreationMixin, TestAPIViewsBase):
+class TestContainerDetailAPIView(TestContainerCreationMixin, APIViewTestBase):
     """Tests for ``ContainerDetailAPIView``."""
 
     def setUp(self):
@@ -291,7 +289,7 @@ class TestContainerDetailAPIView(TestContainerCreationMixin, TestAPIViewsBase):
         self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
 
 
-class TestContainerStartAPIView(TestContainerCreationMixin, TestAPIViewsBase):
+class TestContainerStartAPIView(TestContainerCreationMixin, APIViewTestBase):
     """Tests for ``ContainerStartAPIView``."""
 
     def setUp(self):
@@ -330,7 +328,7 @@ class TestContainerStartAPIView(TestContainerCreationMixin, TestAPIViewsBase):
         self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
 
 
-class TestContainerStopAPIView(TestContainerCreationMixin, TestAPIViewsBase):
+class TestContainerStopAPIView(TestContainerCreationMixin, APIViewTestBase):
     """Tests for ``ContainerStopAPIView``."""
 
     def setUp(self):

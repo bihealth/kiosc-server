@@ -441,9 +441,11 @@ class ContainerMachine(StateMachine):
             detach=True,
             image=self.container.image_id,
             environment=environment,
-            command=shlex.split(self.container.command)
-            if self.container.command
-            else None,
+            command=(
+                shlex.split(self.container.command)
+                if self.container.command
+                else None
+            ),
             ports=[self.container.container_port],
             host_config=self.cli.create_host_config(
                 ulimits=[

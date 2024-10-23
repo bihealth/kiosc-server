@@ -469,9 +469,9 @@ class ContainerLogEntryManager(models.Manager):
 
         return sorted(
             qs,
-            key=lambda a: a.date_docker_log
-            if a.date_docker_log
-            else a.date_created,
+            key=lambda a: (
+                a.date_docker_log if a.date_docker_log else a.date_created
+            ),
         )
 
     def get_logs_as_str(self, *args, **kwargs):

@@ -1,4 +1,5 @@
 """Helpers for the container tests."""
+
 import uuid
 
 from projectroles.forms import (

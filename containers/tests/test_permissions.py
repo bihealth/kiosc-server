@@ -1,8 +1,9 @@
 """Permission tests."""
+
 from unittest.mock import patch
 
 from django.urls import reverse
-from projectroles.tests.test_permissions import TestProjectPermissionBase
+from projectroles.tests.test_permissions import ProjectPermissionTestBase
 from urllib3_mock import Responses
 
 from containers.models import STATE_RUNNING
@@ -12,7 +13,7 @@ from containers.tests.factories import ContainerFactory
 responses = Responses("requests.packages.urllib3")
 
 
-class TestContainerPermissions(TestProjectPermissionBase):
+class TestContainerPermissions(ProjectPermissionTestBase):
     """Test permissions for container app."""
 
     def setUp(self):
@@ -271,6 +272,7 @@ class TestContainerPermissions(TestProjectPermissionBase):
         self.assert_response(url, bad_users, 302)
         mock.assert_called()
 
+    # urllib3-mock not working with Python 3.11+ :-/
     @responses.activate
     def test_proxy(self):
         """Test permissions for the ``proxy`` view."""

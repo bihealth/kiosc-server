@@ -1,4 +1,4 @@
-FROM python:3.10-bookworm AS base
+FROM python:3.11-buster
 
 ENV LANG C.UTF-8
 ENV LC_ALL C.UTF-8
@@ -12,7 +12,7 @@ LABEL org.opencontainers.image.source https://github.com/bihealth/kiosc-server
 
 
 ## Add the wait script to the image
-ADD https://github.com/ufoscout/docker-compose-wait/releases/download/2.7.3/wait /usr/local/bin/wait
+ADD https://github.com/ufoscout/docker-compose-wait/releases/download/2.12.1/wait /usr/local/bin/wait
 RUN chmod +x /usr/local/bin/wait
 
 # Install system dependencies.
@@ -55,10 +55,12 @@ RUN mkdir -p local-static/local/css && \
     wget -P local-static/local/css \
         https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css \
         https://cdn.jsdelivr.net/npm/bootstrap@4.5.3/dist/css/bootstrap.min.css \
+        https://cdn.jsdelivr.net/npm/bootstrap@4.5.3/dist/css/bootstrap.min.css.map \
     && \
     wget -P local-static/local/js \
         https://code.jquery.com/jquery-3.5.1.min.js \
         https://cdn.jsdelivr.net/npm/bootstrap@4.5.3/dist/js/bootstrap.bundle.min.js \
+        https://cdn.jsdelivr.net/npm/bootstrap@4.5.3/dist/js/bootstrap.bundle.min.js.map \
         https://cdnjs.cloudflare.com/ajax/libs/tether/1.4.4/js/tether.js \
         https://cdnjs.cloudflare.com/ajax/libs/shepherd/1.8.1/js/shepherd.min.js \
         https://cdnjs.cloudflare.com/ajax/libs/clipboard.js/2.0.0/clipboard.min.js

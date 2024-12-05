@@ -1,7 +1,7 @@
 """Permission tests."""
 
 from django.urls import reverse
-from projectroles.tests.test_permissions import TestProjectPermissionBase
+from projectroles.tests.test_permissions import ProjectPermissionTestBase
 
 from containertemplates.tests.factories import (
     ContainerTemplateSiteFactory,
@@ -9,7 +9,7 @@ from containertemplates.tests.factories import (
 )
 
 
-class TestContainerTemplateSitePermissions(TestProjectPermissionBase):
+class TestContainerTemplateSitePermissions(ProjectPermissionTestBase):
     """Test permissions for site-wide containertemplates app."""
 
     def setUp(self):
@@ -152,7 +152,7 @@ class TestContainerTemplateSitePermissions(TestProjectPermissionBase):
         self.assert_response(url, bad_users, 302)
 
 
-class TestContainerTemplateProjectPermissions(TestProjectPermissionBase):
+class TestContainerTemplateProjectPermissions(ProjectPermissionTestBase):
     """Test permissions for project-wide containertemplates app."""
 
     def setUp(self):

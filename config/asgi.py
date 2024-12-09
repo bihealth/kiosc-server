@@ -8,6 +8,7 @@ https://docs.djangoproject.com/en/3.2/howto/deployment/asgi/
 """
 
 import django
+from django.core.asgi import get_asgi_application
 
 django.setup()
 
@@ -22,9 +23,9 @@ import containers.urls
 
 application = ProtocolTypeRouter(
     {
-        # (http->django views is added by default)
+        "http": get_asgi_application(),
         "websocket": AuthMiddlewareStack(
             URLRouter(containers.urls.websocket_urlpatterns)
-        )
+        ),
     }
 )

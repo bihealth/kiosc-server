@@ -1,8 +1,8 @@
 """Tests for the containertemplate views."""
+
 import json
 
 from django.contrib.messages import get_messages
-from urllib3_mock import Responses
 
 from django.forms import model_to_dict
 from django.urls import reverse
@@ -13,9 +13,6 @@ from containertemplates.models import (
     ContainerTemplateProject,
 )
 from containertemplates.tests.helpers import TestBase
-
-
-responses = Responses("requests.packages.urllib3")
 
 
 class TestContainerTemplateSiteListView(TestBase):

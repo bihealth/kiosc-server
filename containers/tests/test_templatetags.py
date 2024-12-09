@@ -1,4 +1,5 @@
 """Tests for the ``templatetags`` module."""
+
 import json
 
 from test_plus.test import TestCase

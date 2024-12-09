@@ -1,21 +1,18 @@
 """Permission tests."""
+
 from unittest.mock import patch
 
 from django.urls import reverse
 
 from containers.models import Container
-from projectroles.tests.test_permissions_api import TestProjectAPIPermissionBase
+from projectroles.tests.test_permissions_api import ProjectAPIPermissionTestBase
 from rest_framework import status
-from urllib3_mock import Responses
 
 from containers.tests.factories import ContainerFactory
 from django.test import override_settings
 
 
-responses = Responses("requests.packages.urllib3")
-
-
-class TestContainerAPIPermissions(TestProjectAPIPermissionBase):
+class TestContainerAPIPermissions(ProjectAPIPermissionTestBase):
     """Test API permissions for container app."""
 
     def setUp(self):

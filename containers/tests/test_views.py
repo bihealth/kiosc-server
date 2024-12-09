@@ -1,4 +1,5 @@
 """Tests for the container views."""
+
 import json
 from unittest.mock import patch
 
@@ -456,9 +457,9 @@ class TestContainerUpdateView(TestBase):
         self.container1.environment_secret_keys = "secret,secret_to_update"
         self.container1.save()
         self.post_data_host["environment"] = json.dumps(environment_post)
-        self.post_data_host[
-            "environment_secret_keys"
-        ] = self.container1.environment_secret_keys
+        self.post_data_host["environment_secret_keys"] = (
+            self.container1.environment_secret_keys
+        )
 
         with self.login(self.superuser):
             response = self.client.post(

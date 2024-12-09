@@ -33,6 +33,11 @@ serve:
 	$(MANAGE) runserver --settings=config.settings.local
 
 
+.PHONY: asgi
+asgi:
+	python -m uvicorn config.asgi:application
+
+
 .PHONY: serve_target
 serve_target:
 	$(MANAGE) runserver 0.0.0.0:$(target_port) --settings=config.settings.local_target

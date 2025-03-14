@@ -3,7 +3,7 @@ from django.urls import reverse
 from projectroles.models import SODAR_CONSTANTS
 from projectroles.plugins import ProjectAppPluginPoint
 
-from containers.models import *
+from containers.models import Container, ContainerBackgroundJob
 from containers.urls import urlpatterns
 
 PROJECT_TYPE_PROJECT = SODAR_CONSTANTS["PROJECT_TYPE_PROJECT"]
@@ -161,12 +161,8 @@ class ProjectAppPlugin(ProjectAppPluginPoint):
         :param uuid: sodar_uuid of the referred object
         :return: Dict or None if not found
         """
-        obj = self.get_object(eval(model_str), uuid)
-
-        if not obj:
-            return None
-
-        elif obj.__class__ == Container:
+        if model_str == "Container":
+            obj = self.get_object(Container, uuid)
             return {
                 "url": reverse(
                     "containers:detail",
@@ -175,5 +171,8 @@ class ProjectAppPlugin(ProjectAppPluginPoint):
                 "label": obj.get_display_name(),
                 "blank": True,
             }
+        elif model_str == "ContainerBackgroundJob":
+            # TODO implement a view for background jobs
+            pass
 
         return None

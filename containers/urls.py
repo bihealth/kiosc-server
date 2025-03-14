@@ -115,8 +115,8 @@ api_urlpatterns = [
 
 websocket_urlpatterns = [
     re_path(
-        r"container/proxy/(?P<container>[0-9a-f-]+)/(?P<path>.*)$",
-        consumers.TunnelConsumer,
+        r"^containers/proxy/(?P<container>[0-9a-f-]+)/(?P<path>.*)$",
+        consumers.TunnelConsumer.as_asgi(),
     )
 ]
 

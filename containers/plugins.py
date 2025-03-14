@@ -3,7 +3,7 @@ from django.urls import reverse
 from projectroles.models import SODAR_CONSTANTS
 from projectroles.plugins import ProjectAppPluginPoint
 
-from containers.models import Container, ContainerBackgroundJob
+from containers.models import Container
 from containers.urls import urlpatterns
 
 PROJECT_TYPE_PROJECT = SODAR_CONSTANTS["PROJECT_TYPE_PROJECT"]

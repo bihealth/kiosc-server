@@ -4,6 +4,7 @@ define USAGE=
 @echo -e
 @echo -e "Usage:"
 @echo -e "\tmake black [arg=--<arg>]                 -- black formatting"
+@echo -e "\tmake flake                               -- run flake8"
 @echo -e "\tmake serve                               -- start source server"
 @echo -e "\tmake serve_target                        -- start target server"
 @echo -e "\tmake serve_taskflow [arg=sync]           -- start taskflow server"
@@ -26,6 +27,11 @@ target_port = 8001
 .PHONY: black
 black:
 	black . -l 80 --exclude ".git|.venv|.tox|env|src|docs|migrations|versioneer.py" $(arg)
+
+
+.PHONY: flake
+flake:
+	flake8 .
 
 
 .PHONY: serve

@@ -369,7 +369,11 @@ class ContainerMachine(StateMachine):
             stream=True,
             decode=True,
         ):
-            if line.get("progressDetail") and line["progressDetail"].get("current") and line["progressDetail"].get("total"):
+            if (
+                line.get("progressDetail")
+                and line["progressDetail"].get("current")
+                and line["progressDetail"].get("total")
+            ):
                 docker_log_line = "{status} ({progressDetail[current]}/{progressDetail[total]})".format(
                     **line
                 )

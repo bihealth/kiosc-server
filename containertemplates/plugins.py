@@ -6,10 +6,17 @@ from uuid import UUID
 # Projectroles dependency
 from django.urls import reverse
 from projectroles.models import SODAR_CONSTANTS
-from projectroles.plugins import SiteAppPluginPoint, ProjectAppPluginPoint, PluginObjectLink
+from projectroles.plugins import (
+    SiteAppPluginPoint,
+    ProjectAppPluginPoint,
+    PluginObjectLink,
+)
 
 from containertemplates.urls import urlpatterns
-from containertemplates.models import ContainerTemplateProject, ContainerTemplateSite
+from containertemplates.models import (
+    ContainerTemplateProject,
+    ContainerTemplateSite,
+)
 
 
 PROJECT_TYPE_PROJECT = SODAR_CONSTANTS["PROJECT_TYPE_PROJECT"]
@@ -84,7 +91,9 @@ class ProjectAppPlugin(ProjectAppPluginPoint):
         #     },
     }
 
-    def get_object_link(self, model_str: str, uuid: Union[str, UUID]) -> Optional[PluginObjectLink]:
+    def get_object_link(
+        self, model_str: str, uuid: Union[str, UUID]
+    ) -> Optional[PluginObjectLink]:
         """
         Return the URL for referring to a object used by the app, along with a
         label to be shown to the user for linking.
@@ -141,7 +150,9 @@ class SiteAppPlugin(SiteAppPluginPoint):
     #: App card title for the project details page
     details_title = "Container Templates overview"
 
-    def get_object_link(self, model_str: str, uuid: Union[str, UUID]) -> Optional[PluginObjectLink]:
+    def get_object_link(
+        self, model_str: str, uuid: Union[str, UUID]
+    ) -> Optional[PluginObjectLink]:
         """
         Return the URL for referring to a object used by the app, along with a
         label to be shown to the user for linking.

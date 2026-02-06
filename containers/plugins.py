@@ -157,7 +157,9 @@ class ProjectAppPlugin(ProjectAppPluginPoint):
         #     },
     }
 
-    def get_object_link(self, model_str: str, uuid: Union[str, UUID]) -> Optional[PluginObjectLink]:
+    def get_object_link(
+        self, model_str: str, uuid: Union[str, UUID]
+    ) -> Optional[PluginObjectLink]:
         """
         Return the URL for referring to a object used by the app, along with a
         label to be shown to the user for linking.
@@ -170,8 +172,8 @@ class ProjectAppPlugin(ProjectAppPluginPoint):
             obj = self.get_object(Container, uuid)
             return PluginObjectLink(
                 url=reverse(
-                    'containers:detail',
-                    kwargs={'container': obj.sodar_uuid},
+                    "containers:detail",
+                    kwargs={"container": obj.sodar_uuid},
                 ),
                 name=obj.get_display_name(),
                 blank=True,

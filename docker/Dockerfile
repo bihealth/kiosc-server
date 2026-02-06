@@ -35,7 +35,8 @@ RUN apt-get clean autoclean && \
     apt-get autoremove --yes && \
     rm -rf /var/lib/{apt,dpkg,cache,log}/
 
-# Create Python virtual environment.
+# Create Python virtual environment (KIOSC dependencies conflict with
+# the system packages).
 RUN python3.13 -m venv /venv
 ENV PATH=/venv/bin:$PATH
 

@@ -24,7 +24,6 @@ RUN utility/install_postgres.sh
 RUN utility/install_redis.sh
 RUN utility/install_ldap_dependencies.sh
 RUN utility/install_python.sh
-RUN ln /usr/bin/python3.13 /usr/bin/python
 
 # Install extra system utilities
 RUN apt-get install -y \
@@ -35,6 +34,10 @@ RUN apt-get install -y \
 RUN apt-get clean autoclean && \
     apt-get autoremove --yes && \
     rm -rf /var/lib/{apt,dpkg,cache,log}/
+
+# Create Python virtual environment.
+RUN python3.13 -m venv /venv
+ENV PATH=/venv/bin:$PATH
 
 # Install Python dependencies.
 RUN pip install --no-cache-dir -r requirements/production.txt && \

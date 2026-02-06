@@ -10,6 +10,8 @@ from rest_framework.generics import (
     CreateAPIView,
     DestroyAPIView,
 )
+from rest_framework.renderers import JSONRenderer
+from rest_framework.versioning import AcceptHeaderVersioning
 from rest_framework.views import APIView
 
 from containers.models import (
@@ -28,13 +30,37 @@ from containers.tasks import container_task
 from containers.views import CELERY_SUBMIT_COUNTDOWN
 
 
+# Local constants
 APP_NAME = "containers"
+CONTAINERS_API_MEDIA_TYPE = (
+    "application/vnd.bihealth.kiosc-server.containers+json"
+)
+CONTAINERS_API_DEFAULT_VERSION = "1.0"
+CONTAINERS_API_ALLOWED_VERSIONS = ["1.0"]
 
 
 plugin_api = PluginAPI()
 
 
+class ContainersAPIVersioningMixin:
+    """
+    Containers API view versioning mixin for overriding media type and
+    accepted versions.
+    """
+
+    class ContainersAPIRenderer(JSONRenderer):
+        media_type = CONTAINERS_API_MEDIA_TYPE
+
+    class ContainersAPIVersioning(AcceptHeaderVersioning):
+        allowed_versions = CONTAINERS_API_ALLOWED_VERSIONS
+        default_version = CONTAINERS_API_DEFAULT_VERSION
+
+    renderer_classes = [ContainersAPIRenderer]
+    versioning_class = ContainersAPIVersioning
+
+
 class ContainerListAPIView(
+    ContainersAPIVersioningMixin,
     SODARAPIGenericProjectMixin,
     ListAPIView,
 ):
@@ -46,6 +72,7 @@ class ContainerListAPIView(
 
 
 class ContainerDetailAPIView(
+    ContainersAPIVersioningMixin,
     SODARAPIGenericProjectMixin,
     RetrieveAPIView,
 ):
@@ -56,6 +83,7 @@ class ContainerDetailAPIView(
 
 
 class ContainerCreateAPIView(
+    ContainersAPIVersioningMixin,
     SODARAPIGenericProjectMixin,
     CreateAPIView,
 ):
@@ -84,6 +112,7 @@ class ContainerCreateAPIView(
 
 
 class ContainerDeleteAPIView(
+    ContainersAPIVersioningMixin,
     SODARAPIGenericProjectMixin,
     DestroyAPIView,
 ):
@@ -156,6 +185,7 @@ class ContainerDeleteAPIView(
 
 
 class ContainerStartAPIView(
+    ContainersAPIVersioningMixin,
     SODARAPIGenericProjectMixin,
     APIView,
 ):
@@ -201,6 +231,7 @@ class ContainerStartAPIView(
 
 
 class ContainerStopAPIView(
+    ContainersAPIVersioningMixin,
     SODARAPIGenericProjectMixin,
     APIView,
 ):

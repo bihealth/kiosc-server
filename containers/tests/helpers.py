@@ -16,6 +16,10 @@ from containers.models import (
     STATE_PAUSED,
 )
 from containers.tests.factories import ProjectFactory, ContainerFactory
+from containers.views_api import (
+    CONTAINERS_API_MEDIA_TYPE,
+    CONTAINERS_API_DEFAULT_VERSION,
+)
 from containertemplates.models import (
     ContainerTemplateSite,
     ContainerTemplateProject,
@@ -24,6 +28,7 @@ from containertemplates.tests.factories import (
     ContainerTemplateSiteFactory,
     ContainerTemplateProjectFactory,
 )
+from projectroles.tests.base import APIViewTestBase
 
 
 class TestContainerCreationMixin:
@@ -70,6 +75,16 @@ class TestBase(TestContainerCreationMixin, TestCase):
         self.superuser.is_staff = True
         self.superuser.is_superuser = True
         self.superuser.save()
+
+
+class ContainersAPIViewTestBase(APIViewTestBase):
+    """Base class for containers API tests"""
+
+    media_type = CONTAINERS_API_MEDIA_TYPE
+    api_version = CONTAINERS_API_DEFAULT_VERSION
+
+    def setUp(self):
+        super().setUp()
 
 
 def log_entry1():

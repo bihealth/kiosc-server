@@ -17,7 +17,9 @@ General
 - Fix broken async small file serving (#147)
 - Fix broken ``django-revproxy`` dependency
 - Fix parallel testing errors with Docker (#152)
-- Updated to ``sodar-core`` version 0.13.0
+- Updated to ``sodar-core`` version 1.3.2
+- Updated other dependencies to current versions
+- Updated supported Python versions to 3.11-3.13
 
 Kioscadmin
 ----------

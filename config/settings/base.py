@@ -11,6 +11,8 @@ https://docs.djangoproject.com/en/dev/ref/settings/
 import os
 import environ
 
+from projectroles.constants import get_sodar_constants
+
 
 SITE_PACKAGE = "kiosc"
 
@@ -61,6 +63,7 @@ THIRD_PARTY_APPS = [
     "rest_framework",  # For API views
     "knox",  # For token auth
     "social_django",  # For OIDC authentication
+    "axes",  # Django-axes for login security
     "docs",  # For the online user documentation/manual
     "dal",  # For user search combo box
     "dal_select2",
@@ -114,6 +117,7 @@ MIDDLEWARE = [
     "django.contrib.auth.middleware.AuthenticationMiddleware",
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
+    "axes.middleware.AxesMiddleware",  # Should be the last one on the list
 ]
 
 # MIGRATIONS CONFIGURATION
@@ -154,10 +158,6 @@ DATABASES = {"default": env.db("DATABASE_URL", default="postgres:///kiosc")}
 DATABASES["default"]["ATOMIC_REQUESTS"] = False
 
 DEFAULT_AUTO_FIELD = "django.db.models.AutoField"
-
-# Set django-db-file-storage as the default storage (for filesfolders)
-DEFAULT_FILE_STORAGE = "db_file_storage.storage.DatabaseFileStorage"
-
 
 # GENERAL CONFIGURATION
 # ------------------------------------------------------------------------------
@@ -232,6 +232,18 @@ STATICFILES_FINDERS = [
 MEDIA_ROOT = str(APPS_DIR("media"))
 MEDIA_URL = "/media/"
 
+# STORAGE CONFIGURATION
+# ------------------------------------------------------------------------------
+# Set django-db-file-storage as the default storage (for filesfolders)
+STORAGES = {
+    "default": {
+        "BACKEND": "db_file_storage.storage.DatabaseFileStorage",
+    },
+    "staticfiles": {
+        "BACKEND": "django.contrib.staticfiles.storage.StaticFilesStorage"
+    },
+}
+
 # URL Configuration
 # ------------------------------------------------------------------------------
 ROOT_URLCONF = "config.urls"
@@ -273,7 +285,7 @@ AUTH_PASSWORD_VALIDATORS = [
 AUTHENTICATION_BACKENDS = [
     "rules.permissions.ObjectPermissionBackend",  # For rules
     "django.contrib.auth.backends.ModelBackend",
-]
+]  # NOTE: django-axes added after LDAP/OIDC setup
 
 # Custom user app defaults
 AUTH_USER_MODEL = "users.User"
@@ -311,17 +323,45 @@ CELERY_TASK_ALWAYS_EAGER = False
 # http://docs.celeryproject.org/en/latest/userguide/configuration.html#task-eager-propagates
 CELERY_TASK_EAGER_PROPAGATES = False
 
-# Django REST framework default auth classes
+
+# API Settings
+# ------------------------------------------------------------------------------
+
+# SODAR API host URL
+SODAR_API_DEFAULT_HOST = env.url(
+    "SODAR_API_DEFAULT_HOST", "http://0.0.0.0:8000"
+)
+# SODAR API pagination page size
+SODAR_API_PAGE_SIZE = env.int("SODAR_API_PAGE_SIZE", 100)
+
+# SODAR API version
+SODAR_API_DEFAULT_VERSION = "0.1"
+SODAR_API_ALLOWED_VERSIONS = [SODAR_API_DEFAULT_VERSION]
+
+# SODAR API media type
+SODAR_API_MEDIA_TYPE = "application/your.application+json"
+
+# Django REST framework
+# ------------------------------------------------------------------------------
+
 REST_FRAMEWORK = {
     "DEFAULT_AUTHENTICATION_CLASSES": (
         "rest_framework.authentication.BasicAuthentication",
         "rest_framework.authentication.SessionAuthentication",
         "knox.auth.TokenAuthentication",
-    )
+    ),
+    "DEFAULT_PAGINATION_CLASS": (
+        "rest_framework.pagination.PageNumberPagination"
+    ),
+    "PAGE_SIZE": SODAR_API_PAGE_SIZE,
 }
 
+
+# Additional authentication settings
+# ------------------------------------------------------------------------------
+
 # Knox settings
-TOKEN_TTL = None
+KNOX_TOKEN_MODEL = "tokens.SODARAuthToken"
 
 # Settings for HTTP AuthBasic
 BASICAUTH_REALM = "Log in with user@DOMAIN and your password."
@@ -334,88 +374,86 @@ BASICAUTH_DISABLE = False
 # Enable LDAP if configured
 ENABLE_LDAP = env.bool("ENABLE_LDAP", False)
 ENABLE_LDAP_SECONDARY = env.bool("ENABLE_LDAP_SECONDARY", False)
-
+LDAP_DEBUG = env.bool("LDAP_DEBUG", False)
 # Alternative domains for detecting LDAP access by email address
 LDAP_ALT_DOMAINS = env.list("LDAP_ALT_DOMAINS", None, [])
 
 if ENABLE_LDAP:
-    import itertools
     import ldap
     from django_auth_ldap.config import LDAPSearch
 
+    if LDAP_DEBUG:
+        ldap.set_option(ldap.OPT_DEBUG_LEVEL, 255)
     # Default values
     LDAP_DEFAULT_CONN_OPTIONS = {ldap.OPT_REFERRALS: 0}
-    LDAP_DEFAULT_FILTERSTR = "(sAMAccountName=%(user)s)"
     LDAP_DEFAULT_ATTR_MAP = {
         "first_name": "givenName",
         "last_name": "sn",
         "email": "mail",
     }
 
-    # Temporarily disable cert checking (see issue #1853)
-    ldap.set_option(ldap.OPT_X_TLS_REQUIRE_CERT, ldap.OPT_X_TLS_NEVER)
-
     # Primary LDAP server
     AUTH_LDAP_SERVER_URI = env.str("AUTH_LDAP_SERVER_URI", None)
     AUTH_LDAP_BIND_DN = env.str("AUTH_LDAP_BIND_DN", None)
     AUTH_LDAP_BIND_PASSWORD = env.str("AUTH_LDAP_BIND_PASSWORD", None)
-    AUTH_LDAP_START_TLS = env.str("AUTH_LDAP_START_TLS", False)
+    AUTH_LDAP_START_TLS = env.bool("AUTH_LDAP_START_TLS", False)
     AUTH_LDAP_CA_CERT_FILE = env.str("AUTH_LDAP_CA_CERT_FILE", None)
-    AUTH_LDAP_CONNECTION_OPTIONS = LDAP_DEFAULT_CONN_OPTIONS
+    AUTH_LDAP_CONNECTION_OPTIONS = {**LDAP_DEFAULT_CONN_OPTIONS}
     if AUTH_LDAP_CA_CERT_FILE:
         AUTH_LDAP_CONNECTION_OPTIONS[ldap.OPT_X_TLS_CACERTFILE] = (
             AUTH_LDAP_CA_CERT_FILE
         )
         AUTH_LDAP_CONNECTION_OPTIONS[ldap.OPT_X_TLS_NEWCTX] = 0
+    AUTH_LDAP_USER_FILTER = env.str(
+        "AUTH_LDAP_USER_FILTER", "(sAMAccountName=%(user)s)"
+    )
+    AUTH_LDAP_USER_SEARCH_BASE = env.str("AUTH_LDAP_USER_SEARCH_BASE", None)
     AUTH_LDAP_USER_SEARCH = LDAPSearch(
-        env.str("AUTH_LDAP_USER_SEARCH_BASE", None),
+        AUTH_LDAP_USER_SEARCH_BASE,
         ldap.SCOPE_SUBTREE,
-        LDAP_DEFAULT_FILTERSTR,
+        AUTH_LDAP_USER_FILTER,
     )
     AUTH_LDAP_USER_ATTR_MAP = LDAP_DEFAULT_ATTR_MAP
     AUTH_LDAP_USERNAME_DOMAIN = env.str("AUTH_LDAP_USERNAME_DOMAIN", None)
     AUTH_LDAP_DOMAIN_PRINTABLE = env.str(
         "AUTH_LDAP_DOMAIN_PRINTABLE", AUTH_LDAP_USERNAME_DOMAIN
     )
-
-    AUTHENTICATION_BACKENDS = tuple(
-        itertools.chain(
-            ("projectroles.auth_backends.PrimaryLDAPBackend",),
-            AUTHENTICATION_BACKENDS,
-        )
-    )
+    AUTHENTICATION_BACKENDS = [
+        "projectroles.auth_backends.PrimaryLDAPBackend"
+    ] + AUTHENTICATION_BACKENDS
 
     # Secondary LDAP server (optional)
     if ENABLE_LDAP_SECONDARY:
         AUTH_LDAP2_SERVER_URI = env.str("AUTH_LDAP2_SERVER_URI", None)
         AUTH_LDAP2_BIND_DN = env.str("AUTH_LDAP2_BIND_DN", None)
         AUTH_LDAP2_BIND_PASSWORD = env.str("AUTH_LDAP2_BIND_PASSWORD", None)
-        AUTH_LDAP2_START_TLS = env.str("AUTH_LDAP2_START_TLS", False)
+        AUTH_LDAP2_START_TLS = env.bool("AUTH_LDAP2_START_TLS", False)
         AUTH_LDAP2_CA_CERT_FILE = env.str("AUTH_LDAP2_CA_CERT_FILE", None)
-        AUTH_LDAP2_CONNECTION_OPTIONS = LDAP_DEFAULT_CONN_OPTIONS
+        AUTH_LDAP2_CONNECTION_OPTIONS = {**LDAP_DEFAULT_CONN_OPTIONS}
         if AUTH_LDAP2_CA_CERT_FILE:
             AUTH_LDAP2_CONNECTION_OPTIONS[ldap.OPT_X_TLS_CACERTFILE] = (
                 AUTH_LDAP2_CA_CERT_FILE
             )
             AUTH_LDAP2_CONNECTION_OPTIONS[ldap.OPT_X_TLS_NEWCTX] = 0
-
+        AUTH_LDAP2_USER_FILTER = env.str(
+            "AUTH_LDAP2_USER_FILTER", "(sAMAccountName=%(user)s)"
+        )
+        AUTH_LDAP2_USER_SEARCH_BASE = env.str(
+            "AUTH_LDAP2_USER_SEARCH_BASE", None
+        )
         AUTH_LDAP2_USER_SEARCH = LDAPSearch(
-            env.str("AUTH_LDAP2_USER_SEARCH_BASE", None),
+            AUTH_LDAP2_USER_SEARCH_BASE,
             ldap.SCOPE_SUBTREE,
-            LDAP_DEFAULT_FILTERSTR,
+            AUTH_LDAP2_USER_FILTER,
         )
         AUTH_LDAP2_USER_ATTR_MAP = LDAP_DEFAULT_ATTR_MAP
         AUTH_LDAP2_USERNAME_DOMAIN = env.str("AUTH_LDAP2_USERNAME_DOMAIN")
         AUTH_LDAP2_DOMAIN_PRINTABLE = env.str(
             "AUTH_LDAP2_DOMAIN_PRINTABLE", AUTH_LDAP2_USERNAME_DOMAIN
         )
-
-        AUTHENTICATION_BACKENDS = tuple(
-            itertools.chain(
-                ("projectroles.auth_backends.SecondaryLDAPBackend",),
-                AUTHENTICATION_BACKENDS,
-            )
-        )
+        AUTHENTICATION_BACKENDS = [
+            "projectroles.auth_backends.SecondaryLDAPBackend"
+        ] + AUTHENTICATION_BACKENDS
 
 
 # OpenID Connect (OIDC) configuration
@@ -424,12 +462,9 @@ if ENABLE_LDAP:
 ENABLE_OIDC = env.bool("ENABLE_OIDC", False)
 
 if ENABLE_OIDC:
-    AUTHENTICATION_BACKENDS = tuple(
-        itertools.chain(
-            ("social_core.backends.open_id_connect.OpenIdConnectAuth",),
-            AUTHENTICATION_BACKENDS,
-        )
-    )
+    AUTHENTICATION_BACKENDS = [
+        "social_core.backends.open_id_connect.OpenIdConnectAuth"
+    ] + AUTHENTICATION_BACKENDS
     TEMPLATES[0]["OPTIONS"]["context_processors"] += [
         "social_django.context_processors.backends",
         "social_django.context_processors.login_redirect",
@@ -454,11 +489,84 @@ if ENABLE_OIDC:
     )
 
 
+# Django-Axes
+# ------------------------------------------------------------------------------
+
+# NOTE: Axes backend should be the first backend in the list
+AUTHENTICATION_BACKENDS = [
+    "axes.backends.AxesBackend"
+] + AUTHENTICATION_BACKENDS
+
+# Enable django-axes
+AXES_ENABLED = env.bool("AXES_ENABLED", False)
+
+if AXES_ENABLED:
+    # Number of login attempts allowed before a record is created
+    AXES_FAILURE_LIMIT = env.int("AXES_FAILURE_LIMIT", 5)
+    # Lock out user at failure if True
+    AXES_LOCK_OUT_AT_FAILURE = env.bool("AXES_LOCK_OUT_AT_FAILURE", False)
+    # Cooloff time for failure lock-out in hours
+    AXES_COOLOFF_TIME = env.int("AXES_COOLOFF_TIME", None)
+    # Lockout parameters. by default, block by username only (GRPR compliance)
+    AXES_LOCKOUT_PARAMETERS = env.list(
+        "AXES_LOCKOUT_PARAMETERS", default=["username"]
+    )
+    # Only enable lock for admin site if True
+    AXES_ONLY_ADMIN_SITE = env.bool("AXES_ONLY_ADMIN_SITE", False)
+    # For GDPR compliance, disable storing IP addresses
+    # NOTE: We make this setting up, not a real Axes Django setting
+    AXES_DISABLE_CLIENT_IP_STORAGE = env.bool(
+        "AXES_DISABLE_CLIENT_IP_STORAGE", True
+    )
+    if AXES_DISABLE_CLIENT_IP_STORAGE:
+        AXES_CLIENT_IP_CALLABLE = lambda x: None  # noqa: E731
+
+
 # Logging
 # ------------------------------------------------------------------------------
 
+# Custom logging level
+LOGGING_LEVEL = env.str("LOGGING_LEVEL", "DEBUG" if DEBUG else "ERROR")
 
-def set_logging(debug):
+# List of apps to include in logging
+LOGGING_APPS = env.list(
+    "LOGGING_APPS",
+    default=[
+        "projectroles",
+        "siteinfo",
+        "sodarcache",
+        "timeline",
+        "containers",
+        "containertemplates",
+    ],
+)
+
+# Path for file logging. If not set, will log only to console
+LOGGING_FILE_PATH = env.str("LOGGING_FILE_PATH", None)
+
+
+def set_logging(level=None):
+    if not level:
+        level = "DEBUG" if DEBUG else "ERROR"
+    app_logger_config = {
+        "level": level,
+        "handlers": ["console", "file"] if LOGGING_FILE_PATH else ["console"],
+        "propagate": True,
+    }
+    log_handlers = {
+        "console": {
+            "level": level,
+            "class": "logging.StreamHandler",
+            "formatter": "simple",
+        }
+    }
+    if LOGGING_FILE_PATH:
+        log_handlers["file"] = {
+            "level": level,
+            "class": "logging.FileHandler",
+            "filename": LOGGING_FILE_PATH,
+            "formatter": "simple",
+        }
     return {
         "version": 1,
         "disable_existing_loggers": False,
@@ -467,20 +575,8 @@ def set_logging(debug):
                 "format": "%(asctime)s [%(levelname)s] %(name)s: %(message)s"
             }
         },
-        "handlers": {
-            "console": {
-                "level": "DEBUG",
-                "class": "logging.StreamHandler",
-                "formatter": "simple",
-            }
-        },
-        "loggers": {
-            "projectroles": {
-                "level": "DEBUG" if debug else "INFO",
-                "handlers": ["console"],
-                "propagate": True,
-            }
-        },
+        "handlers": log_handlers,
+        "loggers": {a: app_logger_config for a in LOGGING_APPS},
     }
 
 
@@ -498,6 +594,10 @@ SITE_INSTANCE_TITLE = env.str("SITE_INSTANCE_TITLE", "KIOSC")
 # Local App Settings
 # ------------------------------------------------------------------------------
 
+REVPROXY = {
+    "QUOTE_SPACES_AS_PLUS": True,
+}
+
 
 # Plugin settings
 ENABLED_BACKEND_PLUGINS = env.list(
@@ -508,15 +608,6 @@ ENABLED_BACKEND_PLUGINS = env.list(
         # TODO: add your backend plugins here
     ],
 )
-
-# SODAR API settings
-SODAR_API_DEFAULT_VERSION = "0.1"
-SODAR_API_ALLOWED_VERSIONS = [SODAR_API_DEFAULT_VERSION]
-SODAR_API_MEDIA_TYPE = "application/your.application+json"
-SODAR_API_DEFAULT_HOST = env.url(
-    "SODAR_API_DEFAULT_HOST", "http://0.0.0.0:8000"
-)
-
 
 # Projectroles app settings
 
@@ -574,55 +665,105 @@ PROJECTROLES_TARGET_SYNC_INTERVAL = env.int(
 )
 
 # Optional projectroles settings
+# Sidebar icon size (must be between 18-42)
+PROJECTROLES_SIDEBAR_ICON_SIZE = env.int("PROJECTROLES_SIDEBAR_ICON_SIZE", 36)
 # PROJECTROLES_SECRET_LENGTH = 32
 # PROJECTROLES_HELP_HIGHLIGHT_DAYS = 7
 # PROJECTROLES_SEARCH_PAGINATION = 5
-# PROJECTROLES_HIDE_PROJECT_APPS = env.list('PROJECTROLES_HIDE_PROJECT_APPS', None, [])  # noqa
-# PROJECTROLES_DELEGATE_LIMIT = env.int('PROJECTROLES_DELEGATE_LIMIT', 1)
-# Support for viewing the site in "kiosk mode" (under work, experimental)
-# PROJECTROLES_KIOSK_MODE = env.bool('PROJECTROLES_KIOSK_MODE', False)
-# PROJECTROLES_SIDEBAR_ICON_SIZE = env.int('PROJECTROLES_SIDEBAR_ICON_SIZE', 36)
+# Role list pagination
+PROJECTROLES_ROLE_PAGINATION = env.int("PROJECTROLES_ROLE_PAGINATION", 15)
+# Support for viewing the site in "kiosk mode" (experimental)
+# PROJECTROLES_KIOSK_MODE = env.bool("PROJECTROLES_KIOSK_MODE", False)
+# Scroll project navigation with page content if set False
+# PROJECTROLES_BREADCRUMB_STICKY = True
+# Custom message to be displayed if site read-only mode is enabled
+PROJECTROLES_READ_ONLY_MSG = env.str("PROJECTROLES_READ_ONLY_MSG", None)
+# Restrict REST API user list/details access to users with project roles
+PROJECTROLES_API_USER_DETAIL_RESTRICT = env.bool(
+    "PROJECTROLES_API_USER_DETAIL_RESTRICT", False
+)
+# Support contact to be displayed for users, overrides ADMINS. Set as name:email
+PROJECTROLES_SUPPORT_CONTACT = env.str("PROJECTROLES_SUPPORT_CONTACT", None)
+
+# Hide project apps from the UI (sidebar, dropdown menus and project details)
+PROJECTROLES_HIDE_PROJECT_APPS = env.list(
+    "PROJECTROLES_HIDE_PROJECT_APPS", None, []
+)
+
+# Set limit for delegate roles per project (if 0, no limit is applied)
+PROJECTROLES_DELEGATE_LIMIT = env.int("PROJECTROLES_DELEGATE_LIMIT", 1)
 
 # Warn about unsupported browsers (IE)
-# PROJECTROLES_BROWSER_WARNING = True
+PROJECTROLES_BROWSER_WARNING = env.bool("PROJECTROLES_BROWSER_WARNING", True)
 
 # Disable default CDN JS/CSS includes to replace with your local files
-# PROJECTROLES_DISABLE_CDN_INCLUDES = env.bool(
-#     'PROJECTROLES_DISABLE_CDN_INCLUDES', False
-# )
-
+PROJECTROLES_DISABLE_CDN_INCLUDES = env.bool(
+    "PROJECTROLES_DISABLE_CDN_INCLUDES", False
+)
+# Inline HTML include to the head element of the base site template
+PROJECTROLES_INLINE_HEAD_INCLUDE = env.str(
+    "PROJECTROLES_INLINE_HEAD_INCLUDE", None
+)
 # Paths/URLs to optional global includes to supplement/replace default ones
-# PROJECTROLES_CUSTOM_JS_INCLUDES = env.list(
-#     'PROJECTROLES_CUSTOM_JS_INCLUDES', None, []
-# )
-# PROJECTROLES_CUSTOM_CSS_INCLUDES = env.list(
-#     'PROJECTROLES_CUSTOM_CSS_INCLUDES', None, []
-# )
+PROJECTROLES_CUSTOM_JS_INCLUDES = env.list(
+    "PROJECTROLES_CUSTOM_JS_INCLUDES", None, []
+)
+PROJECTROLES_CUSTOM_CSS_INCLUDES = env.list(
+    "PROJECTROLES_CUSTOM_CSS_INCLUDES", None, []
+)
+
+# Enable profiling for debugging/analysis
+PROJECTROLES_ENABLE_PROFILING = env.bool("PROJECTROLES_ENABLE_PROFILING", False)
+if PROJECTROLES_ENABLE_PROFILING:
+    MIDDLEWARE += ["projectroles.middleware.ProfilerMiddleware"]
+
+
+# Adminalerts app settings
+# Set alert email sending default in alert form
+ADMINALERTS_EMAIL_SENDING_DEFAULT = env.bool(
+    "ADMINALERTS_EMAIL_SENDING_DEFAULT", True
+)
+# Number of alerts to be shown on one page
+ADMINALERTS_PAGINATION = env.int("ADMINALERTS_PAGINATION", 15)
+
+
+# Appalerts app settings
+APPALERTS_STATUS_INTERVAL = env.int("APPALERTS_STATUS_INTERVAL", 5)
 
 
 # Bgjobs app settings
 BGJOBS_PAGINATION = env.int("BGJOBS_PAGINATION", 15)
 
 
-# Timeline app settings
-TIMELINE_PAGINATION = 15
-
-
 # Filesfolders app settings
-FILESFOLDERS_MAX_UPLOAD_SIZE = env.int("FILESFOLDERS_MAX_UPLOAD_SIZE", 52428800)
+FILESFOLDERS_MAX_UPLOAD_SIZE = env.int("FILESFOLDERS_MAX_UPLOAD_SIZE", 10485760)
 FILESFOLDERS_MAX_ARCHIVE_SIZE = env.int(
-    "FILESFOLDERS_MAX_ARCHIVE_SIZE", 52428800 * 5
+    "FILESFOLDERS_MAX_ARCHIVE_SIZE", 52428800
 )
-FILESFOLDERS_SERVE_AS_ATTACHMENT = False
-FILESFOLDERS_LINK_BAD_REQUEST_MSG = "Invalid request"
+FILESFOLDERS_SERVE_AS_ATTACHMENT = env.bool(
+    "FILESFOLDERS_SERVE_AS_ATTACHMENT", False
+)
+FILESFOLDERS_LINK_BAD_REQUEST_MSG = env.str(
+    "FILESFOLDERS_LINK_BAD_REQUEST_MSG", "Invalid request"
+)
+# Custom project list column example
+FILESFOLDERS_SHOW_LIST_COLUMNS = env.bool(
+    "FILESFOLDERS_SHOW_LIST_COLUMNS", True
+)
 
 
-# Adminalerts app settings
-ADMINALERTS_PAGINATION = 15
+# Timeline app settings
+TIMELINE_PAGINATION = env.int("TIMELINE_PAGINATION", 15)
+TIMELINE_SEARCH_LIMIT = env.int("TIMELINE_SEARCH_LIMIT", 250)
 
+
+# Tokens app settings
+# Restrict access to token creation for users with project roles
+TOKENS_CREATE_PROJECT_USER_RESTRICT = env.bool(
+    "TOKENS_CREATE_PROJECT_USER_RESTRICT", False
+)
 
 # SODAR constants (uncomment for modifying)
-# from projectroles.constants import get_sodar_constants
 # SODAR_CONSTANTS = get_sodar_constants(default=True)
 
 ICONIFY_JSON_ROOT = os.path.join(STATIC_ROOT, "iconify")

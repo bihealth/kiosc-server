@@ -1,10 +1,15 @@
+"""Plugins for the containertemplates app"""
+
+from typing import Optional, Union
+from uuid import UUID
+
 # Projectroles dependency
 from django.urls import reverse
 from projectroles.models import SODAR_CONSTANTS
-from projectroles.plugins import SiteAppPluginPoint, ProjectAppPluginPoint
+from projectroles.plugins import SiteAppPluginPoint, ProjectAppPluginPoint, PluginObjectLink
 
 from containertemplates.urls import urlpatterns
-from containertemplates.models import ContainerTemplateProject
+from containertemplates.models import ContainerTemplateProject, ContainerTemplateSite
 
 
 PROJECT_TYPE_PROJECT = SODAR_CONSTANTS["PROJECT_TYPE_PROJECT"]
@@ -79,29 +84,25 @@ class ProjectAppPlugin(ProjectAppPluginPoint):
         #     },
     }
 
-    def get_object_link(self, model_str, uuid):
+    def get_object_link(self, model_str: str, uuid: Union[str, UUID]) -> Optional[PluginObjectLink]:
         """
         Return the URL for referring to a object used by the app, along with a
         label to be shown to the user for linking.
 
         :param model_str: Object class (string)
         :param uuid: sodar_uuid of the referred object
-        :return: Dict or None if not found
+        :return: PluginObjectLink or None if not found
         """
-        obj = self.get_object(eval(model_str), uuid)
-
-        if not obj:
-            return None
-
-        elif obj.__class__ == ContainerTemplateProject:
-            return {
-                "url": reverse(
+        if model_str == "ContainerTemplateProject":
+            obj = self.get_object(ContainerTemplateProject, uuid)
+            return PluginObjectLink(
+                url=reverse(
                     "containertemplates:project-detail",
                     kwargs={"containertemplateproject": obj.sodar_uuid},
                 ),
-                "label": str(obj),
-                "blank": True,
-            }
+                name=str(obj),
+                blank=True,
+            )
 
         return None
 
@@ -139,3 +140,25 @@ class SiteAppPlugin(SiteAppPluginPoint):
 
     #: App card title for the project details page
     details_title = "Container Templates overview"
+
+    def get_object_link(self, model_str: str, uuid: Union[str, UUID]) -> Optional[PluginObjectLink]:
+        """
+        Return the URL for referring to a object used by the app, along with a
+        label to be shown to the user for linking.
+
+        :param model_str: Object class (string)
+        :param uuid: sodar_uuid of the referred object
+        :return: PluginObjectLink or None if not found
+        """
+        if model_str == "ContainerTemplateSite":
+            obj = self.get_object(ContainerTemplateSite, uuid)
+            return PluginObjectLink(
+                url=reverse(
+                    "containertemplates:site-detail",
+                    kwargs={"containertemplatesite": obj.sodar_uuid},
+                ),
+                name=str(obj),
+                blank=True,
+            )
+
+        return None

@@ -1,7 +1,7 @@
 from bgjobs.models import BackgroundJob
 from django.db import IntegrityError, transaction
 from django.http import JsonResponse
-from projectroles.plugins import get_backend_api
+from projectroles.plugins import PluginAPI
 from projectroles.views_api import SODARAPIGenericProjectMixin
 from rest_framework import status
 from rest_framework.generics import (
@@ -29,6 +29,9 @@ from containers.views import CELERY_SUBMIT_COUNTDOWN
 
 
 APP_NAME = "containers"
+
+
+plugin_api = PluginAPI()
 
 
 class ContainerListAPIView(
@@ -91,7 +94,7 @@ class ContainerDeleteAPIView(
 
     @transaction.atomic
     def delete(self, request, *args, **kwargs):
-        timeline = get_backend_api("timeline_backend")
+        timeline = plugin_api.get_backend_api("timeline_backend")
         container = Container.objects.get(sodar_uuid=kwargs.get("container"))
         project = self.get_project()
 
@@ -128,7 +131,7 @@ class ContainerDeleteAPIView(
                     user=request.user,
                     event_name="delete_container",
                     description=f"deleting of {container.get_display_name()} failed",
-                    status_type="FAILED",
+                    status_type=timeline.TL_STATUS_FAILED,
                 )
 
             return JsonResponse(
@@ -146,7 +149,7 @@ class ContainerDeleteAPIView(
                 user=request.user,
                 event_name="delete_container",
                 description=f"deleted {container.get_display_name()}",
-                status_type="OK",
+                status_type=timeline.TL_STATUS_OK,
             )
 
         return super().delete(request, *args, **kwargs)

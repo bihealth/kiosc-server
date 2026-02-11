@@ -5,7 +5,11 @@ from unittest.mock import patch
 from django.urls import reverse
 
 from containers.models import Container
-from projectroles.tests.test_permissions_api import ProjectAPIPermissionTestBase
+from containers.views_api import (
+    CONTAINERS_API_MEDIA_TYPE,
+    CONTAINERS_API_DEFAULT_VERSION,
+)
+from projectroles.tests.base import ProjectAPIPermissionTestBase
 from rest_framework import status
 
 from containers.tests.factories import ContainerFactory
@@ -13,6 +17,9 @@ from django.test import override_settings
 
 
 class TestContainerAPIPermissions(ProjectAPIPermissionTestBase):
+    media_type = CONTAINERS_API_MEDIA_TYPE
+    api_version = CONTAINERS_API_DEFAULT_VERSION
+
     """Test API permissions for container app."""
 
     def setUp(self):

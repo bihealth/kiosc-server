@@ -16,13 +16,17 @@ from containers.models import (
     STATE_RUNNING,
     STATE_DELETED,
 )
-from containers.tests.helpers import TestContainerCreationMixin
+from containers.tests.helpers import (
+    TestContainerCreationMixin,
+    ContainersAPIViewTestBase,
+)
 from containers.views import CELERY_SUBMIT_COUNTDOWN
 from projectroles.models import Project
-from projectroles.tests.test_views_api import APIViewTestBase
 
 
-class TestContainerListAPIView(TestContainerCreationMixin, APIViewTestBase):
+class TestContainerListAPIView(
+    TestContainerCreationMixin, ContainersAPIViewTestBase
+):
     """Tests for ``ContainerListAPIView``."""
 
     def test_get_success_list_empty(self):
@@ -33,7 +37,10 @@ class TestContainerListAPIView(TestContainerCreationMixin, APIViewTestBase):
             )
         )
         self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertEqual(response.json(), [])
+        self.assertEqual(
+            response.json(),
+            {"count": 0, "next": None, "previous": None, "results": []},
+        )
 
     def test_get_success_list_one_item(self):
         self.create_one_container()
@@ -56,7 +63,11 @@ class TestContainerListAPIView(TestContainerCreationMixin, APIViewTestBase):
             Project.objects.get(id=expected["project"]).sodar_uuid
         )
         expected["sodar_uuid"] = str(expected["sodar_uuid"])
-        self.assertEqual(response.json(), [expected])
+        content = response.json()
+        self.assertEqual(content["count"], 1)
+        self.assertEqual(content["next"], None)
+        self.assertEqual(content["previous"], None)
+        self.assertEqual(content["results"], [expected])
 
     def test_get_success_list_two_items(self):
         self.create_two_containers()
@@ -92,10 +103,24 @@ class TestContainerListAPIView(TestContainerCreationMixin, APIViewTestBase):
             Project.objects.get(id=container2["project"]).sodar_uuid
         )
         container2["sodar_uuid"] = str(container2["sodar_uuid"])
-        self.assertEqual(response.json(), [container2, container1])
+        content = response.json()
+        self.assertEqual(content["count"], 2)
+        self.assertEqual(len(content["results"]), 1)
+        self.assertEqual(content["results"][0], container2)
+
+        response_next = self.request_knox(content["next"])
+
+        self.assertEqual(response_next.status_code, status.HTTP_200_OK)
+
+        content_next = response_next.json()
+        self.assertEqual(content_next["count"], 2)
+        self.assertEqual(len(content_next["results"]), 1)
+        self.assertEqual(content_next["results"][0], container1)
 
 
-class TestContainerCreateAPIView(TestContainerCreationMixin, APIViewTestBase):
+class TestContainerCreateAPIView(
+    TestContainerCreationMixin, ContainersAPIViewTestBase
+):
     """Tests for ``ContainerCreateAPIView``."""
 
     def setUp(self):
@@ -188,7 +213,9 @@ class TestContainerCreateAPIView(TestContainerCreationMixin, APIViewTestBase):
         self.assertDictEqual(result, self.post_data_all)
 
 
-class TestContainerDeleteAPIView(TestContainerCreationMixin, APIViewTestBase):
+class TestContainerDeleteAPIView(
+    TestContainerCreationMixin, ContainersAPIViewTestBase
+):
     """Tests for ``ContainerDeleteAPIView``."""
 
     def setUp(self):
@@ -247,7 +274,9 @@ class TestContainerDeleteAPIView(TestContainerCreationMixin, APIViewTestBase):
         self.assertEqual(Container.objects.count(), 1)
 
 
-class TestContainerDetailAPIView(TestContainerCreationMixin, APIViewTestBase):
+class TestContainerDetailAPIView(
+    TestContainerCreationMixin, ContainersAPIViewTestBase
+):
     """Tests for ``ContainerDetailAPIView``."""
 
     def setUp(self):
@@ -289,7 +318,9 @@ class TestContainerDetailAPIView(TestContainerCreationMixin, APIViewTestBase):
         self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
 
 
-class TestContainerStartAPIView(TestContainerCreationMixin, APIViewTestBase):
+class TestContainerStartAPIView(
+    TestContainerCreationMixin, ContainersAPIViewTestBase
+):
     """Tests for ``ContainerStartAPIView``."""
 
     def setUp(self):
@@ -328,7 +359,9 @@ class TestContainerStartAPIView(TestContainerCreationMixin, APIViewTestBase):
         self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
 
 
-class TestContainerStopAPIView(TestContainerCreationMixin, APIViewTestBase):
+class TestContainerStopAPIView(
+    TestContainerCreationMixin, ContainersAPIViewTestBase
+):
     """Tests for ``ContainerStopAPIView``."""
 
     def setUp(self):

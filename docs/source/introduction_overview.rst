@@ -37,10 +37,11 @@ A typical workflow scheme is then as follows:
 SODAR Universe
 --------------
 
-Kiosc is based on the SODAR core framework and be linked to an upstream SODAR instance
-to receive projects, users and role assignments. Based on the project information,
-Docker containers can be created from available Docker images and shared with collaborators
-and customers.
+Kiosc is based on the `SODAR Core <https://github.com/bihealth/sodar-core>`__
+framework and be linked to an upstream SODAR instance to receive projects,
+users and role assignments. Based on the project information, Docker containers
+can be created from available Docker images and shared with collaborators and
+customers.
 
 Technical Description
 ---------------------

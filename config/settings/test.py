@@ -18,6 +18,17 @@ TEMPLATES[0]["OPTIONS"]["debug"] = True
 # Note: This key only used for development and testing.
 SECRET_KEY = env("DJANGO_SECRET_KEY", default="CHANGEME!!!")
 
+# MANAGER CONFIGURATION
+# ------------------------------------------------------------------------------
+ADMINS = [("Admin User", "admin@example.com")]
+MANAGERS = ADMINS
+
+# DATABASE CONFIGURATION
+# ------------------------------------------------------------------------------
+# Set False to support parallel testing, see
+# https://github.com/bihealth/sodar-core/issues/1428
+DATABASES["default"]["ATOMIC_REQUESTS"] = False
+
 # Mail settings
 # ------------------------------------------------------------------------------
 EMAIL_HOST = "localhost"
@@ -26,6 +37,7 @@ EMAIL_PORT = 1025
 # In-memory email backend stores messages in django.core.mail.outbox
 # for unit testing purposes
 EMAIL_BACKEND = "django.core.mail.backends.locmem.EmailBackend"
+EMAIL_SENDER = "noreply@example.com"
 
 # CACHING
 # ------------------------------------------------------------------------------
@@ -40,6 +52,7 @@ CACHES = {
 # TESTING
 # ------------------------------------------------------------------------------
 TEST_RUNNER = "django.test.runner.DiscoverRunner"
+SILENCED_SYSTEM_CHECKS = ["axes.W003"]  # Silence missing axes backend warning
 
 # PASSWORD HASHING
 # ------------------------------------------------------------------------------
@@ -59,11 +72,56 @@ TEMPLATES[0]["OPTIONS"]["loaders"] = [
     ]
 ]
 
+# Django REST framework
+# ------------------------------------------------------------------------------
+
+# Set pagination page size to 1 for easy testing
+REST_FRAMEWORK["PAGE_SIZE"] = 1
+
+# AUTHENTICATION CONFIGURATION
+# ------------------------------------------------------------------------------
+
+# NOTE: Hardcoded due to issue https://github.com/bihealth/sodar-core/issues/1767
+# NOTE: Axes doesn't work with UI tests and cookie-based login, see #1810
+#       in the sodar core repository (https://github.com/bihealth/sodar-core)
+#       Override with AUTHENTICATION_BACKENDS_AXES when testing Axes features
+AUTHENTICATION_BACKENDS = [
+    "rules.permissions.ObjectPermissionBackend",
+    "django.contrib.auth.backends.ModelBackend",
+]
+
+# LDAP configuration
+# ------------------------------------------------------------------------------
+
+ENABLE_LDAP = False
+
+# OpenID Connect (OIDC) configuration
+# ------------------------------------------------------------------------------
+
+ENABLE_OIDC = False
+
+# Django-Axes
+# ------------------------------------------------------------------------------
+
+AXES_ENABLED = False  # Enable by override when testing
+AXES_FAILURE_LIMIT = 3
+AXES_LOCK_OUT_AT_FAILURE = True
+AXES_COOLOFF_TIME = None
+AXES_LOCKOUT_PARAMETERS = ["username"]
+AXES_ONLY_ADMIN_SITE = False
+AXES_CLIENT_IP_CALLABLE = lambda x: None  # noqa: E731
+
 # Logging
 # ------------------------------------------------------------------------------
 
-LOGGING = set_logging(DEBUG)
-LOGGING["handlers"]["console"]["level"] = "CRITICAL"
+LOGGING_LEVEL = env.str("LOGGING_LEVEL", "CRITICAL")
+LOGGING = set_logging(LOGGING_LEVEL)
+LOGGING["loggers"]["axes"] = {
+    "level": LOGGING_LEVEL,
+    "handlers": ["console"],
+    "propagate": False,
+}  # Disable redundant axes logging in tests
+LOGGING_DISABLE_CMD_OUTPUT = True
 
 # Local App Settings
 # ------------------------------------------------------------------------------

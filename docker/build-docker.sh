@@ -15,7 +15,7 @@ IMAGE_TAG=${IMAGE_TAG:-adhoc}
 
 # Explicitely set organization and repository name for Docker image.
 ORG=bihealth
-REPO=hpc-access
+REPO=kiosc-server
 
 # Actually start the Docker build.
 docker build . \

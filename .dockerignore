@@ -1,0 +1,11 @@
+.env
+.git/
+.gitattributes
+.github/
+.gitignore
+.venv/
+.vscode/
+Dockerfile
+docs/
+staticfiles/
+tests/

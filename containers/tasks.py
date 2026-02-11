@@ -12,7 +12,7 @@ from django.db import transaction
 from django.utils import timezone
 
 from projectroles.models import SODAR_CONSTANTS
-from projectroles.plugins import get_backend_api
+from projectroles.plugins import PluginAPI
 
 from config.celery import app
 from django.contrib import auth
@@ -36,6 +36,7 @@ from containers.statemachines import (
 
 User = auth.get_user_model()
 app_settings = AppSettingAPI()
+plugin_api = PluginAPI()
 logger = logging.getLogger(__name__)
 
 # Increase the timeout for communication with Docker daemon.
@@ -56,7 +57,7 @@ class State:
 def container_task(_self, job_id):
     """Task to change a container state"""
     job = ContainerBackgroundJob.objects.get(pk=job_id)
-    timeline = get_backend_api("timeline_backend")
+    timeline = plugin_api.get_backend_api("timeline_backend")
     container = job.container
     user = job.bg_job.user
     tl_event = None

@@ -3,13 +3,13 @@ on: push
 jobs:
   build:
     name: Build
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-24.04
     strategy:
       matrix:
         python-version:
-          - '3.9'
-          - '3.10'
           - '3.11'
+          - '3.12'
+          - '3.13'
     services:
       postgres:
         image: postgres:16
@@ -42,7 +42,6 @@ jobs:
         uses: actions/checkout@v2
       - name: Install project Python dependencies
         run: |
-          pip install wheel==0.42.0
           pip install -r requirements/local.txt
           pip install -r requirements/test.txt
       - name: Download icons
@@ -52,15 +51,20 @@ jobs:
       - name: Run tests
         run: |
           coverage run --rcfile=.coveragerc manage.py test -v 2 --settings=config.settings.test
-          coverage xml
+          coverage lcov
           coverage report
       - name: Check linting
         run: flake8 .
       - name: Check formatting
         run: make black arg=--check
-      - name: Run Codacy coverage reporter
-        uses: codacy/codacy-coverage-reporter-action@master
+      - name: Check docs building
+        working-directory: ./docs
+        run: make html
+        if: ${{ matrix.python-version == '3.13' }}
+      - name: Report coverage with Coveralls
+        uses: coverallsapp/github-action@v2
         with:
-          project-token: ${{ secrets.CODACY_PROJECT_TOKEN }}
-          coverage-reports: coverage.xml
-        if: ${{ matrix.python-version == '3.11' }}
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          path-to-lcov: './coverage.lcov'
+          fail-on-error: false
+        if: ${{ matrix.python-version == '3.13' }}

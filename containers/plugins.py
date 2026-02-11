@@ -1,7 +1,12 @@
+"""Plugins for the containers app"""
+
+from typing import Optional, Union
+from uuid import UUID
+
 # Projectroles dependency
 from django.urls import reverse
 from projectroles.models import SODAR_CONSTANTS
-from projectroles.plugins import ProjectAppPluginPoint
+from projectroles.plugins import ProjectAppPluginPoint, PluginObjectLink
 
 from containers.models import Container
 from containers.urls import urlpatterns
@@ -152,25 +157,27 @@ class ProjectAppPlugin(ProjectAppPluginPoint):
         #     },
     }
 
-    def get_object_link(self, model_str, uuid):
+    def get_object_link(
+        self, model_str: str, uuid: Union[str, UUID]
+    ) -> Optional[PluginObjectLink]:
         """
         Return the URL for referring to a object used by the app, along with a
         label to be shown to the user for linking.
 
         :param model_str: Object class (string)
         :param uuid: sodar_uuid of the referred object
-        :return: Dict or None if not found
+        :return: PluginObjectLink or None if not found
         """
         if model_str == "Container":
             obj = self.get_object(Container, uuid)
-            return {
-                "url": reverse(
+            return PluginObjectLink(
+                url=reverse(
                     "containers:detail",
                     kwargs={"container": obj.sodar_uuid},
                 ),
-                "label": obj.get_display_name(),
-                "blank": True,
-            }
+                name=obj.get_display_name(),
+                blank=True,
+            )
         elif model_str == "ContainerBackgroundJob":
             # TODO implement a view for background jobs
             pass

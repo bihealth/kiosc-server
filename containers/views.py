@@ -31,7 +31,7 @@ from config.settings.base import KIOSC_CONTAINER_DEFAULT_LOG_LINES
 from containers.templatetags.container_tags import colorize_state, state_bell
 from filesfolders.models import File, FileData
 from filesfolders.views import storage
-from projectroles.plugins import get_backend_api
+from projectroles.plugins import PluginAPI
 from projectroles.views import (
     LoggedInPermissionMixin,
     ProjectContextMixin,
@@ -64,6 +64,7 @@ from containertemplates.forms import ContainerTemplateSelectorForm
 
 
 logger = logging.getLogger(__name__)
+plugin_api = PluginAPI()
 
 APP_NAME = "containers"
 CELERY_SUBMIT_COUNTDOWN = 0.5
@@ -101,7 +102,7 @@ class ContainerCreateView(
 
     def form_valid(self, form):
         response = super().form_valid(form)
-        timeline = get_backend_api("timeline_backend")
+        timeline = plugin_api.get_backend_api("timeline_backend")
 
         # Add timeline event
         if timeline:
@@ -111,7 +112,7 @@ class ContainerCreateView(
                 user=self.request.user,
                 event_name="create_container",
                 description="created {container}",
-                status_type="OK",
+                status_type=timeline.TL_STATUS_OK,
             )
             tl_event.add_object(
                 obj=self.object,
@@ -156,7 +157,7 @@ class ContainerDeleteView(
 
     @transaction.atomic
     def delete(self, request, *args, **kwargs):
-        timeline = get_backend_api("timeline_backend")
+        timeline = plugin_api.get_backend_api("timeline_backend")
         container = self.get_object()
         project = self.get_project()
 
@@ -193,7 +194,7 @@ class ContainerDeleteView(
                     user=request.user,
                     event_name="delete_container",
                     description=f"deleting of {container.get_display_name()} failed",
-                    status_type="FAILED",
+                    status_type=timeline.TL_STATUS_FAILED,
                 )
 
             messages.error(
@@ -216,7 +217,7 @@ class ContainerDeleteView(
                 user=request.user,
                 event_name="delete_container",
                 description=f"deleted {container.get_display_name()}",
-                status_type="OK",
+                status_type=timeline.TL_STATUS_OK,
             )
 
         return super().delete(request, *args, **kwargs)
@@ -269,7 +270,7 @@ class ContainerUpdateView(
 
     def form_valid(self, form):
         response = super().form_valid(form)
-        timeline = get_backend_api("timeline_backend")
+        timeline = plugin_api.get_backend_api("timeline_backend")
 
         if timeline:
             tl_event = timeline.add_event(
@@ -278,7 +279,7 @@ class ContainerUpdateView(
                 user=self.request.user,
                 event_name="update_container",
                 description="updated {container}",
-                status_type="OK",
+                status_type=timeline.TL_STATUS_OK,
             )
             tl_event.add_object(
                 obj=self.object,

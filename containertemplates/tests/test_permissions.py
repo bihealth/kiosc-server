@@ -1,7 +1,7 @@
 """Permission tests."""
 
 from django.urls import reverse
-from projectroles.tests.test_permissions import ProjectPermissionTestBase
+from projectroles.tests.base import ProjectPermissionTestBase
 
 from containertemplates.tests.factories import (
     ContainerTemplateSiteFactory,

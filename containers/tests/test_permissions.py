@@ -3,7 +3,7 @@
 from unittest.mock import patch
 
 from django.urls import reverse
-from projectroles.tests.test_permissions import ProjectPermissionTestBase
+from projectroles.tests.base import ProjectPermissionTestBase
 from urllib3_mock import Responses
 
 from containers.models import STATE_RUNNING

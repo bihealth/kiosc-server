@@ -760,7 +760,7 @@ class TestContainerTask(TestBase):
         stop.assert_not_called()
         pause.assert_not_called()
         unpause.assert_not_called()
-        remove_container.not_called()
+        remove_container.assert_not_called()
 
     @patch("docker.api.client.APIClient.remove_container")
     @patch("docker.api.client.APIClient.unpause")

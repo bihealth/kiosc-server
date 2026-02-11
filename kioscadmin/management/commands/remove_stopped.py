@@ -15,7 +15,10 @@ from containers.models import (
 from containers.statemachines import connect_docker
 from containers.tasks import container_task
 from kiosc.users.models import User
-from projectroles.plugins import get_backend_api
+from projectroles.plugins import PluginAPI
+
+
+plugin_api = PluginAPI()
 
 
 class Command(BaseCommand):
@@ -48,7 +51,7 @@ class Command(BaseCommand):
 
         for container in Container.objects.filter(state=STATE_EXITED):
             if container.container_id:
-                timeline = get_backend_api("timeline_backend")
+                timeline = plugin_api.get_backend_api("timeline_backend")
                 container_info = cli.inspect_container(container.container_id)
                 state = container_info.get("State", {}).get("Status")
                 project = container.project
@@ -88,7 +91,7 @@ class Command(BaseCommand):
                             user=user,
                             event_name="delete_container",
                             description=f"deleted {container.get_display_name()}",
-                            status_type="OK",
+                            status_type=timeline.TL_STATUS_OK,
                         )
 
                     container.delete()

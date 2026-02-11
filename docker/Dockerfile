@@ -1,29 +1,33 @@
-FROM python:3.11-buster
+FROM ubuntu:noble
 
-ENV LANG C.UTF-8
-ENV LC_ALL C.UTF-8
-ENV PYTHONDONTWRITEBYTECODE 1
-ENV PYTHONFAULTHANDLER 1
+ENV LANG=C.UTF-8
+ENV LC_ALL=C.UTF-8
+ENV PYTHONDONTWRITEBYTECODE=1
+ENV PYTHONFAULTHANDLER=1
 
 WORKDIR /usr/src/app
 
 LABEL org.opencontainers.image.authors="Oliver Stolpe <oliver.stolpe@bih-charite.de>"
-LABEL org.opencontainers.image.source https://github.com/bihealth/kiosc-server
+LABEL org.opencontainers.image.source=https://github.com/bihealth/kiosc-server
 
 
 ## Add the wait script to the image
 ADD https://github.com/ufoscout/docker-compose-wait/releases/download/2.12.1/wait /usr/local/bin/wait
 RUN chmod +x /usr/local/bin/wait
 
+# Copy the project files.
+COPY . .
+
 # Install system dependencies.
-RUN apt-get update && \
-    apt-get install -y \
+RUN utility/install_os_dependencies.sh
+RUN utility/install_postgres.sh
+RUN utility/install_redis.sh
+RUN utility/install_ldap_dependencies.sh
+RUN utility/install_python.sh
+
+# Install extra system utilities
+RUN apt-get install -y \
         apt-utils \
-        gcc \
-        ldap-utils \
-        libldap2-dev \
-        libsasl2-dev \
-        make \
         postgresql-client \
         wget
 
@@ -31,14 +35,15 @@ RUN apt-get clean autoclean && \
     apt-get autoremove --yes && \
     rm -rf /var/lib/{apt,dpkg,cache,log}/
 
-# Copy the project files.
-COPY . .
+# Create Python virtual environment (KIOSC dependencies conflict with
+# the system packages).
+RUN python3.13 -m venv /venv
+ENV PATH=/venv/bin:$PATH
 
 # Install Python dependencies.
-RUN pip install --use-deprecated=legacy-resolver --no-cache-dir -r requirements/production.txt && \
-    pip install --use-deprecated=legacy-resolver --no-cache-dir -r requirements/local.txt && \
-    pip install --use-deprecated=legacy-resolver --no-cache-dir -r requirements/ldap.txt && \
-    pip install --use-deprecated=legacy-resolver celery  # appears to be missing
+RUN pip install --no-cache-dir -r requirements/production.txt && \
+    pip install --no-cache-dir -r requirements/local.txt && \
+    pip install --no-cache-dir -r requirements/ldap.txt
 
 # Download files from CDN.
 RUN mkdir -p local-static/local/css && \

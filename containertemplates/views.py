@@ -14,7 +14,7 @@ from django.views.generic import (
     DetailView,
 )
 from django.views.generic.detail import SingleObjectMixin
-from projectroles.plugins import get_backend_api
+from projectroles.plugins import PluginAPI
 from projectroles.views import (
     LoginRequiredMixin,
     LoggedInPermissionMixin,
@@ -36,6 +36,9 @@ from containertemplates.models import (
 APP_NAME = "containertemplates"
 
 
+plugin_api = PluginAPI()
+
+
 class ContainerTemplateSiteCreateView(
     LoginRequiredMixin, LoggedInPermissionMixin, CreateView
 ):
@@ -47,7 +50,7 @@ class ContainerTemplateSiteCreateView(
 
     def form_valid(self, form):
         response = super().form_valid(form)
-        timeline = get_backend_api("timeline_backend")
+        timeline = plugin_api.get_backend_api("timeline_backend")
 
         # Add timeline event
         if timeline:
@@ -57,7 +60,7 @@ class ContainerTemplateSiteCreateView(
                 user=self.request.user,
                 event_name="create_containertemplate_site",
                 description="created {containertemplate}",
-                status_type="OK",
+                status_type=timeline.TL_STATUS_OK,
             )
             tl_event.add_object(
                 obj=self.object,
@@ -86,7 +89,7 @@ class ContainerTemplateSiteDeleteView(
         return reverse("containertemplates:site-list")
 
     def delete(self, request, *args, **kwargs):
-        timeline = get_backend_api("timeline_backend")
+        timeline = plugin_api.get_backend_api("timeline_backend")
         obj = self.get_object()
 
         # Add timeline event
@@ -97,7 +100,7 @@ class ContainerTemplateSiteDeleteView(
                 user=request.user,
                 event_name="delete_containertemplate_site",
                 description=f"deleted {str(obj)}",
-                status_type="OK",
+                status_type=timeline.TL_STATUS_OK,
             )
 
         return super().delete(request, *args, **kwargs)
@@ -117,7 +120,7 @@ class ContainerTemplateSiteUpdateView(
 
     def form_valid(self, form):
         response = super().form_valid(form)
-        timeline = get_backend_api("timeline_backend")
+        timeline = plugin_api.get_backend_api("timeline_backend")
 
         if timeline:
             tl_event = timeline.add_event(
@@ -126,7 +129,7 @@ class ContainerTemplateSiteUpdateView(
                 user=self.request.user,
                 event_name="update_containertemplate_site",
                 description="updated {containertemplate}",
-                status_type="OK",
+                status_type=timeline.TL_STATUS_OK,
             )
             tl_event.add_object(
                 obj=self.object,
@@ -170,7 +173,7 @@ class ContainerTemplateSiteDuplicateView(
     slug_field = "sodar_uuid"
 
     def get(self, request, *args, **kwargs):
-        timeline = get_backend_api("timeline_backend")
+        timeline = plugin_api.get_backend_api("timeline_backend")
         obj = self.get_object()
         _redirect = redirect(reverse("containertemplates:site-list"))
 
@@ -182,7 +185,7 @@ class ContainerTemplateSiteDuplicateView(
                     user=self.request.user,
                     event_name="duplicate_containertemplate_site",
                     description="duplicated {containertemplate} site-wide",
-                    status_type="OK",
+                    status_type=timeline.TL_STATUS_OK,
                 )
                 tl_event.add_object(
                     obj=obj, label="containertemplate", name=str(obj)
@@ -237,7 +240,7 @@ class ContainerTemplateProjectCreateView(
 
     def form_valid(self, form):
         response = super().form_valid(form)
-        timeline = get_backend_api("timeline_backend")
+        timeline = plugin_api.get_backend_api("timeline_backend")
 
         # Add timeline event
         if timeline:
@@ -247,7 +250,7 @@ class ContainerTemplateProjectCreateView(
                 user=self.request.user,
                 event_name="create_containertemplate_project",
                 description="created {containertemplate} project-wide",
-                status_type="OK",
+                status_type=timeline.TL_STATUS_OK,
             )
             tl_event.add_object(
                 obj=self.object,
@@ -281,7 +284,7 @@ class ContainerTemplateProjectDeleteView(
         )
 
     def delete(self, request, *args, **kwargs):
-        timeline = get_backend_api("timeline_backend")
+        timeline = plugin_api.get_backend_api("timeline_backend")
 
         # Add timeline event
         if timeline:
@@ -291,7 +294,7 @@ class ContainerTemplateProjectDeleteView(
                 user=request.user,
                 event_name="delete_containertemplate_project",
                 description=f"deleted {self.get_object()} project-wide",
-                status_type="OK",
+                status_type=timeline.TL_STATUS_OK,
             )
 
         return super().delete(request, *args, **kwargs)
@@ -321,7 +324,7 @@ class ContainerTemplateProjectUpdateView(
 
     def form_valid(self, form):
         response = super().form_valid(form)
-        timeline = get_backend_api("timeline_backend")
+        timeline = plugin_api.get_backend_api("timeline_backend")
 
         if timeline:
             tl_event = timeline.add_event(
@@ -330,7 +333,7 @@ class ContainerTemplateProjectUpdateView(
                 user=self.request.user,
                 event_name="update_containertemplate_project",
                 description="updated {containertemplate} project-wide",
-                status_type="OK",
+                status_type=timeline.TL_STATUS_OK,
             )
             tl_event.add_object(
                 obj=self.object,
@@ -396,7 +399,7 @@ class ContainerTemplateProjectDuplicateView(
     slug_field = "sodar_uuid"
 
     def get(self, request, *args, **kwargs):
-        timeline = get_backend_api("timeline_backend")
+        timeline = plugin_api.get_backend_api("timeline_backend")
         obj = self.get_object()
         _redirect = redirect(
             reverse(
@@ -413,7 +416,7 @@ class ContainerTemplateProjectDuplicateView(
                     user=self.request.user,
                     event_name="duplicate_containertemplate_site",
                     description="duplicated {containertemplate} site-wide",
-                    status_type="OK",
+                    status_type=timeline.TL_STATUS_OK,
                 )
                 tl_event.add_object(
                     obj=obj, label="containertemplate", name=str(obj)
@@ -464,7 +467,7 @@ class ContainerTemplateProjectCopyView(
 
     def post(self, request, *args, **kwargs):
         project = self.get_project()
-        timeline = get_backend_api("timeline_backend")
+        timeline = plugin_api.get_backend_api("timeline_backend")
         _redirect = redirect(
             reverse(
                 "containertemplates:project-list",
@@ -509,7 +512,7 @@ class ContainerTemplateProjectCopyView(
                     event_name=f"copy_containertemplate_{site_or_project}",
                     description="copied {containertemplate} %s"
                     % site_or_project,
-                    status_type="OK",
+                    status_type=timeline.TL_STATUS_OK,
                 )
                 tl_event.add_object(
                     obj=obj, label="containertemplate", name=str(obj)

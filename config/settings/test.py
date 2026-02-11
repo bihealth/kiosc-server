@@ -25,7 +25,8 @@ MANAGERS = ADMINS
 
 # DATABASE CONFIGURATION
 # ------------------------------------------------------------------------------
-# Set False to support parallel testing, see issue #1428
+# Set False to support parallel testing, see
+# https://github.com/bihealth/sodar-core/issues/1428
 DATABASES["default"]["ATOMIC_REQUESTS"] = False
 
 # Mail settings

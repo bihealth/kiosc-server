@@ -334,13 +334,6 @@ SODAR_API_DEFAULT_HOST = env.url(
 # SODAR API pagination page size
 SODAR_API_PAGE_SIZE = env.int("SODAR_API_PAGE_SIZE", 100)
 
-# SODAR API version
-SODAR_API_DEFAULT_VERSION = "0.1"
-SODAR_API_ALLOWED_VERSIONS = [SODAR_API_DEFAULT_VERSION]
-
-# SODAR API media type
-SODAR_API_MEDIA_TYPE = "application/your.application+json"
-
 # Django REST framework
 # ------------------------------------------------------------------------------
 

@@ -25,7 +25,7 @@ At a Glance
 
 - License: MIT
 - Dependencies / Tech Stack
-    - Python >=3.8
-    - Django 3
-    - PostgreSQL >=12
-
+    - Python >=3.11
+    - Django 5.2
+    - SODAR Core 1.3
+    - PostgreSQL >=16

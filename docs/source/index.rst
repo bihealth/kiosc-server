@@ -77,6 +77,16 @@ Kiosc is NOT
     rest_api_overview
     rest_api_containers
 
+.. toctree::
+    :maxdepth: 2
+    :caption: Development
+    :name: development
+    :hidden:
+    :titlesonly:
+
+    introduction_development
+    code_of_conduct
+
 Indices and tables
 ==================
 

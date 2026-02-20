@@ -9,9 +9,10 @@ Development environment
 
 The same docker compose used for the production deployment can also be used
 as a development environment. After cloning the `docker compose repository
-<https://github.com/bihealth/kiosc-docker-compose>`__, pass the `--profile
-dev`` argument, so that only the services strictly required by Kiosc will run.
-Manually setting up the database and scheduler is not described in this manual.
+<https://github.com/bihealth/kiosc-docker-compose>`__, pass the ``--profile
+dev`` argument, so that only the services strictly required by Kiosc will
+run [#footnote-make-dev]_. Manually setting up the database and scheduler is
+not described in this manual.
 
 .. code-block:: console
 
@@ -82,3 +83,8 @@ The configuration for the development instance is similar to the one `described
 for the production environment <introduction_installation_configuration>`__.
 However, the ``env.example`` in the kiosc-server repository is more geared
 towards development.
+
+.. rubric:: Footnotes
+
+.. [#footnote-make-dev] You may also simply run ``make dev``, using the Makefile
+    we provide.

@@ -1,9 +1,20 @@
+import json
+
 from django import forms
 from django.conf import settings
+from django.forms import widgets
 from django.urls import reverse
 
 from containers.models import Container, MASKED_KEYWORD
 from filesfolders.models import File
+
+
+class PrettyJSONWidget(widgets.Textarea):
+    def format_value(self, value):
+        try:
+            return json.dumps(json.loads(value), indent=2, sort_keys=False)
+        except Exception:
+            return super().format_value(value)
 
 
 class ContainerForm(forms.ModelForm):
@@ -37,6 +48,7 @@ class ContainerForm(forms.ModelForm):
         self.fields["project"].widget = forms.HiddenInput()
         self.fields["containertemplatesite"].widget = forms.HiddenInput()
         self.fields["containertemplateproject"].widget = forms.HiddenInput()
+        self.fields["environment"].widget = PrettyJSONWidget()
 
         # Hide host port if in docker-shared mode
         if settings.KIOSC_NETWORK_MODE == "docker-shared":

@@ -1,5 +1,6 @@
 import logging
 from ipaddress import ip_address
+from typing import AsyncGenerator, Optional
 from wsgiref.util import FileWrapper
 
 from django.http import (
@@ -8,9 +9,8 @@ from django.http import (
     HttpResponseNotFound,
     HttpResponseForbidden,
     JsonResponse,
+    StreamingHttpResponse,
 )
-
-from bgjobs.models import BackgroundJob, LOG_LEVEL_DEBUG
 from django.conf import settings
 from django.contrib import messages
 from django.contrib.auth.mixins import LoginRequiredMixin
@@ -28,6 +28,7 @@ from django.views.generic import (
 from django.views.generic.detail import SingleObjectMixin
 
 from config.settings.base import KIOSC_CONTAINER_DEFAULT_LOG_LINES
+from bgjobs.models import BackgroundJob, LOG_LEVEL_DEBUG
 from containers.templatetags.container_tags import colorize_state, state_bell
 from filesfolders.models import File, FileData
 from filesfolders.views import storage
@@ -37,8 +38,15 @@ from projectroles.views import (
     ProjectContextMixin,
     ProjectPermissionMixin,
 )
+from revproxy.response import get_streaming_amt
+from revproxy.utils import (
+    set_response_headers,
+    should_stream,
+    cookie_from_string,
+)
 from revproxy.views import ProxyView
 from urllib3.exceptions import NewConnectionError
+from urllib3.response import is_fp_closed
 
 from containers.forms import ContainerForm, FileSelectorForm
 from containers.models import (
@@ -68,6 +76,36 @@ plugin_api = PluginAPI()
 
 APP_NAME = "containers"
 CELERY_SUBMIT_COUNTDOWN = 0.5
+
+
+async def _stream_response(
+    proxy_response: HttpResponse,
+    amt: int,
+    decode_content: Optional[bool] = None,
+) -> AsyncGenerator[bytes, None]:
+    """Asynchronously stream an HttpResponse.
+
+    This function is similar to HTTPResponse.stream() from urllib3.response,
+    but it uses async methods to return the response chunks.
+    """
+    if proxy_response.chunked and proxy_response.supports_chunked_reads():
+        async for chunk in proxy_response.read_chunked(
+            amt, decode_content=decode_content
+        ):
+            yield chunk
+    else:
+        while (
+            not is_fp_closed(proxy_response._fp)
+            or len(proxy_response._decoded_buffer) > 0
+            or (
+                proxy_response._decoder
+                and proxy_response._decoder.has_unconsumed_tail
+            )
+        ):
+            data = proxy_response.read(amt=amt, decode_content=decode_content)
+
+            if data:
+                yield data
 
 
 class ContainerCreateView(
@@ -657,6 +695,74 @@ class KioscProxyView(ProxyView):
 
     rewrite = ((r"^/container/proxy/(?P<container>[a-f0-9-]+)/", "/"),)
 
+    def dispatch(self, request, path):
+        """Override the dispatch method.
+
+        This avoids a warning about Django needing asynchronous iterators
+        to process StreamingHttpResponse objects. This function combines
+        ProxyView.dispatch() from revproxy.views and get_django_response()
+        from revproxy.utils.
+        """
+        self.request_headers = self.get_request_headers()
+
+        redirect_to = self._format_path_to_redirect(request)
+        if redirect_to:
+            return redirect(redirect_to)
+
+        proxy_response = self._created_proxy_response(request, path)
+
+        self._replace_host_on_redirect_location(request, proxy_response)
+        self._set_content_type(request, proxy_response)
+
+        status = proxy_response.status
+        headers = proxy_response.headers
+
+        logger.debug("Proxy response headers: %s", headers)
+
+        content_type = headers.get("Content-Type")
+
+        logger.debug("Content-Type: %s", content_type)
+
+        if should_stream(proxy_response):
+            if self.streaming_amount is None:
+                amt = get_streaming_amt(proxy_response)
+            else:
+                amt = self.streaming_amount
+
+            logger.debug(
+                (
+                    "Starting streaming HTTP Response, buffering amount="
+                    '"%s bytes"'
+                ),
+                amt,
+            )
+            response = StreamingHttpResponse(
+                _stream_response(proxy_response, amt),
+                status=status,
+                content_type=content_type,
+            )
+        else:
+            content = proxy_response.data or b""
+            response = HttpResponse(
+                content, status=status, content_type=content_type
+            )
+
+        set_response_headers(response, headers)
+
+        cookies = proxy_response.headers.getlist("set-cookie")
+        for cookie_string in cookies:
+            cookie_dict = cookie_from_string(
+                cookie_string, strict_cookies=False
+            )
+            # if cookie is invalid cookie_dict will be None
+            if cookie_dict:
+                response.set_cookie(**cookie_dict)
+
+        logger.debug("Response cookies: %s", response.cookies)
+
+        logger.debug("RESPONSE RETURNED: %s", response)
+        return response
+
 
 class ReverseProxyView(
     LoginRequiredMixin,
@@ -664,7 +770,7 @@ class ReverseProxyView(
     ProjectPermissionMixin,
     ProjectContextMixin,
     SingleObjectMixin,
-    View,
+    KioscProxyView,
 ):
     """View for reverse proxy."""
 
@@ -704,12 +810,8 @@ class ReverseProxyView(
         else:
             upstream = f"http://{container.container_id[:12]}:{container.container_port}"
 
-        proxy_view = KioscProxyView()
-        proxy_view.request = request
-        proxy_view.args = args
-        proxy_view.kwargs = kwargs
-        proxy_view.upstream = upstream
-        proxy_view.suppress_empty_body = True
+        self.upstream = upstream
+        self.suppress_empty_body = True
 
         # Add container log entry
         container.log_entries.create(
@@ -719,7 +821,7 @@ class ReverseProxyView(
         )
 
         try:
-            return proxy_view.dispatch(request, *args, **kwargs)
+            return super().dispatch(request, *args, **kwargs)
 
         except NewConnectionError as e:
             container.log_entries.create(

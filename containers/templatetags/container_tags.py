@@ -48,3 +48,8 @@ def state_bell(state, last_action):
 @register.filter
 def pretty_json(obj):
     return json.dumps(obj, indent=4, sort_keys=True)
+
+
+@register.inclusion_tag("containers/_container_controls.html")
+def container_controls(container, user, display=False):
+    return {"container": container, "user": user, "display": display}

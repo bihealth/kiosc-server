@@ -30,6 +30,8 @@ urlpatterns = [
     path("logout/", auth_views.logout_then_login, name="logout"),
     # Auth
     path("api/auth/", include("knox.urls")),
+    # Social auth for OIDC support
+    path("social/", include("social_django.urls")),
     # Projectroles URLs
     path("project/", include("projectroles.urls")),
     # Timeline URLs

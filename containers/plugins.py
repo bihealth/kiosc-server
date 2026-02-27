@@ -12,10 +12,12 @@ from projectroles.plugins import (
     ProjectAppPluginPoint,
     PluginObjectLink,
     PluginCategoryStatistic,
+    ProjectModifyPluginMixin,
 )
 
 from containers.models import Container
 from containers.urls import urlpatterns
+from containers.views import ContainerModifyMixin
 
 from containertemplates.models import (
     ContainerTemplateSite,
@@ -31,7 +33,9 @@ PROJECT_TYPE_PROJECT = SODAR_CONSTANTS['PROJECT_TYPE_PROJECT']
 # Samplesheets project app plugin ----------------------------------------------
 
 
-class ProjectAppPlugin(ProjectAppPluginPoint):
+class ProjectAppPlugin(
+    ProjectAppPluginPoint, ProjectModifyPluginMixin, ContainerModifyMixin
+):
     """Plugin for registering app with Projectroles"""
 
     # Properties required by django-plugins ------------------------------

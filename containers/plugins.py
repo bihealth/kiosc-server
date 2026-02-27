@@ -5,19 +5,24 @@ from uuid import UUID
 
 # Projectroles dependency
 from django.urls import reverse
-from projectroles.models import SODAR_CONSTANTS
-from projectroles.plugins import ProjectAppPluginPoint, PluginObjectLink
+from projectroles.models import Project
+from projectroles.plugins import (
+    ProjectAppPluginPoint,
+    PluginObjectLink,
+    ProjectModifyPluginMixin,
+)
 
 from containers.models import Container
 from containers.urls import urlpatterns
-
-PROJECT_TYPE_PROJECT = SODAR_CONSTANTS["PROJECT_TYPE_PROJECT"]
+from containers.views import ContainerModifyMixin
 
 
 # Samplesheets project app plugin ----------------------------------------------
 
 
-class ProjectAppPlugin(ProjectAppPluginPoint):
+class ProjectAppPlugin(
+    ProjectAppPluginPoint, ProjectModifyPluginMixin, ContainerModifyMixin
+):
     """Plugin for registering app with Projectroles"""
 
     # Properties required by django-plugins ------------------------------

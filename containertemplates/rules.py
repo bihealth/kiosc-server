@@ -45,31 +45,43 @@ rules.add_perm(
 # Allow creating project-wide templates.
 rules.add_perm(
     "containertemplates.project_create",
-    pr_rules.is_project_owner
-    | pr_rules.is_project_delegate
-    | pr_rules.is_project_contributor,
+    pr_rules.can_modify_project_data
+    & (
+        pr_rules.is_project_owner
+        | pr_rules.is_project_delegate
+        | pr_rules.is_project_contributor
+    ),
 )
 
 # Allow updating project-wide templates.
 rules.add_perm(
     "containertemplates.project_edit",
-    pr_rules.is_project_owner
-    | pr_rules.is_project_delegate
-    | pr_rules.is_project_contributor,
+    pr_rules.can_modify_project_data
+    & (
+        pr_rules.is_project_owner
+        | pr_rules.is_project_delegate
+        | pr_rules.is_project_contributor
+    ),
 )
 
 # Allow deleting project-wide templates.
 rules.add_perm(
     "containertemplates.project_delete",
-    pr_rules.is_project_owner
-    | pr_rules.is_project_delegate
-    | pr_rules.is_project_contributor,
+    pr_rules.can_modify_project_data
+    & (
+        pr_rules.is_project_owner
+        | pr_rules.is_project_delegate
+        | pr_rules.is_project_contributor
+    ),
 )
 
 # Allow duplicating project-wide templates.
 rules.add_perm(
     "containertemplates.project_duplicate",
-    pr_rules.is_project_owner
-    | pr_rules.is_project_delegate
-    | pr_rules.is_project_contributor,
+    pr_rules.can_modify_project_data
+    & (
+        pr_rules.is_project_owner
+        | pr_rules.is_project_delegate
+        | pr_rules.is_project_contributor
+    ),
 )

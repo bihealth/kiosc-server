@@ -46,5 +46,10 @@ def state_bell(state, last_action):
 
 
 @register.filter
+def get_class(item):
+    return item.__class__.__name__
+
+
+@register.filter
 def pretty_json(obj):
     return json.dumps(obj, indent=4, sort_keys=True)

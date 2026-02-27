@@ -36,7 +36,7 @@
       {% if item|get_class == 'Container' %}
         {% highlight_search_term item.description search_terms %}
       {% elif item|get_class == 'ContainerBackgroundJob' %}
-        {% highlight_search_term item.container.description search_terms %}
+        {{ item.action }}
       {% elif item|get_class == 'ContainerLogEntry' %}
         {% highlight_search_term item.text search_terms %}
       {% endif %}

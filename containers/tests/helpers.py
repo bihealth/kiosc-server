@@ -28,7 +28,16 @@ from containertemplates.tests.factories import (
     ContainerTemplateSiteFactory,
     ContainerTemplateProjectFactory,
 )
+from projectroles.models import (
+    Role,
+    RoleAssignment,
+    SODAR_CONSTANTS,
+    ROLE_RANKING,
+)
 from projectroles.tests.base import APIViewTestBase
+
+
+PROJECT_ROLE_OWNER = SODAR_CONSTANTS["PROJECT_ROLE_OWNER"]
 
 
 class TestContainerCreationMixin:
@@ -75,6 +84,16 @@ class TestBase(TestContainerCreationMixin, TestCase):
         self.superuser.is_staff = True
         self.superuser.is_superuser = True
         self.superuser.save()
+
+        self.user = self.make_user("alice")
+        self.user.save()
+
+        self.role_owner = Role.objects.get_or_create(
+            name=PROJECT_ROLE_OWNER, rank=ROLE_RANKING[PROJECT_ROLE_OWNER]
+        )[0]
+        self.role_owner_as = RoleAssignment.objects.create(
+            project=self.project, user=self.user, role=self.role_owner
+        )
 
 
 class ContainersAPIViewTestBase(APIViewTestBase):

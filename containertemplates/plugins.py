@@ -41,6 +41,29 @@ class ProjectAppPlugin(ProjectAppPluginPoint):
 
     # Properties defined in ProjectAppPluginPoint -----------------------
 
+    #: App setting definitions
+    #:
+    #: Example ::
+    #:
+    #:     app_settings = [
+    #:         PluginAppSettingDef(
+    #:             name='example_setting',  # Must be unique within plugin
+    #:             scope=APP_SETTING_SCOPE_PROJECT,
+    #:             type=APP_SETTING_TYPE_STRING,
+    #:             default='example',  # Optional
+    #:             label='Example setting',  # Optional
+    #:             placeholder='Enter example setting here',  # Optional
+    #:             description='Example user setting',  # Optional
+    #:             options=['example', 'example2'],  # Optional, only for STRING
+    #:                                               # or INTEGER settings
+    #:             user_modifiable=True,  # Optional, show/hide in forms
+    #:             global_edit=False,  # Optional, enable/disable editing on
+    #:                                 # target sites
+    #:             widget_attrs={},  # Optional, widget attrs for forms
+    #:         )
+    #:    ]
+    app_settings = []
+
     #: FontAwesome icon ID string
     icon = "octicon:repo-template-24"
 
@@ -71,25 +94,27 @@ class ProjectAppPlugin(ProjectAppPluginPoint):
     #: Position in plugin ordering
     plugin_ordering = 10
 
-    #: Project list columns
-    project_list_columns = {
-        #     'sheets': {
-        #         'title': 'Sheets',
-        #         'width': 70,
-        #         'description': None,
-        #         'active': True,
-        #         'ordering': 30,
-        #         'align': 'center',
-        #     },
-        #     'files': {
-        #         'title': 'Files',
-        #         'width': 70,
-        #         'description': None,
-        #         'active': True,
-        #         'ordering': 20,
-        #         'align': 'center',
-        #     },
-    }
+    #: Optional custom project list column definition
+    #:
+    #: Example ::
+    #:
+    #:     project_list_columns = {
+    #:         'column_id': {
+    #:             'title': 'Column Title',
+    #:             'width': 100,  # Desired width of column in pixels
+    #:             'description': 'Description',  # Optional description string
+    #:             'active': True,  # Boolean for whether the column is active
+    #:             'ordering': 50,  # Integer for ordering the columns
+    #:             'align': 'left'  # Alignment of content
+    #:         }
+    #:     }
+    project_list_columns = {}
+
+    #: Display application for categories in addition to projects
+    category_enable = False
+
+    #: Names of plugin specific Django settings to display in siteinfo
+    info_settings = []
 
     def get_object_link(
         self, model_str: str, uuid: Union[str, UUID]
@@ -135,20 +160,46 @@ class SiteAppPlugin(SiteAppPluginPoint):
     #: FontAwesome icon ID string
     icon = "octicon:repo-template-24"
 
-    #: Entry point URL ID (must take project sodar_uuid as "project" argument)
-    entry_point_url_id = "containertemplates:site-list"
-
     #: Description string
     description = "Create and manage container templates"
 
+    #: Entry point URL ID (must take project sodar_uuid as "project" argument)
+    entry_point_url_id = "containertemplates:site-list"
+
     #: Required permission for accessing the app
     app_permission = "containertemplates.site_view"
+
+    #: User settings definition
+    #:
+    #: Example ::
+    #:
+    #:     app_settings = [
+    #:         PluginAppSettingDef(
+    #:             name='example_setting',  # Must be unique within plugin
+    #:             scope=APP_SETTING_SCOPE_USER,  # Use USER or SITE
+    #:             type=APP_SETTING_TYPE_STRING,
+    #:             default='example',  # Optional
+    #:             label='Example setting',  # Optional
+    #:             placeholder='Enter example setting here',  # Optional
+    #:             description='Example user setting',  # Optional
+    #:             options=['example', 'example2'],  # Optional, only for STRING
+    #:                                               # or INTEGER settings
+    #:             user_modifiable=True,  # Optional, show/hide in forms
+    #:             global_edit=False,  # Optional, enable/disable editing on
+    #:                                 # target sites
+    #:             widget_attrs={},  # Optional, widget attrs for forms
+    #:         )
+    #:    ]
+    app_settings = []
 
     #: Enable or disable general search from project title bar
     search_enable = True
 
     #: App card title for the project details page
     details_title = "Container Templates overview"
+
+    #: List of names for plugin specific Django settings to display in siteinfo
+    info_settings = []
 
     def get_object_link(
         self, model_str: str, uuid: Union[str, UUID]

@@ -4,12 +4,17 @@ from typing import Optional, Union
 from uuid import UUID
 
 # Projectroles dependency
+from django.contrib.auth import get_user_model
 from django.urls import reverse
 from projectroles.models import SODAR_CONSTANTS
-from projectroles.plugins import ProjectAppPluginPoint, PluginObjectLink
+from projectroles.plugins import ProjectAppPluginPoint, PluginObjectLink, PluginSearchResult
 
-from containers.models import Container
+from containers.models import Container, ContainerBackgroundJob, ContainerLogEntry
 from containers.urls import urlpatterns
+
+
+User = get_user_model()
+
 
 PROJECT_TYPE_PROJECT = SODAR_CONSTANTS["PROJECT_TYPE_PROJECT"]
 
@@ -72,7 +77,7 @@ class ProjectAppPlugin(ProjectAppPluginPoint):
     search_enable = True
 
     #: List of search object types for the app
-    search_types = ["source", "sample", "file"]
+    search_types = ["container", "containerbackgroundjob", "containerlogentry"]
 
     #: Search results template
     search_template = "containers/_search_results.html"
@@ -134,3 +139,48 @@ class ProjectAppPlugin(ProjectAppPluginPoint):
             pass
 
         return None
+
+    def search(
+        self,
+        search_terms: list[str],
+        user: User,
+        search_type: Optional[str] = None,
+        keywords: Optional[list[str]] = None,
+    ) -> list[PluginSearchResult]:
+        """
+        Return container items based on one or more search terms, user, optional
+        type and optional keywords.
+
+        :param search_terms: Search terms to be joined with the OR operator
+                             (list of strings)
+        :param user: User object for user initiating the search
+        :param search_type: Type of objects to be searched (String)
+        :param keywords: Dictionary of key/value pairs (optional)
+        :return: List of PluginSearchResult objects
+        """
+        items = []
+        if not search_type:
+            containers = Container.objects.find(search_terms, keywords)
+            container_bg_jobs = ContainerBackgroundJob.objects.find(search_terms, keywords)
+            container_logs = ContainerLogEntry.objects.find(search_terms, keywords)
+            items = list(containers) + list(container_bg_jobs) + list(container_logs)
+            # items.sort(key=lambda x: x.title.lower())
+        elif search_type == 'container':
+            items = Container.objects.find(search_terms, keywords)
+        elif search_type == 'containerbackgroundjob':
+            items = ContainerBackgroundJob.objects.find(search_terms, keywords)
+        elif search_type == 'containerlogentry':
+            items = ContainerLogEntry.objects.find(search_terms, keywords)
+        if items:
+            items = [
+                x
+                for x in items
+                if isinstance(x, Container) and user.has_perm('containers.view_container', x) or user.has_perm('containers.view_container', x.container)
+            ]
+        ret = PluginSearchResult(
+            category='all',
+            title='Containers, Background Jobs, and Logs',
+            search_types=['container', 'containerbackgroundjob', 'containerlogentry'],
+            items=items,
+        )
+        return [ret]

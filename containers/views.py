@@ -1,6 +1,8 @@
 import logging
 from ipaddress import ip_address
 from typing import AsyncGenerator, Optional
+from urllib3.exceptions import NewConnectionError
+from urllib3.response import is_fp_closed
 from wsgiref.util import FileWrapper
 
 from django.http import (
@@ -13,6 +15,7 @@ from django.http import (
 )
 from django.conf import settings
 from django.contrib import messages
+from django.contrib.auth import get_user_model
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.db import transaction
 from django.shortcuts import redirect
@@ -26,6 +29,13 @@ from django.views.generic import (
     ListView,
 )
 from django.views.generic.detail import SingleObjectMixin
+from revproxy.response import get_streaming_amt
+from revproxy.utils import (
+    set_response_headers,
+    should_stream,
+    cookie_from_string,
+)
+from revproxy.views import ProxyView
 
 from config.settings.base import KIOSC_CONTAINER_DEFAULT_LOG_LINES
 from bgjobs.models import BackgroundJob, LOG_LEVEL_DEBUG
@@ -38,15 +48,6 @@ from projectroles.views import (
     ProjectContextMixin,
     ProjectPermissionMixin,
 )
-from revproxy.response import get_streaming_amt
-from revproxy.utils import (
-    set_response_headers,
-    should_stream,
-    cookie_from_string,
-)
-from revproxy.views import ProxyView
-from urllib3.exceptions import NewConnectionError
-from urllib3.response import is_fp_closed
 
 from containers.forms import ContainerForm, FileSelectorForm
 from containers.models import (
@@ -73,6 +74,7 @@ from containertemplates.forms import ContainerTemplateSelectorForm
 
 logger = logging.getLogger(__name__)
 plugin_api = PluginAPI()
+User = get_user_model()
 
 APP_NAME = "containers"
 CELERY_SUBMIT_COUNTDOWN = 0.5
@@ -106,6 +108,77 @@ async def _stream_response(
 
             if data:
                 yield data
+
+
+class ContainerModifyMixin:
+    @classmethod
+    @transaction.atomic
+    def _container_delete_docker(cls, container: Container, user: User) -> bool:
+        """Delete a container
+
+        This method deletes the container from Docker as a background job. It
+        also creates log entries and timeline events.
+
+        NOTE: the container is NOT deleted from the database with this method,
+        just from the Docker daemon.
+
+        :param container: Container object to be deleted
+        :param user: User on behalf of whom the action is performed
+        :return: True if the action succeeded, False otherwise
+        """
+        project = container.project
+        timeline = plugin_api.get_backend_api("timeline_backend")
+        bg_job = BackgroundJob.objects.create(
+            name="Delete container",
+            project=project,
+            job_type=ContainerBackgroundJob.spec_name,
+            user=user,
+        )
+        job = ContainerBackgroundJob.objects.create(
+            action=ACTION_DELETE,
+            project=project,
+            container=container,
+            bg_job=bg_job,
+        )
+
+        # Add container log entry
+        container.log_entries.create(
+            text="Delete",
+            process=PROCESS_ACTION,
+            user=user,
+        )
+
+        # No async task
+        container_task(job_id=job.id)
+        container.refresh_from_db()
+
+        if container.state not in (STATE_INITIAL, STATE_DELETED):
+            # Add timeline event
+            if timeline:
+                timeline.add_event(
+                    project=project,
+                    app_name=APP_NAME,
+                    user=user,
+                    event_name="delete_container",
+                    description=f"deleting of {container.get_display_name()} failed",
+                    status_type=timeline.TL_STATUS_FAILED,
+                )
+            logger.error(
+                f"Failed deleting container {container.get_display_name()}",
+            )
+            return False
+
+        # Add timeline event
+        if timeline:
+            timeline.add_event(
+                project=project,
+                app_name=APP_NAME,
+                user=user,
+                event_name="delete_container",
+                description=f"deleted {container.get_display_name()}",
+                status_type=timeline.TL_STATUS_OK,
+            )
+        return True
 
 
 class ContainerCreateView(
@@ -173,6 +246,7 @@ class ContainerDeleteView(
     LoggedInPermissionMixin,
     ProjectPermissionMixin,
     ProjectContextMixin,
+    ContainerModifyMixin,
     DeleteView,
 ):
     """View for deleting a container."""
@@ -193,48 +267,12 @@ class ContainerDeleteView(
             kwargs={"project": self.object.project.sodar_uuid},
         )
 
-    @transaction.atomic
     def delete(self, request, *args, **kwargs):
-        timeline = plugin_api.get_backend_api("timeline_backend")
         container = self.get_object()
         project = self.get_project()
+        success = self._container_delete_docker(container, request.user)
 
-        bg_job = BackgroundJob.objects.create(
-            name="Delete container",
-            project=project,
-            job_type=ContainerBackgroundJob.spec_name,
-            user=request.user,
-        )
-        job = ContainerBackgroundJob.objects.create(
-            action=ACTION_DELETE,
-            project=project,
-            container=container,
-            bg_job=bg_job,
-        )
-
-        # Add container log entry
-        container.log_entries.create(
-            text="Delete",
-            process=PROCESS_ACTION,
-            user=request.user,
-        )
-
-        # No async task
-        container_task(job_id=job.id)
-        container.refresh_from_db()
-
-        if container.state not in (STATE_INITIAL, STATE_DELETED):
-            # Add timeline event
-            if timeline:
-                timeline.add_event(
-                    project=project,
-                    app_name=APP_NAME,
-                    user=request.user,
-                    event_name="delete_container",
-                    description=f"deleting of {container.get_display_name()} failed",
-                    status_type=timeline.TL_STATUS_FAILED,
-                )
-
+        if not success:
             messages.error(
                 request,
                 f"Failed deleting container {container.get_display_name()}",
@@ -245,17 +283,6 @@ class ContainerDeleteView(
                     "containers:list",
                     kwargs={"project": project.sodar_uuid},
                 )
-            )
-
-        # Add timeline event
-        if timeline:
-            timeline.add_event(
-                project=project,
-                app_name=APP_NAME,
-                user=request.user,
-                event_name="delete_container",
-                description=f"deleted {container.get_display_name()}",
-                status_type=timeline.TL_STATUS_OK,
             )
 
         return super().delete(request, *args, **kwargs)

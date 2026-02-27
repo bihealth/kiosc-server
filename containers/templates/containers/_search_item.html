@@ -1,0 +1,45 @@
+{% load container_tags %}
+{# Projectroles dependency #}
+{% load projectroles_common_tags %}
+
+<tr class="sodar-containers-search-item" id="sodar-containers-search-item-{{ item.sodar_uuid }}">
+  {# Type #}
+  <td class="text-nowrap">
+    {{ item|get_class }}
+  </td>
+  {# Project column #}
+  <td>
+    {# NOTE: No highlight here as project is not searched for here #}
+    {% autoescape off %}
+      {% if item|get_class == 'ContainerLogEntry' %}
+        {{ item.container.project.title }}
+      {% else %}
+        {{ item.project.title }}
+      {% endif %}
+    {% endautoescape %}
+  </td>
+  {# Container #}
+  <td>
+    {% autoescape off %}
+      {% if item|get_class == 'Container' %}
+        {% highlight_search_term item.title search_terms %}
+        ({% highlight_search_term item.repository search_terms %}:{{ item.tag }})
+      {% else %}
+        {% highlight_search_term item.container.title search_terms %}
+        ({% highlight_search_term item.container.repository search_terms %}:{{ item.container.tag }})
+      {% endif %}
+    {% endautoescape %}
+  </td>
+  {# Description #}
+  <td>
+    {% autoescape off %}
+      {% if item|get_class == 'Container' %}
+        {% highlight_search_term item.description search_terms %}
+      {% elif item|get_class == 'ContainerBackgroundJob' %}
+        {% highlight_search_term item.container.description search_terms %}
+      {% elif item|get_class == 'ContainerLogEntry' %}
+        {% highlight_search_term item.text search_terms %}
+      {% endif %}
+    {% endautoescape %}
+  </td>
+</tr>

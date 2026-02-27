@@ -617,7 +617,7 @@ PROJECTROLES_ALLOW_LOCAL_USERS = env.bool(
 PROJECTROLES_ALLOW_ANONYMOUS = False
 
 # Enable project modify API
-PROJECTROLES_ENABLE_MODIFY_API = False
+PROJECTROLES_ENABLE_MODIFY_API = True
 # List of apps for executing project modify API actions in the given order. If
 # not set, backend and project apps will execute in alphabetical order by name.
 PROJECTROLES_MODIFY_API_APPS = []

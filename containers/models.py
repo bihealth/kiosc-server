@@ -1,11 +1,13 @@
 import contextlib
 import uuid
 from datetime import timedelta
+from typing import Optional
 
 from bgjobs.models import BackgroundJob, JobModelMessageMixin, LOG_LEVEL_DEBUG
 from django.conf import settings
 from django.db.models import JSONField
 from django.db import models, transaction
+from django.db.models import Q, QuerySet
 from django.urls import reverse
 from django.utils import timezone
 from django.utils.timezone import localtime
@@ -160,6 +162,40 @@ class JobModelMessageContextManagerMixin(JobModelMessageMixin):
             raise e
         else:
             self.mark_success()
+
+
+class ContainerManager(models.Manager):
+    """Manager for custom container queries"""
+
+    def find(
+        self, search_terms: list[str], keywords: Optional[dict] = None
+    ) -> QuerySet:
+        """
+        Return containers matching the query.
+
+        :param search_terms: Search terms (list of strings)
+        :param keywords: Optional search keywords as key/value pairs (dict)
+        :return: QuerySet of Container objects
+        """
+        term_query = Q()
+        for t in search_terms:
+            term_query.add(Q(repository__icontains=t), Q.OR)
+            term_query.add(Q(title__icontains=t), Q.OR)
+            term_query.add(Q(description__icontains=t), Q.OR)
+            try:
+                uuid.UUID(t.replace('-', ''))
+                term_query.add(Q(sodar_uuid=t), Q.OR)
+            except ValueError:
+                pass
+        if keywords and 'project' in keywords:
+            try:
+                project = Project.objects.get(sodar_uuid=keywords['project'])
+                term_query.add(Q(project__full_title__startswith=project.full_title), Q.AND)
+            except Project.DoesNotExist:
+                return Container.objects.none()
+            except ValidationError:
+                return Container.objects.none()
+        return super().get_queryset().filter(term_query).order_by('title')
 
 
 class Container(models.Model):
@@ -364,6 +400,9 @@ class Container(models.Model):
         default=settings.KIOSC_DOCKER_MAX_INACTIVITY,
     )
 
+    # Set manager for custom queries
+    objects = ContainerManager()
+
     def __str__(self):
         return f"{self.title} [{self.state}]"
 
@@ -400,6 +439,40 @@ class Container(models.Model):
             key: (MASKED_KEYWORD if key in secret_keys else value)
             for key, value in self.environment.items()
         }
+
+
+class ContainerBackgroundJobManager(models.Manager):
+    """Manager for custom container-related background job queries"""
+
+    def find(
+        self, search_terms: list[str], keywords: Optional[dict] = None
+    ) -> QuerySet:
+        """
+        Return container background jobs whose container matches the query.
+
+        :param search_terms: Search terms for containers (list of strings)
+        :param keywords: Optional search keywords as key/value pairs (dict)
+        :return: QuerySet of ContainerBackgroundJob objects
+        """
+        term_query = Q()
+        for t in search_terms:
+            term_query.add(Q(container__repository__icontains=t), Q.OR)
+            term_query.add(Q(container__title__icontains=t), Q.OR)
+            term_query.add(Q(container__description__icontains=t), Q.OR)
+            try:
+                uuid.UUID(t.replace('-', ''))
+                term_query.add(Q(sodar_uuid=t), Q.OR)
+            except ValueError:
+                pass
+        if keywords and 'project' in keywords:
+            try:
+                project = Project.objects.get(sodar_uuid=keywords['project'])
+                term_query.add(Q(project__full_title__startswith=project.full_title), Q.AND)
+            except Project.DoesNotExist:
+                return Container.objects.none()
+            except ValidationError:
+                return Container.objects.none()
+        return super().get_queryset().filter(term_query).order_by('container__title')
 
 
 class ContainerBackgroundJob(JobModelMessageContextManagerMixin, models.Model):
@@ -453,6 +526,9 @@ class ContainerBackgroundJob(JobModelMessageContextManagerMixin, models.Model):
         on_delete=models.CASCADE,
     )
 
+    # Set manager for custom queries
+    objects = ContainerBackgroundJobManager()
+
 
 class ContainerLogEntryManager(models.Manager):
     def merge_order(self, *args, **kwargs):
@@ -499,6 +575,35 @@ class ContainerLogEntryManager(models.Manager):
             return None
 
         return obj.get_date_docker_log()
+
+    def find(
+        self, search_terms: list[str], keywords: Optional[dict] = None
+    ) -> QuerySet:
+        """
+        Return container log entries matching the query.
+
+        :param search_terms: Search terms (list of strings)
+        :param keywords: Optional search keywords as key/value pairs (dict)
+        :return: QuerySet of ContainerLogEntry objects
+        """
+        term_query = Q()
+        for t in search_terms:
+            term_query.add(Q(text__icontains=t), Q.OR)
+            term_query.add(Q(process__icontains=t), Q.OR)
+            try:
+                uuid.UUID(t.replace('-', ''))
+                term_query.add(Q(sodar_uuid=t), Q.OR)
+            except ValueError:
+                pass
+        if keywords and 'project' in keywords:
+            try:
+                project = Project.objects.get(sodar_uuid=keywords['project'])
+                term_query.add(Q(project__full_title__startswith=project.full_title), Q.AND)
+            except Project.DoesNotExist:
+                return Container.objects.none()
+            except ValidationError:
+                return Container.objects.none()
+        return super().get_queryset().filter(term_query).order_by('container', '-date_created')
 
 
 class ContainerLogEntry(models.Model):

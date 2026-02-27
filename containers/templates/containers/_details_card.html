@@ -15,7 +15,7 @@
 {% has_perm "containers.pause_container" request.user project as can_pause_container %}
 {% has_perm "containers.unpause_container" request.user project as can_unpause_container %}
 
-<table class="table sodar-card-table" id="kiosc-container-details-table">
+<table class="table table-striped sodar-card-table" id="kiosc-container-details-table">
   <thead>
     <tr>
       <th>Title</th>
@@ -115,6 +115,10 @@
             {% endif %}
           </div>
         </td>
+      </tr>
+    {% empty %}
+      <tr>
+        <td class="font-italic text-center" colspan="6">No contaniers to show.</td>
       </tr>
     {% endfor %}
   </tbody>

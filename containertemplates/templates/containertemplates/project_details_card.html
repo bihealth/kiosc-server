@@ -5,7 +5,7 @@
 {% load projectroles_common_tags %}
 
 
-<table class="table sodar-card-table" id="kiosc-containertemplates-details-table">
+<table class="table table-striped sodar-card-table" id="kiosc-containertemplates-details-table">
   <thead>
     <tr>
       <th>Title</th>
@@ -23,6 +23,10 @@
         <td>
           {{ containertemplate.get_repos_full }}
         </td>
+      </tr>
+    {% empty %}
+      <tr>
+        <td class="font-italic text-center" colspan="6">No contanier templates to show.</td>
       </tr>
     {% endfor %}
   </tbody>

@@ -134,3 +134,23 @@ class ProjectAppPlugin(ProjectAppPluginPoint):
             pass
 
         return None
+
+    def perform_project_delete(self, project: Project):
+        """
+        Clean-up actions to be performed when a project is deleted
+
+        Ensure that all containers belonging to the project are stopped and
+        deleted.
+
+        NOTE: the method is called only if the setting
+        ``PROJECTROLES_ENABLE_MODIFY_API`` is True.
+
+        :param project: The project being deleted
+        """
+        containers = Container.objects.filter(project=project)
+        # NOTE: the project modify API plugin only passes the project as arg to
+        # this function, not the user. Hence, we use the project owner for the
+        # BackgroundJob user, as a workaround.
+        user = project.get_owner().user
+        for container in containers:
+            self._container_delete_docker(container, user)

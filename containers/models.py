@@ -5,6 +5,7 @@ from typing import Optional
 
 from bgjobs.models import BackgroundJob, JobModelMessageMixin, LOG_LEVEL_DEBUG
 from django.conf import settings
+from django.core.exceptions import ValidationError
 from django.db.models import JSONField
 from django.db import models, transaction
 from django.db.models import Q, QuerySet
@@ -183,19 +184,21 @@ class ContainerManager(models.Manager):
             term_query.add(Q(title__icontains=t), Q.OR)
             term_query.add(Q(description__icontains=t), Q.OR)
             try:
-                uuid.UUID(t.replace('-', ''))
+                uuid.UUID(t.replace("-", ""))
                 term_query.add(Q(sodar_uuid=t), Q.OR)
             except ValueError:
                 pass
-        if keywords and 'project' in keywords:
+        if keywords and "project" in keywords:
             try:
-                project = Project.objects.get(sodar_uuid=keywords['project'])
-                term_query.add(Q(project__full_title__startswith=project.full_title), Q.AND)
+                project = Project.objects.get(sodar_uuid=keywords["project"])
+                term_query.add(
+                    Q(project__full_title__startswith=project.full_title), Q.AND
+                )
             except Project.DoesNotExist:
                 return Container.objects.none()
             except ValidationError:
                 return Container.objects.none()
-        return super().get_queryset().filter(term_query).order_by('title')
+        return super().get_queryset().filter(term_query).order_by("title")
 
 
 class Container(models.Model):
@@ -460,19 +463,26 @@ class ContainerBackgroundJobManager(models.Manager):
             term_query.add(Q(container__title__icontains=t), Q.OR)
             term_query.add(Q(container__description__icontains=t), Q.OR)
             try:
-                uuid.UUID(t.replace('-', ''))
+                uuid.UUID(t.replace("-", ""))
                 term_query.add(Q(sodar_uuid=t), Q.OR)
             except ValueError:
                 pass
-        if keywords and 'project' in keywords:
+        if keywords and "project" in keywords:
             try:
-                project = Project.objects.get(sodar_uuid=keywords['project'])
-                term_query.add(Q(project__full_title__startswith=project.full_title), Q.AND)
+                project = Project.objects.get(sodar_uuid=keywords["project"])
+                term_query.add(
+                    Q(project__full_title__startswith=project.full_title), Q.AND
+                )
             except Project.DoesNotExist:
                 return Container.objects.none()
             except ValidationError:
                 return Container.objects.none()
-        return super().get_queryset().filter(term_query).order_by('container__title')
+        return (
+            super()
+            .get_queryset()
+            .filter(term_query)
+            .order_by("container__title")
+        )
 
 
 class ContainerBackgroundJob(JobModelMessageContextManagerMixin, models.Model):
@@ -591,19 +601,26 @@ class ContainerLogEntryManager(models.Manager):
             term_query.add(Q(text__icontains=t), Q.OR)
             term_query.add(Q(process__icontains=t), Q.OR)
             try:
-                uuid.UUID(t.replace('-', ''))
+                uuid.UUID(t.replace("-", ""))
                 term_query.add(Q(sodar_uuid=t), Q.OR)
             except ValueError:
                 pass
-        if keywords and 'project' in keywords:
+        if keywords and "project" in keywords:
             try:
-                project = Project.objects.get(sodar_uuid=keywords['project'])
-                term_query.add(Q(project__full_title__startswith=project.full_title), Q.AND)
+                project = Project.objects.get(sodar_uuid=keywords["project"])
+                term_query.add(
+                    Q(project__full_title__startswith=project.full_title), Q.AND
+                )
             except Project.DoesNotExist:
                 return Container.objects.none()
             except ValidationError:
                 return Container.objects.none()
-        return super().get_queryset().filter(term_query).order_by('container', '-date_created')
+        return (
+            super()
+            .get_queryset()
+            .filter(term_query)
+            .order_by("container", "-date_created")
+        )
 
 
 class ContainerLogEntry(models.Model):

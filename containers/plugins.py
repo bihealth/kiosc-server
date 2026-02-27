@@ -7,9 +7,17 @@ from uuid import UUID
 from django.contrib.auth import get_user_model
 from django.urls import reverse
 from projectroles.models import SODAR_CONSTANTS
-from projectroles.plugins import ProjectAppPluginPoint, PluginObjectLink, PluginSearchResult
+from projectroles.plugins import (
+    ProjectAppPluginPoint,
+    PluginObjectLink,
+    PluginSearchResult,
+)
 
-from containers.models import Container, ContainerBackgroundJob, ContainerLogEntry
+from containers.models import (
+    Container,
+    ContainerBackgroundJob,
+    ContainerLogEntry,
+)
 from containers.urls import urlpatterns
 
 
@@ -161,26 +169,40 @@ class ProjectAppPlugin(ProjectAppPluginPoint):
         items = []
         if not search_type:
             containers = Container.objects.find(search_terms, keywords)
-            container_bg_jobs = ContainerBackgroundJob.objects.find(search_terms, keywords)
-            container_logs = ContainerLogEntry.objects.find(search_terms, keywords)
-            items = list(containers) + list(container_bg_jobs) + list(container_logs)
+            container_bg_jobs = ContainerBackgroundJob.objects.find(
+                search_terms, keywords
+            )
+            container_logs = ContainerLogEntry.objects.find(
+                search_terms, keywords
+            )
+            items = (
+                list(containers)
+                + list(container_bg_jobs)
+                + list(container_logs)
+            )
             # items.sort(key=lambda x: x.title.lower())
-        elif search_type == 'container':
+        elif search_type == "container":
             items = Container.objects.find(search_terms, keywords)
-        elif search_type == 'containerbackgroundjob':
+        elif search_type == "containerbackgroundjob":
             items = ContainerBackgroundJob.objects.find(search_terms, keywords)
-        elif search_type == 'containerlogentry':
+        elif search_type == "containerlogentry":
             items = ContainerLogEntry.objects.find(search_terms, keywords)
         if items:
             items = [
                 x
                 for x in items
-                if isinstance(x, Container) and user.has_perm('containers.view_container', x) or user.has_perm('containers.view_container', x.container)
+                if isinstance(x, Container)
+                and user.has_perm("containers.view_container", x)
+                or user.has_perm("containers.view_container", x.container)
             ]
         ret = PluginSearchResult(
-            category='all',
-            title='Containers, Background Jobs, and Logs',
-            search_types=['container', 'containerbackgroundjob', 'containerlogentry'],
+            category="all",
+            title="Containers, Background Jobs, and Logs",
+            search_types=[
+                "container",
+                "containerbackgroundjob",
+                "containerlogentry",
+            ],
             items=items,
         )
         return [ret]

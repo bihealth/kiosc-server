@@ -322,9 +322,16 @@ class ProjectAppPlugin(
             items = [
                 x
                 for x in items
-                if isinstance(x, Container)
-                and user.has_perm("containers.view_container", x)
-                or user.has_perm("containers.view_container", x.container)
+                if (
+                    isinstance(x, Container)
+                    and user.has_perm("containers.view_container", x.project)
+                )
+                or (
+                    not isinstance(x, Container)
+                    and user.has_perm(
+                        "containers.view_container", x.container.project
+                    )
+                )
             ]
         ret = PluginSearchResult(
             category="all",

@@ -628,6 +628,7 @@ class TestSearchPermissions(ProjectPermissionTestBase):
             container=self.other_container,
             user=self.user_contributor_cat,
         )
+        # Promote user to guest
         self.make_assignment(
             self.other_project, self.user_finder_cat, self.role_guest
         )

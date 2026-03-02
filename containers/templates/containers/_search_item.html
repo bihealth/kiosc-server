@@ -21,7 +21,7 @@
   {# Container #}
   <td>
     {% autoescape off %}
-      {% if item|get_class == 'Container' %}
+      {% if item|get_class == 'Container' or item|get_class == 'ContainerTemplateProject' or item|get_class == 'ContainerTemplateSite' %}
         {% highlight_search_term item.title search_terms %}
         ({% highlight_search_term item.repository search_terms %}:{{ item.tag }})
       {% else %}

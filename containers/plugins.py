@@ -95,7 +95,12 @@ class ProjectAppPlugin(
     search_enable = True
 
     #: List of search object types for the app
-    search_types = ["container", "containerbackgroundjob", "containerlogentry"]
+    search_types = [
+        "container",
+        "containerbackgroundjob",
+        "containerlogentry",
+        "containertemplate",
+    ]
 
     #: Search results template
     search_template = 'containers/_search_results.html'
@@ -300,6 +305,12 @@ class ProjectAppPlugin(
         items = []
         if not search_type:
             containers = Container.objects.find(search_terms, keywords)
+            container_templates_project = ContainerTemplateProject.objects.find(
+                search_terms, keywords
+            )
+            container_templates_site = ContainerTemplateSite.objects.find(
+                search_terms, keywords
+            )
             container_bg_jobs = ContainerBackgroundJob.objects.find(
                 search_terms, keywords
             )
@@ -308,31 +319,44 @@ class ProjectAppPlugin(
             )
             items = (
                 list(containers)
+                + list(container_templates_project)
+                + list(container_templates_site)
                 + list(container_bg_jobs)
                 + list(container_logs)
             )
             # items.sort(key=lambda x: x.title.lower())
         elif search_type == "container":
             items = Container.objects.find(search_terms, keywords)
+        elif search_type == "containertemplate":
+            container_templates_project = ContainerTemplateProject.objects.find(
+                search_terms, keywords
+            )
+            container_templates_site = ContainerTemplateSite.objects.find(
+                search_terms, keywords
+            )
+            items = list(container_templates_project) + list(
+                container_templates_site
+            )
         elif search_type == "containerbackgroundjob":
             items = ContainerBackgroundJob.objects.find(search_terms, keywords)
         elif search_type == "containerlogentry":
             items = ContainerLogEntry.objects.find(search_terms, keywords)
-        if items:
-            items = [
-                x
-                for x in items
-                if (
-                    isinstance(x, Container)
-                    and user.has_perm("containers.view_container", x.project)
-                )
-                or (
-                    not isinstance(x, Container)
-                    and user.has_perm(
-                        "containers.view_container", x.container.project
-                    )
-                )
-            ]
+        filtered_items = []
+        for item in items:
+            if (
+                isinstance(item, Container)
+                or isinstance(item, ContainerTemplateProject)
+            ) and user.has_perm("containers.view_container", item.project):
+                filtered_items.append(item)
+            elif (
+                isinstance(item, ContainerBackgroundJob)
+                or isinstance(item, ContainerLogEntry)
+            ) and user.has_perm(
+                "containers.view_container", item.container.project
+            ):
+                filtered_items.append(item)
+            elif isinstance(item, ContainerTemplateSite):
+                filtered_items.append(item)
         ret = PluginSearchResult(
             category="all",
             title="Containers, Background Jobs, and Logs",
@@ -341,6 +365,6 @@ class ProjectAppPlugin(
                 "containerbackgroundjob",
                 "containerlogentry",
             ],
-            items=items,
+            items=filtered_items,
         )
         return [ret]

@@ -77,10 +77,10 @@ class ProjectAppPlugin(ProjectAppPluginPoint):
     app_permission = 'containertemplates.project_view'
 
     #: Enable or disable general search from project title bar
-    search_enable = True
+    search_enable = False
 
     #: List of search object types for the app
-    search_types = ['source', 'sample', 'file']
+    search_types = []
 
     #: Search results template
     search_template = 'containertemplates/_search_results.html'

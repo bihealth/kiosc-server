@@ -6,22 +6,14 @@ from uuid import UUID
 # Projectroles dependency
 from django.contrib.auth import get_user_model
 from django.db.models import Count
-from django.template.loader import render_to_string
 from django.urls import reverse
 from projectroles.models import Project, SODAR_CONSTANTS, CAT_DELIMITER
-from projectroles.plugins import (
-    ProjectAppPluginPoint,
-    PluginObjectLink,
-    PluginCategoryStatistic,
-)
+from projectroles.plugins import ProjectAppPluginPoint, PluginObjectLink, PluginCategoryStatistic
 
 from containers.models import Container
 from containers.urls import urlpatterns
 
-from containertemplates.models import (
-    ContainerTemplateSite,
-    ContainerTemplateProject,
-)
+from containertemplates.models import ContainerTemplateSite, ContainerTemplateProject
 
 
 User = get_user_model()
@@ -196,32 +188,25 @@ class ProjectAppPlugin(ProjectAppPluginPoint):
         if column_id != "containers":
             raise ValueError(f'Unexpected column_id: "{column_id}"')
 
-        queryset = Container.objects.filter(project=project).order_by("title")
-        s = '<table class="table table-borderless text-nowrap">'
-        for el in queryset:
-            container_title = '<a href="{container_url}">{title}</a>'.format(
-                container_url=reverse(
-                    "containers:detail",
-                    kwargs={"container": el.sodar_uuid},
-                ),
-                title=el.title,
-            )
-            controls_ui = render_to_string(
-                "containers/_container_controls.html",
-                {"container": el, "user": user},
-            )
-            td_attrs = 'class="align-middle pt-1 pb-1"'
-            s += (
-                '<tr style="background-color: unset; height: unset!important;">'
-            )
-            s += (
-                f"<td {td_attrs}>{container_title}</td>"
-                f"<td {td_attrs}>{el.repository}:{el.tag}</td>"
-                f"<td {td_attrs}>{el.state}</td>"
-                f"<td {td_attrs}>{controls_ui}</td>"
-            )
-        s += "</table>"
-        return s
+        container_states = Container.objects.filter(project=project).values("state").annotate(count=Count("state"))
+        running = 0
+        paused = 0
+        stopped = 0
+        failed = 0
+        for el in container_states:
+            match el["state"]:
+                case "running" | "restarting" | "pulling":
+                    running += 1
+                case "paused":
+                    paused += 1
+                case "stopped" | "created" | "initial":
+                    stopped += 1
+                case "failed" | "exited" | "dead":
+                    failed += 1
+                case "deleted" | "deleting":
+                    pass
+
+        return f"{running}R / {paused}P </br> {stopped}S / {failed}F"
 
     def get_object_link(
         self, model_str: str, uuid: Union[str, UUID]

@@ -102,6 +102,7 @@ LOCAL_APPS = [
     'kiosc.users.apps.UsersConfig',
     'containers.apps.ContainersConfig',
     'containertemplates.apps.ContainertemplatesConfig',
+    'containerlist.apps.ContainerListConfig',
     'kioscadmin.apps.KioscAdminConfig',
 ]
 

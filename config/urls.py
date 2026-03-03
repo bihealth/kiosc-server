@@ -51,6 +51,8 @@ urlpatterns = [
     path('appalerts/', include('appalerts.urls')),
     # Site Info URLs
     path('siteinfo/', include('siteinfo.urls')),
+    # Container List URLs
+    path('containerlist/', include('containerlist.urls')),
     # API Tokens URLs
     path('tokens/', include('tokens.urls')),
     # Containers URLs

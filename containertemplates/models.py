@@ -10,68 +10,6 @@ from django.utils.timezone import localtime
 from projectroles.models import Project
 
 
-class ContainerTemplateSiteManager(models.Manager):
-    """Manager for custom queries on container site templates"""
-
-    def find(
-        self, search_terms: list[str], keywords: Optional[dict] = None
-    ) -> QuerySet:
-        """
-        Return container templates matching the query.
-
-        :param search_terms: Search terms (list of strings)
-        :param keywords: Optional search keywords as key/value pairs (dict)
-        :return: QuerySet of Container objects
-        """
-        term_query = Q()
-        for t in search_terms:
-            term_query.add(Q(repository__icontains=t), Q.OR)
-            term_query.add(Q(title__icontains=t), Q.OR)
-            term_query.add(Q(description__icontains=t), Q.OR)
-            try:
-                uuid.UUID(t.replace("-", ""))
-                term_query.add(Q(sodar_uuid=t), Q.OR)
-            except ValueError:
-                pass
-        return super().get_queryset().filter(term_query).order_by("title")
-
-
-class ContainerTemplateProjectManager(models.Manager):
-    """Manager for custom queries on container project templates"""
-
-    def find(
-        self, search_terms: list[str], keywords: Optional[dict] = None
-    ) -> QuerySet:
-        """
-        Return container templates matching the query.
-
-        :param search_terms: Search terms (list of strings)
-        :param keywords: Optional search keywords as key/value pairs (dict)
-        :return: QuerySet of Container objects
-        """
-        term_query = Q()
-        for t in search_terms:
-            term_query.add(Q(repository__icontains=t), Q.OR)
-            term_query.add(Q(title__icontains=t), Q.OR)
-            term_query.add(Q(description__icontains=t), Q.OR)
-            try:
-                uuid.UUID(t.replace("-", ""))
-                term_query.add(Q(sodar_uuid=t), Q.OR)
-            except ValueError:
-                pass
-        if keywords and "project" in keywords:
-            try:
-                project = Project.objects.get(sodar_uuid=keywords["project"])
-                term_query.add(
-                    Q(project__full_title__startswith=project.full_title), Q.AND
-                )
-            except Project.DoesNotExist:
-                return ContainerTemplateProject.objects.none()
-            except ValidationError:
-                return ContainerTemplateProject.objects.none()
-        return super().get_queryset().filter(term_query).order_by("title")
-
-
 class ContainerTemplateBase(models.Model):
     """Base model for a ContainerTemplate* instances."""
 
@@ -202,6 +140,31 @@ class ContainerTemplateBase(models.Model):
         return localtime(self.date_modified).strftime('%Y-%m-%d %H:%M')
 
 
+class ContainerTemplateSiteManager(models.Manager):
+    """Manager for custom queries on container site templates"""
+
+    def find(
+        self, search_terms: list[str], keywords: Optional[dict] = None
+    ) -> QuerySet:
+        """
+        Return container templates matching the query.
+
+        :param search_terms: Search terms (list of strings)
+        :param keywords: Optional search keywords as key/value pairs (dict)
+        :return: QuerySet of Container objects
+        """
+        term_query = Q()
+        for t in search_terms:
+            term_query.add(Q(repository__icontains=t), Q.OR)
+            term_query.add(Q(title__icontains=t), Q.OR)
+            term_query.add(Q(description__icontains=t), Q.OR)
+            try:
+                term_query.add(Q(sodar_uuid=uuid.UUID(t)), Q.OR)
+            except ValueError:
+                pass
+        return super().get_queryset().filter(term_query).order_by("title")
+
+
 class ContainerTemplateSite(ContainerTemplateBase):
     """Model for a ContainerTemplate instance."""
 
@@ -223,6 +186,42 @@ class ContainerTemplateSite(ContainerTemplateBase):
 
     def __repr__(self):
         return f'ContainerTemplateSite({self.title}, {self.get_repos_full()})'
+
+
+class ContainerTemplateProjectManager(models.Manager):
+    """Manager for custom queries on container project templates"""
+
+    def find(
+        self, search_terms: list[str], keywords: Optional[dict] = None
+    ) -> QuerySet:
+        """
+        Return container templates matching the query.
+
+        :param search_terms: Search terms (list of strings)
+        :param keywords: Optional search keywords as key/value pairs (dict)
+        :return: QuerySet of Container objects
+        """
+        term_query = Q()
+        for t in search_terms:
+            term_query.add(Q(repository__icontains=t), Q.OR)
+            term_query.add(Q(title__icontains=t), Q.OR)
+            term_query.add(Q(description__icontains=t), Q.OR)
+            try:
+                uuid.UUID(t.replace("-", ""))
+                term_query.add(Q(sodar_uuid=t), Q.OR)
+            except ValueError:
+                pass
+        if keywords and "project" in keywords:
+            try:
+                project = Project.objects.get(sodar_uuid=keywords["project"])
+                term_query.add(
+                    Q(project__full_title__startswith=project.full_title), Q.AND
+                )
+            except Project.DoesNotExist:
+                return ContainerTemplateProject.objects.none()
+            except ValidationError:
+                return ContainerTemplateProject.objects.none()
+        return super().get_queryset().filter(term_query).order_by("title")
 
 
 class ContainerTemplateProject(ContainerTemplateBase):

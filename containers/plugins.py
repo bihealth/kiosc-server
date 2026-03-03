@@ -2,6 +2,7 @@
 
 from typing import Optional, Union
 from uuid import UUID
+import logging
 
 # Projectroles dependency
 from django.contrib.auth import get_user_model
@@ -31,6 +32,7 @@ from containertemplates.models import (
 
 
 User = get_user_model()
+logger = logging.getLogger(__name__)
 
 PROJECT_TYPE_PROJECT = SODAR_CONSTANTS['PROJECT_TYPE_PROJECT']
 
@@ -295,6 +297,9 @@ class ProjectAppPlugin(
         Return container items based on one or more search terms, user, optional
         type and optional keywords.
 
+        NOTE: this method is also responsible for searching ContainerTemplate
+        objects.
+
         :param search_terms: Search terms to be joined with the OR operator
                              (list of strings)
         :param user: User object for user initiating the search
@@ -303,60 +308,36 @@ class ProjectAppPlugin(
         :return: List of PluginSearchResult objects
         """
         items = []
-        if not search_type:
-            containers = Container.objects.find(search_terms, keywords)
-            container_templates_project = ContainerTemplateProject.objects.find(
-                search_terms, keywords
+        if not search_type or search_type == "container":
+            items.extend(Container.objects.find(search_terms, keywords))
+        if not search_type or search_type == "containertemplate":
+            items.extend(
+                ContainerTemplateProject.objects.find(search_terms, keywords)
             )
-            container_templates_site = ContainerTemplateSite.objects.find(
-                search_terms, keywords
+            items.extend(
+                ContainerTemplateSite.objects.find(search_terms, keywords)
             )
-            container_bg_jobs = ContainerBackgroundJob.objects.find(
-                search_terms, keywords
+        if not search_type or search_type == "containerbackgroundjob":
+            items.extend(
+                ContainerBackgroundJob.objects.find(search_terms, keywords)
             )
-            container_logs = ContainerLogEntry.objects.find(
-                search_terms, keywords
-            )
-            items = (
-                list(containers)
-                + list(container_templates_project)
-                + list(container_templates_site)
-                + list(container_bg_jobs)
-                + list(container_logs)
-            )
-            # items.sort(key=lambda x: x.title.lower())
-        elif search_type == "container":
-            items = Container.objects.find(search_terms, keywords)
-        elif search_type == "containertemplate":
-            container_templates_project = ContainerTemplateProject.objects.find(
-                search_terms, keywords
-            )
-            container_templates_site = ContainerTemplateSite.objects.find(
-                search_terms, keywords
-            )
-            items = list(container_templates_project) + list(
-                container_templates_site
-            )
-        elif search_type == "containerbackgroundjob":
-            items = ContainerBackgroundJob.objects.find(search_terms, keywords)
-        elif search_type == "containerlogentry":
-            items = ContainerLogEntry.objects.find(search_terms, keywords)
+        if not search_type or search_type == "containerlogentry":
+            items.extend(ContainerLogEntry.objects.find(search_terms, keywords))
         filtered_items = []
         for item in items:
-            if (
-                isinstance(item, Container)
-                or isinstance(item, ContainerTemplateProject)
-            ) and user.has_perm("containers.view_container", item.project):
-                filtered_items.append(item)
-            elif (
-                isinstance(item, ContainerBackgroundJob)
-                or isinstance(item, ContainerLogEntry)
-            ) and user.has_perm(
-                "containers.view_container", item.container.project
-            ):
-                filtered_items.append(item)
-            elif isinstance(item, ContainerTemplateSite):
-                filtered_items.append(item)
+            match item:
+                case ContainerTemplateSite():
+                    filtered_items.append(item)
+                case Container() | ContainerTemplateProject():
+                    if user.has_perm("containers.view_container", item.project):
+                        filtered_items.append(item)
+                case ContainerBackgroundJob() | ContainerLogEntry():
+                    if user.has_perm(
+                        "containers.view_container", item.container.project
+                    ):
+                        filtered_items.append(item)
+                case _:
+                    logger.debug(f"Unexpected search result: {item}")
         ret = PluginSearchResult(
             category="all",
             title="Containers, Background Jobs, and Logs",

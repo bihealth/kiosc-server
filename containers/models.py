@@ -185,8 +185,7 @@ class ContainerManager(models.Manager):
             term_query.add(Q(title__icontains=t), Q.OR)
             term_query.add(Q(description__icontains=t), Q.OR)
             try:
-                uuid.UUID(t.replace("-", ""))
-                term_query.add(Q(sodar_uuid=t), Q.OR)
+                term_query.add(Q(sodar_uuid=uuid.UUID(t)), Q.OR)
             except ValueError:
                 pass
         if keywords and "project" in keywords:
@@ -467,8 +466,7 @@ class ContainerBackgroundJobManager(models.Manager):
             term_query.add(Q(container__title__icontains=t), Q.OR)
             term_query.add(Q(container__description__icontains=t), Q.OR)
             try:
-                uuid.UUID(t.replace("-", ""))
-                term_query.add(Q(sodar_uuid=t), Q.OR)
+                term_query.add(Q(sodar_uuid=uuid.UUID(t)), Q.OR)
             except ValueError:
                 pass
         if keywords and "project" in keywords:
@@ -605,8 +603,7 @@ class ContainerLogEntryManager(models.Manager):
             term_query.add(Q(text__icontains=t), Q.OR)
             term_query.add(Q(process__icontains=t), Q.OR)
             try:
-                uuid.UUID(t.replace("-", ""))
-                term_query.add(Q(sodar_uuid=t), Q.OR)
+                term_query.add(Q(sodar_uuid=uuid.UUID(t)), Q.OR)
             except ValueError:
                 pass
         if keywords and "project" in keywords:

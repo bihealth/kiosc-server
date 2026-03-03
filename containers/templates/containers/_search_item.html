@@ -11,7 +11,7 @@
   <td>
     {# NOTE: No highlight here as project is not searched for here #}
     {% autoescape off %}
-      {% if item|get_class == 'ContainerLogEntry' %}
+      {% if item|get_class == "ContainerLogEntry" %}
         {{ item.container.project.title }}
       {% else %}
         {{ item.project.title }}
@@ -21,24 +21,28 @@
   {# Container #}
   <td>
     {% autoescape off %}
-      {% if item|get_class == 'Container' or item|get_class == 'ContainerTemplateProject' or item|get_class == 'ContainerTemplateSite' %}
+      {% if item|get_class == "Container" or item|get_class == "ContainerTemplateProject" or item|get_class == "ContainerTemplateSite" %}
         {% highlight_search_term item.title search_terms %}
         ({% highlight_search_term item.repository search_terms %}:{{ item.tag }})
-      {% else %}
+      {% elif item|get_class == "ContainerBackgroundJob" or item|get_class == "ContainerLogEntry" %}
         {% highlight_search_term item.container.title search_terms %}
         ({% highlight_search_term item.container.repository search_terms %}:{{ item.container.tag }})
+      {% else %}
+        Object of class {{ item|get_class }}
       {% endif %}
     {% endautoescape %}
   </td>
   {# Description #}
   <td>
     {% autoescape off %}
-      {% if item|get_class == 'Container' %}
+      {% if item|get_class == "Container" or item|get_class == "ContainerTemplateProject" or item|get_class == "ContainerTemplateSite" %}
         {% highlight_search_term item.description search_terms %}
-      {% elif item|get_class == 'ContainerBackgroundJob' %}
+      {% elif item|get_class == "ContainerBackgroundJob" %}
         {{ item.action }}
-      {% elif item|get_class == 'ContainerLogEntry' %}
+      {% elif item|get_class == "ContainerLogEntry" %}
         {% highlight_search_term item.text search_terms %}
+      {% else %}
+        Object of class {{ item|get_class }}
       {% endif %}
     {% endautoescape %}
   </td>

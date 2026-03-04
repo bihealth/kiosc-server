@@ -4,6 +4,7 @@ from datetime import timedelta
 
 from bgjobs.models import BackgroundJob, JobModelMessageMixin, LOG_LEVEL_DEBUG
 from django.conf import settings
+from django.core.serializers.json import DjangoJSONEncoder
 from django.db.models import JSONField
 from django.db import models, transaction
 from django.urls import reverse
@@ -299,7 +300,10 @@ class Container(models.Model):
     #: Define the environment variables to use, as an array of dicts with keys "name" and "value".
     #: This guarantees that the order of environment variable definitions does not change.
     environment = JSONField(
-        help_text="The environment variables to use", blank=True, null=True
+        help_text="The environment variables to use",
+        blank=True,
+        null=True,
+        encoder=DjangoJSONEncoder,
     )
 
     #: List if keys that when defined in ``environment`` are set but no displayed.

@@ -217,8 +217,32 @@
 {% endblock projectroles_extend %}
 
 {% block javascript %}
-    {{ block.super }}
-    <script>
+  {{ block.super }}
+  <script>
+    var logWatcherSocket = createWebSocket();
+    const logsElement = document.querySelector("#id_logs");
+    const logLinesInput = document.querySelector("#id_log_lines");
+    function createWebSocket() {
+      const socket = new WebSocket(`ws://${window.location.host}/{% url "log-watcher" container=object.sodar_uuid %}`);
+      socket.addEventListener("open", (event) => {
+        logsElement.innerText = "";
+        socket.send(logLinesInput.value);
+      });
+      socket.addEventListener("message", (event) => {
+        logsElement.append(event.data);
+        logsElement.scrollTo(0, logsElement.scrollHeight);
+      });
+      socket.addEventListener("close", (event) => {
+        logsElement.innerText = "Failed to fetch logs.";
+        console.error(event);
+      });
+      return socket;
+    }
+    function setLogLinesCookie(event) {
+      logWatcherSocket.close();
+      logWatcherSocket = createWebSocket();
+    }
+    {% comment %}
     $(document).ready(function () {
         setLogLinesField();
         getDynamicDetails();
@@ -320,5 +344,6 @@
             }
         });
     }
-    </script>
+    {% endcomment %}
+  </script>
 {% endblock javascript %}

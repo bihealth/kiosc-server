@@ -223,14 +223,19 @@
     const logsElement = document.querySelector("#id_logs");
     const logLinesInput = document.querySelector("#id_log_lines");
     function createWebSocket() {
-      const socket = new WebSocket(`ws://${window.location.host}/{% url "log-watcher" container=object.sodar_uuid %}`);
+      const socket = new WebSocket(
+        `ws://` +
+        `${window.location.host}/` +
+        `{% url "log-watcher" container=object.sodar_uuid %}`
+      );
       socket.addEventListener("open", (event) => {
         logsElement.innerText = "";
         socket.send(logLinesInput.value);
       });
       socket.addEventListener("message", (event) => {
         logsElement.append(event.data);
-        if (logsElement.scrollHeight - logsElement.scrollTop < logsElement.getBoundingClientRect()["height"] + 100) {
+        scrollBuffer = logsElement.getBoundingClientRect()["height"] + 100;
+        if (logsElement.scrollHeight - logsElement.scrollTop < scrollBuffer) {
           logsElement.scrollTop = logsElement.scrollHeight;
         }
       });
@@ -244,33 +249,10 @@
       logWatcherSocket.close();
       logWatcherSocket = createWebSocket();
     }
-    {% comment %}
     $(document).ready(function () {
-        setLogLinesField();
         getDynamicDetails();
         setInterval(getDynamicDetails, 30000);
     });
-
-    function setLogLinesCookie() {
-        let log_lines = $("#id_log_lines").val();
-        setCookie("log_lines", log_lines);
-        getDynamicDetails();
-    }
-
-    function setLogLinesField() {
-        let log_lines = getCookie("log_lines");
-        if (log_lines === null) {
-            setCookie("log_lines", $("#id_log_lines").val())
-        }
-        else {
-          $("#id_log_lines").val(log_lines);
-        }
-    }
-
-    function scrollLogs() {
-        var logs = $("#id_logs");
-        logs.animate({scrollTop: logs.prop("scrollHeight")}, 2000);
-    }
 
     function getDynamicDetails() {
         var url = $("#id_details").data("url") + "?log_lines=" + getCookie("log_lines");
@@ -341,11 +323,8 @@
                         }
                     }
                 });
-
-                scrollLogs();
             }
         });
     }
-    {% endcomment %}
   </script>
 {% endblock javascript %}

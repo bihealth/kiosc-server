@@ -36,6 +36,33 @@
       </p>
     </div>
   </div>
+  {% if can_view_logs %}
+  <div class="card">
+    <div class="card-header">
+      <div class="row">
+        <div class="col-9">
+          <h4 class="float-left">
+            Logs
+          </h4>
+        </div>
+        <div class="col-3">
+          <div class="input-group">
+            <div class="input-group-prepend">
+              <span class="input-group-text">Log lines</span>
+            </div>
+            <input type="number" class="form-control" id="id_log_lines" value="{{ default_log_lines }}" />
+            <div class="input-group-append">
+              <button type="button" class="btn btn-info" onclick="setLogLinesCookie()">Apply</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="card-body">
+      <pre id="id_logs" class="p-2 text-light overflow-auto bg-dark border border-dark rounded-lg" style="height: 400px; font-size: 87.5%;"><i class="iconify" data-icon="eos-icons:bubble-loading"></i> <em>Loading logs ...</em></pre>
+    </div>
+  </div>
+  {% endif %}
   <div class="card" id="id_details" data-url="{% url "containers:ajax-get-dynamic-details" container=object.sodar_uuid %}">
     <div class="card-header"><h4>Details</h4></div>
     <div class="card-body">
@@ -184,33 +211,6 @@
       </p>
     </div>
   </div>
-  {% if can_view_logs %}
-  <div class="card">
-    <div class="card-header">
-      <div class="row">
-        <div class="col-9">
-          <h4 class="float-left">
-            Logs
-          </h4>
-        </div>
-        <div class="col-3">
-          <div class="input-group">
-            <div class="input-group-prepend">
-              <span class="input-group-text">Log lines</span>
-            </div>
-            <input type="number" class="form-control" id="id_log_lines" value="{{ default_log_lines }}" />
-            <div class="input-group-append">
-              <button type="button" class="btn btn-info" onclick="setLogLinesCookie()">Apply</button>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-    <div class="card-body">
-      <pre id="id_logs" class="p-2 text-light overflow-auto bg-dark border border-dark rounded-lg" style="height: 400px"><i class="iconify" data-icon="eos-icons:bubble-loading"></i> <em>Loading logs ...</em></pre>
-    </div>
-  </div>
-  {% endif %}
 </div>
 {% endwith %}
 

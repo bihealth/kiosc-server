@@ -190,23 +190,20 @@ class ProjectAppPlugin(ProjectAppPluginPoint):
 
         container_states = Container.objects.filter(project=project).values("state").annotate(count=Count("state"))
         running = 0
-        paused = 0
         stopped = 0
         failed = 0
         for el in container_states:
             match el["state"]:
                 case "running" | "restarting" | "pulling":
-                    running += 1
-                case "paused":
-                    paused += 1
-                case "stopped" | "created" | "initial":
-                    stopped += 1
+                    running += el["count"]
+                case "paused" | "stopped" | "created" | "initial":
+                    stopped += el["count"]
                 case "failed" | "exited" | "dead":
-                    failed += 1
+                    failed += el["count"]
                 case "deleted" | "deleting":
                     pass
 
-        return f"{running}R / {paused}P </br> {stopped}S / {failed}F"
+        return f"{running}R / {stopped}S / {failed}F"
 
     def get_object_link(
         self, model_str: str, uuid: Union[str, UUID]

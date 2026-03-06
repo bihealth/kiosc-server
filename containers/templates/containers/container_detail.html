@@ -230,10 +230,12 @@
       });
       socket.addEventListener("message", (event) => {
         logsElement.append(event.data);
-        logsElement.scrollTo(0, logsElement.scrollHeight);
+        if (logsElement.scrollHeight - logsElement.scrollTop < logsElement.getBoundingClientRect()["height"] + 100) {
+          logsElement.scrollTop = logsElement.scrollHeight;
+        }
       });
       socket.addEventListener("close", (event) => {
-        logsElement.innerText = "Failed to fetch logs.";
+        logsElement.innerText = `Failed to fetch logs.`;
         console.error(event);
       });
       return socket;

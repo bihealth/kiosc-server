@@ -7,6 +7,9 @@ from channels.generic.websocket import WebsocketConsumer
 import websocket
 import threading
 from typing import Optional
+from urllib3.exceptions import ReadTimeoutError
+import urllib3.contrib
+import socket
 
 from django.conf import settings
 from .models import Container
@@ -57,7 +60,7 @@ class TunnelConsumer(WebsocketConsumer):
         self.ws = websocket.WebSocketApp(ws_url, on_message=on_message)
 
         # Kick off thread copying data from internal web socket to the original client.
-        thread = threading.Thread(target=self.ws.run_forever, args=())
+        thread = threading.Thread(target=self.ws.run_forever, args=(), daemon=True)
         thread.daemon = True
         thread.start()
 
@@ -74,9 +77,26 @@ class TunnelConsumer(WebsocketConsumer):
 
 
 class LogWatcherConsumer(WebsocketConsumer):
-    """Setup tunnel to the websocket behind the proxy."""
+    """Setup tunnel to the websocket behind the proxy.
 
-    def _watch_logs(self, container_id, tail):
+    Protocol:
+    1a. The client (web browser) sends a websocket connection to this view:
+
+        const socket = new WebSocket("https://kiosc.org/log-watcher");
+
+    1b. We verify user authorization and accept the connection.
+    2a. The client sends a message with the amount of log lines they want:
+
+        socket.send(1000)
+
+    2b. We start a thread that fetches the latest 1000 logs and starts streaming the logs from that moment onwards.
+    3a. The client receives the lines and is supposed to print them.
+    3b. If the client sends another message, we repeat the cycle from 2a.
+    4a. The client closes the browser or refreshes the page, closing the websocket.
+    4b. We kill the thread.
+    """
+
+    def _watch_logs(self, container_id: str, tail: int):
         """
         Stream docker logs and send them throug the websocket as they occur.
 
@@ -93,33 +113,62 @@ class LogWatcherConsumer(WebsocketConsumer):
         res = logs_generator._response
         while not self.event.wait(1):
             try:
+                # Header can be either empty or a byte string or a ReadTimeoutError exception
                 while header := res.raw.read(
                     docker.constants.STREAM_HEADER_SIZE_BYTES
                 ):
+                    # If we are here, it means that the header is not empty. Decode the content length as int
                     _, length = struct.unpack(">BxxxL", header)
                     if not length:
-                        continue
+                        break
                     data = res.raw.read(length)
                     if not data:
+                        # Something terrible happened
+                        raise ValueError('No data from docker log stream socket')
+                    if self.event.is_set():
+                        # Check if thread was killed during socket timeout
                         break
                     self.send(data.decode("utf-8"))
-            except Exception as ex:
-                print("TIMED OUT ", type(ex), ex)
+            except ReadTimeoutError:
+                # This is totally normal and prevents the socket from blocking
+                continue
 
-    def start_watching(self, tail):
+        # Close the socket (see docker.types.daemon.CancellableStream())
+        if not res.raw.closed:
+            # find the underlying socket object
+            # based on api.client._get_raw_response_socket
+            sock_fp = res.raw._fp.fp
+            if hasattr(sock_fp, 'raw'):
+                sock_raw = sock_fp.raw
+                if hasattr(sock_raw, 'sock'):
+                    sock = sock_raw.sock
+                elif hasattr(sock_raw, '_sock'):
+                    sock = sock_raw._sock
+            else:
+                sock = sock_fp._sock
+            if hasattr(urllib3.contrib, 'pyopenssl') and isinstance(
+                    sock, urllib3.contrib.pyopenssl.WrappedSocket):
+                sock = sock.socket
+            sock.shutdown(socket.SHUT_RDWR)
+            sock.close()
+
+    def start_watching(self, tail: int):
         self.event.clear()
         self.task = threading.Thread(
             target=self._watch_logs,
             args=(self.container_id, tail),
+            daemon=True
         )
         self.task.start()
         logger.info(f"{self.__class__.__name__} thread started.")
 
     def stop_watching(self):
         self.event.set()
-        if self.task is not None:
+        try:
             self.task.join()
             logger.info(f"{self.__class__.__name__} thread terminated.")
+        except (AttributeError, RuntimeError):
+            logger.debug(f"{self.__class__.__name__} disconnection before the thread started.")
 
     def connect(self):
         user = self.scope["user"]
@@ -128,6 +177,7 @@ class LogWatcherConsumer(WebsocketConsumer):
         logger.info(
             f"New connection request to {self.__class__.__name__} for {container_sodar_uuid} from {user.username}"
         )
+        logger.debug(f"Currently active threads: {[thread.name for thread in threading.enumerate()]}")
         self.container_id = container_obj.container_id
         self.event = threading.Event()
         self.task = None
@@ -142,6 +192,11 @@ class LogWatcherConsumer(WebsocketConsumer):
         self.accept()
 
     def disconnect(self, close_code: int):
+        user = self.scope["user"]
+        container_sodar_uuid = self.scope["url_route"]["kwargs"]["container"]
+        logger.info(
+            f"{self.__class__.__name__} disconnection request for {container_sodar_uuid} from {user.username}"
+        )
         self.stop_watching()
 
     def receive(

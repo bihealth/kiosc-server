@@ -1,3 +1,4 @@
+import inspect
 import logging
 from ipaddress import ip_address
 from typing import AsyncGenerator, Optional
@@ -86,13 +87,16 @@ async def _stream_response(
     """Asynchronously stream an HttpResponse.
 
     This function is similar to HTTPResponse.stream() from urllib3.response,
-    but it uses async methods to return the response chunks.
+    but it uses async methods to return the response chunks (if applicable).
     """
     if proxy_response.chunked and proxy_response.supports_chunked_reads():
-        async for chunk in proxy_response.read_chunked(
-            amt, decode_content=decode_content
-        ):
-            yield chunk
+        stream = proxy_response.read_chunked(amt, decode_content=decode_content)
+        if inspect.iscoroutinefunction(stream):
+            async for chunk in stream:
+                yield chunk
+        else:
+            for chunk in stream:
+                yield chunk
     else:
         while (
             not is_fp_closed(proxy_response._fp)

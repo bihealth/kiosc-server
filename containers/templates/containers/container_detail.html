@@ -229,18 +229,20 @@
         `{% url "log-watcher" container=object.sodar_uuid %}`
       );
       socket.addEventListener("open", (event) => {
-        logsElement.innerText = "";
+        logsElement.innerText = "Waiting for logs...";
         socket.send(logLinesInput.value);
       });
       socket.addEventListener("message", (event) => {
         logsElement.append(event.data);
-        scrollBuffer = logsElement.getBoundingClientRect()["height"] + 100;
+        let scrollBuffer = logsElement.getBoundingClientRect()["height"] + 100;
         if (logsElement.scrollHeight - logsElement.scrollTop < scrollBuffer) {
           logsElement.scrollTop = logsElement.scrollHeight;
         }
       });
       socket.addEventListener("close", (event) => {
-        logsElement.innerText = `Failed to fetch logs.`;
+        if (event.code <= 1000) {
+          logsElement.innerText = `Failed to fetch logs.`;
+        }
         console.error(event);
       });
       return socket;
@@ -262,6 +264,10 @@
             success: function(data) {
                 $.each(data, function(key, value) {
                     let element = $("#id_" + key);
+
+                    if (key === "logs") {
+                        return;
+                    }
 
                     if (key === "state") {
                         element.text(value);

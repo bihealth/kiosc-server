@@ -52,7 +52,7 @@
             </div>
             <input type="number" class="form-control" id="id_log_lines" value="{{ default_log_lines }}" />
             <div class="input-group-append">
-              <button type="button" class="btn btn-info" onclick="setLogLinesCookie()">Apply</button>
+              <button type="button" class="btn btn-info" onclick="setLogLinesTail()">Apply</button>
             </div>
           </div>
         </div>
@@ -222,6 +222,11 @@
     var logWatcherSocket = createWebSocket();
     const logsElement = document.querySelector("#id_logs");
     const logLinesInput = document.querySelector("#id_log_lines");
+    logLinesCookie = getCookie("log_lines");
+    if (logLinesCookie !== null) {
+      logLinesInput.value = logLinesCookie;
+    }
+    logLinesInput.value
     function createWebSocket() {
       const socket = new WebSocket(
         `ws://` +
@@ -230,6 +235,7 @@
       );
       socket.addEventListener("open", (event) => {
         logsElement.innerText = "Waiting for logs...";
+        setCookie("log_lines", logLinesInput.value);
         socket.send(logLinesInput.value);
       });
       socket.addEventListener("message", (event) => {
@@ -247,7 +253,7 @@
       });
       return socket;
     }
-    function setLogLinesCookie(event) {
+    function setLogLinesTail(event) {
       logWatcherSocket.close();
       logWatcherSocket = createWebSocket();
     }

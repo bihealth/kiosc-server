@@ -121,6 +121,10 @@ class ProjectAppPlugin(ProjectAppPluginPoint):
         """
         if model_str == "Container":
             obj = self.get_object(Container, uuid)
+            if obj is None:
+                # This happens when we try to show timeline events
+                # for deleted containers
+                return None
             return PluginObjectLink(
                 url=reverse(
                     "containers:detail",

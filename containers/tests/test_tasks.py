@@ -109,7 +109,7 @@ class TestContainerTask(TestBase):
         # Assert mocks
         create_container.assert_called_once_with(
             detach=True,
-            image='repository0:latest',
+            image="repository0:latest",
             environment=environment,
             command=self.container1.command or None,
             ports=[self.container1.container_port],
@@ -201,7 +201,7 @@ class TestContainerTask(TestBase):
         # Assert mocks
         create_container.assert_called_once_with(
             detach=True,
-            image='repository0:latest',
+            image="repository0:latest",
             environment=environment,
             command=self.container1.command or None,
             ports=[self.container1.container_port],
@@ -304,7 +304,7 @@ class TestContainerTask(TestBase):
         # Assert mocks
         create_container.assert_called_once_with(
             detach=True,
-            image='repository0:latest',
+            image="repository0:latest",
             environment=environment,
             command=self.container1.command or None,
             ports=[self.container1.container_port],
@@ -408,7 +408,7 @@ class TestContainerTask(TestBase):
 
         create_container.assert_called_once_with(
             detach=True,
-            image='repository0:latest',
+            image="repository0:latest",
             environment=environment,
             command=self.container1.command or None,
             ports=[self.container1.container_port],
@@ -567,7 +567,7 @@ class TestContainerTask(TestBase):
         # Assert mocks
         create_container.assert_called_once_with(
             detach=True,
-            image='repository0:latest',
+            image="repository0:latest",
             environment=environment,
             command=self.container1.command or None,
             ports=[self.container1.container_port],
@@ -601,7 +601,9 @@ class TestContainerTask(TestBase):
         stop.assert_called_once_with(self.container1.container_id)
         pause.assert_not_called()
         unpause.assert_not_called()
-        remove_container.assert_called_once_with(self.container1.container_id, force=True)
+        remove_container.assert_called_once_with(
+            self.container1.container_id, force=True
+        )
 
     @patch("containers.tasks.sync_container_state")
     @patch("docker.api.client.APIClient.remove_container")

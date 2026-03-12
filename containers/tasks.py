@@ -30,6 +30,7 @@ from containers.models import (
     ContainerActionLock,
 )
 from containers.statemachines import (
+    connect_docker,
     ContainerMachine,
     ActionSwitch,
 )
@@ -53,6 +54,30 @@ class State:
         self.state = state
 
 
+def sync_container_state(container):
+    # Update container state
+    cli = connect_docker()
+    if not container.container_id:
+        logger.error(
+            "%s: Missing container ID (state is %s)",
+            container.sodar_uuid,
+            container.state,
+        )
+        return
+    try:
+        data = cli.inspect_container(container.container_id)
+        actual_state = data.get("State", {}).get("Status")
+        if container.state != actual_state:
+            logger.warning(
+                "%s: Container state our of sync", container.sodar_uuid
+            )
+            container.date_last_status_update = timezone.now()
+            container.state = actual_state
+            container.save()
+    except docker.errors.NotFound as ex:
+        logger.error(ex)
+
+
 @app.task(bind=True)
 def container_task(_self, job_id):
     """Task to change a container state"""
@@ -61,6 +86,8 @@ def container_task(_self, job_id):
     container = job.container
     user = job.bg_job.user
     tl_event = None
+    sync_container_state(container)
+
     cm = ContainerMachine(State(container.state), job=job)
 
     if timeline:

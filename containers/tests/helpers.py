@@ -134,7 +134,7 @@ class DockerMock:
             "status": "status",
         }
     ]
-    inspect_image = {"Id": "1"}
+    inspect_image = {"Id": "1", "RepoTags": ["repository0:latest"]}
     inspect_container_started = {"State": {"Status": STATE_RUNNING}}
     inspect_container_restarted = {"State": {"Status": STATE_RUNNING}}
     inspect_container_paused = {"State": {"Status": STATE_PAUSED}}

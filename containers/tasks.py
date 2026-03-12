@@ -116,6 +116,7 @@ def container_task(_self, job_id):
             acs.do(job.action, job.container.state)
 
         except docker.errors.NotFound as e:
+            logger.error(e)
             job.add_log_entry(
                 f"Action failed: {job.action}", level=LOG_LEVEL_ERROR
             )
@@ -141,6 +142,7 @@ def container_task(_self, job_id):
                 job.container.save()
 
         except docker.errors.DockerException as e:
+            logger.error(e)
             # Catch Docker-specific exceptions
             job.add_log_entry(
                 f"Action failed: {job.action}", level=LOG_LEVEL_ERROR
@@ -165,6 +167,7 @@ def container_task(_self, job_id):
                 container.save(force_update=True)
 
         except statemachine.exceptions.StateMachineError as e:
+            logger.error(e)
             job.add_log_entry(
                 f"Action failed: {job.action}", level=LOG_LEVEL_ERROR
             )
@@ -175,7 +178,8 @@ def container_task(_self, job_id):
                 level=LOG_LEVEL_ERROR,
             )
 
-        except ContainerActionLock.CoolDown:
+        except ContainerActionLock.CoolDown as e:
+            logger.warning(e)
             job.add_log_entry(
                 f"Action not performed: {job.action} (cool-down)",
                 level=LOG_LEVEL_WARNING,
@@ -188,6 +192,7 @@ def container_task(_self, job_id):
             )
 
         except Exception as e:
+            logger.error(e)
             # Catch all exceptions that are not coming from Docker
             job.add_log_entry(
                 f"Action failed: {job.action}", level=LOG_LEVEL_ERROR

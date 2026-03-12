@@ -2,6 +2,7 @@ import shlex
 
 import docker
 import docker.errors
+import logging
 
 from django.conf import settings
 from django.db import transaction
@@ -30,6 +31,9 @@ from containers.models import (
     ACTION_UNPAUSE,
     ACTION_DELETE,
 )
+
+
+logger = logging.getLogger(__name__)
 
 
 # Increase the timeout for communication with Docker daemon.
@@ -363,30 +367,37 @@ class ContainerMachine(StateMachine):
         self.container.state = STATE_PULLING
         self.container.save()
 
-        for line in self.cli.pull(
-            repository=self.container.repository,
-            tag=self.container.tag,
-            stream=True,
-            decode=True,
-        ):
-            if (
-                line.get("progressDetail")
-                and line["progressDetail"].get("current")
-                and line["progressDetail"].get("total")
-            ):
-                docker_log_line = "{status} ({progressDetail[current]}/{progressDetail[total]})".format(
-                    **line
-                )
-            else:
-                docker_log_line = line["status"]
+        need_to_pull = True
+        for image in self.cli.images(self.container.repository):
+            if self.container.get_repos_full() in image["RepoTags"]:
+                need_to_pull = False
+                break
 
-            self.container.log_entries.create(
-                text=docker_log_line,
-                process=PROCESS_DOCKER,
-                date_docker_log=timezone.now(),
-                user=self.user,
-            )
-            self.job.add_log_entry(docker_log_line)
+        if need_to_pull:
+            for line in self.cli.pull(
+                repository=self.container.repository,
+                tag=self.container.tag,
+                stream=True,
+                decode=True,
+            ):
+                if (
+                    line.get("progressDetail")
+                    and line["progressDetail"].get("current")
+                    and line["progressDetail"].get("total")
+                ):
+                    docker_log_line = "{status} ({progressDetail[current]}/{progressDetail[total]})".format(
+                        **line
+                    )
+                else:
+                    docker_log_line = line["status"]
+
+                self.container.log_entries.create(
+                    text=docker_log_line,
+                    process=PROCESS_DOCKER,
+                    date_docker_log=timezone.now(),
+                    user=self.user,
+                )
+                self.job.add_log_entry(docker_log_line)
 
         image_details = self.cli.inspect_image(self.container.get_repos_full())
         self.container.image_id = image_details.get("Id")
@@ -443,7 +454,7 @@ class ContainerMachine(StateMachine):
         # Create container
         container_info = self.cli.create_container(
             detach=True,
-            image=self.container.image_id,
+            image=image_details["RepoTags"][0],
             environment=environment,
             command=(
                 shlex.split(self.container.command)
@@ -552,16 +563,18 @@ class ContainerMachine(StateMachine):
 
         # Removing container and erasing container_id
         try:
-            self.cli.remove_container(self.container.container_id)
+            self.cli.remove_container(self.container.container_id, force=True)
 
-        except docker.errors.NullResource:
+        except docker.errors.NullResource as ex:
+            logger.error("Failed to delete container: %s", ex)
             self.container.log_entries.create(
                 text="Empty container ID, don't know what to delete. Continuing.",
                 process=PROCESS_TASK,
                 user=self.user,
             )
 
-        except docker.errors.NotFound:
+        except docker.errors.NotFound as ex:
+            logger.error("Failed to delete container: %s", ex)
             self.container.log_entries.create(
                 text=f"Container with {self.container.container_id} not found, nothing to delete",
                 process=PROCESS_TASK,

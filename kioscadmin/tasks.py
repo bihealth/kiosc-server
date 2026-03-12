@@ -24,6 +24,8 @@ from containers.models import (
     Container,
     ContainerBackgroundJob,
     STATE_FAILED,
+    STATE_INITIAL,
+    STATE_DELETED,
     PROCESS_TASK,
     PROCESS_DOCKER,
     LOG_LEVEL_WARNING,
@@ -129,6 +131,10 @@ def poll_docker_status_and_logs(_self):
             data = cli.inspect_container(container.container_id)
 
         except docker.errors.NotFound:
+            logger.error(
+                "%s: Container not found when polling status and logs.",
+                container.sodar_uuid,
+            )
             container.container_id = ""
             container.state = STATE_FAILED
             container.save()
@@ -194,6 +200,16 @@ def sync_container_state_with_last_user_action(_self):
 
     for container in Container.objects.all():
         if not container.container_id:
+            if container.state not in (
+                STATE_INITIAL,
+                STATE_DELETED,
+                STATE_FAILED,
+            ):
+                logger.error(
+                    "%s: Unexpected container state (%s) in kioscadmin task.",
+                    container.sodar_uuid,
+                    container.state,
+                )
             continue
 
         try:
@@ -211,6 +227,11 @@ def sync_container_state_with_last_user_action(_self):
 
             # Do nothing, Docker state needs to be synced first
             if not container.state == state:
+                logger.warning(
+                    "%s: Container state out of sync. "
+                    "Skipping job action synchronization.",
+                    container.sodar_uuid,
+                )
                 continue
 
             # Reset counter when action and state are in harmony
@@ -218,6 +239,13 @@ def sync_container_state_with_last_user_action(_self):
                 job.retries = 0
                 job.save()
                 continue
+
+            logger.warning(
+                "%s: Container state (%s) out of sync with job action (%s)",
+                container.sodar_uuid,
+                state,
+                job.action,
+            )
 
             if (
                 container.date_last_status_update
@@ -236,6 +264,29 @@ def sync_container_state_with_last_user_action(_self):
                 job.save()
 
 
+@app.task(bind=True)
+def prune_zombie_containers(_self):
+    if settings.KIOSC_NETWORK_MODE != "docker-shared":
+        # Only run in docker-shared mode: we don't want to kill containers which
+        # are not our own.
+        return
+
+    cli = connect_docker()
+    for container in cli.containers():
+        if (
+            settings.KIOSC_DOCKER_NETWORK
+            not in container["NetworkSettings"]["Networks"]
+        ):
+            # Leave this container alone, it doesn't belong to KIOSC
+            continue
+
+        try:
+            container = Container.objects.get(container_id=container["Id"])
+        except Container.DoesNotExist:
+            logger.warning("Found zombie container: %s", container["Id"])
+            cli.remove_container(container["Id"], force=True)
+
+
 @app.on_after_finalize.connect
 def setup_periodic_tasks(sender, **_kwargs):
     """Register periodic tasks"""
@@ -245,4 +296,7 @@ def setup_periodic_tasks(sender, **_kwargs):
     )
     sender.add_periodic_task(
         crontab(hour=1, minute=11), sig=stop_inactive_containers.s()
+    )
+    sender.add_periodic_task(
+        crontab(hour="*", minute=30), sig=prune_zombie_containers.s()
     )

@@ -23,6 +23,7 @@ from projectroles.app_settings import AppSettingAPI
 from containers.models import (
     ContainerBackgroundJob,
     LOG_LEVEL_ERROR,
+    STATE_INITIAL,
     STATE_FAILED,
     PROCESS_TASK,
     PROCESS_DOCKER,
@@ -57,13 +58,6 @@ class State:
 def sync_container_state(container):
     # Update container state
     cli = connect_docker()
-    if not container.container_id:
-        logger.error(
-            "%s: Missing container ID (state is %s)",
-            container.sodar_uuid,
-            container.state,
-        )
-        return
     try:
         data = cli.inspect_container(container.container_id)
         actual_state = data.get("State", {}).get("Status")
@@ -74,8 +68,27 @@ def sync_container_state(container):
             container.date_last_status_update = timezone.now()
             container.state = actual_state
             container.save()
+    except docker.errors.NullResource as ex:
+        if container.state not in (STATE_INITIAL, STATE_FAILED):
+            logger.error(
+                "%s: %s (state is %s)",
+                container.sodar_uuid,
+                ex,
+                container.state,
+            )
+            container.date_last_status_update = timezone.now()
+            container.state = STATE_FAILED
+            container.container_id = ""
+            container.save()
     except docker.errors.NotFound as ex:
+        # We mark it as failed. STATE_DELETED could also be an option,
+        # but failed is more general. Besides, the container record in the db
+        # is NOT deleted.
         logger.error(ex)
+        container.date_last_status_update = timezone.now()
+        container.state = STATE_FAILED
+        container.container_id = ""
+        container.save()
 
 
 @app.task(bind=True)

@@ -11,7 +11,7 @@ from django.conf import settings
 
 from django.utils import timezone
 
-from containers.tasks import container_task
+from containers.tasks import container_task, sync_container_state
 from projectroles.models import SODAR_CONSTANTS
 
 from config.celery import app
@@ -124,74 +124,53 @@ def poll_docker_status_and_logs(_self):
     cli = connect_docker()
 
     for container in Container.objects.all():
+        sync_container_state(container)
+        container.refresh_from_db()
         if not container.container_id:
             continue
 
+        last_log = container.log_entries.filter(process=PROCESS_DOCKER).last()
+        fetch_logs_parameters = {"timestamps": True}
+        date_last_logs = None
+
+        if last_log:
+            date_last_logs = last_log.date_docker_log
+            fetch_logs_parameters["since"] = date_last_logs.replace(tzinfo=None)
+
+        # Get most recent logs. ``since`` does not consider milliseconds,
+        # so we need to post-filter to avoid duplicates.
         try:
-            data = cli.inspect_container(container.container_id)
-
-        except docker.errors.NotFound:
-            logger.error(
-                "%s: Container not found when polling status and logs.",
-                container.sodar_uuid,
+            logs = (
+                cli.logs(container.container_id, **fetch_logs_parameters)
+                .decode("utf-8")
+                .strip()
+                .split("\n")
             )
-            container.container_id = ""
-            container.state = STATE_FAILED
-            container.save()
 
-        else:
-            state = data.get("State", {}).get("Status")
-            last_log = container.log_entries.filter(
-                process=PROCESS_DOCKER
-            ).last()
-            fetch_logs_parameters = {"timestamps": True}
-            date_last_logs = None
+        except docker.errors.DockerException as e:
+            # Log somewhere?
+            raise e
 
-            if last_log:
-                date_last_logs = last_log.date_docker_log
-                fetch_logs_parameters["since"] = date_last_logs.replace(
-                    tzinfo=None
-                )
-
-            # Get most recent logs. ``since`` does not consider milliseconds,
-            # so we need to post-filter to avoid duplicates.
+        for line in logs:
             try:
-                logs = (
-                    cli.logs(container.container_id, **fetch_logs_parameters)
-                    .decode("utf-8")
-                    .strip()
-                    .split("\n")
-                )
-
-            except docker.errors.DockerException as e:
-                # Log somewhere?
-                raise e
-
-            if state and not container.state == state:
-                container.date_last_status_update = timezone.now()
-                container.state = state
-                container.save()
-
-            for line in logs:
-                try:
-                    text = line[31:]
-                    log_date = dateutil.parser.parse(line[:30])
-                except dateutil.parser.ParserError:
-                    container.log_entries.create(
-                        text=f"Docker log has no timestamp! ({line})",
-                        level=LOG_LEVEL_WARNING,
-                        process=PROCESS_TASK,
-                    )
-                    continue
-
-                # Filter out duplicates
-                if date_last_logs and log_date <= date_last_logs:
-                    continue
-
-                # Write new log entry
+                text = line[31:]
+                log_date = dateutil.parser.parse(line[:30])
+            except dateutil.parser.ParserError:
                 container.log_entries.create(
-                    date_docker_log=log_date, text=text, process=PROCESS_DOCKER
+                    text=f"Docker log has no timestamp! ({line})",
+                    level=LOG_LEVEL_WARNING,
+                    process=PROCESS_TASK,
                 )
+                continue
+
+            # Filter out duplicates
+            if date_last_logs and log_date <= date_last_logs:
+                continue
+
+            # Write new log entry
+            container.log_entries.create(
+                date_docker_log=log_date, text=text, process=PROCESS_DOCKER
+            )
 
 
 @app.task(bind=True)

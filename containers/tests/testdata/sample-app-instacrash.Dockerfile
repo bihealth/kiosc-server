@@ -1,3 +1,3 @@
 FROM alpine:latest
 
-CMD ["INEXISTING_COMMAND", "--should-fail"]
+CMD ["MYSTICAL_COMMAND", "--should-fail"]

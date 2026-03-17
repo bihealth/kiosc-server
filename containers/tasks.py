@@ -150,7 +150,6 @@ def container_task(_self, job_id):
             with transaction.atomic():
                 job.container.refresh_from_db()
                 job.container.container_id = ""
-                job.container.image_id = ""
                 job.container.state = STATE_FAILED
                 job.container.save()
 

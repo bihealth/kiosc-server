@@ -12,6 +12,7 @@ from containers.models import (
     ACTION_PAUSE,
     ACTION_UNPAUSE,
     ACTION_DELETE,
+    STATE_CREATED,
     STATE_EXITED,
     STATE_RUNNING,
     STATE_PAUSED,
@@ -38,13 +39,12 @@ def build_testdata_container(cli, dockerfile_name):
 
 
 @override_settings(KIOSC_DOCKER_ACTION_MIN_DELAY=0)
-class TestContainerCrash(TestBase):
+class TestContainerLifecycle(TestBase):
     def setUp(self):
         super().setUp()
         self.cli = connect_docker()
         # Build the sample container image
         build_testdata_container(self.cli, "sample-app-logging")
-        build_testdata_container(self.cli, "sample-app-instacrash")
 
         self.container = ContainerFactory(
             project=self.project,
@@ -173,11 +173,12 @@ class TestContainerCrash(TestBase):
         self.container.refresh_from_db()
         self.assertEqual(self.container.state, STATE_DELETED)
         # Test from the daemon (container should not be found)
-        for container in self.cli.containers():
+        for container in self.cli.containers(all=True):
             if container["ImageID"] == image_id:
                 raise RuntimeError("Container was not deleted successfully")
 
     def test_container_lifecycle(self):
+        """Test a typical container lifecycle"""
         self._test_container_start()
         self._test_container_pause()
         self._test_container_unpause()
@@ -186,6 +187,7 @@ class TestContainerCrash(TestBase):
         self._test_container_delete()
 
     def test_container_crash_stop(self):
+        """Simulate a container crash"""
         self._test_container_start()
         self.cli.stop(self.container.container_id)
         self.assertEqual(self.container.state, STATE_RUNNING)
@@ -197,6 +199,7 @@ class TestContainerCrash(TestBase):
         self._test_container_delete(initial=STATE_EXITED)
 
     def test_container_crash_delete(self):
+        """Simulate a container deletion"""
         self._test_container_start()
         self.cli.remove_container(self.container.container_id, force=True)
         self.assertEqual(self.container.state, STATE_RUNNING)
@@ -208,7 +211,50 @@ class TestContainerCrash(TestBase):
 
     def test_container_delete_unsynced(self):
         """Test situation where an unsynced container gets deleted"""
+        # NOTE: This test failed before #200
         self._test_container_start()
         self.container.state = STATE_EXITED  # But it's actually still running
         self.container.save()
         self._test_container_delete(initial=STATE_EXITED)
+
+
+@override_settings(KIOSC_DOCKER_ACTION_MIN_DELAY=0)
+class TestContainerCrash(TestBase):
+    def setUp(self):
+        super().setUp()
+        self.cli = connect_docker()
+        # Build the sample container image
+        build_testdata_container(self.cli, "sample-app-instacrash")
+
+        self.container = ContainerFactory(
+            project=self.project,
+            repository="sample-app-instacrash",
+            tag="testing",
+            host_port=0,
+            container_id=None,
+        )
+
+    def test_start_and_crash(self):
+        """Test starting a container that crashes"""
+        bg_job = ContainerBackgroundJobFactory(
+            user=self.superuser,
+            action=ACTION_START,
+            container=self.container,
+        )
+        container_task(job_id=bg_job.pk)
+        # Test from the database
+        self.container.refresh_from_db()
+        logs = [log.text for log in ContainerLogEntry.objects.all()]
+        sync_container_state(self.container)
+        self.assertNotIn("Starting succeeded", logs)
+        self.assertIn("Action failed: start", logs)
+        self.assertEqual(self.container.state, STATE_FAILED)
+        # self.assertTrue(self.container.image_id.startswith("sha256:"))
+        self.assertIsNone(self.container.container_id)
+        # Test from the daemon
+        for container in self.cli.containers(all=True):
+            if container["Image"] == "sample-app-instacrash:testing":
+                self.assertEqual(container["State"], STATE_CREATED)
+                break
+        else:
+            raise RuntimeError("Container was not found")

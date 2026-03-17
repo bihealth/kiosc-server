@@ -253,7 +253,7 @@ class TestContainerCrash(TestBase):
         self.assertIsNone(self.container.container_id)
         # Test from the daemon
         for container in self.cli.containers(all=True):
-            if container["Image"] == 'sample-app-instacrash:testing':
+            if container["Image"] == "sample-app-instacrash:testing":
                 self.assertEqual(container["State"], STATE_CREATED)
                 break
         else:

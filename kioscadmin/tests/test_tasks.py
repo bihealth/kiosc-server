@@ -1328,6 +1328,7 @@ class TestStopInactiveContainers(TestBase):
 @override_settings(
     KIOSC_NETWORK_MODE="docker-shared",
     KIOSC_DOCKER_NETWORK="kiosc-docker-network-testing",
+    KIOSC_DOCKER_ACTION_MIN_DELAY=0,
 )
 class TestPruneZombieContainers(TestBase):
     """Tests for ``prune_zombie_containers`` task."""
@@ -1347,6 +1348,7 @@ class TestPruneZombieContainers(TestBase):
             repository="sample-app-logging",
             tag="testing",
             host_port=0,
+            container_id=None,
         )
 
     def tearDown(self):
@@ -1354,6 +1356,7 @@ class TestPruneZombieContainers(TestBase):
         self.cli.remove_network(network["Id"])
 
     def test_prune_zombie_containers(self):
+        """Test that zombie containers are removed"""
         bg_job = ContainerBackgroundJobFactory(
             user=self.superuser,
             action=ACTION_START,
@@ -1370,7 +1373,42 @@ class TestPruneZombieContainers(TestBase):
         self.container.save()
         # Test that pruning the zombies does the job
         prune_zombie_containers()
-        for container in self.cli.containers():
+        for container in self.cli.containers(all=True):
+            if container["ImageID"] == image_id:
+                # Container should not be found
+                raise RuntimeError("Container did not stop successfully")
+
+    def test_prune_stopped_zombie_containers(self):
+        """Test that zombie containers are removed also if not currently running"""
+        bg_job = ContainerBackgroundJobFactory(
+            user=self.superuser,
+            action=ACTION_START,
+            container=self.container,
+        )
+        container_task(job_id=bg_job.pk)
+        self.container.refresh_from_db()
+        logs = [log.text for log in ContainerLogEntry.objects.all()]
+        self.assertIn("Starting succeeded", logs)
+        self.assertEqual(self.container.state, STATE_RUNNING)
+        image_id = self.container.image_id
+        container_id = self.container.container_id
+        # Stop the container
+        bg_job = ContainerBackgroundJobFactory(
+            user=self.superuser,
+            action=ACTION_STOP,
+            container=self.container,
+        )
+        container_task(job_id=bg_job.pk)
+        poll_docker_status_and_logs()
+        self.container.refresh_from_db()
+        self.assertEqual(self.container.state, STATE_EXITED)
+        self.assertEqual(self.container.container_id, container_id)
+        # Artificially cut the tie between kiosc and the container
+        self.container.container_id = None
+        self.container.save()
+        # Test that pruning the zombies does the job
+        prune_zombie_containers()
+        for container in self.cli.containers(all=True):
             if container["ImageID"] == image_id:
                 # Container should not be found
                 raise RuntimeError("Container did not stop successfully")

@@ -7,6 +7,7 @@ from unittest.mock import patch, call
 import docker.errors
 from django.conf import settings
 from django.utils import timezone
+from django.test import override_settings
 
 from containers.models import (
     ACTION_STOP,
@@ -29,8 +30,13 @@ from kioscadmin.tasks import (
     sync_container_state_with_last_user_action,
     DEFAULT_GRACE_PERIOD_CONTAINER_STATUS,
     stop_inactive_containers,
+    prune_zombie_containers,
 )
+from containers.tasks import container_task
+
+from containers.tests.test_lifecycle import build_testdata_container
 from containers.tests.factories import (
+    ContainerFactory,
     ContainerBackgroundJobFactory,
     ContainerLogEntryFactory,
 )
@@ -58,9 +64,12 @@ class TestPollDockerStatusAndLogsTask(TestBase):
             project=self.project, user=self.superuser, container=self.container1
         )
 
+    @patch("containers.tasks.sync_container_state")
     @patch("docker.api.client.APIClient.logs")
     @patch("docker.api.client.APIClient.inspect_container")
-    def test_all_new_entries(self, inspect_container, _logs):
+    def test_all_new_entries(
+        self, inspect_container, _logs, _sync_container_state
+    ):
         self.assertEqual(self.container1.state, STATE_INITIAL)
 
         # Prepare
@@ -94,9 +103,12 @@ class TestPollDockerStatusAndLogsTask(TestBase):
             self.container1.container_id, timestamps=True
         )
 
+    @patch("containers.tasks.sync_container_state")
     @patch("docker.api.client.APIClient.logs")
     @patch("docker.api.client.APIClient.inspect_container")
-    def test_all_new_entries_no_date(self, inspect_container, _logs):
+    def test_all_new_entries_no_date(
+        self, inspect_container, _logs, _sync_container_state
+    ):
         self.assertEqual(self.container1.state, STATE_INITIAL)
 
         # Prepare
@@ -130,9 +142,12 @@ class TestPollDockerStatusAndLogsTask(TestBase):
             self.container1.container_id, timestamps=True
         )
 
+    @patch("containers.tasks.sync_container_state")
     @patch("docker.api.client.APIClient.logs")
     @patch("docker.api.client.APIClient.inspect_container")
-    def test_add_entries_since_date(self, inspect_container, _logs):
+    def test_add_entries_since_date(
+        self, inspect_container, _logs, _sync_container_state
+    ):
         self.assertEqual(self.container1.state, STATE_INITIAL)
 
         # Prepare
@@ -199,6 +214,7 @@ class TestSyncContainerStateWithLastUserActionTask(TestBase):
             project=self.project, user=self.superuser, container=self.container1
         )
 
+    @patch("containers.tasks.sync_container_state")
     @patch("docker.api.client.APIClient.remove_container")
     @patch("docker.api.client.APIClient.unpause")
     @patch("docker.api.client.APIClient.pause")
@@ -221,6 +237,7 @@ class TestSyncContainerStateWithLastUserActionTask(TestBase):
         pause,
         unpause,
         remove_container,
+        sync_container_state,
     ):
         self.assertEqual(self.container1.state, STATE_INITIAL)
         inspect_container.side_effect = [DockerMock.inspect_container_started]
@@ -244,6 +261,7 @@ class TestSyncContainerStateWithLastUserActionTask(TestBase):
         self.bg_job.refresh_from_db()
         self.assertEqual(self.bg_job.retries, 0)
 
+    @patch("containers.tasks.sync_container_state")
     @patch("docker.api.client.APIClient.remove_container")
     @patch("docker.api.client.APIClient.unpause")
     @patch("docker.api.client.APIClient.pause")
@@ -266,6 +284,7 @@ class TestSyncContainerStateWithLastUserActionTask(TestBase):
         pause,
         unpause,
         remove_container,
+        sync_container_state,
     ):
         # Prepare
         self.bg_job.delete()
@@ -288,6 +307,7 @@ class TestSyncContainerStateWithLastUserActionTask(TestBase):
         unpause.assert_not_called()
         remove_container.assert_not_called()
 
+    @patch("containers.tasks.sync_container_state")
     @patch("docker.api.client.APIClient.remove_container")
     @patch("docker.api.client.APIClient.unpause")
     @patch("docker.api.client.APIClient.pause")
@@ -310,6 +330,7 @@ class TestSyncContainerStateWithLastUserActionTask(TestBase):
         pause,
         unpause,
         remove_container,
+        sync_container_state,
     ):
         # Prepare
         self.container1.date_last_status_update = timezone.now()
@@ -335,6 +356,7 @@ class TestSyncContainerStateWithLastUserActionTask(TestBase):
         self.bg_job.refresh_from_db()
         self.assertEqual(self.bg_job.retries, 0)
 
+    @patch("containers.tasks.sync_container_state")
     @patch("docker.api.client.APIClient.remove_container")
     @patch("docker.api.client.APIClient.unpause")
     @patch("docker.api.client.APIClient.pause")
@@ -357,6 +379,7 @@ class TestSyncContainerStateWithLastUserActionTask(TestBase):
         pause,
         unpause,
         remove_container,
+        sync_container_state,
     ):
         # Prepare
         self.container1.date_last_status_update = timezone.now()
@@ -385,6 +408,7 @@ class TestSyncContainerStateWithLastUserActionTask(TestBase):
         self.bg_job.refresh_from_db()
         self.assertEqual(self.bg_job.retries, 0)
 
+    @patch("containers.tasks.sync_container_state")
     @patch("docker.api.client.APIClient.remove_container")
     @patch("docker.api.client.APIClient.unpause")
     @patch("docker.api.client.APIClient.pause")
@@ -407,6 +431,7 @@ class TestSyncContainerStateWithLastUserActionTask(TestBase):
         pause,
         unpause,
         remove_container,
+        sync_container_state,
     ):
         # Prepare
         self.container1.date_last_status_update = timezone.now()
@@ -435,6 +460,7 @@ class TestSyncContainerStateWithLastUserActionTask(TestBase):
         self.bg_job.refresh_from_db()
         self.assertEqual(self.bg_job.retries, 0)
 
+    @patch("containers.tasks.sync_container_state")
     @patch("docker.api.client.APIClient.remove_container")
     @patch("docker.api.client.APIClient.unpause")
     @patch("docker.api.client.APIClient.pause")
@@ -457,6 +483,7 @@ class TestSyncContainerStateWithLastUserActionTask(TestBase):
         pause,
         unpause,
         remove_container,
+        sync_container_state,
     ):
         # Prepare
         self.container1.date_last_status_update = timezone.now()
@@ -485,6 +512,7 @@ class TestSyncContainerStateWithLastUserActionTask(TestBase):
         self.bg_job.refresh_from_db()
         self.assertEqual(self.bg_job.retries, 0)
 
+    @patch("containers.tasks.sync_container_state")
     @patch("docker.api.client.APIClient.remove_container")
     @patch("docker.api.client.APIClient.unpause")
     @patch("docker.api.client.APIClient.pause")
@@ -507,6 +535,7 @@ class TestSyncContainerStateWithLastUserActionTask(TestBase):
         pause,
         unpause,
         remove_container,
+        sync_container_state,
     ):
         # Prepare
         self.container1.date_last_status_update = timezone.now()
@@ -535,6 +564,7 @@ class TestSyncContainerStateWithLastUserActionTask(TestBase):
         self.bg_job.refresh_from_db()
         self.assertEqual(self.bg_job.retries, 0)
 
+    @patch("containers.tasks.sync_container_state")
     @patch("docker.api.client.APIClient.remove_container")
     @patch("docker.api.client.APIClient.unpause")
     @patch("docker.api.client.APIClient.pause")
@@ -557,6 +587,7 @@ class TestSyncContainerStateWithLastUserActionTask(TestBase):
         pause,
         unpause,
         remove_container,
+        sync_container_state,
     ):
         # Prepare
         self.container1.date_last_status_update = timezone.now()
@@ -585,6 +616,7 @@ class TestSyncContainerStateWithLastUserActionTask(TestBase):
         self.bg_job.refresh_from_db()
         self.assertEqual(self.bg_job.retries, 0)
 
+    @patch("containers.tasks.sync_container_state")
     @patch("docker.api.client.APIClient.remove_container")
     @patch("docker.api.client.APIClient.unpause")
     @patch("docker.api.client.APIClient.pause")
@@ -607,6 +639,7 @@ class TestSyncContainerStateWithLastUserActionTask(TestBase):
         pause,
         unpause,
         remove_container,
+        sync_container_state,
     ):
         # Prepare
         self.container1.date_last_status_update = timezone.now()
@@ -635,6 +668,7 @@ class TestSyncContainerStateWithLastUserActionTask(TestBase):
         self.bg_job.refresh_from_db()
         self.assertEqual(self.bg_job.retries, 0)
 
+    @patch("containers.tasks.sync_container_state")
     @patch("docker.api.client.APIClient.remove_container")
     @patch("docker.api.client.APIClient.unpause")
     @patch("docker.api.client.APIClient.pause")
@@ -657,6 +691,7 @@ class TestSyncContainerStateWithLastUserActionTask(TestBase):
         pause,
         unpause,
         remove_container,
+        sync_container_state,
     ):
         # Prepare
         self.container1.date_last_status_update = timezone.now() - timedelta(
@@ -688,6 +723,7 @@ class TestSyncContainerStateWithLastUserActionTask(TestBase):
         self.bg_job.refresh_from_db()
         self.assertEqual(self.bg_job.retries, self.container1.max_retries)
 
+    @patch("containers.tasks.sync_container_state")
     @patch("docker.api.client.APIClient.remove_container")
     @patch("docker.api.client.APIClient.unpause")
     @patch("docker.api.client.APIClient.pause")
@@ -710,6 +746,7 @@ class TestSyncContainerStateWithLastUserActionTask(TestBase):
         pause,
         unpause,
         remove_container,
+        sync_container_state,
     ):
         # Prepare
         self.container1.date_last_status_update = timezone.now() - timedelta(
@@ -747,6 +784,7 @@ class TestSyncContainerStateWithLastUserActionTask(TestBase):
         self.assertEqual(self.bg_job.retries, 1)
         self.assertEqual(self.container1.state, STATE_EXITED)
 
+    @patch("containers.tasks.sync_container_state")
     @patch("docker.api.client.APIClient.remove_container")
     @patch("docker.api.client.APIClient.unpause")
     @patch("docker.api.client.APIClient.pause")
@@ -773,6 +811,7 @@ class TestSyncContainerStateWithLastUserActionTask(TestBase):
         pause,
         unpause,
         remove_container,
+        sync_container_state,
     ):
         # Prepare
         self.container1.date_last_status_update = timezone.now() - timedelta(
@@ -804,7 +843,7 @@ class TestSyncContainerStateWithLastUserActionTask(TestBase):
         # Assert mocks
         create_container.assert_called_once_with(
             detach=True,
-            image=self.container1.image_id,
+            image="repository0:latest",
             environment=environment,
             command=self.container1.command or None,
             ports=[self.container1.container_port],
@@ -838,7 +877,9 @@ class TestSyncContainerStateWithLastUserActionTask(TestBase):
         stop.assert_not_called()
         pause.assert_not_called()
         unpause.assert_not_called()
-        remove_container.assert_called_once_with(self.container1.container_id)
+        remove_container.assert_called_once_with(
+            self.container1.container_id, force=True
+        )
 
         # Assert objects
         self.container1.refresh_from_db()
@@ -846,6 +887,7 @@ class TestSyncContainerStateWithLastUserActionTask(TestBase):
         self.assertEqual(self.bg_job.retries, 1)
         self.assertEqual(self.container1.state, STATE_RUNNING)
 
+    @patch("containers.tasks.sync_container_state")
     @patch("docker.api.client.APIClient.remove_container")
     @patch("docker.api.client.APIClient.unpause")
     @patch("docker.api.client.APIClient.pause")
@@ -868,6 +910,7 @@ class TestSyncContainerStateWithLastUserActionTask(TestBase):
         pause,
         unpause,
         remove_container,
+        sync_container_state,
     ):
         # Prepare
         self.container1.date_last_status_update = timezone.now() - timedelta(
@@ -905,6 +948,7 @@ class TestSyncContainerStateWithLastUserActionTask(TestBase):
         self.assertEqual(self.bg_job.retries, 1)
         self.assertEqual(self.container1.state, STATE_PAUSED)
 
+    @patch("containers.tasks.sync_container_state")
     @patch("docker.api.client.APIClient.remove_container")
     @patch("docker.api.client.APIClient.unpause")
     @patch("docker.api.client.APIClient.pause")
@@ -927,6 +971,7 @@ class TestSyncContainerStateWithLastUserActionTask(TestBase):
         pause,
         unpause,
         remove_container,
+        sync_container_state,
     ):
         # Prepare
         self.container1.date_last_status_update = timezone.now() - timedelta(
@@ -976,6 +1021,7 @@ class TestStopInactiveContainers(TestBase):
         self.container1.image_id = DockerMock.inspect_image.get("Id")
         self.container1.save()
 
+    @patch("containers.tasks.sync_container_state")
     @patch("docker.api.client.APIClient.remove_container")
     @patch("docker.api.client.APIClient.unpause")
     @patch("docker.api.client.APIClient.pause")
@@ -998,6 +1044,7 @@ class TestStopInactiveContainers(TestBase):
         pause,
         unpause,
         remove_container,
+        sync_container_state,
     ):
         self.assertEqual(self.container1.state, STATE_INITIAL)
         inspect_container.side_effect = docker.errors.NotFound("x")
@@ -1020,6 +1067,7 @@ class TestStopInactiveContainers(TestBase):
         # Assert objects
         self.assertEqual(ContainerBackgroundJob.objects.count(), 0)
 
+    @patch("containers.tasks.sync_container_state")
     @patch("docker.api.client.APIClient.remove_container")
     @patch("docker.api.client.APIClient.unpause")
     @patch("docker.api.client.APIClient.pause")
@@ -1042,6 +1090,7 @@ class TestStopInactiveContainers(TestBase):
         pause,
         unpause,
         remove_container,
+        sync_container_state,
     ):
         self.assertEqual(self.container1.state, STATE_INITIAL)
         inspect_container.side_effect = [DockerMock.inspect_container_no_info]
@@ -1064,6 +1113,7 @@ class TestStopInactiveContainers(TestBase):
         # Assert objects
         self.assertEqual(ContainerBackgroundJob.objects.count(), 0)
 
+    @patch("containers.tasks.sync_container_state")
     @patch("docker.api.client.APIClient.remove_container")
     @patch("docker.api.client.APIClient.unpause")
     @patch("docker.api.client.APIClient.pause")
@@ -1086,6 +1136,7 @@ class TestStopInactiveContainers(TestBase):
         pause,
         unpause,
         remove_container,
+        sync_container_state,
     ):
         self.container1.state = STATE_EXITED
         self.container1.save()
@@ -1110,6 +1161,7 @@ class TestStopInactiveContainers(TestBase):
         # Assert objects
         self.assertEqual(ContainerBackgroundJob.objects.count(), 0)
 
+    @patch("containers.tasks.sync_container_state")
     @patch("docker.api.client.APIClient.remove_container")
     @patch("docker.api.client.APIClient.unpause")
     @patch("docker.api.client.APIClient.pause")
@@ -1132,6 +1184,7 @@ class TestStopInactiveContainers(TestBase):
         pause,
         unpause,
         remove_container,
+        sync_container_state,
     ):
         # Prepare
         inspect_container.side_effect = [DockerMock.inspect_container_started]
@@ -1154,6 +1207,7 @@ class TestStopInactiveContainers(TestBase):
         # Assert objects
         self.assertEqual(ContainerBackgroundJob.objects.count(), 0)
 
+    @patch("containers.tasks.sync_container_state")
     @patch("docker.api.client.APIClient.remove_container")
     @patch("docker.api.client.APIClient.unpause")
     @patch("docker.api.client.APIClient.pause")
@@ -1176,6 +1230,7 @@ class TestStopInactiveContainers(TestBase):
         pause,
         unpause,
         remove_container,
+        sync_container_state,
     ):
         # Prepare
         self.container1.log_entries.create(
@@ -1203,6 +1258,7 @@ class TestStopInactiveContainers(TestBase):
         # Assert objects
         self.assertEqual(ContainerBackgroundJob.objects.count(), 0)
 
+    @patch("containers.tasks.sync_container_state")
     @patch("docker.api.client.APIClient.remove_container")
     @patch("docker.api.client.APIClient.unpause")
     @patch("docker.api.client.APIClient.pause")
@@ -1225,6 +1281,7 @@ class TestStopInactiveContainers(TestBase):
         pause,
         unpause,
         remove_container,
+        sync_container_state,
     ):
         # Prepare
         mock_now = timezone.now() - timedelta(days=2)
@@ -1266,3 +1323,54 @@ class TestStopInactiveContainers(TestBase):
 
         # Assert objects
         self.assertEqual(ContainerBackgroundJob.objects.count(), 1)
+
+
+@override_settings(
+    KIOSC_NETWORK_MODE="docker-shared",
+    KIOSC_DOCKER_NETWORK="kiosc-docker-network-testing",
+)
+class TestPruneZombieContainers(TestBase):
+    """Tests for ``prune_zombie_containers`` task."""
+
+    def setUp(self):
+        super().setUp()
+        self.cli = connect_docker()
+        # Build the sample container image
+        build_testdata_container(self.cli, "sample-app-logging")
+        # Create the network
+        self.cli.create_network(
+            settings.KIOSC_DOCKER_NETWORK, driver="bridge", check_duplicate=True
+        )
+
+        self.container = ContainerFactory(
+            project=self.project,
+            repository="sample-app-logging",
+            tag="testing",
+            host_port=0,
+        )
+
+    def tearDown(self):
+        network = self.cli.networks(settings.KIOSC_DOCKER_NETWORK)[0]
+        self.cli.remove_network(network["Id"])
+
+    def test_prune_zombie_containers(self):
+        bg_job = ContainerBackgroundJobFactory(
+            user=self.superuser,
+            action=ACTION_START,
+            container=self.container,
+        )
+        container_task(job_id=bg_job.pk)
+        self.container.refresh_from_db()
+        logs = [log.text for log in ContainerLogEntry.objects.all()]
+        self.assertIn("Starting succeeded", logs)
+        self.assertEqual(self.container.state, STATE_RUNNING)
+        image_id = self.container.image_id
+        # Artificially cut the tie between kiosc and the container
+        self.container.container_id = None
+        self.container.save()
+        # Test that pruning the zombies does the job
+        prune_zombie_containers()
+        for container in self.cli.containers():
+            if container["ImageID"] == image_id:
+                # Container should not be found
+                raise RuntimeError("Container did not stop successfully")

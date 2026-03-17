@@ -68,7 +68,7 @@ from containers.models import (
     STATE_INITIAL,
     LOG_LEVEL_ERROR,
 )
-from containers.tasks import container_task
+from containers.tasks import container_task, sync_container_state
 from containertemplates.forms import ContainerTemplateSelectorForm
 
 
@@ -369,6 +369,10 @@ class ContainerDetailView(
     model = Container
     slug_url_kwarg = "container"
     slug_field = "sodar_uuid"
+
+    def get(self, request, *args, **kwargs):
+        sync_container_state(self.get_object())
+        return super().get(request, *args, **kwargs)
 
 
 class ContainerStartView(

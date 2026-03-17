@@ -23,6 +23,7 @@ from projectroles.app_settings import AppSettingAPI
 from containers.models import (
     ContainerBackgroundJob,
     LOG_LEVEL_ERROR,
+    STATE_INITIAL,
     STATE_FAILED,
     PROCESS_TASK,
     PROCESS_DOCKER,
@@ -30,6 +31,7 @@ from containers.models import (
     ContainerActionLock,
 )
 from containers.statemachines import (
+    connect_docker,
     ContainerMachine,
     ActionSwitch,
 )
@@ -53,6 +55,42 @@ class State:
         self.state = state
 
 
+def sync_container_state(container):
+    # Update container state
+    cli = connect_docker()
+    try:
+        data = cli.inspect_container(container.container_id)
+        actual_state = data.get("State", {}).get("Status")
+        if container.state != actual_state:
+            logger.warning(
+                "%s: Container state our of sync", container.sodar_uuid
+            )
+            container.date_last_status_update = timezone.now()
+            container.state = actual_state
+            container.save()
+    except docker.errors.NullResource as ex:
+        if container.state not in (STATE_INITIAL, STATE_FAILED):
+            logger.error(
+                "%s: %s (state is %s)",
+                container.sodar_uuid,
+                ex,
+                container.state,
+            )
+            container.date_last_status_update = timezone.now()
+            container.state = STATE_FAILED
+            container.container_id = ""
+            container.save()
+    except docker.errors.NotFound as ex:
+        # We mark it as failed. STATE_DELETED could also be an option,
+        # but failed is more general. Besides, the container record in the db
+        # is NOT deleted.
+        logger.error(ex)
+        container.date_last_status_update = timezone.now()
+        container.state = STATE_FAILED
+        container.container_id = ""
+        container.save()
+
+
 @app.task(bind=True)
 def container_task(_self, job_id):
     """Task to change a container state"""
@@ -61,6 +99,8 @@ def container_task(_self, job_id):
     container = job.container
     user = job.bg_job.user
     tl_event = None
+    sync_container_state(container)
+
     cm = ContainerMachine(State(container.state), job=job)
 
     if timeline:
@@ -89,6 +129,7 @@ def container_task(_self, job_id):
             acs.do(job.action, job.container.state)
 
         except docker.errors.NotFound as e:
+            logger.error(e)
             job.add_log_entry(
                 f"Action failed: {job.action}", level=LOG_LEVEL_ERROR
             )
@@ -114,6 +155,7 @@ def container_task(_self, job_id):
                 job.container.save()
 
         except docker.errors.DockerException as e:
+            logger.error(e)
             # Catch Docker-specific exceptions
             job.add_log_entry(
                 f"Action failed: {job.action}", level=LOG_LEVEL_ERROR
@@ -138,6 +180,7 @@ def container_task(_self, job_id):
                 container.save(force_update=True)
 
         except statemachine.exceptions.StateMachineError as e:
+            logger.error(e)
             job.add_log_entry(
                 f"Action failed: {job.action}", level=LOG_LEVEL_ERROR
             )
@@ -148,7 +191,8 @@ def container_task(_self, job_id):
                 level=LOG_LEVEL_ERROR,
             )
 
-        except ContainerActionLock.CoolDown:
+        except ContainerActionLock.CoolDown as e:
+            logger.warning(e)
             job.add_log_entry(
                 f"Action not performed: {job.action} (cool-down)",
                 level=LOG_LEVEL_WARNING,
@@ -161,6 +205,7 @@ def container_task(_self, job_id):
             )
 
         except Exception as e:
+            logger.error(e)
             # Catch all exceptions that are not coming from Docker
             job.add_log_entry(
                 f"Action failed: {job.action}", level=LOG_LEVEL_ERROR

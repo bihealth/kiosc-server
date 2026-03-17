@@ -51,6 +51,7 @@ class TestContainerCrash(TestBase):
             repository="sample-app-logging",
             tag="testing",
             host_port=0,
+            container_id=None,
         )
 
     def _test_container_start(self):
@@ -159,8 +160,8 @@ class TestContainerCrash(TestBase):
         else:
             raise RuntimeError("Container did not restart")
 
-    def _test_container_delete(self):
-        self.assertEqual(self.container.state, STATE_RUNNING)
+    def _test_container_delete(self, initial=STATE_RUNNING):
+        self.assertEqual(self.container.state, initial)
         image_id = self.container.image_id
         bg_job = ContainerBackgroundJobFactory(
             user=self.superuser,
@@ -193,7 +194,7 @@ class TestContainerCrash(TestBase):
         self.container.refresh_from_db()
         self.assertEqual(self.container.state, STATE_EXITED)
         self.assertEqual(old_container_id, self.container.container_id)
-        self._test_container_delete()
+        self._test_container_delete(initial=STATE_EXITED)
 
     def test_container_crash_delete(self):
         self._test_container_start()
@@ -210,16 +211,4 @@ class TestContainerCrash(TestBase):
         self._test_container_start()
         self.container.state = STATE_EXITED  # But it's actually still running
         self.container.save()
-        image_id = self.container.image_id
-        bg_job = ContainerBackgroundJobFactory(
-            user=self.superuser,
-            action=ACTION_DELETE,
-            container=self.container,
-        )
-        container_task(job_id=bg_job.pk)
-        # Test from the database
-        self.container.refresh_from_db()
-        # Test from the daemon (container should not be found)
-        for container in self.cli.containers():
-            if container["ImageID"] == image_id:
-                raise RuntimeError("Container was not deleted successfully")
+        self._test_container_delete(initial=STATE_EXITED)

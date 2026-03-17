@@ -64,9 +64,12 @@ class TestPollDockerStatusAndLogsTask(TestBase):
             project=self.project, user=self.superuser, container=self.container1
         )
 
+    @patch("containers.tasks.sync_container_state")
     @patch("docker.api.client.APIClient.logs")
     @patch("docker.api.client.APIClient.inspect_container")
-    def test_all_new_entries(self, inspect_container, _logs):
+    def test_all_new_entries(
+        self, inspect_container, _logs, _sync_container_state
+    ):
         self.assertEqual(self.container1.state, STATE_INITIAL)
 
         # Prepare
@@ -100,9 +103,12 @@ class TestPollDockerStatusAndLogsTask(TestBase):
             self.container1.container_id, timestamps=True
         )
 
+    @patch("containers.tasks.sync_container_state")
     @patch("docker.api.client.APIClient.logs")
     @patch("docker.api.client.APIClient.inspect_container")
-    def test_all_new_entries_no_date(self, inspect_container, _logs):
+    def test_all_new_entries_no_date(
+        self, inspect_container, _logs, _sync_container_state
+    ):
         self.assertEqual(self.container1.state, STATE_INITIAL)
 
         # Prepare
@@ -136,9 +142,12 @@ class TestPollDockerStatusAndLogsTask(TestBase):
             self.container1.container_id, timestamps=True
         )
 
+    @patch("containers.tasks.sync_container_state")
     @patch("docker.api.client.APIClient.logs")
     @patch("docker.api.client.APIClient.inspect_container")
-    def test_add_entries_since_date(self, inspect_container, _logs):
+    def test_add_entries_since_date(
+        self, inspect_container, _logs, _sync_container_state
+    ):
         self.assertEqual(self.container1.state, STATE_INITIAL)
 
         # Prepare

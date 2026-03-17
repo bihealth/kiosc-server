@@ -56,6 +56,7 @@ class TestContainerTask(TestBase):
         self.cli.prune_images()
 
     @override_settings(KIOSC_NETWORK_MODE="host")
+    @patch("containers.tasks.sync_container_state")
     @patch("docker.api.client.APIClient.remove_container")
     @patch("docker.api.client.APIClient.unpause")
     @patch("docker.api.client.APIClient.pause")
@@ -82,6 +83,7 @@ class TestContainerTask(TestBase):
         pause,
         unpause,
         remove_container,
+        sync_container_state,
     ):
         # Prepare
         create_container.side_effect = [DockerMock.create_container]
@@ -107,7 +109,7 @@ class TestContainerTask(TestBase):
         # Assert mocks
         create_container.assert_called_once_with(
             detach=True,
-            image=self.container1.image_id,
+            image="repository0:latest",
             environment=environment,
             command=self.container1.command or None,
             ports=[self.container1.container_port],
@@ -142,6 +144,7 @@ class TestContainerTask(TestBase):
         remove_container.assert_not_called()
 
     @override_settings(KIOSC_NETWORK_MODE="docker-shared")
+    @patch("containers.tasks.sync_container_state")
     @patch("docker.api.client.APIClient.remove_container")
     @patch("docker.api.client.APIClient.unpause")
     @patch("docker.api.client.APIClient.pause")
@@ -168,6 +171,7 @@ class TestContainerTask(TestBase):
         pause,
         unpause,
         remove_container,
+        sync_container_state,
     ):
         # Prepare
         create_container.side_effect = [DockerMock.create_container]
@@ -197,7 +201,7 @@ class TestContainerTask(TestBase):
         # Assert mocks
         create_container.assert_called_once_with(
             detach=True,
-            image=self.container1.image_id,
+            image="repository0:latest",
             environment=environment,
             command=self.container1.command or None,
             ports=[self.container1.container_port],
@@ -232,6 +236,7 @@ class TestContainerTask(TestBase):
         remove_container.assert_not_called()
 
     @override_settings(KIOSC_DOCKER_ACTION_MIN_DELAY=10)
+    @patch("containers.tasks.sync_container_state")
     @patch("docker.api.client.APIClient.remove_container")
     @patch("docker.api.client.APIClient.unpause")
     @patch("docker.api.client.APIClient.pause")
@@ -258,6 +263,7 @@ class TestContainerTask(TestBase):
         pause,
         unpause,
         remove_container,
+        sync_container_state,
     ):
         # Prepare
         bg_job2 = ContainerBackgroundJobFactory(
@@ -298,7 +304,7 @@ class TestContainerTask(TestBase):
         # Assert mocks
         create_container.assert_called_once_with(
             detach=True,
-            image=self.container1.image_id,
+            image="repository0:latest",
             environment=environment,
             command=self.container1.command or None,
             ports=[self.container1.container_port],
@@ -333,6 +339,7 @@ class TestContainerTask(TestBase):
         remove_container.assert_not_called()
 
     @override_settings(KIOSC_DOCKER_ACTION_MIN_DELAY=0)
+    @patch("containers.tasks.sync_container_state")
     @patch("docker.api.client.APIClient.remove_container")
     @patch("docker.api.client.APIClient.unpause")
     @patch("docker.api.client.APIClient.pause")
@@ -359,6 +366,7 @@ class TestContainerTask(TestBase):
         pause,
         unpause,
         remove_container,
+        sync_container_state,
     ):
         # Prepare
         bg_job2 = ContainerBackgroundJobFactory(
@@ -400,7 +408,7 @@ class TestContainerTask(TestBase):
 
         create_container.assert_called_once_with(
             detach=True,
-            image=self.container1.image_id,
+            image="repository0:latest",
             environment=environment,
             command=self.container1.command or None,
             ports=[self.container1.container_port],
@@ -436,6 +444,7 @@ class TestContainerTask(TestBase):
         unpause.assert_not_called()
         remove_container.assert_not_called()
 
+    @patch("containers.tasks.sync_container_state")
     @patch("docker.api.client.APIClient.remove_container")
     @patch("docker.api.client.APIClient.unpause")
     @patch("docker.api.client.APIClient.pause")
@@ -462,6 +471,7 @@ class TestContainerTask(TestBase):
         pause,
         unpause,
         remove_container,
+        sync_container_state,
     ):
         # Prepare
         self.bg_job.action = ACTION_STOP
@@ -495,6 +505,7 @@ class TestContainerTask(TestBase):
         unpause.assert_not_called()
         remove_container.assert_not_called()
 
+    @patch("containers.tasks.sync_container_state")
     @patch("docker.api.client.APIClient.remove_container")
     @patch("docker.api.client.APIClient.unpause")
     @patch("docker.api.client.APIClient.pause")
@@ -521,6 +532,7 @@ class TestContainerTask(TestBase):
         pause,
         unpause,
         remove_container,
+        sync_container_state,
     ):
         # Prepare
         self.bg_job.action = ACTION_RESTART
@@ -555,7 +567,7 @@ class TestContainerTask(TestBase):
         # Assert mocks
         create_container.assert_called_once_with(
             detach=True,
-            image=self.container1.image_id,
+            image="repository0:latest",
             environment=environment,
             command=self.container1.command or None,
             ports=[self.container1.container_port],
@@ -589,8 +601,11 @@ class TestContainerTask(TestBase):
         stop.assert_called_once_with(self.container1.container_id)
         pause.assert_not_called()
         unpause.assert_not_called()
-        remove_container.assert_called_once_with(self.container1.container_id)
+        remove_container.assert_called_once_with(
+            self.container1.container_id, force=True
+        )
 
+    @patch("containers.tasks.sync_container_state")
     @patch("docker.api.client.APIClient.remove_container")
     @patch("docker.api.client.APIClient.unpause")
     @patch("docker.api.client.APIClient.pause")
@@ -617,6 +632,7 @@ class TestContainerTask(TestBase):
         pause,
         unpause,
         remove_container,
+        sync_container_state,
     ):
         # Prepare
         self.bg_job.action = ACTION_PAUSE
@@ -648,6 +664,7 @@ class TestContainerTask(TestBase):
         unpause.assert_not_called()
         remove_container.assert_not_called()
 
+    @patch("containers.tasks.sync_container_state")
     @patch("docker.api.client.APIClient.remove_container")
     @patch("docker.api.client.APIClient.unpause")
     @patch("docker.api.client.APIClient.pause")
@@ -674,6 +691,7 @@ class TestContainerTask(TestBase):
         pause,
         unpause,
         remove_container,
+        sync_container_state,
     ):
         # Prepare
         self.bg_job.action = ACTION_UNPAUSE
@@ -705,6 +723,7 @@ class TestContainerTask(TestBase):
         unpause.assert_called_once_with(self.container1.container_id)
         remove_container.assert_not_called()
 
+    @patch("containers.tasks.sync_container_state")
     @patch("docker.api.client.APIClient.remove_container")
     @patch("docker.api.client.APIClient.unpause")
     @patch("docker.api.client.APIClient.pause")
@@ -731,6 +750,7 @@ class TestContainerTask(TestBase):
         pause,
         unpause,
         remove_container,
+        sync_container_state,
     ):
         # Prepare
         container_id = DockerMock.create_container.get("Id")
@@ -762,6 +782,7 @@ class TestContainerTask(TestBase):
         unpause.assert_not_called()
         remove_container.assert_not_called()
 
+    @patch("containers.tasks.sync_container_state")
     @patch("docker.api.client.APIClient.remove_container")
     @patch("docker.api.client.APIClient.unpause")
     @patch("docker.api.client.APIClient.pause")
@@ -788,6 +809,7 @@ class TestContainerTask(TestBase):
         pause,
         unpause,
         remove_container,
+        sync_container_state,
     ):
         # Prepare
         container_id = DockerMock.create_container.get("Id")
@@ -818,8 +840,9 @@ class TestContainerTask(TestBase):
         stop.assert_called_once_with(container_id)
         pause.assert_not_called()
         unpause.assert_not_called()
-        remove_container.assert_called_once_with(container_id)
+        remove_container.assert_called_once_with(container_id, force=True)
 
+    @patch("containers.tasks.sync_container_state")
     @patch("docker.api.client.APIClient.remove_container")
     @patch("docker.api.client.APIClient.unpause")
     @patch("docker.api.client.APIClient.pause")
@@ -846,6 +869,7 @@ class TestContainerTask(TestBase):
         pause,
         unpause,
         remove_container,
+        sync_container_state,
     ):
         # Prepare
         container_id = DockerMock.create_container.get("Id")
@@ -875,7 +899,7 @@ class TestContainerTask(TestBase):
         stop.assert_not_called()
         pause.assert_not_called()
         unpause.assert_not_called()
-        remove_container.assert_called_once_with(container_id)
+        remove_container.assert_called_once_with(container_id, force=True)
 
     @tag("docker-server")
     @override_settings(KIOSC_DOCKER_ACTION_MIN_DELAY=0)

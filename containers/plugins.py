@@ -8,12 +8,19 @@ from django.contrib.auth import get_user_model
 from django.db.models import Count
 from django.urls import reverse
 from projectroles.models import Project, SODAR_CONSTANTS, CAT_DELIMITER
-from projectroles.plugins import ProjectAppPluginPoint, PluginObjectLink, PluginCategoryStatistic
+from projectroles.plugins import (
+    ProjectAppPluginPoint,
+    PluginObjectLink,
+    PluginCategoryStatistic,
+)
 
 from containers.models import Container
 from containers.urls import urlpatterns
 
-from containertemplates.models import ContainerTemplateSite, ContainerTemplateProject
+from containertemplates.models import (
+    ContainerTemplateSite,
+    ContainerTemplateProject,
+)
 
 
 User = get_user_model()
@@ -188,7 +195,11 @@ class ProjectAppPlugin(ProjectAppPluginPoint):
         if column_id != "containers":
             raise ValueError(f'Unexpected column_id: "{column_id}"')
 
-        container_states = Container.objects.filter(project=project).values("state").annotate(count=Count("state"))
+        container_states = (
+            Container.objects.filter(project=project)
+            .values("state")
+            .annotate(count=Count("state"))
+        )
         running = 0
         stopped = 0
         failed = 0

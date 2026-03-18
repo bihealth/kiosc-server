@@ -9,12 +9,19 @@ from django.db.models import Count
 from django.template.loader import render_to_string
 from django.urls import reverse
 from projectroles.models import Project, SODAR_CONSTANTS, CAT_DELIMITER
-from projectroles.plugins import ProjectAppPluginPoint, PluginObjectLink, PluginCategoryStatistic
+from projectroles.plugins import (
+    ProjectAppPluginPoint,
+    PluginObjectLink,
+    PluginCategoryStatistic,
+)
 
 from containers.models import Container
 from containers.urls import urlpatterns
 
-from containertemplates.models import ContainerTemplateSite, ContainerTemplateProject
+from containertemplates.models import (
+    ContainerTemplateSite,
+    ContainerTemplateProject,
+)
 
 
 User = get_user_model()
@@ -100,32 +107,44 @@ class ProjectAppPlugin(ProjectAppPluginPoint):
     #: Names of plugin specific Django settings to display in siteinfo
     info_settings = []
 
-    #: Project list columns
+    #: Optional custom project list column definition
+    #:
+    #: Example ::
+    #:
+    #:     project_list_columns = {
+    #:         'column_id': {
+    #:             'title': 'Column Title',
+    #:             'width': 100,  # Desired width of column in pixels
+    #:             'description': 'Description',  # Optional description string
+    #:             'active': True,  # Boolean for whether the column is active
+    #:             'ordering': 50,  # Integer for ordering the columns
+    #:             'align': 'left'  # Alignment of content
+    #:         }
+    #:     }
     project_list_columns = {
-        'containers': {
-            'title': 'Containers',
-            'width': 50,
-            'description': "All containers defined in this projects (title, repository:tag, state, controls)",
-            'active': True,
-            'ordering': 20,
-            'align': 'center',
+        "containers": {
+            "title": "Containers",
+            "width": 50,
+            "description": "All containers defined in this projects (title, repository:tag, state, controls)",
+            "active": True,
+            "ordering": 20,
+            "align": "center",
         },
     }
 
-
     def get_statistics(self):
         return {
-            'container_count': {
-                'label': 'Containers',
-                'value': Container.objects.all().count(),
+            "container_count": {
+                "label": "Containers",
+                "value": Container.objects.all().count(),
             },
-            'containertemplates_site_count': {
-                'label': 'Site-wide Container Templates',
-                'value': ContainerTemplateSite.objects.all().count(),
+            "containertemplates_site_count": {
+                "label": "Site-wide Container Templates",
+                "value": ContainerTemplateSite.objects.all().count(),
             },
-            'containertemplates_project_count': {
-                'label': 'Project Container Templates',
-                'value': ContainerTemplateProject.objects.all().count(),
+            "containertemplates_project_count": {
+                "label": "Project Container Templates",
+                "value": ContainerTemplateProject.objects.all().count(),
             },
         }
 
@@ -144,16 +163,20 @@ class ProjectAppPlugin(ProjectAppPluginPoint):
             type=PROJECT_TYPE_PROJECT,
             full_title__startswith=category.full_title + CAT_DELIMITER,
         )
-        container_states = Container.objects.filter(project__in=children).values("state").annotate(count=Count("state"))
+        container_states = (
+            Container.objects.filter(project__in=children)
+            .values("state")
+            .annotate(count=Count("state"))
+        )
         stats = []
         for state_entry in container_states:
             stats.append(
                 PluginCategoryStatistic(
                     plugin=self,
                     title=f'Containers {state_entry["state"].title()}',
-                    value=state_entry['count'],
+                    value=state_entry["count"],
                     description=f'Number of {state_entry["state"]} containers in this category',
-                    icon='mdi:file',
+                    icon="mdi:file",
                 )
             )
         return stats
@@ -170,7 +193,7 @@ class ProjectAppPlugin(ProjectAppPluginPoint):
         :param user: User object (current user)
         :return: String (may contain HTML), integer or None
         """
-        if column_id != 'containers':
+        if column_id != "containers":
             raise ValueError(f'Unexpected column_id: "{column_id}"')
 
         queryset = Container.objects.filter(project=project).order_by("title")
@@ -178,24 +201,26 @@ class ProjectAppPlugin(ProjectAppPluginPoint):
         for el in queryset:
             container_title = '<a href="{container_url}">{title}</a>'.format(
                 container_url=reverse(
-                    'containers:detail',
-                    kwargs={'container': el.sodar_uuid},
+                    "containers:detail",
+                    kwargs={"container": el.sodar_uuid},
                 ),
                 title=el.title,
             )
             controls_ui = render_to_string(
-                'containers/_container_controls.html',
-                {'container': el, 'user': user}
+                "containers/_container_controls.html",
+                {"container": el, "user": user},
             )
             td_attrs = 'class="align-middle pt-1 pb-1"'
-            s += '<tr style="background-color: unset; height: unset!important;">'
             s += (
-                f'<td {td_attrs}>{container_title}</td>'
-                f'<td {td_attrs}>{el.repository}:{el.tag}</td>'
-                f'<td {td_attrs}>{el.state}</td>'
-                f'<td {td_attrs}>{controls_ui}</td>'
+                '<tr style="background-color: unset; height: unset!important;">'
             )
-        s += '</table>'
+            s += (
+                f"<td {td_attrs}>{container_title}</td>"
+                f"<td {td_attrs}>{el.repository}:{el.tag}</td>"
+                f"<td {td_attrs}>{el.state}</td>"
+                f"<td {td_attrs}>{controls_ui}</td>"
+            )
+        s += "</table>"
         return s
 
     def get_object_link(

@@ -7,14 +7,14 @@ from django.urls import reverse
 from containers.tests.helpers import TestBase, DockerMock
 
 
-class TestKioscAdminView(TestBase):
-    """Tests for ``KioscAdminView``."""
+class TestContainerListView(TestBase):
+    """Tests for ``ContainerListView``."""
 
     def test_get_success(self):
         with self.login(self.superuser):
             response = self.client.get(
                 reverse(
-                    "kioscadmin:overview",
+                    "containerlist:overview",
                 )
             )
 

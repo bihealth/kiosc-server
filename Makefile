@@ -3,11 +3,14 @@ MANAGE = python manage.py
 define USAGE=
 @echo -e
 @echo -e "Usage:"
-@echo -e "\tmake black [arg=--<arg>]                 -- black formatting"
-@echo -e "\tmake flake                               -- run flake8"
+@echo -e "\tmake asgi                                -- start asgi server"
 @echo -e "\tmake serve                               -- start source server"
 @echo -e "\tmake serve_target                        -- start target server"
 @echo -e "\tmake serve_taskflow [arg=sync]           -- start taskflow server"
+@echo -e "\tmake check                               -- check Python code linting and formatting"
+@echo -e "\tmake lint                                -- lint Pythoncode"
+@echo -e "\tmake format                              -- format python code"
+@echo -e "\tmake format-check                        -- check formatting of python code"
 @echo -e "\tmake collectstatic                       -- run collectstatic"
 @echo -e "\tmake test [arg=<test_object>]            -- run all tests or specify module/class/function"
 @echo -e "\tmake test_taskflow [arg=<test_object>]   -- run all tests and taskflow tests or specify module/class/function"
@@ -24,14 +27,9 @@ arg =
 target_port = 8001
 
 
-.PHONY: black
-black:
-	black . -l 80 --exclude ".git|.venv|.tox|env|src|docs|migrations|versioneer.py" $(arg)
-
-
-.PHONY: flake
-flake:
-	flake8 .
+.PHONY: usage
+usage:
+	$(USAGE)
 
 
 .PHONY: serve
@@ -56,6 +54,25 @@ else
 serve_taskflow:
 endif
 	$(MANAGE) runserver --settings=config.settings.local_taskflow
+
+
+.PHONY: check
+check: format-check lint
+
+
+.PHONY: format
+format:
+	ruff format $(arg)
+
+
+.PHONY: format-check
+format-check:
+	ruff format --check
+
+
+.PHONY: lint
+lint:
+	ruff check $(arg)
 
 
 .PHONY: collectstatic
@@ -93,8 +110,4 @@ endif
 celery:
 	celery -A config.celery_app worker -l info --concurrency=4 --beat
 
-
-.PHONY: usage
-usage:
-	$(USAGE)
 

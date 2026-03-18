@@ -29,7 +29,10 @@ Kiosc is NOT
 - For running Docker images without webserver (you can do that, but you likely won't benefit much from it)
 - For directly loading or sharing data (this has to be managed by the Docker image).
 
-If your group also use `SODAR <https://github.com/bihealth/sodar-server>`__, projects and users can be directly imported from there.
+.. tip::
+
+    If your group also use `SODAR <https://github.com/bihealth/sodar-server>`__, projects and users can be directly imported from there.
+
 
 .. note::
 

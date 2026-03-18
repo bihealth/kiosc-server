@@ -30,10 +30,7 @@ jobs:
       DATABASE_URL: 'postgres://kiosc:kiosc@0.0.0.0/kiosc'
     steps:
       - name: Install server dependencies
-        run: |
-          sudo apt-get update
-          sudo apt-get install -qq build-essential zlib1g-dev libtiff5-dev libjpeg8-dev libfreetype6-dev
-          sudo apt-get install -qq liblcms2-dev libwebp-dev libpq-dev graphviz-dev
+        run: sudo ./utility/install_os_dependencies.sh
       - name: Install Python
         uses: actions/setup-python@v2
         with:

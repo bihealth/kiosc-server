@@ -45,8 +45,8 @@ If your group also use `SODAR <https://github.com/bihealth/sodar-server>`__, pro
     :hidden:
     :titlesonly:
 
-    introduction_docker
     introduction_overview
+    Docker concepts <introduction_docker>
     introduction_installation
     introduction_interface
     introduction_roles

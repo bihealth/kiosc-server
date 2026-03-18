@@ -6,8 +6,8 @@ Basic Docker concepts for beginners
 This chapter is meant to provide a quick introduction to docker and docker compose so that you can start using Kiosc right away even if you are not familiar with container technologies.
 If you have already mastered these topics, feel free to skip to the next chapter.
 
-Docker
-------
+Docker containers and images
+----------------------------
 
 Docker is a program that allows you to isolate certain applications so that they will still run in your machine, but they won't have access to any of your files or resources unless explicitly provided.
 It is useful to strictly control the application and has a number of advantages over installing the application directly:

@@ -3,119 +3,119 @@ from django.views.decorators.csrf import csrf_exempt
 
 from . import views, consumers, views_api
 
-app_name = "containers"
+app_name = 'containers'
 
 
 ui_urlpatterns = [
     path(
-        "<uuid:project>",
+        '<uuid:project>',
         view=views.ContainerListView.as_view(),
-        name="list",
+        name='list',
     ),
     path(
-        "detail/<uuid:container>",
+        'detail/<uuid:container>',
         view=views.ContainerDetailView.as_view(),
-        name="detail",
+        name='detail',
     ),
     path(
-        "create/<uuid:project>",
+        'create/<uuid:project>',
         view=views.ContainerCreateView.as_view(),
-        name="create",
+        name='create',
     ),
     path(
-        "update/<uuid:container>",
+        'update/<uuid:container>',
         view=views.ContainerUpdateView.as_view(),
-        name="update",
+        name='update',
     ),
     path(
-        "delete/<uuid:container>",
+        'delete/<uuid:container>',
         view=views.ContainerDeleteView.as_view(),
-        name="delete",
+        name='delete',
     ),
     path(
-        "start/<uuid:container>",
+        'start/<uuid:container>',
         view=views.ContainerStartView.as_view(),
-        name="start",
+        name='start',
     ),
     path(
-        "stop/<uuid:container>",
+        'stop/<uuid:container>',
         view=views.ContainerStopView.as_view(),
-        name="stop",
+        name='stop',
     ),
     path(
-        "pause/<uuid:container>",
+        'pause/<uuid:container>',
         view=views.ContainerPauseView.as_view(),
-        name="pause",
+        name='pause',
     ),
     path(
-        "unpause/<uuid:container>",
+        'unpause/<uuid:container>',
         view=views.ContainerUnpauseView.as_view(),
-        name="unpause",
+        name='unpause',
     ),
     path(
-        "restart/<uuid:container>",
+        'restart/<uuid:container>',
         view=views.ContainerRestartView.as_view(),
-        name="restart",
+        name='restart',
     ),
     re_path(
-        r"^proxy/(?P<container>[0-9a-f-]+)/(?P<path>.*)$",
+        r'^proxy/(?P<container>[0-9a-f-]+)/(?P<path>.*)$',
         view=csrf_exempt(views.ReverseProxyView.as_view()),
-        name="proxy",
+        name='proxy',
     ),
     path(
-        "proxy/lobby/<uuid:container>",
+        'proxy/lobby/<uuid:container>',
         view=views.ContainerProxyLobbyView.as_view(),
-        name="proxy-lobby",
+        name='proxy-lobby',
     ),
     path(
-        "file/serve/<uuid:file>/<str:filename>",
+        'file/serve/<uuid:file>/<str:filename>',
         view=views.FileServeView.as_view(),
-        name="file-serve",
+        name='file-serve',
     ),
     # Ajax views
     path(
-        "ajax/get-dynamic-details/<uuid:container>",
+        'ajax/get-dynamic-details/<uuid:container>',
         view=views.ContainerGetDynamicDetailsApiView.as_view(),
-        name="ajax-get-dynamic-details",
+        name='ajax-get-dynamic-details',
     ),
 ]
 
 api_urlpatterns = [
     path(
-        "api/<uuid:project>",
+        'api/<uuid:project>',
         view=views_api.ContainerListAPIView.as_view(),
-        name="api-list",
+        name='api-list',
     ),
     path(
-        "api/detail/<uuid:container>",
+        'api/detail/<uuid:container>',
         view=views_api.ContainerDetailAPIView.as_view(),
-        name="api-detail",
+        name='api-detail',
     ),
     path(
-        "api/create/<uuid:project>",
+        'api/create/<uuid:project>',
         view=views_api.ContainerCreateAPIView.as_view(),
-        name="api-create",
+        name='api-create',
     ),
     path(
-        "api/delete/<uuid:container>",
+        'api/delete/<uuid:container>',
         view=views_api.ContainerDeleteAPIView.as_view(),
-        name="api-delete",
+        name='api-delete',
     ),
     path(
-        "api/start/<uuid:container>",
+        'api/start/<uuid:container>',
         view=views_api.ContainerStartAPIView.as_view(),
-        name="api-start",
+        name='api-start',
     ),
     path(
-        "api/stop/<uuid:container>",
+        'api/stop/<uuid:container>',
         view=views_api.ContainerStopAPIView.as_view(),
-        name="api-stop",
+        name='api-stop',
     ),
 ]
 
 websocket_urlpatterns = [
     re_path(
-        r"^containers/proxy/(?P<container>[0-9a-f-]+)/(?P<path>.*)$",
+        r'^containers/proxy/(?P<container>[0-9a-f-]+)/(?P<path>.*)$',
         consumers.TunnelConsumer.as_asgi(),
     )
 ]

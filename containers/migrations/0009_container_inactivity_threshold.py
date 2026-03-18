@@ -4,7 +4,6 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
         ('containers', '0008_auto_20210729_1503'),
     ]
@@ -13,6 +12,9 @@ class Migration(migrations.Migration):
         migrations.AddField(
             model_name='container',
             name='inactivity_threshold',
-            field=models.IntegerField(default=7, help_text='Number of days the container is allowed to run without proxy access.'),
+            field=models.IntegerField(
+                default=7,
+                help_text='Number of days the container is allowed to run without proxy access.',
+            ),
         ),
     ]

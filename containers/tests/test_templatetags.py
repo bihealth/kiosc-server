@@ -25,23 +25,23 @@ class TestContainerTags(TestCase):
     """Tests for ``container_tags``."""
 
     def test_colorize_state_initial(self):
-        self.assertEqual(colorize_state(STATE_INITIAL), "text-primary")
+        self.assertEqual(colorize_state(STATE_INITIAL), 'text-primary')
 
     def test_colorize_state_running(self):
-        self.assertEqual(colorize_state(STATE_RUNNING), "text-success")
+        self.assertEqual(colorize_state(STATE_RUNNING), 'text-success')
 
     def test_colorize_state_failed(self):
-        self.assertEqual(colorize_state(STATE_FAILED), "text-danger")
+        self.assertEqual(colorize_state(STATE_FAILED), 'text-danger')
 
     def test_colorize_state_exited(self):
-        self.assertEqual(colorize_state(STATE_EXITED), "text-secondary")
+        self.assertEqual(colorize_state(STATE_EXITED), 'text-secondary')
 
     def test_colorize_state_unknown(self):
-        self.assertEqual(colorize_state("unknown"), "text-dark")
+        self.assertEqual(colorize_state('unknown'), 'text-dark')
 
     def test_pretty_json_empty(self):
-        data = "{}"
-        expected = "{}"
+        data = '{}'
+        expected = '{}'
         self.assertEqual(pretty_json(json.loads(data)), expected)
 
     def test_pretty_json_short(self):
@@ -62,40 +62,40 @@ class TestContainerTags(TestCase):
         self.assertEqual(pretty_json(json.loads(data)), expected)
 
     def test_state_bell_no_action(self):
-        self.assertEqual(state_bell(STATE_FAILED, None), "")
+        self.assertEqual(state_bell(STATE_FAILED, None), '')
 
     def test_state_bell_state_running_action_consistent(self):
-        self.assertEqual(state_bell(STATE_RUNNING, ACTION_START), "")
+        self.assertEqual(state_bell(STATE_RUNNING, ACTION_START), '')
 
     def test_state_bell_state_running_action_stop(self):
         self.assertEqual(
             state_bell(STATE_RUNNING, ACTION_STOP),
-            "Should be running or pulling",
+            'Should be running or pulling',
         )
 
     def test_state_bell_state_running_action_pause(self):
         self.assertEqual(
             state_bell(STATE_RUNNING, ACTION_PAUSE),
-            "Should be running or pulling",
+            'Should be running or pulling',
         )
 
     def test_state_bell_state_pulling_action_stop(self):
         self.assertEqual(
             state_bell(STATE_PULLING, ACTION_STOP),
-            "Should be running or pulling",
+            'Should be running or pulling',
         )
 
     def test_state_bell_state_pulling_action_pause(self):
         self.assertEqual(
             state_bell(STATE_PULLING, ACTION_PAUSE),
-            "Should be running or pulling",
+            'Should be running or pulling',
         )
 
     def test_state_bell_state_exited_action_consistent(self):
-        self.assertEqual(state_bell(STATE_EXITED, ACTION_STOP), "")
+        self.assertEqual(state_bell(STATE_EXITED, ACTION_STOP), '')
 
     def test_state_bell_state_exited_action_start(self):
         self.assertEqual(
             state_bell(STATE_EXITED, ACTION_START),
-            "Should be exited",
+            'Should be exited',
         )

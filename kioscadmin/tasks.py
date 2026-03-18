@@ -44,12 +44,12 @@ app_settings = AppSettingAPI()
 logger = logging.getLogger(__name__)
 
 # Increase the timeout for communication with Docker daemon.
-APP_NAME = "kioscadmin"
+APP_NAME = 'kioscadmin'
 DEFAULT_GRACE_PERIOD_CONTAINER_STATUS = 180
 
 # SODAR constants
-SITE_MODE_TARGET = SODAR_CONSTANTS["SITE_MODE_TARGET"]
-SITE_MODE_SOURCE = SODAR_CONSTANTS["SITE_MODE_SOURCE"]
+SITE_MODE_TARGET = SODAR_CONSTANTS['SITE_MODE_TARGET']
+SITE_MODE_SOURCE = SODAR_CONSTANTS['SITE_MODE_SOURCE']
 
 
 @app.task(bind=True)
@@ -69,7 +69,7 @@ def stop_inactive_containers(_self):
             continue
 
         else:
-            state = data.get("State", {}).get("Status")
+            state = data.get('State', {}).get('Status')
 
             if not state or state not in (STATE_RUNNING, STATE_PAUSED):
                 continue
@@ -77,7 +77,7 @@ def stop_inactive_containers(_self):
             # Get latest proxy entry
             obj = (
                 container.log_entries.filter(process=PROCESS_PROXY)
-                .order_by("-date_created")
+                .order_by('-date_created')
                 .first()
             )
 
@@ -96,7 +96,7 @@ def stop_inactive_containers(_self):
 
             if threshold < timezone.now():
                 bg_job = BackgroundJob.objects.create(
-                    name="Stop container",
+                    name='Stop container',
                     project=container.project,
                     job_type=ContainerBackgroundJob.spec_name,
                     user=User.objects.get(
@@ -111,10 +111,10 @@ def stop_inactive_containers(_self):
                 )
 
                 container_task.apply_async(
-                    kwargs={"job_id": job.id}, countdown=0.5
+                    kwargs={'job_id': job.id}, countdown=0.5
                 )
 
-                msgs.append("Submitted job to stop {}".format(container.title))
+                msgs.append('Submitted job to stop {}'.format(container.title))
 
     return msgs
 
@@ -130,21 +130,21 @@ def poll_docker_status_and_logs(_self):
             continue
 
         last_log = container.log_entries.filter(process=PROCESS_DOCKER).last()
-        fetch_logs_parameters = {"timestamps": True}
+        fetch_logs_parameters = {'timestamps': True}
         date_last_logs = None
 
         if last_log:
             date_last_logs = last_log.date_docker_log
-            fetch_logs_parameters["since"] = date_last_logs.replace(tzinfo=None)
+            fetch_logs_parameters['since'] = date_last_logs.replace(tzinfo=None)
 
         # Get most recent logs. ``since`` does not consider milliseconds,
         # so we need to post-filter to avoid duplicates.
         try:
             logs = (
                 cli.logs(container.container_id, **fetch_logs_parameters)
-                .decode("utf-8")
+                .decode('utf-8')
                 .strip()
-                .split("\n")
+                .split('\n')
             )
 
         except docker.errors.DockerException as e:
@@ -157,7 +157,7 @@ def poll_docker_status_and_logs(_self):
                 log_date = dateutil.parser.parse(line[:30])
             except dateutil.parser.ParserError:
                 container.log_entries.create(
-                    text=f"Docker log has no timestamp! ({line})",
+                    text=f'Docker log has no timestamp! ({line})',
                     level=LOG_LEVEL_WARNING,
                     process=PROCESS_TASK,
                 )
@@ -185,7 +185,7 @@ def sync_container_state_with_last_user_action(_self):
                 STATE_FAILED,
             ):
                 logger.error(
-                    "%s: Unexpected container state (%s) in kioscadmin task.",
+                    '%s: Unexpected container state (%s) in kioscadmin task.',
                     container.sodar_uuid,
                     container.state,
                 )
@@ -198,7 +198,7 @@ def sync_container_state_with_last_user_action(_self):
             continue
 
         else:
-            state = data.get("State", {}).get("Status")
+            state = data.get('State', {}).get('Status')
             job = container.containerbackgroundjob.last()
 
             if not (state and job and container.date_last_status_update):
@@ -207,8 +207,8 @@ def sync_container_state_with_last_user_action(_self):
             # Do nothing, Docker state needs to be synced first
             if not container.state == state:
                 logger.warning(
-                    "%s: Container state out of sync. "
-                    "Skipping job action synchronization.",
+                    '%s: Container state out of sync. '
+                    'Skipping job action synchronization.',
                     container.sodar_uuid,
                 )
                 continue
@@ -220,7 +220,7 @@ def sync_container_state_with_last_user_action(_self):
                 continue
 
             logger.warning(
-                "%s: Container state (%s) out of sync with job action (%s)",
+                '%s: Container state (%s) out of sync with job action (%s)',
                 container.sodar_uuid,
                 state,
                 job.action,
@@ -233,7 +233,7 @@ def sync_container_state_with_last_user_action(_self):
                 and job.retries < container.max_retries
             ):
                 container.log_entries.create(
-                    text=f"Syncing last registered container state ({container.state}) with current Docker state ({state})",
+                    text=f'Syncing last registered container state ({container.state}) with current Docker state ({state})',
                     process=PROCESS_TASK,
                 )
 
@@ -245,7 +245,7 @@ def sync_container_state_with_last_user_action(_self):
 
 @app.task(bind=True)
 def prune_zombie_containers(_self):
-    if settings.KIOSC_NETWORK_MODE != "docker-shared":
+    if settings.KIOSC_NETWORK_MODE != 'docker-shared':
         # Only run in docker-shared mode: we don't want to kill containers which
         # are not our own.
         return
@@ -254,16 +254,16 @@ def prune_zombie_containers(_self):
     for container in cli.containers():
         if (
             settings.KIOSC_DOCKER_NETWORK
-            not in container["NetworkSettings"]["Networks"]
+            not in container['NetworkSettings']['Networks']
         ):
             # Leave this container alone, it doesn't belong to KIOSC
             continue
 
         try:
-            container = Container.objects.get(container_id=container["Id"])
+            container = Container.objects.get(container_id=container['Id'])
         except Container.DoesNotExist:
-            logger.warning("Found zombie container: %s", container["Id"])
-            cli.remove_container(container["Id"], force=True)
+            logger.warning('Found zombie container: %s', container['Id'])
+            cli.remove_container(container['Id'], force=True)
 
 
 @app.on_after_finalize.connect
@@ -277,5 +277,5 @@ def setup_periodic_tasks(sender, **_kwargs):
         crontab(hour=1, minute=11), sig=stop_inactive_containers.s()
     )
     sender.add_periodic_task(
-        crontab(hour="*", minute=30), sig=prune_zombie_containers.s()
+        crontab(hour='*', minute=30), sig=prune_zombie_containers.s()
     )

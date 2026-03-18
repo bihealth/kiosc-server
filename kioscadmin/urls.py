@@ -3,13 +3,13 @@ from django.urls import path
 from . import views
 
 
-app_name = "kioscadmin"
+app_name = 'kioscadmin'
 
 
 urlpatterns = [
     path(
-        "overview",
+        'overview',
         view=views.KioscAdminView.as_view(),
-        name="overview",
+        name='overview',
     ),
 ]

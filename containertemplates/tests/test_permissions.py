@@ -19,7 +19,7 @@ class TestContainerTemplateSitePermissions(ProjectPermissionTestBase):
     def test_containertemplatesite_list(self):
         """Test permissions for the ``containertemplates:site-list`` view."""
         url = reverse(
-            "containertemplates:site-list",
+            'containertemplates:site-list',
         )
         good_users = [
             self.superuser,
@@ -37,7 +37,7 @@ class TestContainerTemplateSitePermissions(ProjectPermissionTestBase):
     def test_containertemplatesite_create(self):
         """Test permissions for the ``containertemplates:site-create`` view."""
         url = reverse(
-            "containertemplates:site-create",
+            'containertemplates:site-create',
         )
         good_users = [
             self.superuser,
@@ -57,9 +57,9 @@ class TestContainerTemplateSitePermissions(ProjectPermissionTestBase):
     def test_containertemplatesite_update(self):
         """Test permissions for the ``containertemplates:site-update`` view."""
         url = reverse(
-            "containertemplates:site-update",
+            'containertemplates:site-update',
             kwargs={
-                "containertemplatesite": self.containertemplatesite.sodar_uuid
+                'containertemplatesite': self.containertemplatesite.sodar_uuid
             },
         )
         good_users = [
@@ -80,9 +80,9 @@ class TestContainerTemplateSitePermissions(ProjectPermissionTestBase):
     def test_containertemplatesite_detail(self):
         """Test permissions for the ``containertemplates:site-detail`` view."""
         url = reverse(
-            "containertemplates:site-detail",
+            'containertemplates:site-detail',
             kwargs={
-                "containertemplatesite": self.containertemplatesite.sodar_uuid
+                'containertemplatesite': self.containertemplatesite.sodar_uuid
             },
         )
         good_users = [
@@ -101,9 +101,9 @@ class TestContainerTemplateSitePermissions(ProjectPermissionTestBase):
     def test_containertemplatesite_delete(self):
         """Test permissions for the ``containertemplates:site-delete`` view."""
         url = reverse(
-            "containertemplates:site-delete",
+            'containertemplates:site-delete',
             kwargs={
-                "containertemplatesite": self.containertemplatesite.sodar_uuid
+                'containertemplatesite': self.containertemplatesite.sodar_uuid
             },
         )
         good_users = [
@@ -124,9 +124,9 @@ class TestContainerTemplateSitePermissions(ProjectPermissionTestBase):
     def test_containertemplatesite_duplicate(self):
         """Test permissions for the ``containertemplates:site-duplicate`` view."""
         url = reverse(
-            "containertemplates:site-duplicate",
+            'containertemplates:site-duplicate',
             kwargs={
-                "containertemplatesite": self.containertemplatesite.sodar_uuid
+                'containertemplatesite': self.containertemplatesite.sodar_uuid
             },
         )
         good_users = [
@@ -146,7 +146,7 @@ class TestContainerTemplateSitePermissions(ProjectPermissionTestBase):
             good_users,
             302,
             redirect_user=reverse(
-                "containertemplates:site-list",
+                'containertemplates:site-list',
             ),
         )
         self.assert_response(url, bad_users, 302)
@@ -164,8 +164,8 @@ class TestContainerTemplateProjectPermissions(ProjectPermissionTestBase):
     def test_containertemplateproject_list(self):
         """Test permissions for the ``containertemplates:project-list`` view."""
         url = reverse(
-            "containertemplates:project-list",
-            kwargs={"project": self.project.sodar_uuid},
+            'containertemplates:project-list',
+            kwargs={'project': self.project.sodar_uuid},
         )
         good_users = [
             self.superuser,
@@ -181,8 +181,8 @@ class TestContainerTemplateProjectPermissions(ProjectPermissionTestBase):
     def test_containertemplateproject_create(self):
         """Test permissions for the ``containertemplates:project-create`` view."""
         url = reverse(
-            "containertemplates:project-create",
-            kwargs={"project": self.project.sodar_uuid},
+            'containertemplates:project-create',
+            kwargs={'project': self.project.sodar_uuid},
         )
         good_users = [
             self.superuser,
@@ -202,9 +202,9 @@ class TestContainerTemplateProjectPermissions(ProjectPermissionTestBase):
     def test_containertemplateproject_update(self):
         """Test permissions for the ``containertemplates:project-update`` view."""
         url = reverse(
-            "containertemplates:project-update",
+            'containertemplates:project-update',
             kwargs={
-                "containertemplateproject": self.containertemplateproject.sodar_uuid
+                'containertemplateproject': self.containertemplateproject.sodar_uuid
             },
         )
         good_users = [
@@ -225,9 +225,9 @@ class TestContainerTemplateProjectPermissions(ProjectPermissionTestBase):
     def test_containertemplateproject_detail(self):
         """Test permissions for the ``containertemplates:project-detail`` view."""
         url = reverse(
-            "containertemplates:project-detail",
+            'containertemplates:project-detail',
             kwargs={
-                "containertemplateproject": self.containertemplateproject.sodar_uuid
+                'containertemplateproject': self.containertemplateproject.sodar_uuid
             },
         )
         good_users = [
@@ -244,9 +244,9 @@ class TestContainerTemplateProjectPermissions(ProjectPermissionTestBase):
     def test_containertemplateproject_delete(self):
         """Test permissions for the ``containertemplates:project-delete`` view."""
         url = reverse(
-            "containertemplates:project-delete",
+            'containertemplates:project-delete',
             kwargs={
-                "containertemplateproject": self.containertemplateproject.sodar_uuid
+                'containertemplateproject': self.containertemplateproject.sodar_uuid
             },
         )
         good_users = [
@@ -267,9 +267,9 @@ class TestContainerTemplateProjectPermissions(ProjectPermissionTestBase):
     def test_containertemplateproject_duplicate(self):
         """Test permissions for the ``containertemplates:project-duplicate`` view."""
         url = reverse(
-            "containertemplates:project-duplicate",
+            'containertemplates:project-duplicate',
             kwargs={
-                "containertemplateproject": self.containertemplateproject.sodar_uuid
+                'containertemplateproject': self.containertemplateproject.sodar_uuid
             },
         )
         good_users = [
@@ -289,8 +289,8 @@ class TestContainerTemplateProjectPermissions(ProjectPermissionTestBase):
             good_users,
             302,
             redirect_user=reverse(
-                "containertemplates:project-list",
-                kwargs={"project": self.project.sodar_uuid},
+                'containertemplates:project-list',
+                kwargs={'project': self.project.sodar_uuid},
             ),
         )
         self.assert_response(url, bad_users, 302)
@@ -298,8 +298,8 @@ class TestContainerTemplateProjectPermissions(ProjectPermissionTestBase):
     def test_containertemplateproject_copy(self):
         """Test permissions for the ``containertemplates:project-copy`` view."""
         url = reverse(
-            "containertemplates:project-copy",
-            kwargs={"project": self.project.sodar_uuid},
+            'containertemplates:project-copy',
+            kwargs={'project': self.project.sodar_uuid},
         )
         good_users = [
             self.superuser,
@@ -318,22 +318,22 @@ class TestContainerTemplateProjectPermissions(ProjectPermissionTestBase):
             good_users,
             302,
             redirect_user=reverse(
-                "containertemplates:project-list",
-                kwargs={"project": self.project.sodar_uuid},
+                'containertemplates:project-list',
+                kwargs={'project': self.project.sodar_uuid},
             ),
-            method="POST",
+            method='POST',
         )
-        self.assert_response(url, bad_users, 302, method="POST")
+        self.assert_response(url, bad_users, 302, method='POST')
 
     def test_containertemplate_ajax_get(self):
         """Test permissions for the ``containertemplates:ajax-get-containertemplate`` view."""
         url = reverse(
-            "containertemplates:ajax-get-containertemplate",
+            'containertemplates:ajax-get-containertemplate',
         )
         containertemplate = ContainerTemplateSiteFactory()
         data = {
-            "containertemplate_id": containertemplate.id,
-            "site_or_project": "site",
+            'containertemplate_id': containertemplate.id,
+            'site_or_project': 'site',
         }
         good_users = [
             self.superuser,
@@ -345,8 +345,8 @@ class TestContainerTemplateProjectPermissions(ProjectPermissionTestBase):
             self.user_finder_cat,
         ]
         bad_users = [self.anonymous]
-        self.assert_response(url, good_users, 200, method="POST", data=data)
-        self.assert_response(url, bad_users, 302, method="POST", data=data)
+        self.assert_response(url, good_users, 200, method='POST', data=data)
+        self.assert_response(url, bad_users, 302, method='POST', data=data)
 
 
 class TestContainerTemplateProjectPermissionsReadOnly(
@@ -374,8 +374,8 @@ class TestContainerTemplateProjectPermissionsReadOnly(
     def test_containertemplateproject_list(self):
         """Test permissions for the ``containertemplates:project-list`` view."""
         url = reverse(
-            "containertemplates:project-list",
-            kwargs={"project": self.project.sodar_uuid},
+            'containertemplates:project-list',
+            kwargs={'project': self.project.sodar_uuid},
         )
         good_users = [
             self.superuser,
@@ -391,8 +391,8 @@ class TestContainerTemplateProjectPermissionsReadOnly(
     def test_containertemplateproject_create(self):
         """Test permissions for the ``containertemplates:project-create`` view."""
         url = reverse(
-            "containertemplates:project-create",
-            kwargs={"project": self.project.sodar_uuid},
+            'containertemplates:project-create',
+            kwargs={'project': self.project.sodar_uuid},
         )
         self.assert_response(url, self.good_users, 200)
         self.assert_response(url, self.bad_users, 302)
@@ -400,9 +400,9 @@ class TestContainerTemplateProjectPermissionsReadOnly(
     def test_containertemplateproject_update(self):
         """Test permissions for the ``containertemplates:project-update`` view."""
         url = reverse(
-            "containertemplates:project-update",
+            'containertemplates:project-update',
             kwargs={
-                "containertemplateproject": self.containertemplateproject.sodar_uuid
+                'containertemplateproject': self.containertemplateproject.sodar_uuid
             },
         )
         self.assert_response(url, self.good_users, 200)
@@ -411,9 +411,9 @@ class TestContainerTemplateProjectPermissionsReadOnly(
     def test_containertemplateproject_detail(self):
         """Test permissions for the ``containertemplates:project-detail`` view."""
         url = reverse(
-            "containertemplates:project-detail",
+            'containertemplates:project-detail',
             kwargs={
-                "containertemplateproject": self.containertemplateproject.sodar_uuid
+                'containertemplateproject': self.containertemplateproject.sodar_uuid
             },
         )
         good_users = [
@@ -430,9 +430,9 @@ class TestContainerTemplateProjectPermissionsReadOnly(
     def test_containertemplateproject_delete(self):
         """Test permissions for the ``containertemplates:project-delete`` view."""
         url = reverse(
-            "containertemplates:project-delete",
+            'containertemplates:project-delete',
             kwargs={
-                "containertemplateproject": self.containertemplateproject.sodar_uuid
+                'containertemplateproject': self.containertemplateproject.sodar_uuid
             },
         )
         self.assert_response(url, self.good_users, 200)
@@ -441,9 +441,9 @@ class TestContainerTemplateProjectPermissionsReadOnly(
     def test_containertemplateproject_duplicate(self):
         """Test permissions for the ``containertemplates:project-duplicate`` view."""
         url = reverse(
-            "containertemplates:project-duplicate",
+            'containertemplates:project-duplicate',
             kwargs={
-                "containertemplateproject": self.containertemplateproject.sodar_uuid
+                'containertemplateproject': self.containertemplateproject.sodar_uuid
             },
         )
         self.assert_response(
@@ -451,8 +451,8 @@ class TestContainerTemplateProjectPermissionsReadOnly(
             self.good_users,
             302,
             redirect_user=reverse(
-                "containertemplates:project-list",
-                kwargs={"project": self.project.sodar_uuid},
+                'containertemplates:project-list',
+                kwargs={'project': self.project.sodar_uuid},
             ),
         )
         self.assert_response(url, self.bad_users, 302)
@@ -460,30 +460,30 @@ class TestContainerTemplateProjectPermissionsReadOnly(
     def test_containertemplateproject_copy(self):
         """Test permissions for the ``containertemplates:project-copy`` view."""
         url = reverse(
-            "containertemplates:project-copy",
-            kwargs={"project": self.project.sodar_uuid},
+            'containertemplates:project-copy',
+            kwargs={'project': self.project.sodar_uuid},
         )
         self.assert_response(
             url,
             self.good_users,
             302,
             redirect_user=reverse(
-                "containertemplates:project-list",
-                kwargs={"project": self.project.sodar_uuid},
+                'containertemplates:project-list',
+                kwargs={'project': self.project.sodar_uuid},
             ),
-            method="POST",
+            method='POST',
         )
-        self.assert_response(url, self.bad_users, 302, method="POST")
+        self.assert_response(url, self.bad_users, 302, method='POST')
 
     def test_containertemplate_ajax_get(self):
         """Test permissions for the ``containertemplates:ajax-get-containertemplate`` view."""
         url = reverse(
-            "containertemplates:ajax-get-containertemplate",
+            'containertemplates:ajax-get-containertemplate',
         )
         containertemplate = ContainerTemplateSiteFactory()
         data = {
-            "containertemplate_id": containertemplate.id,
-            "site_or_project": "site",
+            'containertemplate_id': containertemplate.id,
+            'site_or_project': 'site',
         }
         good_users = [
             self.superuser,
@@ -495,5 +495,5 @@ class TestContainerTemplateProjectPermissionsReadOnly(
             self.user_finder_cat,
         ]
         bad_users = [self.anonymous]
-        self.assert_response(url, good_users, 200, method="POST", data=data)
-        self.assert_response(url, bad_users, 302, method="POST", data=data)
+        self.assert_response(url, good_users, 200, method='POST', data=data)
+        self.assert_response(url, bad_users, 302, method='POST', data=data)

@@ -31,12 +31,12 @@ from containers.views import CELERY_SUBMIT_COUNTDOWN
 
 
 # Local constants
-APP_NAME = "containers"
+APP_NAME = 'containers'
 CONTAINERS_API_MEDIA_TYPE = (
-    "application/vnd.bihealth.kiosc-server.containers+json"
+    'application/vnd.bihealth.kiosc-server.containers+json'
 )
-CONTAINERS_API_DEFAULT_VERSION = "1.0"
-CONTAINERS_API_ALLOWED_VERSIONS = ["1.0"]
+CONTAINERS_API_DEFAULT_VERSION = '1.0'
+CONTAINERS_API_ALLOWED_VERSIONS = ['1.0']
 
 
 plugin_api = PluginAPI()
@@ -65,7 +65,7 @@ class ContainerListAPIView(
     ListAPIView,
 ):
     serializer_class = ContainerSerializer
-    permission_required = "containers.view_container"
+    permission_required = 'containers.view_container'
 
     def get_queryset(self):
         return Container.objects.filter(project=self.get_project())
@@ -77,9 +77,9 @@ class ContainerDetailAPIView(
     RetrieveAPIView,
 ):
     serializer_class = ContainerSerializer
-    lookup_url_kwarg = "container"
-    lookup_field = "sodar_uuid"
-    permission_required = "containers.view_container"
+    lookup_url_kwarg = 'container'
+    lookup_field = 'sodar_uuid'
+    permission_required = 'containers.view_container'
 
 
 class ContainerCreateAPIView(
@@ -88,17 +88,17 @@ class ContainerCreateAPIView(
     CreateAPIView,
 ):
     serializer_class = ContainerSerializer
-    permission_required = "containers.create_container"
+    permission_required = 'containers.create_container'
 
     def create(self, request, *args, **kwargs):
         try:
             response = super().create(request, *args, **kwargs)
             # Add container log entry
             container = Container.objects.get(
-                sodar_uuid=response.data.get("sodar_uuid")
+                sodar_uuid=response.data.get('sodar_uuid')
             )
             container.log_entries.create(
-                text="Created [API]",
+                text='Created [API]',
                 process=PROCESS_OBJECT,
                 user=self.request.user,
             )
@@ -106,7 +106,7 @@ class ContainerCreateAPIView(
 
         except IntegrityError as e:
             return JsonResponse(
-                {"error": f"Bad Request (400) - {e}"},
+                {'error': f'Bad Request (400) - {e}'},
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
@@ -117,18 +117,18 @@ class ContainerDeleteAPIView(
     DestroyAPIView,
 ):
     serializer_class = ContainerSerializer
-    lookup_url_kwarg = "container"
-    lookup_field = "sodar_uuid"
-    permission_required = "containers.delete_container"
+    lookup_url_kwarg = 'container'
+    lookup_field = 'sodar_uuid'
+    permission_required = 'containers.delete_container'
 
     @transaction.atomic
     def delete(self, request, *args, **kwargs):
-        timeline = plugin_api.get_backend_api("timeline_backend")
-        container = Container.objects.get(sodar_uuid=kwargs.get("container"))
+        timeline = plugin_api.get_backend_api('timeline_backend')
+        container = Container.objects.get(sodar_uuid=kwargs.get('container'))
         project = self.get_project()
 
         bg_job = BackgroundJob.objects.create(
-            name="Delete container",
+            name='Delete container',
             project=project,
             job_type=ContainerBackgroundJob.spec_name,
             user=request.user,
@@ -142,7 +142,7 @@ class ContainerDeleteAPIView(
 
         # Add container log entry
         container.log_entries.create(
-            text="Delete [API]",
+            text='Delete [API]',
             process=PROCESS_ACTION,
             user=request.user,
         )
@@ -158,14 +158,14 @@ class ContainerDeleteAPIView(
                     project=project,
                     app_name=APP_NAME,
                     user=request.user,
-                    event_name="delete_container",
-                    description=f"deleting of {container.get_display_name()} failed",
+                    event_name='delete_container',
+                    description=f'deleting of {container.get_display_name()} failed',
                     status_type=timeline.TL_STATUS_FAILED,
                 )
 
             return JsonResponse(
                 {
-                    "message": f"Failed deleting container {container.get_display_name()}"
+                    'message': f'Failed deleting container {container.get_display_name()}'
                 },
                 status=status.HTTP_400_BAD_REQUEST,
             )
@@ -176,8 +176,8 @@ class ContainerDeleteAPIView(
                 project=project,
                 app_name=APP_NAME,
                 user=request.user,
-                event_name="delete_container",
-                description=f"deleted {container.get_display_name()}",
+                event_name='delete_container',
+                description=f'deleted {container.get_display_name()}',
                 status_type=timeline.TL_STATUS_OK,
             )
 
@@ -190,17 +190,17 @@ class ContainerStartAPIView(
     APIView,
 ):
     serializer_class = ContainerSerializer
-    lookup_url_kwarg = "container"
-    lookup_field = "sodar_uuid"
-    permission_required = "containers.start_container"
+    lookup_url_kwarg = 'container'
+    lookup_field = 'sodar_uuid'
+    permission_required = 'containers.start_container'
 
     @transaction.atomic
     def get(self, request, *args, **kwargs):
         project = self.get_project()
-        container = Container.objects.get(sodar_uuid=kwargs.get("container"))
+        container = Container.objects.get(sodar_uuid=kwargs.get('container'))
 
         bg_job = BackgroundJob.objects.create(
-            name="Start container",
+            name='Start container',
             project=project,
             job_type=ContainerBackgroundJob.spec_name,
             user=request.user,
@@ -214,18 +214,18 @@ class ContainerStartAPIView(
 
         # Add container log entry
         container.log_entries.create(
-            text="Start [API]",
+            text='Start [API]',
             process=PROCESS_ACTION,
             user=request.user,
         )
 
         # Schedule task
         container_task.apply_async(
-            kwargs={"job_id": job.id}, countdown=CELERY_SUBMIT_COUNTDOWN
+            kwargs={'job_id': job.id}, countdown=CELERY_SUBMIT_COUNTDOWN
         )
 
         return JsonResponse(
-            {"message": "container starting job submitted"},
+            {'message': 'container starting job submitted'},
             status=status.HTTP_200_OK,
         )
 
@@ -236,17 +236,17 @@ class ContainerStopAPIView(
     APIView,
 ):
     serializer_class = ContainerSerializer
-    lookup_url_kwarg = "container"
-    lookup_field = "sodar_uuid"
-    permission_required = "containers.stop_container"
+    lookup_url_kwarg = 'container'
+    lookup_field = 'sodar_uuid'
+    permission_required = 'containers.stop_container'
 
     @transaction.atomic
     def get(self, request, *args, **kwargs):
         project = self.get_project()
-        container = Container.objects.get(sodar_uuid=kwargs.get("container"))
+        container = Container.objects.get(sodar_uuid=kwargs.get('container'))
 
         bg_job = BackgroundJob.objects.create(
-            name="Stop container",
+            name='Stop container',
             project=project,
             job_type=ContainerBackgroundJob.spec_name,
             user=request.user,
@@ -260,17 +260,17 @@ class ContainerStopAPIView(
 
         # Add container log entry
         container.log_entries.create(
-            text="Stop [API]",
+            text='Stop [API]',
             process=PROCESS_ACTION,
             user=request.user,
         )
 
         # Schedule task
         container_task.apply_async(
-            kwargs={"job_id": job.id}, countdown=CELERY_SUBMIT_COUNTDOWN
+            kwargs={'job_id': job.id}, countdown=CELERY_SUBMIT_COUNTDOWN
         )
 
         return JsonResponse(
-            {"message": "container stopping job submitted"},
+            {'message': 'container stopping job submitted'},
             status=status.HTTP_200_OK,
         )

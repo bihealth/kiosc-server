@@ -8,7 +8,6 @@ import uuid
 
 
 class Migration(migrations.Migration):
-
     initial = True
 
     dependencies = [
@@ -21,26 +20,176 @@ class Migration(migrations.Migration):
         migrations.CreateModel(
             name='Container',
             fields=[
-                ('id', models.AutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('date_created', models.DateTimeField(auto_now_add=True, help_text='DateTime of container creation')),
-                ('date_modified', models.DateTimeField(auto_now=True, help_text='DateTime of last container modification')),
-                ('date_last_status_update', models.DateTimeField(blank=True, help_text='DateTime of last status update', null=True)),
-                ('repository', models.CharField(help_text='The repository/name of the image.', max_length=512)),
-                ('tag', models.CharField(help_text='The tag of the image.', max_length=128)),
-                ('sodar_uuid', models.UUIDField(default=uuid.uuid4, help_text='Container SODAR UUID', unique=True)),
-                ('image_id', models.CharField(blank=True, help_text='Image ID', max_length=128, null=True)),
-                ('container_id', models.CharField(blank=True, help_text='Container ID', max_length=128, null=True)),
-                ('container_port', models.IntegerField(default=80, help_text='Server port within the container')),
-                ('container_path', models.CharField(blank=True, help_text='Path segment of the container URL', max_length=512, null=True)),
-                ('heartbeat_url', models.CharField(blank=True, help_text='Optional heartbeat URL to check if server in Docker container is alive', max_length=512, null=True)),
-                ('host_port', models.IntegerField(blank=True, help_text='Port of the container on the host', null=True, unique=True)),
-                ('timeout', models.IntegerField(default=60, help_text='Interval in seconds for any Docker action to be performed.')),
-                ('state', models.CharField(choices=[('created', 'created'), ('restarting', 'restarting'), ('running', 'running'), ('paused', 'paused'), ('exited', 'exited'), ('dead', 'dead'), ('deleting', 'deleting'), ('deleted', 'deleted'), ('pulling', 'pulling'), ('initial', 'initial'), ('failed', 'failed')], default='initial', help_text='The state of the container.', max_length=32)),
-                ('environment', models.JSONField(help_text='The environment variables to use')),
-                ('environment_secret_keys', models.CharField(blank=True, help_text='Comma-separated list of keys in the environment that are set but not read (use for tokens/keys).', max_length=512, null=True)),
-                ('command', models.TextField(blank=True, help_text='The command to execute', null=True)),
-                ('max_retries', models.IntegerField(default=5, help_text='Maximal number of retries for an action in case of failure')),
-                ('project', models.ForeignKey(help_text='Project in which this container belongs', on_delete=django.db.models.deletion.CASCADE, related_name='containers', to='projectroles.project')),
+                (
+                    'id',
+                    models.AutoField(
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name='ID',
+                    ),
+                ),
+                (
+                    'date_created',
+                    models.DateTimeField(
+                        auto_now_add=True,
+                        help_text='DateTime of container creation',
+                    ),
+                ),
+                (
+                    'date_modified',
+                    models.DateTimeField(
+                        auto_now=True,
+                        help_text='DateTime of last container modification',
+                    ),
+                ),
+                (
+                    'date_last_status_update',
+                    models.DateTimeField(
+                        blank=True,
+                        help_text='DateTime of last status update',
+                        null=True,
+                    ),
+                ),
+                (
+                    'repository',
+                    models.CharField(
+                        help_text='The repository/name of the image.',
+                        max_length=512,
+                    ),
+                ),
+                (
+                    'tag',
+                    models.CharField(
+                        help_text='The tag of the image.', max_length=128
+                    ),
+                ),
+                (
+                    'sodar_uuid',
+                    models.UUIDField(
+                        default=uuid.uuid4,
+                        help_text='Container SODAR UUID',
+                        unique=True,
+                    ),
+                ),
+                (
+                    'image_id',
+                    models.CharField(
+                        blank=True,
+                        help_text='Image ID',
+                        max_length=128,
+                        null=True,
+                    ),
+                ),
+                (
+                    'container_id',
+                    models.CharField(
+                        blank=True,
+                        help_text='Container ID',
+                        max_length=128,
+                        null=True,
+                    ),
+                ),
+                (
+                    'container_port',
+                    models.IntegerField(
+                        default=80, help_text='Server port within the container'
+                    ),
+                ),
+                (
+                    'container_path',
+                    models.CharField(
+                        blank=True,
+                        help_text='Path segment of the container URL',
+                        max_length=512,
+                        null=True,
+                    ),
+                ),
+                (
+                    'heartbeat_url',
+                    models.CharField(
+                        blank=True,
+                        help_text='Optional heartbeat URL to check if server in Docker container is alive',
+                        max_length=512,
+                        null=True,
+                    ),
+                ),
+                (
+                    'host_port',
+                    models.IntegerField(
+                        blank=True,
+                        help_text='Port of the container on the host',
+                        null=True,
+                        unique=True,
+                    ),
+                ),
+                (
+                    'timeout',
+                    models.IntegerField(
+                        default=60,
+                        help_text='Interval in seconds for any Docker action to be performed.',
+                    ),
+                ),
+                (
+                    'state',
+                    models.CharField(
+                        choices=[
+                            ('created', 'created'),
+                            ('restarting', 'restarting'),
+                            ('running', 'running'),
+                            ('paused', 'paused'),
+                            ('exited', 'exited'),
+                            ('dead', 'dead'),
+                            ('deleting', 'deleting'),
+                            ('deleted', 'deleted'),
+                            ('pulling', 'pulling'),
+                            ('initial', 'initial'),
+                            ('failed', 'failed'),
+                        ],
+                        default='initial',
+                        help_text='The state of the container.',
+                        max_length=32,
+                    ),
+                ),
+                (
+                    'environment',
+                    models.JSONField(
+                        help_text='The environment variables to use'
+                    ),
+                ),
+                (
+                    'environment_secret_keys',
+                    models.CharField(
+                        blank=True,
+                        help_text='Comma-separated list of keys in the environment that are set but not read (use for tokens/keys).',
+                        max_length=512,
+                        null=True,
+                    ),
+                ),
+                (
+                    'command',
+                    models.TextField(
+                        blank=True,
+                        help_text='The command to execute',
+                        null=True,
+                    ),
+                ),
+                (
+                    'max_retries',
+                    models.IntegerField(
+                        default=5,
+                        help_text='Maximal number of retries for an action in case of failure',
+                    ),
+                ),
+                (
+                    'project',
+                    models.ForeignKey(
+                        help_text='Project in which this container belongs',
+                        on_delete=django.db.models.deletion.CASCADE,
+                        related_name='containers',
+                        to='projectroles.project',
+                    ),
+                ),
             ],
             options={
                 'ordering': ('-date_created',),
@@ -49,28 +198,154 @@ class Migration(migrations.Migration):
         migrations.CreateModel(
             name='ContainerLogEntry',
             fields=[
-                ('id', models.AutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('date_created', models.DateTimeField(auto_now_add=True, help_text='DateTime of creation')),
-                ('date_docker_log', models.DateTimeField(blank=True, help_text='DateTime of Docker log entry', null=True)),
-                ('level', models.CharField(choices=[('info', 'info'), ('warning', 'warning'), ('error', 'error')], default='info', help_text='Level of log entry', max_length=32)),
+                (
+                    'id',
+                    models.AutoField(
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name='ID',
+                    ),
+                ),
+                (
+                    'date_created',
+                    models.DateTimeField(
+                        auto_now_add=True, help_text='DateTime of creation'
+                    ),
+                ),
+                (
+                    'date_docker_log',
+                    models.DateTimeField(
+                        blank=True,
+                        help_text='DateTime of Docker log entry',
+                        null=True,
+                    ),
+                ),
+                (
+                    'level',
+                    models.CharField(
+                        choices=[
+                            ('info', 'info'),
+                            ('warning', 'warning'),
+                            ('error', 'error'),
+                        ],
+                        default='info',
+                        help_text='Level of log entry',
+                        max_length=32,
+                    ),
+                ),
                 ('text', models.TextField()),
-                ('process', models.CharField(choices=[('object', 'object'), ('task', 'task'), ('proxy', 'proxy'), ('docker', 'docker'), ('action', 'action')], default='object', help_text='Process that reports the entry', max_length=32)),
-                ('container', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='log_entries', to='containers.container')),
-                ('user', models.ForeignKey(blank=True, help_text='User who caused the log entry', null=True, on_delete=django.db.models.deletion.SET_NULL, related_name='log_entries', to=settings.AUTH_USER_MODEL)),
+                (
+                    'process',
+                    models.CharField(
+                        choices=[
+                            ('object', 'object'),
+                            ('task', 'task'),
+                            ('proxy', 'proxy'),
+                            ('docker', 'docker'),
+                            ('action', 'action'),
+                        ],
+                        default='object',
+                        help_text='Process that reports the entry',
+                        max_length=32,
+                    ),
+                ),
+                (
+                    'container',
+                    models.ForeignKey(
+                        on_delete=django.db.models.deletion.CASCADE,
+                        related_name='log_entries',
+                        to='containers.container',
+                    ),
+                ),
+                (
+                    'user',
+                    models.ForeignKey(
+                        blank=True,
+                        help_text='User who caused the log entry',
+                        null=True,
+                        on_delete=django.db.models.deletion.SET_NULL,
+                        related_name='log_entries',
+                        to=settings.AUTH_USER_MODEL,
+                    ),
+                ),
             ],
         ),
         migrations.CreateModel(
             name='ContainerBackgroundJob',
             fields=[
-                ('id', models.AutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('date_created', models.DateTimeField(auto_now_add=True, help_text='DateTime of creation')),
-                ('sodar_uuid', models.UUIDField(default=uuid.uuid4, help_text='Background job specialization SODAR UUID', unique=True)),
-                ('action', models.CharField(choices=[('start', 'start'), ('restart', 'restart'), ('stop', 'stop'), ('pause', 'pause'), ('unpause', 'unpause')], max_length=32)),
-                ('retries', models.IntegerField(default=0, help_text='Number of retries for the action.')),
-                ('bg_job', models.ForeignKey(help_text='Background job for state etc.', on_delete=django.db.models.deletion.CASCADE, related_name='containers_containerbackgroundjob_related', to='bgjobs.backgroundjob')),
-                ('container', models.ForeignKey(help_text='The container that the job belongs to', on_delete=django.db.models.deletion.CASCADE, related_name='containerbackgroundjob', to='containers.container')),
-                ('project', models.ForeignKey(help_text='Project in which this objects belongs', on_delete=django.db.models.deletion.CASCADE, to='projectroles.project')),
+                (
+                    'id',
+                    models.AutoField(
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name='ID',
+                    ),
+                ),
+                (
+                    'date_created',
+                    models.DateTimeField(
+                        auto_now_add=True, help_text='DateTime of creation'
+                    ),
+                ),
+                (
+                    'sodar_uuid',
+                    models.UUIDField(
+                        default=uuid.uuid4,
+                        help_text='Background job specialization SODAR UUID',
+                        unique=True,
+                    ),
+                ),
+                (
+                    'action',
+                    models.CharField(
+                        choices=[
+                            ('start', 'start'),
+                            ('restart', 'restart'),
+                            ('stop', 'stop'),
+                            ('pause', 'pause'),
+                            ('unpause', 'unpause'),
+                        ],
+                        max_length=32,
+                    ),
+                ),
+                (
+                    'retries',
+                    models.IntegerField(
+                        default=0, help_text='Number of retries for the action.'
+                    ),
+                ),
+                (
+                    'bg_job',
+                    models.ForeignKey(
+                        help_text='Background job for state etc.',
+                        on_delete=django.db.models.deletion.CASCADE,
+                        related_name='containers_containerbackgroundjob_related',
+                        to='bgjobs.backgroundjob',
+                    ),
+                ),
+                (
+                    'container',
+                    models.ForeignKey(
+                        help_text='The container that the job belongs to',
+                        on_delete=django.db.models.deletion.CASCADE,
+                        related_name='containerbackgroundjob',
+                        to='containers.container',
+                    ),
+                ),
+                (
+                    'project',
+                    models.ForeignKey(
+                        help_text='Project in which this objects belongs',
+                        on_delete=django.db.models.deletion.CASCADE,
+                        to='projectroles.project',
+                    ),
+                ),
             ],
-            bases=(containers.models.JobModelMessageContextManagerMixin, models.Model),
+            bases=(
+                containers.models.JobModelMessageContextManagerMixin,
+                models.Model,
+            ),
         ),
     ]

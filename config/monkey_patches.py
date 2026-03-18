@@ -10,5 +10,5 @@ def patch_sync_to_async(*args, **kwargs):
     thread_sensitive=False, thats why we are patching it on our side for now.
     https://github.com/django/channels/blob/main/channels/http.py#L220
     """
-    kwargs["thread_sensitive"] = False
+    kwargs['thread_sensitive'] = False
     return sync_to_async(*args, **kwargs)

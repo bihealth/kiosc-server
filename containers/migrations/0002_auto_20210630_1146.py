@@ -4,7 +4,6 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
         ('containers', '0001_initial'),
     ]
@@ -13,6 +12,10 @@ class Migration(migrations.Migration):
         migrations.AlterField(
             model_name='container',
             name='environment',
-            field=models.JSONField(blank=True, help_text='The environment variables to use', null=True),
+            field=models.JSONField(
+                blank=True,
+                help_text='The environment variables to use',
+                null=True,
+            ),
         ),
     ]

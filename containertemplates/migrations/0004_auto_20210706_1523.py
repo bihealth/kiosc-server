@@ -5,7 +5,6 @@ import django.db.models.deletion
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
         ('containertemplates', '0003_auto_20210630_1632'),
     ]
@@ -22,6 +21,13 @@ class Migration(migrations.Migration):
         migrations.AddField(
             model_name='containertemplateproject',
             name='containertemplatesite',
-            field=models.ForeignKey(blank=True, help_text='Link to site-wide container template', null=True, on_delete=django.db.models.deletion.SET_NULL, related_name='containertemplateprojects', to='containertemplates.containertemplatesite'),
+            field=models.ForeignKey(
+                blank=True,
+                help_text='Link to site-wide container template',
+                null=True,
+                on_delete=django.db.models.deletion.SET_NULL,
+                related_name='containertemplateprojects',
+                to='containertemplates.containertemplatesite',
+            ),
         ),
     ]

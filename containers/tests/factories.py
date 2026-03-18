@@ -22,10 +22,10 @@ class ProjectFactory(factory.django.DjangoModelFactory):
     class Meta:
         model = Project
 
-    title = factory.Sequence(lambda n: "Project %03d" % n)
-    type = SODAR_CONSTANTS["PROJECT_TYPE_PROJECT"]
+    title = factory.Sequence(lambda n: 'Project %03d' % n)
+    type = SODAR_CONSTANTS['PROJECT_TYPE_PROJECT']
     parent = None
-    description = factory.Sequence(lambda n: "This is project %03d" % n)
+    description = factory.Sequence(lambda n: 'This is project %03d' % n)
 
 
 class ContainerFactory(factory.django.DjangoModelFactory):
@@ -34,23 +34,23 @@ class ContainerFactory(factory.django.DjangoModelFactory):
     class Meta:
         model = Container
 
-    title = factory.Sequence(lambda n: "Container %i" % n)
-    description = "Some description"
-    repository = factory.Sequence(lambda n: "repository%i" % n)
-    tag = "latest"
+    title = factory.Sequence(lambda n: 'Container %i' % n)
+    description = 'Some description'
+    repository = factory.Sequence(lambda n: 'repository%i' % n)
+    tag = 'latest'
     project = factory.SubFactory(ProjectFactory)
-    image_id = ""
-    container_id = "abcdefghijklmnopqrstuvwxyz"
-    container_ip = "172.16.0.2"
+    image_id = ''
+    container_id = 'abcdefghijklmnopqrstuvwxyz'
+    container_ip = '172.16.0.2'
     container_port = 80
-    container_path = ""
-    heartbeat_url = ""
+    container_path = ''
+    heartbeat_url = ''
     host_port = factory.Sequence(lambda n: 8000 + n)
     timeout = 60
     state = STATE_INITIAL
     environment = {}
-    environment_secret_keys = ""
-    command = ""
+    environment_secret_keys = ''
+    command = ''
     containertemplatesite = None
     containertemplateproject = None
     max_retries = 5
@@ -62,19 +62,19 @@ class ContainerBackgroundJobFactory(factory.django.DjangoModelFactory):
 
     class Meta:
         model = ContainerBackgroundJob
-        exclude = ["user"]
+        exclude = ['user']
 
     # Dummy argument ``user`` to pass to subfactory ``BackgroundJobFactory``
     user = None
     project = factory.SubFactory(ProjectFactory)
     container = factory.SubFactory(
-        ContainerFactory, project=factory.SelfAttribute("..project")
+        ContainerFactory, project=factory.SelfAttribute('..project')
     )
     action = ACTION_START
     bg_job = factory.SubFactory(
         BackgroundJobFactory,
-        project=factory.SelfAttribute("..project"),
-        user=factory.SelfAttribute("..user"),
+        project=factory.SelfAttribute('..project'),
+        user=factory.SelfAttribute('..user'),
     )
 
 
@@ -85,7 +85,7 @@ class ContainerLogEntryFactory(factory.django.DjangoModelFactory):
         model = ContainerLogEntry
 
     level = LOG_LEVEL_INFO
-    text = factory.Sequence(lambda n: "Log entry %d" % n)
+    text = factory.Sequence(lambda n: 'Log entry %d' % n)
     container = factory.SubFactory(ContainerFactory)
     process = PROCESS_OBJECT
     date_docker_log = None

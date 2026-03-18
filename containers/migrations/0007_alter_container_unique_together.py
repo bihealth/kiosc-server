@@ -4,7 +4,6 @@ from django.db import migrations
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
         ('projectroles', '0019_project_public_guest_access'),
         ('containers', '0006_give_titles_in_container_a_unique_value'),

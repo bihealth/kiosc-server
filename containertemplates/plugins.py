@@ -19,7 +19,7 @@ from containertemplates.models import (
 )
 
 
-PROJECT_TYPE_PROJECT = SODAR_CONSTANTS["PROJECT_TYPE_PROJECT"]
+PROJECT_TYPE_PROJECT = SODAR_CONSTANTS['PROJECT_TYPE_PROJECT']
 
 
 # Samplesheets project app plugin ----------------------------------------------
@@ -31,10 +31,10 @@ class ProjectAppPlugin(ProjectAppPluginPoint):
     # Properties required by django-plugins ------------------------------
 
     #: Name (slug-safe, used in URLs)
-    name = "containertemplates"
+    name = 'containertemplates'
 
     #: Title (used in templates)
-    title = "Container Templates"
+    title = 'Container Templates'
 
     #: App URLs (will be included in settings by djangoplugins)
     urls = urlpatterns
@@ -65,31 +65,31 @@ class ProjectAppPlugin(ProjectAppPluginPoint):
     app_settings = []
 
     #: FontAwesome icon ID string
-    icon = "octicon:repo-template-24"
+    icon = 'octicon:repo-template-24'
 
     #: Entry point URL ID (must take project sodar_uuid as "project" argument)
-    entry_point_url_id = "containertemplates:project-list"
+    entry_point_url_id = 'containertemplates:project-list'
 
     #: Description string
-    description = "Create and manage container templates"
+    description = 'Create and manage container templates'
 
     #: Required permission for accessing the app
-    app_permission = "containertemplates.project_view"
+    app_permission = 'containertemplates.project_view'
 
     #: Enable or disable general search from project title bar
     search_enable = True
 
     #: List of search object types for the app
-    search_types = ["source", "sample", "file"]
+    search_types = ['source', 'sample', 'file']
 
     #: Search results template
-    search_template = "containertemplates/_search_results.html"
+    search_template = 'containertemplates/_search_results.html'
 
     #: App card template for the project details page
-    details_template = "containertemplates/project_details_card.html"
+    details_template = 'containertemplates/project_details_card.html'
 
     #: App card title for the project details page
-    details_title = "Container Templates overview"
+    details_title = 'Container Templates overview'
 
     #: Position in plugin ordering
     plugin_ordering = 10
@@ -127,12 +127,12 @@ class ProjectAppPlugin(ProjectAppPluginPoint):
         :param uuid: sodar_uuid of the referred object
         :return: PluginObjectLink or None if not found
         """
-        if model_str == "ContainerTemplateProject":
+        if model_str == 'ContainerTemplateProject':
             obj = self.get_object(ContainerTemplateProject, uuid)
             return PluginObjectLink(
                 url=reverse(
-                    "containertemplates:project-detail",
-                    kwargs={"containertemplateproject": obj.sodar_uuid},
+                    'containertemplates:project-detail',
+                    kwargs={'containertemplateproject': obj.sodar_uuid},
                 ),
                 name=str(obj),
                 blank=True,
@@ -147,10 +147,10 @@ class SiteAppPlugin(SiteAppPluginPoint):
     # Properties required by django-plugins ------------------------------
 
     #: Name (slug-safe, used in URLs)
-    name = "containertemplates"
+    name = 'containertemplates'
 
     #: Title (used in templates)
-    title = "Container Templates"
+    title = 'Container Templates'
 
     #: App URLs (will be included in settings by djangoplugins)
     urls = urlpatterns
@@ -158,16 +158,16 @@ class SiteAppPlugin(SiteAppPluginPoint):
     # Properties defined in SiteAppPluginPoint -----------------------
 
     #: FontAwesome icon ID string
-    icon = "octicon:repo-template-24"
+    icon = 'octicon:repo-template-24'
 
     #: Description string
-    description = "Create and manage container templates"
+    description = 'Create and manage container templates'
 
     #: Entry point URL ID (must take project sodar_uuid as "project" argument)
-    entry_point_url_id = "containertemplates:site-list"
+    entry_point_url_id = 'containertemplates:site-list'
 
     #: Required permission for accessing the app
-    app_permission = "containertemplates.site_view"
+    app_permission = 'containertemplates.site_view'
 
     #: User settings definition
     #:
@@ -196,7 +196,7 @@ class SiteAppPlugin(SiteAppPluginPoint):
     search_enable = True
 
     #: App card title for the project details page
-    details_title = "Container Templates overview"
+    details_title = 'Container Templates overview'
 
     #: List of names for plugin specific Django settings to display in siteinfo
     info_settings = []
@@ -212,12 +212,12 @@ class SiteAppPlugin(SiteAppPluginPoint):
         :param uuid: sodar_uuid of the referred object
         :return: PluginObjectLink or None if not found
         """
-        if model_str == "ContainerTemplateSite":
+        if model_str == 'ContainerTemplateSite':
             obj = self.get_object(ContainerTemplateSite, uuid)
             return PluginObjectLink(
                 url=reverse(
-                    "containertemplates:site-detail",
-                    kwargs={"containertemplatesite": obj.sodar_uuid},
+                    'containertemplates:site-detail',
+                    kwargs={'containertemplatesite': obj.sodar_uuid},
                 ),
                 name=str(obj),
                 blank=True,

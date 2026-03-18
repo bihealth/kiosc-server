@@ -4,22 +4,22 @@ import os
 from celery import Celery
 
 # set the default Django settings module for the 'celery' program.
-os.environ.setdefault("DJANGO_SETTINGS_MODULE", "config.settings.local")
+os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'config.settings.local')
 
-app = Celery("kiosc")
+app = Celery('kiosc')
 
 # Using a string here means the worker doesn't have to serialize
 # the configuration object to child processes.
 # - namespace='CELERY' means all celery-related configuration keys
 #   should have a `CELERY_` prefix.
-app.config_from_object("django.conf:settings", namespace="CELERY")
+app.config_from_object('django.conf:settings', namespace='CELERY')
 
-if "production" in os.environ.get("DJANGO_SETTINGS_MODULE"):
+if 'production' in os.environ.get('DJANGO_SETTINGS_MODULE'):
     # Configure routing as we nee different degrees of concurrency for the background job processing.
     app.conf.task_routes = {}
 
     # Explicitely set the name of the default queue to default (is celery).
-    app.conf.task_default_queue = "default"
+    app.conf.task_default_queue = 'default'
 
 # Load task modules from all registered Django app configs.
 app.autodiscover_tasks()

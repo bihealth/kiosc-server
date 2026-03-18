@@ -37,16 +37,16 @@ class TestBase(RoleAssignmentMixin, TestCase):
         self.project2 = ProjectFactory()
 
         # Setup superuser
-        self.superuser = self.make_user("superuser")
+        self.superuser = self.make_user('superuser')
         self.superuser.is_staff = True
         self.superuser.is_superuser = True
         self.superuser.save()
 
         # Setup users
-        self.user_owner = self.make_user("owner")
-        self.user_delegate = self.make_user("delegate")
-        self.user_contributor = self.make_user("contributor")
-        self.user_guest = self.make_user("guest")
+        self.user_owner = self.make_user('owner')
+        self.user_delegate = self.make_user('delegate')
+        self.user_contributor = self.make_user('contributor')
+        self.user_guest = self.make_user('guest')
 
         # Init roles
         self.role_owner = Role.objects.get_or_create(name=PROJECT_ROLE_OWNER)[0]
@@ -103,6 +103,6 @@ class TestBase(RoleAssignmentMixin, TestCase):
         """Assign user to project."""
         self.make_assignment(
             project,
-            getattr(self, f"user_{username}"),
-            getattr(self, f"role_{username}"),
+            getattr(self, f'user_{username}'),
+            getattr(self, f'role_{username}'),
         )

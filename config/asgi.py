@@ -23,8 +23,8 @@ import containers.urls
 
 application = ProtocolTypeRouter(
     {
-        "http": get_asgi_application(),
-        "websocket": AuthMiddlewareStack(
+        'http': get_asgi_application(),
+        'websocket': AuthMiddlewareStack(
             URLRouter(containers.urls.websocket_urlpatterns)
         ),
     }

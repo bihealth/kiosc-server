@@ -4,7 +4,6 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
         ('containers', '0007_alter_container_unique_together'),
     ]
@@ -13,11 +12,31 @@ class Migration(migrations.Migration):
         migrations.AlterField(
             model_name='containeractionlock',
             name='action',
-            field=models.CharField(choices=[('start', 'start'), ('restart', 'restart'), ('stop', 'stop'), ('pause', 'pause'), ('unpause', 'unpause'), ('delete', 'delete')], max_length=32),
+            field=models.CharField(
+                choices=[
+                    ('start', 'start'),
+                    ('restart', 'restart'),
+                    ('stop', 'stop'),
+                    ('pause', 'pause'),
+                    ('unpause', 'unpause'),
+                    ('delete', 'delete'),
+                ],
+                max_length=32,
+            ),
         ),
         migrations.AlterField(
             model_name='containerbackgroundjob',
             name='action',
-            field=models.CharField(choices=[('start', 'start'), ('restart', 'restart'), ('stop', 'stop'), ('pause', 'pause'), ('unpause', 'unpause'), ('delete', 'delete')], max_length=32),
+            field=models.CharField(
+                choices=[
+                    ('start', 'start'),
+                    ('restart', 'restart'),
+                    ('stop', 'stop'),
+                    ('pause', 'pause'),
+                    ('unpause', 'unpause'),
+                    ('delete', 'delete'),
+                ],
+                max_length=32,
+            ),
         ),
     ]

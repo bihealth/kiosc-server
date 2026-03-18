@@ -4,7 +4,6 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
         ('containers', '0009_container_inactivity_threshold'),
     ]
@@ -13,6 +12,8 @@ class Migration(migrations.Migration):
         migrations.AddField(
             model_name='container',
             name='container_ip',
-            field=models.CharField(blank=True, help_text='Container IP', max_length=16, null=True),
+            field=models.CharField(
+                blank=True, help_text='Container IP', max_length=16, null=True
+            ),
         ),
     ]

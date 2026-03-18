@@ -16,58 +16,60 @@
 
 <div class="container-fluid sodar-page-container">
 
-<div class="card" id="kiosc-admin-container-list">
-  <div class="card-header">
-    <h4>All Containers</h4>
+{% if object_list.count > 0 %}
+  <table class="table table-striped table-bordered sodar-card-table"
+         id="kiosc-containerlist-table">
+    <thead>
+      <tr>
+        <th>Project / Title</th>
+        <th>Repository:Tag</th>
+        {% if network_mode == "host" %}
+          <th>Host Port</th>
+        {% endif %}
+        <th>Date Created</th>
+        <th>Last Modified</th>
+        <th>State</th>
+        <th>Controls</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for container in object_list %}
+        {% has_perm "containers.view_container" request.user container.project as can_view_container %}
+        {% if can_view_container %}
+          <tr>
+            <td><a href="{% url 'containers:detail' container=container.sodar_uuid %}">{{ container.project.title }} / {{ container.title }}</a></td>
+            <td>{{ container.get_repos_full }}</td>
+            {% if network_mode == "host" %}
+              <td>{{ container.host_port }}</td>
+            {% endif %}
+            <td>{{ container.date_created }}</td>
+            <td>{{ container.date_modified }}</td> {# There is also date_last_status_update #}
+            <td><strong class="{{ container.state|colorize_state }}">{{ container.state }}</strong></td>
+            <td class="text-right">
+              {% container_controls container request.user %}
+            </td>
+          </tr>
+        {% endif %}
+      {% endfor %}
+    </tbody>
+  </table>
+{% else %}
+  <div class="alert alert-info" id="kiosc-container-alert">
+    No containers to show.
   </div>
-  <div class="card-body p-0">
-  {% if object_list.count > 0 %}
-    <table class="table table-striped sodar-card-table"
-           id="kiosc-admin-container-table">
-      <thead>
-        <tr>
-          <th>Project / Title</th>
-          <th>Repository:Tag</th>
-          {% if network_mode == "host" %}
-            <th>Host Port</th>
-          {% endif %}
-          <th>Date Created</th>
-          <th>Last Modified</th>
-          <th>State</th>
-          <th></th>
-        </tr>
-      </thead>
-      <tbody>
-        {% for container in object_list %}
-          {% has_perm "containers.view_container" request.user container.project as can_view_container %}
-          {% if can_view_container %}
-            <tr>
-              <td><a href="{% url 'containers:detail' container=container.sodar_uuid %}">{{ container.project.title }} / {{ container.title }}</a></td>
-              <td>{{ container.get_repos_full }}</td>
-              {% if network_mode == "host" %}
-                <td>{{ container.host_port }}</td>
-              {% endif %}
-              <td>{{ container.date_created }}</td>
-              <td>{{ container.date_modified }}</td> {# There is also date_last_status_update #}
-              <td><strong class="{{ container.state|colorize_state }}">{{ container.state }}</strong></td>
-              <td class="text-right">
-                {% container_controls container request.user %}
-              </td>
-            </tr>
-          {% endif %}
-        {% endfor %}
-      </tbody>
-    </table>
-    {% else %}
-      <div class="alert alert-info" id="kiosc-container-alert">
-        No containers to show.
-      </div>
-    {% endif %}
-  </div>
-  {% if is_paginated %}
-    {% include 'projectroles/_pagination.html' with pg_small=False %}
-  {% endif %}
-</div>
+{% endif %}
 
 </div>
+
 {% endblock projectroles %}
+
+{% block css %}
+  {{ block.super }}
+  {% include 'projectroles/_datatables_css.html' %}
+{% endblock css %}
+
+{% block javascript %}
+  {{ block.super }}
+  {% include 'projectroles/_datatables_js.html' %}
+  <script type="text/javascript" src="{% static 'js/containerlist.js' %}"></script>
+{% endblock javascript %}

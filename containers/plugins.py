@@ -124,7 +124,10 @@ class ProjectAppPlugin(ProjectAppPluginPoint):
         "containers": {
             "title": "Containers",
             "width": 50,
-            "description": "All containers defined in this projects (title, repository:tag, state, controls)",
+            "description": (
+                "The current status of all containers "
+                "defined in this project"
+            ),
             "active": True,
             "ordering": 20,
             "align": "center",
@@ -200,21 +203,22 @@ class ProjectAppPlugin(ProjectAppPluginPoint):
             .values("state")
             .annotate(count=Count("state"))
         )
-        running = 0
-        stopped = 0
-        failed = 0
+        if not container_states:
+            return "0"
+
+        stats = []
         for el in container_states:
             match el["state"]:
                 case "running" | "restarting" | "pulling":
-                    running += el["count"]
+                    stats.append(str(el["count"]) + " running")
                 case "paused" | "stopped" | "created" | "initial":
-                    stopped += el["count"]
+                    stats.append(str(el["count"]) + " stopped")
                 case "failed" | "exited" | "dead":
-                    failed += el["count"]
+                    stats.append(str(el["count"]) + " failed")
                 case "deleted" | "deleting":
                     pass
 
-        return f"{running}R / {stopped}S / {failed}F"
+        return ",</br>".join(stats)
 
     def get_object_link(
         self, model_str: str, uuid: Union[str, UUID]

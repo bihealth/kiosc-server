@@ -5,14 +5,25 @@ Development environment
 
 .. note::
 
-    This chapter is meant for Kiosc developers, feel free to skip this chapter if you only want to use Kiosc.
+    This chapter is meant for Kiosc developers or administrators who want to install Kiosc manually. Feel free to skip this chapter if you only want to use Kiosc.
 
-The same docker compose used for the production deployment can also be used
-as a development environment. After cloning the `docker compose repository
+If you want to install Kiosc manually or contribute to its development, you will be responsible for installing and making sure that the following services are available:
+
+- The Kiosc django web app
+- A celery daemon for distributed background tasks
+- A celerybeat process for scheduled recurrent tasks
+- A database to store project and container metadata (we recommend PostgreSQL v16)
+- Redis (we recommend v8), used as celery broker and generic cache provider
+
+The Kiosc repository provides scripts and Makefile rules to conveniently run the django web app through an ASGI server, as well as the celery daemon and the celerybeat process, but you are still required to install and run the database and redis.
+These services can be installed manually as well; we refer the interested reader to the relevant documentation for `PostgreSQL <https://www.postgresql.org/>`__ and `Redis <https://github.com/redis/redis>`__.
+However, the same docker compose used for the production deployment can also be used as a development environment which provides just PostgreSQL and Redis.
+We describe this setup in detail here.
+
+After cloning the `docker compose repository
 <https://github.com/bihealth/kiosc-docker-compose>`__, pass the ``--profile
 dev`` argument, so that only the services strictly required by Kiosc will
-run [#footnote-make-dev]_. Manually setting up the database and scheduler is
-not described in this manual.
+run [#footnote-make-dev]_.
 
 .. code-block:: console
 

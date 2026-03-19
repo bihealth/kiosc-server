@@ -29,8 +29,8 @@ class TestContainerAPIPermissions(ProjectAPIPermissionTestBase):
     def test_container_list(self):
         """Test permissions for the ``api-list`` view."""
         url = reverse(
-            "containers:api-list",
-            kwargs={"project": self.project.sodar_uuid},
+            'containers:api-list',
+            kwargs={'project': self.project.sodar_uuid},
         )
         good_users = [
             self.superuser,
@@ -49,21 +49,21 @@ class TestContainerAPIPermissions(ProjectAPIPermissionTestBase):
             url, self.anonymous, status.HTTP_401_UNAUTHORIZED
         )
 
-    @override_settings(KIOSC_NETWORK_MODE="docker-shared")
+    @override_settings(KIOSC_NETWORK_MODE='docker-shared')
     def test_container_create(self):
         """Test permissions for the ``api-create`` view."""
 
         def _cleanup():
-            Container.objects.order_by("-pk").first().delete()
+            Container.objects.order_by('-pk').first().delete()
 
         url = reverse(
-            "containers:api-create",
-            kwargs={"project": self.project.sodar_uuid},
+            'containers:api-create',
+            kwargs={'project': self.project.sodar_uuid},
         )
         data = {
-            "title": "title",
-            "repository": "repository",
-            "tag": "tag",
+            'title': 'title',
+            'repository': 'repository',
+            'tag': 'tag',
         }
         good_users = [
             self.superuser,
@@ -77,7 +77,7 @@ class TestContainerAPIPermissions(ProjectAPIPermissionTestBase):
             url,
             good_users,
             status.HTTP_201_CREATED,
-            method="POST",
+            method='POST',
             data=data,
             knox=True,
             cleanup_method=_cleanup,
@@ -86,7 +86,7 @@ class TestContainerAPIPermissions(ProjectAPIPermissionTestBase):
             url,
             bad_users,
             status.HTTP_403_FORBIDDEN,
-            method="POST",
+            method='POST',
             data=data,
             knox=True,
         )
@@ -94,15 +94,15 @@ class TestContainerAPIPermissions(ProjectAPIPermissionTestBase):
             url,
             self.anonymous,
             status.HTTP_401_UNAUTHORIZED,
-            method="POST",
+            method='POST',
             data=data,
         )
 
     def test_container_detail(self):
         """Test permissions for the ``api-detail`` view."""
         url = reverse(
-            "containers:api-detail",
-            kwargs={"container": self.container.sodar_uuid},
+            'containers:api-detail',
+            kwargs={'container': self.container.sodar_uuid},
         )
         good_users = [
             self.superuser,
@@ -131,8 +131,8 @@ class TestContainerAPIPermissions(ProjectAPIPermissionTestBase):
             )
 
         url = reverse(
-            "containers:api-delete",
-            kwargs={"container": self.container.sodar_uuid},
+            'containers:api-delete',
+            kwargs={'container': self.container.sodar_uuid},
         )
         good_users = [
             self.superuser,
@@ -146,7 +146,7 @@ class TestContainerAPIPermissions(ProjectAPIPermissionTestBase):
             url,
             good_users,
             status.HTTP_204_NO_CONTENT,
-            method="DELETE",
+            method='DELETE',
             cleanup_method=_cleanup,
             knox=True,
         )
@@ -154,22 +154,22 @@ class TestContainerAPIPermissions(ProjectAPIPermissionTestBase):
             url,
             bad_users,
             status.HTTP_403_FORBIDDEN,
-            method="DELETE",
+            method='DELETE',
             knox=True,
         )
         self.assert_response_api(
             url,
             self.anonymous,
             status.HTTP_401_UNAUTHORIZED,
-            method="DELETE",
+            method='DELETE',
         )
 
-    @patch("containers.tasks.container_task.apply_async")
+    @patch('containers.tasks.container_task.apply_async')
     def test_container_start(self, mock):
         """Test permissions for the ``start`` view."""
         url = reverse(
-            "containers:api-start",
-            kwargs={"container": self.container.sodar_uuid},
+            'containers:api-start',
+            kwargs={'container': self.container.sodar_uuid},
         )
         good_users = [
             self.superuser,
@@ -187,12 +187,12 @@ class TestContainerAPIPermissions(ProjectAPIPermissionTestBase):
         )
         mock.assert_called()
 
-    @patch("containers.tasks.container_task.apply_async")
+    @patch('containers.tasks.container_task.apply_async')
     def test_container_stop(self, mock):
         """Test permissions for the ``stop`` view."""
         url = reverse(
-            "containers:api-stop",
-            kwargs={"container": self.container.sodar_uuid},
+            'containers:api-stop',
+            kwargs={'container': self.container.sodar_uuid},
         )
         good_users = [
             self.superuser,

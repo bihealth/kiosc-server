@@ -3,79 +3,79 @@ from django.urls import path
 from . import views
 
 
-app_name = "containertemplates"
+app_name = 'containertemplates'
 
 
 urlpatterns = [
     path(
-        "site",
+        'site',
         view=views.ContainerTemplateSiteListView.as_view(),
-        name="site-list",
+        name='site-list',
     ),
     path(
-        "site/detail/<uuid:containertemplatesite>",
+        'site/detail/<uuid:containertemplatesite>',
         view=views.ContainerTemplateSiteDetailView.as_view(),
-        name="site-detail",
+        name='site-detail',
     ),
     path(
-        "site/create",
+        'site/create',
         view=views.ContainerTemplateSiteCreateView.as_view(),
-        name="site-create",
+        name='site-create',
     ),
     path(
-        "site/update/<uuid:containertemplatesite>",
+        'site/update/<uuid:containertemplatesite>',
         view=views.ContainerTemplateSiteUpdateView.as_view(),
-        name="site-update",
+        name='site-update',
     ),
     path(
-        "site/delete/<uuid:containertemplatesite>",
+        'site/delete/<uuid:containertemplatesite>',
         view=views.ContainerTemplateSiteDeleteView.as_view(),
-        name="site-delete",
+        name='site-delete',
     ),
     path(
-        "site/duplicate/<uuid:containertemplatesite>",
+        'site/duplicate/<uuid:containertemplatesite>',
         view=views.ContainerTemplateSiteDuplicateView.as_view(),
-        name="site-duplicate",
+        name='site-duplicate',
     ),
     path(
-        "project/<uuid:project>",
+        'project/<uuid:project>',
         view=views.ContainerTemplateProjectListView.as_view(),
-        name="project-list",
+        name='project-list',
     ),
     path(
-        "project/detail/<uuid:containertemplateproject>",
+        'project/detail/<uuid:containertemplateproject>',
         view=views.ContainerTemplateProjectDetailView.as_view(),
-        name="project-detail",
+        name='project-detail',
     ),
     path(
-        "project/create/<uuid:project>",
+        'project/create/<uuid:project>',
         view=views.ContainerTemplateProjectCreateView.as_view(),
-        name="project-create",
+        name='project-create',
     ),
     path(
-        "project/update/<uuid:containertemplateproject>",
+        'project/update/<uuid:containertemplateproject>',
         view=views.ContainerTemplateProjectUpdateView.as_view(),
-        name="project-update",
+        name='project-update',
     ),
     path(
-        "project/delete/<uuid:containertemplateproject>",
+        'project/delete/<uuid:containertemplateproject>',
         view=views.ContainerTemplateProjectDeleteView.as_view(),
-        name="project-delete",
+        name='project-delete',
     ),
     path(
-        "project/duplicate/<uuid:containertemplateproject>",
+        'project/duplicate/<uuid:containertemplateproject>',
         view=views.ContainerTemplateProjectDuplicateView.as_view(),
-        name="project-duplicate",
+        name='project-duplicate',
     ),
     path(
-        "project/copy/<uuid:project>",
+        'project/copy/<uuid:project>',
         view=views.ContainerTemplateProjectCopyView.as_view(),
-        name="project-copy",
+        name='project-copy',
     ),
     # Ajax views
     path(
-        "ajax/get-containertemplate",
+        'ajax/get-containertemplate',
         view=views.ContainerTemplateSelectorApiView.as_view(),
-        name="ajax-get-containertemplate",
+        name='ajax-get-containertemplate',
     ),
 ]

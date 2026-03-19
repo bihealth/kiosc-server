@@ -75,7 +75,7 @@ from containertemplates.forms import ContainerTemplateSelectorForm
 logger = logging.getLogger(__name__)
 plugin_api = PluginAPI()
 
-APP_NAME = "containers"
+APP_NAME = 'containers'
 CELERY_SUBMIT_COUNTDOWN = 0.5
 
 
@@ -121,30 +121,30 @@ class ContainerCreateView(
 ):
     """View for creating a container."""
 
-    permission_required = "containers.create_container"
-    template_name = "containers/container_form.html"
+    permission_required = 'containers.create_container'
+    template_name = 'containers/container_form.html'
     form_class = ContainerForm
 
     def get_context_data(self, *args, **kwargs):
         context = super().get_context_data(*args, **kwargs)
-        context["containertemplate_form"] = ContainerTemplateSelectorForm(
-            auto_id="containertemplate_%s", user=self.request.user
+        context['containertemplate_form'] = ContainerTemplateSelectorForm(
+            auto_id='containertemplate_%s', user=self.request.user
         )
 
         if settings.KIOSC_EMBEDDED_FILES:
-            context["files_form"] = FileSelectorForm(project=self.get_project())
+            context['files_form'] = FileSelectorForm(project=self.get_project())
 
         return context
 
     def get_initial(self):
         """Set hidden project field."""
         initial = super().get_initial()
-        initial["project"] = self.get_project()
+        initial['project'] = self.get_project()
         return initial
 
     def form_valid(self, form):
         response = super().form_valid(form)
-        timeline = plugin_api.get_backend_api("timeline_backend")
+        timeline = plugin_api.get_backend_api('timeline_backend')
 
         # Add timeline event
         if timeline:
@@ -152,19 +152,19 @@ class ContainerCreateView(
                 project=self.get_project(),
                 app_name=APP_NAME,
                 user=self.request.user,
-                event_name="create_container",
-                description="created {container}",
+                event_name='create_container',
+                description='created {container}',
                 status_type=timeline.TL_STATUS_OK,
             )
             tl_event.add_object(
                 obj=self.object,
-                label="container",
+                label='container',
                 name=self.object.get_display_name(),
             )
 
         # Add container log entry
         self.object.log_entries.create(
-            text="Created",
+            text='Created',
             process=PROCESS_OBJECT,
             user=self.request.user,
         )
@@ -181,30 +181,30 @@ class ContainerDeleteView(
 ):
     """View for deleting a container."""
 
-    permission_required = "containers.delete_container"
-    template_name = "containers/container_confirm_delete.html"
+    permission_required = 'containers.delete_container'
+    template_name = 'containers/container_confirm_delete.html'
     model = Container
-    slug_url_kwarg = "container"
-    slug_field = "sodar_uuid"
+    slug_url_kwarg = 'container'
+    slug_field = 'sodar_uuid'
 
     def get_success_url(self):
         messages.success(
             self.request,
-            "Container deleted.",
+            'Container deleted.',
         )
         return reverse(
-            "containers:list",
-            kwargs={"project": self.object.project.sodar_uuid},
+            'containers:list',
+            kwargs={'project': self.object.project.sodar_uuid},
         )
 
     @transaction.atomic
     def delete(self, request, *args, **kwargs):
-        timeline = plugin_api.get_backend_api("timeline_backend")
+        timeline = plugin_api.get_backend_api('timeline_backend')
         container = self.get_object()
         project = self.get_project()
 
         bg_job = BackgroundJob.objects.create(
-            name="Delete container",
+            name='Delete container',
             project=project,
             job_type=ContainerBackgroundJob.spec_name,
             user=request.user,
@@ -218,7 +218,7 @@ class ContainerDeleteView(
 
         # Add container log entry
         container.log_entries.create(
-            text="Delete",
+            text='Delete',
             process=PROCESS_ACTION,
             user=request.user,
         )
@@ -234,20 +234,20 @@ class ContainerDeleteView(
                     project=project,
                     app_name=APP_NAME,
                     user=request.user,
-                    event_name="delete_container",
-                    description=f"deleting of {container.get_display_name()} failed",
+                    event_name='delete_container',
+                    description=f'deleting of {container.get_display_name()} failed',
                     status_type=timeline.TL_STATUS_FAILED,
                 )
 
             messages.error(
                 request,
-                f"Failed deleting container {container.get_display_name()}",
+                f'Failed deleting container {container.get_display_name()}',
             )
 
             return redirect(
                 reverse(
-                    "containers:list",
-                    kwargs={"project": project.sodar_uuid},
+                    'containers:list',
+                    kwargs={'project': project.sodar_uuid},
                 )
             )
 
@@ -257,8 +257,8 @@ class ContainerDeleteView(
                 project=project,
                 app_name=APP_NAME,
                 user=request.user,
-                event_name="delete_container",
-                description=f"deleted {container.get_display_name()}",
+                event_name='delete_container',
+                description=f'deleted {container.get_display_name()}',
                 status_type=timeline.TL_STATUS_OK,
             )
 
@@ -274,26 +274,26 @@ class ContainerUpdateView(
 ):
     """View for updating a container."""
 
-    permission_required = "containers.edit_container"
-    template_name = "containers/container_form.html"
+    permission_required = 'containers.edit_container'
+    template_name = 'containers/container_form.html'
     form_class = ContainerForm
     model = Container
-    slug_url_kwarg = "container"
-    slug_field = "sodar_uuid"
+    slug_url_kwarg = 'container'
+    slug_field = 'sodar_uuid'
 
     def get_initial(self):
         initial = super().get_initial()
-        initial["environment"] = self.object.get_environment_masked()
+        initial['environment'] = self.object.get_environment_masked()
         return initial
 
     def get_context_data(self, *args, **kwargs):
         context = super().get_context_data(*args, **kwargs)
-        context["containertemplate_form"] = ContainerTemplateSelectorForm(
-            auto_id="containertemplate_%s", user=self.request.user
+        context['containertemplate_form'] = ContainerTemplateSelectorForm(
+            auto_id='containertemplate_%s', user=self.request.user
         )
 
         if settings.KIOSC_EMBEDDED_FILES:
-            context["files_form"] = FileSelectorForm(project=self.get_project())
+            context['files_form'] = FileSelectorForm(project=self.get_project())
 
         return context
 
@@ -303,35 +303,35 @@ class ContainerUpdateView(
 
         messages.success(
             self.request,
-            "Container updated and restarted.",
+            'Container updated and restarted.',
         )
         return reverse(
-            "containers:restart",
-            kwargs={"container": self.object.sodar_uuid},
+            'containers:restart',
+            kwargs={'container': self.object.sodar_uuid},
         )
 
     def form_valid(self, form):
         response = super().form_valid(form)
-        timeline = plugin_api.get_backend_api("timeline_backend")
+        timeline = plugin_api.get_backend_api('timeline_backend')
 
         if timeline:
             tl_event = timeline.add_event(
                 project=self.get_project(),
                 app_name=APP_NAME,
                 user=self.request.user,
-                event_name="update_container",
-                description="updated {container}",
+                event_name='update_container',
+                description='updated {container}',
                 status_type=timeline.TL_STATUS_OK,
             )
             tl_event.add_object(
                 obj=self.object,
-                label="container",
+                label='container',
                 name=self.object.get_display_name(),
             )
 
         # Add container log entry
         self.object.log_entries.create(
-            text="Updated",
+            text='Updated',
             process=PROCESS_OBJECT,
             user=self.request.user,
         )
@@ -348,11 +348,11 @@ class ContainerListView(
 ):
     """View for listing containers."""
 
-    permission_required = "containers.view_container"
-    template_name = "containers/container_list.html"
+    permission_required = 'containers.view_container'
+    template_name = 'containers/container_list.html'
     model = Container
-    slug_url_kwarg = "project"
-    slug_field = "sodar_uuid"
+    slug_url_kwarg = 'project'
+    slug_field = 'sodar_uuid'
 
 
 class ContainerDetailView(
@@ -364,11 +364,11 @@ class ContainerDetailView(
 ):
     """View for details of container."""
 
-    permission_required = "containers.view_container"
-    template_name = "containers/container_detail.html"
+    permission_required = 'containers.view_container'
+    template_name = 'containers/container_detail.html'
     model = Container
-    slug_url_kwarg = "container"
-    slug_field = "sodar_uuid"
+    slug_url_kwarg = 'container'
+    slug_field = 'sodar_uuid'
 
     def get(self, request, *args, **kwargs):
         sync_container_state(self.get_object())
@@ -385,17 +385,17 @@ class ContainerStartView(
 ):
     """View for starting a container."""
 
-    permission_required = "containers.start_container"
+    permission_required = 'containers.start_container'
     model = Container
-    slug_url_kwarg = "container"
-    slug_field = "sodar_uuid"
+    slug_url_kwarg = 'container'
+    slug_field = 'sodar_uuid'
 
     @transaction.atomic
     def get(self, request, *args, **kwargs):
         project = self.get_project()
         container = self.get_object()
         bg_job = BackgroundJob.objects.create(
-            name="Start container",
+            name='Start container',
             project=project,
             job_type=ContainerBackgroundJob.spec_name,
             user=request.user,
@@ -409,20 +409,20 @@ class ContainerStartView(
 
         # Add container log entry
         container.log_entries.create(
-            text="Start",
+            text='Start',
             process=PROCESS_ACTION,
             user=request.user,
         )
 
         # Schedule task
         container_task.apply_async(
-            kwargs={"job_id": job.id}, countdown=CELERY_SUBMIT_COUNTDOWN
+            kwargs={'job_id': job.id}, countdown=CELERY_SUBMIT_COUNTDOWN
         )
 
         return redirect(
             reverse(
-                "containers:detail",
-                kwargs={"container": container.sodar_uuid},
+                'containers:detail',
+                kwargs={'container': container.sodar_uuid},
             )
         )
 
@@ -437,17 +437,17 @@ class ContainerStopView(
 ):
     """View for stopping a container."""
 
-    permission_required = "containers.stop_container"
+    permission_required = 'containers.stop_container'
     model = Container
-    slug_url_kwarg = "container"
-    slug_field = "sodar_uuid"
+    slug_url_kwarg = 'container'
+    slug_field = 'sodar_uuid'
 
     @transaction.atomic
     def get(self, request, *args, **kwargs):
         project = self.get_project()
         container = self.get_object()
         bg_job = BackgroundJob.objects.create(
-            name="Stop container",
+            name='Stop container',
             project=project,
             job_type=ContainerBackgroundJob.spec_name,
             user=request.user,
@@ -461,20 +461,20 @@ class ContainerStopView(
 
         # Add container log entry
         container.log_entries.create(
-            text="Stop",
+            text='Stop',
             process=PROCESS_ACTION,
             user=request.user,
         )
 
         # Schedule task
         container_task.apply_async(
-            kwargs={"job_id": job.id}, countdown=CELERY_SUBMIT_COUNTDOWN
+            kwargs={'job_id': job.id}, countdown=CELERY_SUBMIT_COUNTDOWN
         )
 
         return redirect(
             reverse(
-                "containers:detail",
-                kwargs={"container": container.sodar_uuid},
+                'containers:detail',
+                kwargs={'container': container.sodar_uuid},
             )
         )
 
@@ -489,17 +489,17 @@ class ContainerPauseView(
 ):
     """View for pausing a container."""
 
-    permission_required = "containers.pause_container"
+    permission_required = 'containers.pause_container'
     model = Container
-    slug_url_kwarg = "container"
-    slug_field = "sodar_uuid"
+    slug_url_kwarg = 'container'
+    slug_field = 'sodar_uuid'
 
     @transaction.atomic
     def get(self, request, *args, **kwargs):
         project = self.get_project()
         container = self.get_object()
         bg_job = BackgroundJob.objects.create(
-            name="Pause container",
+            name='Pause container',
             project=project,
             job_type=ContainerBackgroundJob.spec_name,
             user=request.user,
@@ -513,20 +513,20 @@ class ContainerPauseView(
 
         # Add container log entry
         container.log_entries.create(
-            text="Pause",
+            text='Pause',
             process=PROCESS_ACTION,
             user=request.user,
         )
 
         # Schedule task
         container_task.apply_async(
-            kwargs={"job_id": job.id}, countdown=CELERY_SUBMIT_COUNTDOWN
+            kwargs={'job_id': job.id}, countdown=CELERY_SUBMIT_COUNTDOWN
         )
 
         return redirect(
             reverse(
-                "containers:detail",
-                kwargs={"container": container.sodar_uuid},
+                'containers:detail',
+                kwargs={'container': container.sodar_uuid},
             )
         )
 
@@ -541,17 +541,17 @@ class ContainerUnpauseView(
 ):
     """View for unpausing a container."""
 
-    permission_required = "containers.unpause_container"
+    permission_required = 'containers.unpause_container'
     model = Container
-    slug_url_kwarg = "container"
-    slug_field = "sodar_uuid"
+    slug_url_kwarg = 'container'
+    slug_field = 'sodar_uuid'
 
     @transaction.atomic
     def get(self, request, *args, **kwargs):
         project = self.get_project()
         container = self.get_object()
         bg_job = BackgroundJob.objects.create(
-            name="Unpause container",
+            name='Unpause container',
             project=project,
             job_type=ContainerBackgroundJob.spec_name,
             user=request.user,
@@ -565,20 +565,20 @@ class ContainerUnpauseView(
 
         # Add container log entry
         container.log_entries.create(
-            text="Unpause",
+            text='Unpause',
             process=PROCESS_ACTION,
             user=request.user,
         )
 
         # Schedule task
         container_task.apply_async(
-            kwargs={"job_id": job.id}, countdown=CELERY_SUBMIT_COUNTDOWN
+            kwargs={'job_id': job.id}, countdown=CELERY_SUBMIT_COUNTDOWN
         )
 
         return redirect(
             reverse(
-                "containers:detail",
-                kwargs={"container": container.sodar_uuid},
+                'containers:detail',
+                kwargs={'container': container.sodar_uuid},
             )
         )
 
@@ -593,17 +593,17 @@ class ContainerRestartView(
 ):
     """View for restarting a container."""
 
-    permission_required = "containers.start_container"
+    permission_required = 'containers.start_container'
     model = Container
-    slug_url_kwarg = "container"
-    slug_field = "sodar_uuid"
+    slug_url_kwarg = 'container'
+    slug_field = 'sodar_uuid'
 
     @transaction.atomic
     def get(self, request, *args, **kwargs):
         project = self.get_project()
         container = self.get_object()
         bg_job = BackgroundJob.objects.create(
-            name="Restart container",
+            name='Restart container',
             project=project,
             job_type=ContainerBackgroundJob.spec_name,
             user=request.user,
@@ -617,20 +617,20 @@ class ContainerRestartView(
 
         # Add container log entry
         container.log_entries.create(
-            text="Restart",
+            text='Restart',
             process=PROCESS_ACTION,
             user=request.user,
         )
 
         # Schedule task
         container_task.apply_async(
-            kwargs={"job_id": job.id}, countdown=CELERY_SUBMIT_COUNTDOWN
+            kwargs={'job_id': job.id}, countdown=CELERY_SUBMIT_COUNTDOWN
         )
 
         return redirect(
             reverse(
-                "containers:detail",
-                kwargs={"container": container.sodar_uuid},
+                'containers:detail',
+                kwargs={'container': container.sodar_uuid},
             )
         )
 
@@ -644,11 +644,11 @@ class ContainerProxyLobbyView(
 ):
     """View for proxy lobby."""
 
-    permission_required = "containers.proxy"
+    permission_required = 'containers.proxy'
     model = Container
-    slug_url_kwarg = "container"
-    slug_field = "sodar_uuid"
-    template_name = "containers/container_proxylobby.html"
+    slug_url_kwarg = 'container'
+    slug_field = 'sodar_uuid'
+    template_name = 'containers/container_proxylobby.html'
 
     @transaction.atomic
     def get(self, request, *args, **kwargs):
@@ -658,10 +658,10 @@ class ContainerProxyLobbyView(
         if container.state == STATE_RUNNING:
             return redirect(
                 reverse(
-                    "containers:proxy",
+                    'containers:proxy',
                     kwargs={
-                        "container": container.sodar_uuid,
-                        "path": container.container_path,
+                        'container': container.sodar_uuid,
+                        'path': container.container_path,
                     },
                 )
             )
@@ -673,7 +673,7 @@ class ContainerProxyLobbyView(
             action = ACTION_START
 
         bg_job = BackgroundJob.objects.create(
-            name="Proxy lobby",
+            name='Proxy lobby',
             project=project,
             job_type=ContainerBackgroundJob.spec_name,
             user=request.user,
@@ -688,12 +688,12 @@ class ContainerProxyLobbyView(
 
         # Add container log entry
         container.log_entries.create(
-            text="Proxy lobby",
+            text='Proxy lobby',
             process=PROCESS_ACTION,
             user=request.user,
         )
 
-        container_task.apply_async(kwargs={"job_id": job.id}, countdown=0.5)
+        container_task.apply_async(kwargs={'job_id': job.id}, countdown=0.5)
 
         return super().get(request, *args, **kwargs)
 
@@ -701,7 +701,7 @@ class ContainerProxyLobbyView(
 class KioscProxyView(ProxyView):
     """Inheriting the ProxyView to adjust settings."""
 
-    rewrite = ((r"^/container/proxy/(?P<container>[a-f0-9-]+)/", "/"),)
+    rewrite = ((r'^/container/proxy/(?P<container>[a-f0-9-]+)/', '/'),)
 
     def dispatch(self, request, path):
         """Override the dispatch method.
@@ -725,11 +725,11 @@ class KioscProxyView(ProxyView):
         status = proxy_response.status
         headers = proxy_response.headers
 
-        logger.debug("Proxy response headers: %s", headers)
+        logger.debug('Proxy response headers: %s', headers)
 
-        content_type = headers.get("Content-Type")
+        content_type = headers.get('Content-Type')
 
-        logger.debug("Content-Type: %s", content_type)
+        logger.debug('Content-Type: %s', content_type)
 
         if should_stream(proxy_response):
             if self.streaming_amount is None:
@@ -739,7 +739,7 @@ class KioscProxyView(ProxyView):
 
             logger.debug(
                 (
-                    "Starting streaming HTTP Response, buffering amount="
+                    'Starting streaming HTTP Response, buffering amount='
                     '"%s bytes"'
                 ),
                 amt,
@@ -750,14 +750,14 @@ class KioscProxyView(ProxyView):
                 content_type=content_type,
             )
         else:
-            content = proxy_response.data or b""
+            content = proxy_response.data or b''
             response = HttpResponse(
                 content, status=status, content_type=content_type
             )
 
         set_response_headers(response, headers)
 
-        cookies = proxy_response.headers.getlist("set-cookie")
+        cookies = proxy_response.headers.getlist('set-cookie')
         for cookie_string in cookies:
             cookie_dict = cookie_from_string(
                 cookie_string, strict_cookies=False
@@ -766,9 +766,9 @@ class KioscProxyView(ProxyView):
             if cookie_dict:
                 response.set_cookie(**cookie_dict)
 
-        logger.debug("Response cookies: %s", response.cookies)
+        logger.debug('Response cookies: %s', response.cookies)
 
-        logger.debug("RESPONSE RETURNED: %s", response)
+        logger.debug('RESPONSE RETURNED: %s', response)
         return response
 
 
@@ -782,22 +782,22 @@ class ReverseProxyView(
 ):
     """View for reverse proxy."""
 
-    permission_required = "containers.proxy"
+    permission_required = 'containers.proxy'
     model = Container
-    slug_url_kwarg = "container"
-    slug_field = "sodar_uuid"
+    slug_url_kwarg = 'container'
+    slug_field = 'sodar_uuid'
 
     def dispatch(self, request, *args, **kwargs):
         if not self.has_permission():
             return self.handle_no_permission()
 
         container = self.get_object()
-        kwargs.pop("container")
+        kwargs.pop('container')
 
         _redirect = redirect(
             reverse(
-                "containers:list",
-                kwargs={"project": container.project.sodar_uuid},
+                'containers:list',
+                kwargs={'project': container.project.sodar_uuid},
             )
         )
 
@@ -807,23 +807,23 @@ class ReverseProxyView(
             )
             return _redirect
 
-        if settings.KIOSC_NETWORK_MODE == "host":
+        if settings.KIOSC_NETWORK_MODE == 'host':
             if container.host_port:
-                upstream = f"http://localhost:{container.host_port}"
+                upstream = f'http://localhost:{container.host_port}'
 
             else:
-                messages.error(request, "Host port not set.")
+                messages.error(request, 'Host port not set.')
                 return _redirect
 
         else:
-            upstream = f"http://{container.container_id[:12]}:{container.container_port}"
+            upstream = f'http://{container.container_id[:12]}:{container.container_port}'
 
         self.upstream = upstream
         self.suppress_empty_body = True
 
         # Add container log entry
         container.log_entries.create(
-            text=f"Accessing {upstream}",
+            text=f'Accessing {upstream}',
             process=PROCESS_PROXY,
             user=request.user,
         )
@@ -839,7 +839,7 @@ class ReverseProxyView(
                 level=LOG_LEVEL_DEBUG,
             )
             container.log_entries.create(
-                text=f"Access {upstream} failed",
+                text=f'Access {upstream} failed',
                 process=PROCESS_PROXY,
                 user=request.user,
                 level=LOG_LEVEL_ERROR,
@@ -862,21 +862,21 @@ class FileServeView(View):
 
         # Get File object
         try:
-            file = File.objects.get(sodar_uuid=kwargs["file"])
+            file = File.objects.get(sodar_uuid=kwargs['file'])
 
         except File.DoesNotExist:
             return HttpResponseNotFound()
 
         # Check access
         for k in (
-            "HTTP_X_FORWARDED_FOR",
-            "X_FORWARDED_FOR",
-            "FORWARDED",
-            "REMOTE_ADDR",
+            'HTTP_X_FORWARDED_FOR',
+            'X_FORWARDED_FOR',
+            'FORWARDED',
+            'REMOTE_ADDR',
         ):
             v = self.request.META.get(k)
             if v:
-                client_ip = ip_address(v.split(",")[0])
+                client_ip = ip_address(v.split(',')[0])
                 break
 
         else:  # Can't fetch client ip address
@@ -890,7 +890,7 @@ class FileServeView(View):
             )
         except Container.DoesNotExist:
             logger.error(
-                "Container with IP {} does not belong to the project {} the file {} is in. Access denied!".format(
+                'Container with IP {} does not belong to the project {} the file {} is in. Access denied!'.format(
                     client_ip, file.project.sodar_uuid, file.name
                 )
             )
@@ -925,19 +925,19 @@ class ContainerGetDynamicDetailsApiView(
 ):
     """AJAX view for getting Docker status and logs of a container."""
 
-    permission_required = "containers.view_container"
+    permission_required = 'containers.view_container'
     model = Container
-    slug_url_kwarg = "container"
-    slug_field = "sodar_uuid"
+    slug_url_kwarg = 'container'
+    slug_field = 'sodar_uuid'
 
     def get(self, *args, **kwargs):
         container = self.get_object()
         last_job = container.containerbackgroundjob.last()
         last_action = last_job.action if last_job else None
         log_lines = int(
-            self.request.GET.get("log_lines", KIOSC_CONTAINER_DEFAULT_LOG_LINES)
+            self.request.GET.get('log_lines', KIOSC_CONTAINER_DEFAULT_LOG_LINES)
         )
-        logs = ""
+        logs = ''
 
         if log_lines > 0:
             logs = container.log_entries.get_logs_as_str(
@@ -946,16 +946,16 @@ class ContainerGetDynamicDetailsApiView(
             )
 
         response = {
-            "state": container.state,
-            "state_color": colorize_state(container.state),
-            "state_bell": state_bell(container.state, last_action),
-            "logs": logs,
-            "container_id": container.container_id,
-            "container_ip": container.container_ip,
-            "date_last_docker_log": container.log_entries.get_date_last_docker_log(),
+            'state': container.state,
+            'state_color': colorize_state(container.state),
+            'state_bell': state_bell(container.state, last_action),
+            'logs': logs,
+            'container_id': container.container_id,
+            'container_ip': container.container_ip,
+            'date_last_docker_log': container.log_entries.get_date_last_docker_log(),
         }
 
         if last_job:
-            response["retries"] = last_job.retries
+            response['retries'] = last_job.retries
 
         return JsonResponse(response)

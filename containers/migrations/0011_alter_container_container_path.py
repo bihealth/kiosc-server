@@ -4,7 +4,6 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
         ('containers', '0010_container_container_ip'),
     ]
@@ -13,6 +12,11 @@ class Migration(migrations.Migration):
         migrations.AlterField(
             model_name='container',
             name='container_path',
-            field=models.CharField(blank=True, default='', help_text='Path segment of the container URL', max_length=512),
+            field=models.CharField(
+                blank=True,
+                default='',
+                help_text='Path segment of the container URL',
+                max_length=512,
+            ),
         ),
     ]

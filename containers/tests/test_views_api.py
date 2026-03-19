@@ -32,14 +32,14 @@ class TestContainerListAPIView(
     def test_get_success_list_empty(self):
         response = self.request_knox(
             reverse(
-                "containers:api-list",
-                kwargs={"project": self.project.sodar_uuid},
+                'containers:api-list',
+                kwargs={'project': self.project.sodar_uuid},
             )
         )
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(
             response.json(),
-            {"count": 0, "next": None, "previous": None, "results": []},
+            {'count': 0, 'next': None, 'previous': None, 'results': []},
         )
 
     def test_get_success_list_one_item(self):
@@ -47,75 +47,75 @@ class TestContainerListAPIView(
 
         response = self.request_knox(
             reverse(
-                "containers:api-list",
-                kwargs={"project": self.project.sodar_uuid},
+                'containers:api-list',
+                kwargs={'project': self.project.sodar_uuid},
             )
         )
         self.assertEqual(response.status_code, status.HTTP_200_OK)
-        expected = model_to_dict(self.container1, exclude=["id"])
-        expected["date_created"] = self.get_drf_datetime(
+        expected = model_to_dict(self.container1, exclude=['id'])
+        expected['date_created'] = self.get_drf_datetime(
             self.container1.date_created
         )
-        expected["date_modified"] = self.get_drf_datetime(
+        expected['date_modified'] = self.get_drf_datetime(
             self.container1.date_modified
         )
-        expected["project"] = str(
-            Project.objects.get(id=expected["project"]).sodar_uuid
+        expected['project'] = str(
+            Project.objects.get(id=expected['project']).sodar_uuid
         )
-        expected["sodar_uuid"] = str(expected["sodar_uuid"])
+        expected['sodar_uuid'] = str(expected['sodar_uuid'])
         content = response.json()
-        self.assertEqual(content["count"], 1)
-        self.assertEqual(content["next"], None)
-        self.assertEqual(content["previous"], None)
-        self.assertEqual(content["results"], [expected])
+        self.assertEqual(content['count'], 1)
+        self.assertEqual(content['next'], None)
+        self.assertEqual(content['previous'], None)
+        self.assertEqual(content['results'], [expected])
 
     def test_get_success_list_two_items(self):
         self.create_two_containers()
 
         response = self.request_knox(
             reverse(
-                "containers:api-list",
-                kwargs={"project": self.project.sodar_uuid},
+                'containers:api-list',
+                kwargs={'project': self.project.sodar_uuid},
             ),
         )
 
         self.assertEqual(response.status_code, status.HTTP_200_OK)
 
-        container1 = model_to_dict(self.container1, exclude=["id"])
-        container1["date_created"] = self.get_drf_datetime(
+        container1 = model_to_dict(self.container1, exclude=['id'])
+        container1['date_created'] = self.get_drf_datetime(
             self.container1.date_created
         )
-        container1["date_modified"] = self.get_drf_datetime(
+        container1['date_modified'] = self.get_drf_datetime(
             self.container1.date_modified
         )
-        container1["project"] = str(
-            Project.objects.get(id=container1["project"]).sodar_uuid
+        container1['project'] = str(
+            Project.objects.get(id=container1['project']).sodar_uuid
         )
-        container1["sodar_uuid"] = str(container1["sodar_uuid"])
-        container2 = model_to_dict(self.container2, exclude=["id"])
-        container2["date_created"] = self.get_drf_datetime(
+        container1['sodar_uuid'] = str(container1['sodar_uuid'])
+        container2 = model_to_dict(self.container2, exclude=['id'])
+        container2['date_created'] = self.get_drf_datetime(
             self.container2.date_created
         )
-        container2["date_modified"] = self.get_drf_datetime(
+        container2['date_modified'] = self.get_drf_datetime(
             self.container2.date_modified
         )
-        container2["project"] = str(
-            Project.objects.get(id=container2["project"]).sodar_uuid
+        container2['project'] = str(
+            Project.objects.get(id=container2['project']).sodar_uuid
         )
-        container2["sodar_uuid"] = str(container2["sodar_uuid"])
+        container2['sodar_uuid'] = str(container2['sodar_uuid'])
         content = response.json()
-        self.assertEqual(content["count"], 2)
-        self.assertEqual(len(content["results"]), 1)
-        self.assertEqual(content["results"][0], container2)
+        self.assertEqual(content['count'], 2)
+        self.assertEqual(len(content['results']), 1)
+        self.assertEqual(content['results'][0], container2)
 
-        response_next = self.request_knox(content["next"])
+        response_next = self.request_knox(content['next'])
 
         self.assertEqual(response_next.status_code, status.HTTP_200_OK)
 
         content_next = response_next.json()
-        self.assertEqual(content_next["count"], 2)
-        self.assertEqual(len(content_next["results"]), 1)
-        self.assertEqual(content_next["results"][0], container1)
+        self.assertEqual(content_next['count'], 2)
+        self.assertEqual(len(content_next['results']), 1)
+        self.assertEqual(content_next['results'][0], container1)
 
 
 class TestContainerCreateAPIView(
@@ -127,38 +127,38 @@ class TestContainerCreateAPIView(
         super().setUp()
         self.create_containertemplates()
         self.post_data_min_shared = {
-            "title": "Title",
-            "environment": '{"test": 1}',
-            "repository": "repository",
-            "tag": "tag",
-            "container_port": 80,
-            "timeout": 60,
-            "project": self.project.pk,
-            "max_retries": 10,
-            "inactivity_threshold": 20,
+            'title': 'Title',
+            'environment': '{"test": 1}',
+            'repository': 'repository',
+            'tag': 'tag',
+            'container_port': 80,
+            'timeout': 60,
+            'project': self.project.pk,
+            'max_retries': 10,
+            'inactivity_threshold': 20,
         }
         self.post_data_min_host = {
             **self.post_data_min_shared,
-            "host_port": 8000,
+            'host_port': 8000,
         }
         self.post_data_all = {
             **self.post_data_min_host,
-            "description": "some description",
-            "container_path": "some/path",
-            "heartbeat_url": "https://heartbeat.url",
-            "environment_secret_keys": "test",
-            "command": "some command",
-            "containertemplatesite": self.containertemplatesite1.pk,
+            'description': 'some description',
+            'container_path': 'some/path',
+            'heartbeat_url': 'https://heartbeat.url',
+            'environment_secret_keys': 'test',
+            'command': 'some command',
+            'containertemplatesite': self.containertemplatesite1.pk,
         }
 
-    @override_settings(KIOSC_NETWORK_MODE="host")
+    @override_settings(KIOSC_NETWORK_MODE='host')
     def test_post_success_min_fields_mode_host(self):
         response = self.request_knox(
             reverse(
-                "containers:api-create",
-                kwargs={"project": self.project.sodar_uuid},
+                'containers:api-create',
+                kwargs={'project': self.project.sodar_uuid},
             ),
-            method="POST",
+            method='POST',
             data=self.post_data_min_host,
         )
 
@@ -171,14 +171,14 @@ class TestContainerCreateAPIView(
         # Assert updated properties
         self.assertDictEqual(result, self.post_data_min_host)
 
-    @override_settings(KIOSC_NETWORK_MODE="docker-shared")
+    @override_settings(KIOSC_NETWORK_MODE='docker-shared')
     def test_post_success_min_fields_mode_docker_shared(self):
         response = self.request_knox(
             reverse(
-                "containers:api-create",
-                kwargs={"project": self.project.sodar_uuid},
+                'containers:api-create',
+                kwargs={'project': self.project.sodar_uuid},
             ),
-            method="POST",
+            method='POST',
             data=self.post_data_min_shared,
         )
 
@@ -196,10 +196,10 @@ class TestContainerCreateAPIView(
     def test_post_success_all_fields(self):
         response = self.request_knox(
             reverse(
-                "containers:api-create",
-                kwargs={"project": self.project.sodar_uuid},
+                'containers:api-create',
+                kwargs={'project': self.project.sodar_uuid},
             ),
-            method="POST",
+            method='POST',
             data=self.post_data_all,
         )
 
@@ -226,17 +226,17 @@ class TestContainerDeleteAPIView(
     def test_delete_success_initial(self):
         response = self.request_knox(
             reverse(
-                "containers:api-delete",
-                kwargs={"container": self.container1.sodar_uuid},
+                'containers:api-delete',
+                kwargs={'container': self.container1.sodar_uuid},
             ),
-            method="DELETE",
+            method='DELETE',
         )
 
         self.assertEqual(response.status_code, status.HTTP_204_NO_CONTENT)
         self.assertEqual(Container.objects.count(), 0)
         self.assertEqual(ContainerBackgroundJob.objects.count(), 0)
 
-    @patch("containers.tasks.container_task.run")
+    @patch('containers.tasks.container_task.run')
     def test_delete_success_running(self, mock):
         self.container1.state = STATE_RUNNING
         self.container1.save()
@@ -250,10 +250,10 @@ class TestContainerDeleteAPIView(
 
         response = self.request_knox(
             reverse(
-                "containers:api-delete",
-                kwargs={"container": self.container1.sodar_uuid},
+                'containers:api-delete',
+                kwargs={'container': self.container1.sodar_uuid},
             ),
-            method="DELETE",
+            method='DELETE',
         )
 
         self.assertEqual(response.status_code, status.HTTP_204_NO_CONTENT)
@@ -264,10 +264,10 @@ class TestContainerDeleteAPIView(
     def test_delete_non_existent(self):
         response = self.request_knox(
             reverse(
-                "containers:api-delete",
-                kwargs={"container": self.fake_uuid},
+                'containers:api-delete',
+                kwargs={'container': self.fake_uuid},
             ),
-            method="DELETE",
+            method='DELETE',
         )
 
         self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
@@ -287,31 +287,31 @@ class TestContainerDetailAPIView(
     def test_get_success(self):
         response = self.request_knox(
             reverse(
-                "containers:api-detail",
-                kwargs={"container": self.container1.sodar_uuid},
+                'containers:api-detail',
+                kwargs={'container': self.container1.sodar_uuid},
             )
         )
 
         self.assertEqual(response.status_code, status.HTTP_200_OK)
-        expected = model_to_dict(self.container1, exclude=["id"])
-        expected["date_created"] = self.get_drf_datetime(
+        expected = model_to_dict(self.container1, exclude=['id'])
+        expected['date_created'] = self.get_drf_datetime(
             self.container1.date_created
         )
-        expected["date_modified"] = self.get_drf_datetime(
+        expected['date_modified'] = self.get_drf_datetime(
             self.container1.date_modified
         )
-        expected["project"] = str(
-            Project.objects.get(id=expected["project"]).sodar_uuid
+        expected['project'] = str(
+            Project.objects.get(id=expected['project']).sodar_uuid
         )
-        expected["sodar_uuid"] = str(expected["sodar_uuid"])
+        expected['sodar_uuid'] = str(expected['sodar_uuid'])
 
         self.assertEqual(response.json(), expected)
 
     def test_get_non_existent(self):
         response = self.request_knox(
             reverse(
-                "containers:api-detail",
-                kwargs={"container": self.fake_uuid},
+                'containers:api-detail',
+                kwargs={'container': self.fake_uuid},
             )
         )
 
@@ -328,12 +328,12 @@ class TestContainerStartAPIView(
         self.create_one_container()
         self.create_fake_uuid()
 
-    @patch("containers.tasks.container_task.apply_async")
+    @patch('containers.tasks.container_task.apply_async')
     def test_get_success(self, mock):
         response = self.request_knox(
             reverse(
-                "containers:api-start",
-                kwargs={"container": self.container1.sodar_uuid},
+                'containers:api-start',
+                kwargs={'container': self.container1.sodar_uuid},
             )
         )
 
@@ -345,14 +345,14 @@ class TestContainerStartAPIView(
         self.assertEqual(job.action, ACTION_START)
         self.assertEqual(job.container, self.container1)
         mock.assert_called_with(
-            kwargs={"job_id": job.pk}, countdown=CELERY_SUBMIT_COUNTDOWN
+            kwargs={'job_id': job.pk}, countdown=CELERY_SUBMIT_COUNTDOWN
         )
 
     def test_get_non_existent(self):
         response = self.request_knox(
             reverse(
-                "containers:api-start",
-                kwargs={"container": self.fake_uuid},
+                'containers:api-start',
+                kwargs={'container': self.fake_uuid},
             )
         )
 
@@ -369,12 +369,12 @@ class TestContainerStopAPIView(
         self.create_one_container()
         self.create_fake_uuid()
 
-    @patch("containers.tasks.container_task.apply_async")
+    @patch('containers.tasks.container_task.apply_async')
     def test_get_success(self, mock):
         response = self.request_knox(
             reverse(
-                "containers:api-stop",
-                kwargs={"container": self.container1.sodar_uuid},
+                'containers:api-stop',
+                kwargs={'container': self.container1.sodar_uuid},
             )
         )
 
@@ -386,14 +386,14 @@ class TestContainerStopAPIView(
         self.assertEqual(job.action, ACTION_STOP)
         self.assertEqual(job.container, self.container1)
         mock.assert_called_with(
-            kwargs={"job_id": job.pk}, countdown=CELERY_SUBMIT_COUNTDOWN
+            kwargs={'job_id': job.pk}, countdown=CELERY_SUBMIT_COUNTDOWN
         )
 
     def test_get_non_existent(self):
         response = self.request_knox(
             reverse(
-                "containers:api-stop",
-                kwargs={"container": self.fake_uuid},
+                'containers:api-stop',
+                kwargs={'container': self.fake_uuid},
             )
         )
 

@@ -37,7 +37,7 @@ logger = logging.getLogger(__name__)
 
 
 # Increase the timeout for communication with Docker daemon.
-APP_NAME = "containers"
+APP_NAME = 'containers'
 DEFAULT_TIMEOUT_DOCKER_ACTION = 60
 
 
@@ -52,7 +52,7 @@ ACTION_TO_EXPECTED_STATE = {
 
 
 def connect_docker(
-    base_url="unix:///var/run/docker.sock",
+    base_url='unix:///var/run/docker.sock',
     timeout=DEFAULT_TIMEOUT_DOCKER_ACTION,
 ):
     return docker.APIClient(base_url=base_url, timeout=timeout)
@@ -95,7 +95,7 @@ class ActionSwitch:
             self.cm.start_pulled()
 
         else:
-            raise RuntimeError(f"Action start not allowed in state {state}")
+            raise RuntimeError(f'Action start not allowed in state {state}')
 
     def _stop(self, state):
         if state == STATE_RUNNING:
@@ -105,21 +105,21 @@ class ActionSwitch:
             self.cm.stop_paused()
 
         else:
-            raise RuntimeError(f"Action stop not allowed in state {state}")
+            raise RuntimeError(f'Action stop not allowed in state {state}')
 
     def _pause(self, state):
         if state == STATE_RUNNING:
             self.cm.pause()
 
         else:
-            raise RuntimeError(f"Action pause not allowed in state {state}")
+            raise RuntimeError(f'Action pause not allowed in state {state}')
 
     def _unpause(self, state):
         if state == STATE_PAUSED:
             self.cm.unpause()
 
         else:
-            raise RuntimeError(f"Action unpause not allowed in state {state}")
+            raise RuntimeError(f'Action unpause not allowed in state {state}')
 
     def _restart(self, state):
         if state == STATE_RUNNING:
@@ -136,7 +136,7 @@ class ActionSwitch:
             self.cm.start_pulled()
 
         else:
-            raise RuntimeError(f"Action restart not allowed in state {state}")
+            raise RuntimeError(f'Action restart not allowed in state {state}')
 
     def _delete(self, state):
         if state == STATE_INITIAL:
@@ -174,23 +174,23 @@ class ActionSwitch:
             self.cm.delete_success()
 
         else:
-            raise RuntimeError(f"Action delete not allowed in state {state}")
+            raise RuntimeError(f'Action delete not allowed in state {state}')
 
     def do(self, action, state):
         f = self._switches.get(action)
 
         if not f:
             if self.tl_event:
-                self.tl_event.set_status("FAILED", "action failed")
+                self.tl_event.set_status('FAILED', 'action failed')
                 self.job.container.log_entries.create(
-                    text=f"Unknown action: {action}",
+                    text=f'Unknown action: {action}',
                     process=PROCESS_TASK,
                     user=self.job.bg_job.user,
                 )
-            raise RuntimeError(f"Unknown action: {action}")
+            raise RuntimeError(f'Unknown action: {action}')
 
         if self.tl_event:
-            self.tl_event.set_status("OK", "action succeeded")
+            self.tl_event.set_status('OK', 'action succeeded')
 
         action_locks = self.cm.container.action_lock.all()
 
@@ -202,7 +202,7 @@ class ActionSwitch:
 
         else:
             raise RuntimeError(
-                f"Maximal one lock per container expected, got {action_locks.count()}"
+                f'Maximal one lock per container expected, got {action_locks.count()}'
             )
 
         with transaction.atomic():
@@ -327,14 +327,14 @@ class ContainerMachine(StateMachine):
     failed_paused = paused.to(failed)
 
     def __init__(self, *args, **kwargs):
-        job = kwargs.pop("job")
+        job = kwargs.pop('job')
         super().__init__(*args, **kwargs)
         self.container = job.container
         self.job = job
         self.user = job.bg_job.user
 
         # Connect to Docker
-        self.job.add_log_entry("Connecting to Docker API...")
+        self.job.add_log_entry('Connecting to Docker API...')
         self.cli = connect_docker(timeout=self.container.timeout)
 
     def _update_status(self, container_info=None):
@@ -343,24 +343,24 @@ class ContainerMachine(StateMachine):
                 self.container.container_id
             )
 
-        if container_info.get("State"):
-            self.container.state = container_info.get("State").get("Status")
+        if container_info.get('State'):
+            self.container.state = container_info.get('State').get('Status')
 
         self.container.container_ip = (
-            container_info.get("NetworkSettings", {})
-            .get("Networks", {})
+            container_info.get('NetworkSettings', {})
+            .get('Networks', {})
             .get(settings.KIOSC_DOCKER_NETWORK, {})
-            .get("IPAddress")
+            .get('IPAddress')
         )
         self.container.save()
 
     def on_pull(self):
         # Pulling image
         self.job.add_log_entry(
-            f"Pulling image {self.container.get_repos_full()} ..."
+            f'Pulling image {self.container.get_repos_full()} ...'
         )
         self.container.log_entries.create(
-            text="Pulling image ...",
+            text='Pulling image ...',
             process=PROCESS_TASK,
             user=self.user,
         )
@@ -369,7 +369,7 @@ class ContainerMachine(StateMachine):
 
         need_to_pull = True
         for image in self.cli.images(self.container.repository):
-            if self.container.get_repos_full() in image["RepoTags"]:
+            if self.container.get_repos_full() in image['RepoTags']:
                 need_to_pull = False
                 break
 
@@ -381,15 +381,15 @@ class ContainerMachine(StateMachine):
                 decode=True,
             ):
                 if (
-                    line.get("progressDetail")
-                    and line["progressDetail"].get("current")
-                    and line["progressDetail"].get("total")
+                    line.get('progressDetail')
+                    and line['progressDetail'].get('current')
+                    and line['progressDetail'].get('total')
                 ):
-                    docker_log_line = "{status} ({progressDetail[current]}/{progressDetail[total]})".format(
+                    docker_log_line = '{status} ({progressDetail[current]}/{progressDetail[total]})'.format(
                         **line
                     )
                 else:
-                    docker_log_line = line["status"]
+                    docker_log_line = line['status']
 
                 self.container.log_entries.create(
                     text=docker_log_line,
@@ -400,11 +400,11 @@ class ContainerMachine(StateMachine):
                 self.job.add_log_entry(docker_log_line)
 
         image_details = self.cli.inspect_image(self.container.get_repos_full())
-        self.container.image_id = image_details.get("Id")
+        self.container.image_id = image_details.get('Id')
         self.container.save()
-        self.job.add_log_entry("Pulling image succeeded")
+        self.job.add_log_entry('Pulling image succeeded')
         self.container.log_entries.create(
-            text="Pulling image succeeded",
+            text='Pulling image succeeded',
             process=PROCESS_TASK,
             user=self.user,
         )
@@ -412,15 +412,15 @@ class ContainerMachine(StateMachine):
         options = {}
         options_host_config = {}
 
-        if settings.KIOSC_NETWORK_MODE == "docker-shared":
-            options["networking_config"] = self.cli.create_networking_config(
+        if settings.KIOSC_NETWORK_MODE == 'docker-shared':
+            options['networking_config'] = self.cli.create_networking_config(
                 {
                     settings.KIOSC_DOCKER_NETWORK: self.cli.create_endpoint_config()
                 }
             )
 
-        if settings.KIOSC_NETWORK_MODE == "host":
-            options_host_config["port_bindings"] = {
+        if settings.KIOSC_NETWORK_MODE == 'host':
+            options_host_config['port_bindings'] = {
                 self.container.container_port: self.container.host_port
             }
 
@@ -430,31 +430,31 @@ class ContainerMachine(StateMachine):
             else {}
         )
         url_prefix = reverse(
-            "containers:proxy",
+            'containers:proxy',
             kwargs={
-                "container": self.container.sodar_uuid,
-                "path": self.container.container_path or "",
+                'container': self.container.sodar_uuid,
+                'path': self.container.container_path or '',
             },
         )
 
         for key, value in environment.items():
-            if isinstance(value, str) and "__KIOSC_URL_PREFIX__" in value:
+            if isinstance(value, str) and '__KIOSC_URL_PREFIX__' in value:
                 environment[key] = value.replace(
-                    "__KIOSC_URL_PREFIX__", url_prefix
+                    '__KIOSC_URL_PREFIX__', url_prefix
                 )
 
         environment.update(
             {
-                "CONTAINER_PORT": self.container.container_port,
-                "TITLE": self.container.title,
-                "DESCRIPTION": self.container.description or "",
+                'CONTAINER_PORT': self.container.container_port,
+                'TITLE': self.container.title,
+                'DESCRIPTION': self.container.description or '',
             }
         )
 
         # Create container
         container_info = self.cli.create_container(
             detach=True,
-            image=image_details["RepoTags"][0],
+            image=image_details['RepoTags'][0],
             environment=environment,
             command=(
                 shlex.split(self.container.command)
@@ -465,7 +465,7 @@ class ContainerMachine(StateMachine):
             host_config=self.cli.create_host_config(
                 ulimits=[
                     Ulimit(
-                        name="nofile",
+                        name='nofile',
                         soft=settings.KIOSC_DOCKER_MAX_ULIMIT_NOFILE_SOFT,
                         hard=settings.KIOSC_DOCKER_MAX_ULIMIT_NOFILE_HARD,
                     )
@@ -474,7 +474,7 @@ class ContainerMachine(StateMachine):
             ),
             **options,
         )
-        self.container.container_id = container_info.get("Id")
+        self.container.container_id = container_info.get('Id')
         self.container.save()
         self._update_status(container_info)
 
@@ -487,14 +487,14 @@ class ContainerMachine(StateMachine):
     def on_start_pulled(self):
         # Starting container
         self.container.log_entries.create(
-            text="Starting ...", process=PROCESS_TASK, user=self.user
+            text='Starting ...', process=PROCESS_TASK, user=self.user
         )
-        self.job.add_log_entry("Starting container")
+        self.job.add_log_entry('Starting container')
         self.cli.start(self.container.container_id)
         self._update_status()
-        self.job.add_log_entry("Starting container succeeded")
+        self.job.add_log_entry('Starting container succeeded')
         self.container.log_entries.create(
-            text="Starting succeeded",
+            text='Starting succeeded',
             process=PROCESS_TASK,
             user=self.user,
         )
@@ -507,57 +507,57 @@ class ContainerMachine(StateMachine):
 
     def on_pause(self):
         self.container.log_entries.create(
-            text="Pausing ...", process=PROCESS_TASK, user=self.user
+            text='Pausing ...', process=PROCESS_TASK, user=self.user
         )
-        self.job.add_log_entry("Pausing container")
+        self.job.add_log_entry('Pausing container')
         self.cli.pause(self.container.container_id)
         self._update_status()
-        self.job.add_log_entry("Pausing container succeeded")
+        self.job.add_log_entry('Pausing container succeeded')
         self.container.log_entries.create(
-            text="Pausing succeeded",
+            text='Pausing succeeded',
             process=PROCESS_TASK,
             user=self.user,
         )
 
     def on_unpause(self):
         self.container.log_entries.create(
-            text="Unpausing ...", process=PROCESS_TASK, user=self.user
+            text='Unpausing ...', process=PROCESS_TASK, user=self.user
         )
-        self.job.add_log_entry("Unpausing container")
+        self.job.add_log_entry('Unpausing container')
         self.cli.unpause(self.container.container_id)
         self._update_status()
-        self.job.add_log_entry("Unpausing container succeeded")
+        self.job.add_log_entry('Unpausing container succeeded')
         self.container.log_entries.create(
-            text="Unpausing succeeded",
+            text='Unpausing succeeded',
             process=PROCESS_TASK,
             user=self.user,
         )
 
     def on_stop_running(self):
         self.container.log_entries.create(
-            text="Stopping ...", process=PROCESS_TASK, user=self.user
+            text='Stopping ...', process=PROCESS_TASK, user=self.user
         )
-        self.job.add_log_entry("Stopping container")
+        self.job.add_log_entry('Stopping container')
 
         # Stopping container and updating status
         self.cli.stop(self.container.container_id)
         self._update_status()
 
         self.container.log_entries.create(
-            text="Stopping succeeded",
+            text='Stopping succeeded',
             process=PROCESS_TASK,
             user=self.user,
         )
-        self.job.add_log_entry("Stopping container succeeded")
+        self.job.add_log_entry('Stopping container succeeded')
 
     def on_stop_paused(self):
         self.on_stop_running()
 
     def on_delete(self):
         self.container.log_entries.create(
-            text="Deleting ...", process=PROCESS_TASK, user=self.user
+            text='Deleting ...', process=PROCESS_TASK, user=self.user
         )
-        self.job.add_log_entry("Deleting container")
+        self.job.add_log_entry('Deleting container')
         self.container.state = STATE_DELETING
         self.container.save()
 
@@ -566,7 +566,7 @@ class ContainerMachine(StateMachine):
             self.cli.remove_container(self.container.container_id, force=True)
 
         except docker.errors.NullResource as ex:
-            logger.error("Failed to delete container: %s", ex)
+            logger.error('Failed to delete container: %s', ex)
             self.container.log_entries.create(
                 text="Empty container ID, don't know what to delete. Continuing.",
                 process=PROCESS_TASK,
@@ -574,9 +574,9 @@ class ContainerMachine(StateMachine):
             )
 
         except docker.errors.NotFound as ex:
-            logger.error("Failed to delete container: %s", ex)
+            logger.error('Failed to delete container: %s', ex)
             self.container.log_entries.create(
-                text=f"Container with {self.container.container_id} not found, nothing to delete",
+                text=f'Container with {self.container.container_id} not found, nothing to delete',
                 process=PROCESS_TASK,
                 user=self.user,
             )
@@ -599,8 +599,8 @@ class ContainerMachine(StateMachine):
         self.container.save()
 
         self.container.log_entries.create(
-            text="Deleting succeeded",
+            text='Deleting succeeded',
             process=PROCESS_TASK,
             user=self.user,
         )
-        self.job.add_log_entry("Deleting container succeeded")
+        self.job.add_log_entry('Deleting container succeeded')

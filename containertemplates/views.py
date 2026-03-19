@@ -33,7 +33,7 @@ from containertemplates.models import (
 )
 
 
-APP_NAME = "containertemplates"
+APP_NAME = 'containertemplates'
 
 
 plugin_api = PluginAPI()
@@ -44,13 +44,13 @@ class ContainerTemplateSiteCreateView(
 ):
     """View for creating a site-wide containertemplate."""
 
-    permission_required = "containertemplates.site_create"
-    template_name = "containertemplates/site_form.html"
+    permission_required = 'containertemplates.site_create'
+    template_name = 'containertemplates/site_form.html'
     form_class = ContainerTemplateSiteForm
 
     def form_valid(self, form):
         response = super().form_valid(form)
-        timeline = plugin_api.get_backend_api("timeline_backend")
+        timeline = plugin_api.get_backend_api('timeline_backend')
 
         # Add timeline event
         if timeline:
@@ -58,13 +58,13 @@ class ContainerTemplateSiteCreateView(
                 project=None,
                 app_name=APP_NAME,
                 user=self.request.user,
-                event_name="create_containertemplate_site",
-                description="created {containertemplate}",
+                event_name='create_containertemplate_site',
+                description='created {containertemplate}',
                 status_type=timeline.TL_STATUS_OK,
             )
             tl_event.add_object(
                 obj=self.object,
-                label="containertemplate",
+                label='containertemplate',
                 name=str(self.object),
             )
 
@@ -78,18 +78,18 @@ class ContainerTemplateSiteDeleteView(
 ):
     """View for deleting a site-wide containertemplate."""
 
-    permission_required = "containertemplates.site_delete"
-    template_name = "containertemplates/site_confirm_delete.html"
+    permission_required = 'containertemplates.site_delete'
+    template_name = 'containertemplates/site_confirm_delete.html'
     model = ContainerTemplateSite
-    slug_url_kwarg = "containertemplatesite"
-    slug_field = "sodar_uuid"
+    slug_url_kwarg = 'containertemplatesite'
+    slug_field = 'sodar_uuid'
 
     def get_success_url(self):
-        messages.success(self.request, "ContainerTemplate deleted.")
-        return reverse("containertemplates:site-list")
+        messages.success(self.request, 'ContainerTemplate deleted.')
+        return reverse('containertemplates:site-list')
 
     def delete(self, request, *args, **kwargs):
-        timeline = plugin_api.get_backend_api("timeline_backend")
+        timeline = plugin_api.get_backend_api('timeline_backend')
         obj = self.get_object()
 
         # Add timeline event
@@ -98,8 +98,8 @@ class ContainerTemplateSiteDeleteView(
                 project=None,
                 app_name=APP_NAME,
                 user=request.user,
-                event_name="delete_containertemplate_site",
-                description=f"deleted {str(obj)}",
+                event_name='delete_containertemplate_site',
+                description=f'deleted {str(obj)}',
                 status_type=timeline.TL_STATUS_OK,
             )
 
@@ -111,29 +111,29 @@ class ContainerTemplateSiteUpdateView(
 ):
     """View for updating a site-wide ContainerTemplate."""
 
-    permission_required = "containertemplates.site_edit"
-    template_name = "containertemplates/site_form.html"
+    permission_required = 'containertemplates.site_edit'
+    template_name = 'containertemplates/site_form.html'
     form_class = ContainerTemplateSiteForm
     model = ContainerTemplateSite
-    slug_url_kwarg = "containertemplatesite"
-    slug_field = "sodar_uuid"
+    slug_url_kwarg = 'containertemplatesite'
+    slug_field = 'sodar_uuid'
 
     def form_valid(self, form):
         response = super().form_valid(form)
-        timeline = plugin_api.get_backend_api("timeline_backend")
+        timeline = plugin_api.get_backend_api('timeline_backend')
 
         if timeline:
             tl_event = timeline.add_event(
                 project=None,
                 app_name=APP_NAME,
                 user=self.request.user,
-                event_name="update_containertemplate_site",
-                description="updated {containertemplate}",
+                event_name='update_containertemplate_site',
+                description='updated {containertemplate}',
                 status_type=timeline.TL_STATUS_OK,
             )
             tl_event.add_object(
                 obj=self.object,
-                label="containertemplate",
+                label='containertemplate',
                 name=str(self.object),
             )
 
@@ -145,8 +145,8 @@ class ContainerTemplateSiteListView(
 ):
     """View for listing site-wide ContainerTemplates."""
 
-    permission_required = "containertemplates.site_view"
-    template_name = "containertemplates/site_list.html"
+    permission_required = 'containertemplates.site_view'
+    template_name = 'containertemplates/site_list.html'
     model = ContainerTemplateSite
 
 
@@ -155,11 +155,11 @@ class ContainerTemplateSiteDetailView(
 ):
     """View for details of site-wide containertemplate."""
 
-    permission_required = "containertemplates.site_view"
-    template_name = "containertemplates/site_detail.html"
+    permission_required = 'containertemplates.site_view'
+    template_name = 'containertemplates/site_detail.html'
     model = ContainerTemplateSite
-    slug_url_kwarg = "containertemplatesite"
-    slug_field = "sodar_uuid"
+    slug_url_kwarg = 'containertemplatesite'
+    slug_field = 'sodar_uuid'
 
 
 class ContainerTemplateSiteDuplicateView(
@@ -167,15 +167,15 @@ class ContainerTemplateSiteDuplicateView(
 ):
     """View for duplicating a site-wide containertemplate."""
 
-    permission_required = "containertemplates.site_duplicate"
+    permission_required = 'containertemplates.site_duplicate'
     model = ContainerTemplateSite
-    slug_url_kwarg = "containertemplatesite"
-    slug_field = "sodar_uuid"
+    slug_url_kwarg = 'containertemplatesite'
+    slug_field = 'sodar_uuid'
 
     def get(self, request, *args, **kwargs):
-        timeline = plugin_api.get_backend_api("timeline_backend")
+        timeline = plugin_api.get_backend_api('timeline_backend')
         obj = self.get_object()
-        _redirect = redirect(reverse("containertemplates:site-list"))
+        _redirect = redirect(reverse('containertemplates:site-list'))
 
         with transaction.atomic():
             if timeline:
@@ -183,26 +183,26 @@ class ContainerTemplateSiteDuplicateView(
                     project=None,
                     app_name=APP_NAME,
                     user=self.request.user,
-                    event_name="duplicate_containertemplate_site",
-                    description="duplicated {containertemplate} site-wide",
+                    event_name='duplicate_containertemplate_site',
+                    description='duplicated {containertemplate} site-wide',
                     status_type=timeline.TL_STATUS_OK,
                 )
                 tl_event.add_object(
-                    obj=obj, label="containertemplate", name=str(obj)
+                    obj=obj, label='containertemplate', name=str(obj)
                 )
 
-            data = model_to_dict(obj, exclude=["id", "sodar_uuid"])
-            title_original = data["title"]
-            title_new = f"{data['title']} (Duplicate)"
+            data = model_to_dict(obj, exclude=['id', 'sodar_uuid'])
+            title_original = data['title']
+            title_new = f'{data["title"]} (Duplicate)'
             counter = 1
 
             while ContainerTemplateSite.objects.filter(
                 title=title_new
             ).exists():
                 counter += 1
-                title_new = f"{title_original} (Duplicate {counter})"
+                title_new = f'{title_original} (Duplicate {counter})'
 
-            data["title"] = title_new
+            data['title'] = title_new
 
             try:
                 ContainerTemplateSite.objects.create(**data)
@@ -228,19 +228,19 @@ class ContainerTemplateProjectCreateView(
 ):
     """View for creating a project-wide containertemplate."""
 
-    permission_required = "containertemplates.project_create"
-    template_name = "containertemplates/project_form.html"
+    permission_required = 'containertemplates.project_create'
+    template_name = 'containertemplates/project_form.html'
     form_class = ContainerTemplateProjectForm
 
     def get_initial(self):
         """Set hidden project field."""
         initial = super().get_initial()
-        initial["project"] = self.get_project()
+        initial['project'] = self.get_project()
         return initial
 
     def form_valid(self, form):
         response = super().form_valid(form)
-        timeline = plugin_api.get_backend_api("timeline_backend")
+        timeline = plugin_api.get_backend_api('timeline_backend')
 
         # Add timeline event
         if timeline:
@@ -248,13 +248,13 @@ class ContainerTemplateProjectCreateView(
                 project=self.get_project(),
                 app_name=APP_NAME,
                 user=self.request.user,
-                event_name="create_containertemplate_project",
-                description="created {containertemplate} project-wide",
+                event_name='create_containertemplate_project',
+                description='created {containertemplate} project-wide',
                 status_type=timeline.TL_STATUS_OK,
             )
             tl_event.add_object(
                 obj=self.object,
-                label="containertemplate",
+                label='containertemplate',
                 name=str(self.object),
             )
 
@@ -270,21 +270,21 @@ class ContainerTemplateProjectDeleteView(
 ):
     """View for deleting a project-wide containertemplate."""
 
-    permission_required = "containertemplates.project_delete"
-    template_name = "containertemplates/project_confirm_delete.html"
+    permission_required = 'containertemplates.project_delete'
+    template_name = 'containertemplates/project_confirm_delete.html'
     model = ContainerTemplateProject
-    slug_url_kwarg = "containertemplateproject"
-    slug_field = "sodar_uuid"
+    slug_url_kwarg = 'containertemplateproject'
+    slug_field = 'sodar_uuid'
 
     def get_success_url(self):
-        messages.success(self.request, "ContainerTemplate deleted.")
+        messages.success(self.request, 'ContainerTemplate deleted.')
         return reverse(
-            "containertemplates:project-list",
-            kwargs={"project": self.get_project().sodar_uuid},
+            'containertemplates:project-list',
+            kwargs={'project': self.get_project().sodar_uuid},
         )
 
     def delete(self, request, *args, **kwargs):
-        timeline = plugin_api.get_backend_api("timeline_backend")
+        timeline = plugin_api.get_backend_api('timeline_backend')
 
         # Add timeline event
         if timeline:
@@ -292,8 +292,8 @@ class ContainerTemplateProjectDeleteView(
                 project=self.get_project(),
                 app_name=APP_NAME,
                 user=request.user,
-                event_name="delete_containertemplate_project",
-                description=f"deleted {self.get_object()} project-wide",
+                event_name='delete_containertemplate_project',
+                description=f'deleted {self.get_object()} project-wide',
                 status_type=timeline.TL_STATUS_OK,
             )
 
@@ -309,35 +309,35 @@ class ContainerTemplateProjectUpdateView(
 ):
     """View for updating a project-wide containertemplate."""
 
-    permission_required = "containertemplates.project_edit"
-    template_name = "containertemplates/project_form.html"
+    permission_required = 'containertemplates.project_edit'
+    template_name = 'containertemplates/project_form.html'
     form_class = ContainerTemplateProjectForm
     model = ContainerTemplateProject
-    slug_url_kwarg = "containertemplateproject"
-    slug_field = "sodar_uuid"
+    slug_url_kwarg = 'containertemplateproject'
+    slug_field = 'sodar_uuid'
 
     def get_initial(self):
         """Set hidden project field."""
         initial = super().get_initial()
-        initial["project"] = self.get_project()
+        initial['project'] = self.get_project()
         return initial
 
     def form_valid(self, form):
         response = super().form_valid(form)
-        timeline = plugin_api.get_backend_api("timeline_backend")
+        timeline = plugin_api.get_backend_api('timeline_backend')
 
         if timeline:
             tl_event = timeline.add_event(
                 project=self.get_project(),
                 app_name=APP_NAME,
                 user=self.request.user,
-                event_name="update_containertemplate_project",
-                description="updated {containertemplate} project-wide",
+                event_name='update_containertemplate_project',
+                description='updated {containertemplate} project-wide',
                 status_type=timeline.TL_STATUS_OK,
             )
             tl_event.add_object(
                 obj=self.object,
-                label="containertemplate",
+                label='containertemplate',
                 name=str(self.object),
             )
 
@@ -353,15 +353,15 @@ class ContainerTemplateProjectListView(
 ):
     """View for listing project-wide containertemplate."""
 
-    permission_required = "containertemplates.project_view"
-    template_name = "containertemplates/project_list.html"
+    permission_required = 'containertemplates.project_view'
+    template_name = 'containertemplates/project_list.html'
     model = ContainerTemplateProject
-    slug_url_kwarg = "project"
-    slug_field = "sodar_uuid"
+    slug_url_kwarg = 'project'
+    slug_field = 'sodar_uuid'
 
     def get_context_data(self, *args, **kwargs):
         context = super().get_context_data(*args, **kwargs)
-        context["template_copy_form"] = ContainerTemplateSelectorForm(
+        context['template_copy_form'] = ContainerTemplateSelectorForm(
             user=self.request.user
         )
         return context
@@ -376,11 +376,11 @@ class ContainerTemplateProjectDetailView(
 ):
     """View for details of project-wide containertemplate."""
 
-    permission_required = "containertemplates.project_view"
-    template_name = "containertemplates/project_detail.html"
+    permission_required = 'containertemplates.project_view'
+    template_name = 'containertemplates/project_detail.html'
     model = ContainerTemplateProject
-    slug_url_kwarg = "containertemplateproject"
-    slug_field = "sodar_uuid"
+    slug_url_kwarg = 'containertemplateproject'
+    slug_field = 'sodar_uuid'
 
 
 class ContainerTemplateProjectDuplicateView(
@@ -393,18 +393,18 @@ class ContainerTemplateProjectDuplicateView(
 ):
     """View for duplicating a project-wide containertemplate."""
 
-    permission_required = "containertemplates.project_duplicate"
+    permission_required = 'containertemplates.project_duplicate'
     model = ContainerTemplateProject
-    slug_url_kwarg = "containertemplateproject"
-    slug_field = "sodar_uuid"
+    slug_url_kwarg = 'containertemplateproject'
+    slug_field = 'sodar_uuid'
 
     def get(self, request, *args, **kwargs):
-        timeline = plugin_api.get_backend_api("timeline_backend")
+        timeline = plugin_api.get_backend_api('timeline_backend')
         obj = self.get_object()
         _redirect = redirect(
             reverse(
-                "containertemplates:project-list",
-                kwargs={"project": obj.project.sodar_uuid},
+                'containertemplates:project-list',
+                kwargs={'project': obj.project.sodar_uuid},
             )
         )
 
@@ -414,28 +414,28 @@ class ContainerTemplateProjectDuplicateView(
                     project=obj.project,
                     app_name=APP_NAME,
                     user=self.request.user,
-                    event_name="duplicate_containertemplate_site",
-                    description="duplicated {containertemplate} site-wide",
+                    event_name='duplicate_containertemplate_site',
+                    description='duplicated {containertemplate} site-wide',
                     status_type=timeline.TL_STATUS_OK,
                 )
                 tl_event.add_object(
-                    obj=obj, label="containertemplate", name=str(obj)
+                    obj=obj, label='containertemplate', name=str(obj)
                 )
 
-            data = model_to_dict(obj, exclude=["id", "sodar_uuid", "project"])
-            title_original = data["title"]
-            title_new = f"{data['title']} (Duplicate)"
+            data = model_to_dict(obj, exclude=['id', 'sodar_uuid', 'project'])
+            title_original = data['title']
+            title_new = f'{data["title"]} (Duplicate)'
             counter = 1
 
             while ContainerTemplateProject.objects.filter(
                 title=title_new, project=obj.project
             ).exists():
                 counter += 1
-                title_new = f"{title_original} (Duplicate {counter})"
+                title_new = f'{title_original} (Duplicate {counter})'
 
-            data["title"] = title_new
-            data["project"] = obj.project
-            data["containertemplatesite"] = obj.containertemplatesite
+            data['title'] = title_new
+            data['project'] = obj.project
+            data['containertemplatesite'] = obj.containertemplatesite
 
             try:
                 ContainerTemplateProject.objects.create(**data)
@@ -461,34 +461,34 @@ class ContainerTemplateProjectCopyView(
 ):
     """View for copying a project-wide containertemplate."""
 
-    permission_required = "containertemplates.project_duplicate"
-    slug_url_kwarg = "project"
-    slug_field = "sodar_uuid"
+    permission_required = 'containertemplates.project_duplicate'
+    slug_url_kwarg = 'project'
+    slug_field = 'sodar_uuid'
 
     def post(self, request, *args, **kwargs):
         project = self.get_project()
-        timeline = plugin_api.get_backend_api("timeline_backend")
+        timeline = plugin_api.get_backend_api('timeline_backend')
         _redirect = redirect(
             reverse(
-                "containertemplates:project-list",
-                kwargs={"project": project.sodar_uuid},
+                'containertemplates:project-list',
+                kwargs={'project': project.sodar_uuid},
             )
         )
 
-        source = request.POST.get("source")
+        source = request.POST.get('source')
 
         if not source:
             return _redirect
 
-        site_or_project, source_id = source.split(":")
+        site_or_project, source_id = source.split(':')
 
-        if site_or_project == "site":
+        if site_or_project == 'site':
             model = ContainerTemplateSite
-            exclude = ["id", "sodar_uuid"]
+            exclude = ['id', 'sodar_uuid']
 
-        elif site_or_project == "project":
+        elif site_or_project == 'project':
             model = ContainerTemplateProject
-            exclude = ["id", "sodar_uuid", "project"]
+            exclude = ['id', 'sodar_uuid', 'project']
 
         else:
             messages.error(
@@ -500,7 +500,7 @@ class ContainerTemplateProjectCopyView(
             obj = model.objects.get(id=source_id)
 
         except model.DoesNotExist:
-            messages.error(request, "Source template not found!")
+            messages.error(request, 'Source template not found!')
             return _redirect
 
         with transaction.atomic():
@@ -509,44 +509,44 @@ class ContainerTemplateProjectCopyView(
                     project=project,
                     app_name=APP_NAME,
                     user=self.request.user,
-                    event_name=f"copy_containertemplate_{site_or_project}",
-                    description="copied {containertemplate} %s"
+                    event_name=f'copy_containertemplate_{site_or_project}',
+                    description='copied {containertemplate} %s'
                     % site_or_project,
                     status_type=timeline.TL_STATUS_OK,
                 )
                 tl_event.add_object(
-                    obj=obj, label="containertemplate", name=str(obj)
+                    obj=obj, label='containertemplate', name=str(obj)
                 )
 
             data = model_to_dict(obj, exclude=exclude)
-            title_original = data["title"]
-            title_new = f"{data['title']} (Copy)"
+            title_original = data['title']
+            title_new = f'{data["title"]} (Copy)'
             counter = 1
 
             while ContainerTemplateProject.objects.filter(
                 title=title_new, project=project
             ).exists():
                 counter += 1
-                title_new = f"{title_original} (Copy {counter})"
+                title_new = f'{title_original} (Copy {counter})'
 
-            data["title"] = title_new
-            data["project"] = project
+            data['title'] = title_new
+            data['project'] = project
 
-            if site_or_project == "site":
-                data["containertemplatesite"] = obj
+            if site_or_project == 'site':
+                data['containertemplatesite'] = obj
 
             else:
-                if data.get("containertemplatesite") is not None:
+                if data.get('containertemplatesite') is not None:
                     try:
-                        data["containertemplatesite"] = (
+                        data['containertemplatesite'] = (
                             ContainerTemplateSite.objects.get(
-                                id=data.get("containertemplatesite")
+                                id=data.get('containertemplatesite')
                             )
                         )
 
                     except ContainerTemplateSite.DoesNotExist:
                         messages.error(
-                            request, "Site-wide container template not found!"
+                            request, 'Site-wide container template not found!'
                         )
                         return _redirect
 
@@ -569,32 +569,32 @@ class ContainerTemplateSelectorApiView(LoginRequiredMixin, View):
     """Class for returning containertemplate values."""
 
     def post(self, *args, **kwargs):
-        containertemplate_id = self.request.POST.get("containertemplate_id")
-        site_or_project = self.request.POST.get("site_or_project")
+        containertemplate_id = self.request.POST.get('containertemplate_id')
+        site_or_project = self.request.POST.get('site_or_project')
 
         # TODO check if user is allowed to access project
 
         if not containertemplate_id:
             return JsonResponse(
-                {"msg": "Missing `containertemplate_id`"}, status=500
+                {'msg': 'Missing `containertemplate_id`'}, status=500
             )
 
-        if site_or_project not in ("site", "project"):
+        if site_or_project not in ('site', 'project'):
             return JsonResponse(
                 {
-                    "msg": "Missing or invalid `site_or_project`. Only `site` or `project` allowed."
+                    'msg': 'Missing or invalid `site_or_project`. Only `site` or `project` allowed.'
                 },
                 status=500,
             )
 
-        if site_or_project == "site":
+        if site_or_project == 'site':
             try:
                 obj = ContainerTemplateSite.objects.get(id=containertemplate_id)
 
             except ContainerTemplateSite.DoesNotExist:
                 return JsonResponse(
                     {
-                        "msg": f"No ContainerTemplateSite with id {containertemplate_id}"
+                        'msg': f'No ContainerTemplateSite with id {containertemplate_id}'
                     },
                     status=500,
                 )
@@ -608,7 +608,7 @@ class ContainerTemplateSelectorApiView(LoginRequiredMixin, View):
             except ContainerTemplateProject.DoesNotExist:
                 return JsonResponse(
                     {
-                        "msg": f"No ContainerTemplateProject with id {containertemplate_id}"
+                        'msg': f'No ContainerTemplateProject with id {containertemplate_id}'
                     },
                     status=500,
                 )
@@ -616,6 +616,6 @@ class ContainerTemplateSelectorApiView(LoginRequiredMixin, View):
         return JsonResponse(
             model_to_dict(
                 obj,
-                exclude=["sodar_uuid", "containertemplatesite", "project"],
+                exclude=['sodar_uuid', 'containertemplatesite', 'project'],
             )
         )

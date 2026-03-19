@@ -5,7 +5,6 @@ import django.db.models.deletion
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
         ('containertemplates', '0004_auto_20210706_1523'),
         ('containers', '0003_containeractionlock'),
@@ -15,15 +14,46 @@ class Migration(migrations.Migration):
         migrations.AddField(
             model_name='container',
             name='containertemplateproject',
-            field=models.ForeignKey(blank=True, help_text='Link to project-wide container template', null=True, on_delete=django.db.models.deletion.SET_NULL, related_name='containers', to='containertemplates.containertemplateproject'),
+            field=models.ForeignKey(
+                blank=True,
+                help_text='Link to project-wide container template',
+                null=True,
+                on_delete=django.db.models.deletion.SET_NULL,
+                related_name='containers',
+                to='containertemplates.containertemplateproject',
+            ),
         ),
         migrations.AddField(
             model_name='container',
             name='containertemplatesite',
-            field=models.ForeignKey(blank=True, help_text='Link to site-wide container template', null=True, on_delete=django.db.models.deletion.SET_NULL, related_name='containers', to='containertemplates.containertemplatesite'),
+            field=models.ForeignKey(
+                blank=True,
+                help_text='Link to site-wide container template',
+                null=True,
+                on_delete=django.db.models.deletion.SET_NULL,
+                related_name='containers',
+                to='containertemplates.containertemplatesite',
+            ),
         ),
         migrations.AddConstraint(
             model_name='container',
-            constraint=models.CheckConstraint(check=models.Q(models.Q(('containertemplateproject__isnull', False), ('containertemplatesite__isnull', True)), models.Q(('containertemplateproject__isnull', True), ('containertemplatesite__isnull', False)), models.Q(('containertemplateproject__isnull', True), ('containertemplatesite__isnull', True)), _connector='OR'), name='containers_container_site_or_project_or_null_template'),
+            constraint=models.CheckConstraint(
+                check=models.Q(
+                    models.Q(
+                        ('containertemplateproject__isnull', False),
+                        ('containertemplatesite__isnull', True),
+                    ),
+                    models.Q(
+                        ('containertemplateproject__isnull', True),
+                        ('containertemplatesite__isnull', False),
+                    ),
+                    models.Q(
+                        ('containertemplateproject__isnull', True),
+                        ('containertemplatesite__isnull', True),
+                    ),
+                    _connector='OR',
+                ),
+                name='containers_container_site_or_project_or_null_template',
+            ),
         ),
     ]

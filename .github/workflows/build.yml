@@ -29,17 +29,14 @@ jobs:
       POSTGRES_PORT: 5432
       DATABASE_URL: 'postgres://kiosc:kiosc@0.0.0.0/kiosc'
     steps:
+      - name: Checkout repository
+        uses: actions/checkout@v2
       - name: Install server dependencies
-        run: |
-          sudo apt-get update
-          sudo apt-get install -qq build-essential zlib1g-dev libtiff5-dev libjpeg8-dev libfreetype6-dev
-          sudo apt-get install -qq liblcms2-dev libwebp-dev libpq-dev graphviz-dev
+        run: sudo ./utility/install_os_dependencies.sh
       - name: Install Python
         uses: actions/setup-python@v2
         with:
           python-version: ${{ matrix.python-version }}
-      - name: Checkout repository
-        uses: actions/checkout@v2
       - name: Install project Python dependencies
         run: |
           pip install -r requirements/local.txt
@@ -48,19 +45,17 @@ jobs:
         run: python manage.py geticons
       - name: Run collectstatic
         run: python manage.py collectstatic --noinput
+      - name: Check linting and formatting
+        run: make check
+      - name: Check docs building
+        working-directory: ./docs
+        run: make html
+        if: ${{ matrix.python-version == '3.13' }}
       - name: Run tests
         run: |
           coverage run --rcfile=.coveragerc manage.py test -v 2 --settings=config.settings.test
           coverage lcov
           coverage report
-      - name: Check linting
-        run: flake8 .
-      - name: Check formatting
-        run: make black arg=--check
-      - name: Check docs building
-        working-directory: ./docs
-        run: make html
-        if: ${{ matrix.python-version == '3.13' }}
       - name: Report coverage with Coveralls
         uses: coverallsapp/github-action@v2
         with:

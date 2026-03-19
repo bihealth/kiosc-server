@@ -4,17 +4,17 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
-        ("users", "0006_auto_20210409_1106"),
+        ('users', '0006_auto_20210409_1106'),
     ]
 
     operations = [
         migrations.AddField(
-            model_name="user",
-            name="enable_update",
+            model_name='user',
+            name='enable_update',
             field=models.BooleanField(
-                default=True, help_text="Enable user profile updating for local user."
+                default=True,
+                help_text='Enable user profile updating for local user.',
             ),
         ),
     ]

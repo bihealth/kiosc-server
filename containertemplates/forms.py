@@ -8,18 +8,18 @@ from containertemplates.models import (
 )
 
 fields = [
-    "title",
-    "description",
-    "container_port",
-    "container_path",
-    "heartbeat_url",
-    "timeout",
-    "environment",
-    "command",
-    "repository",
-    "tag",
-    "max_retries",
-    "inactivity_threshold",
+    'title',
+    'description',
+    'container_port',
+    'container_path',
+    'heartbeat_url',
+    'timeout',
+    'environment',
+    'command',
+    'repository',
+    'tag',
+    'max_retries',
+    'inactivity_threshold',
 ]
 
 
@@ -38,14 +38,14 @@ class ContainerTemplateProjectForm(forms.ModelForm):
         model = ContainerTemplateProject
         fields = [
             *fields,
-            "project",
+            'project',
         ]
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
         # Hide project field
-        self.fields["project"].widget = forms.HiddenInput()
+        self.fields['project'].widget = forms.HiddenInput()
 
 
 class ContainerTemplateSelectorForm(forms.Form):
@@ -55,12 +55,12 @@ class ContainerTemplateSelectorForm(forms.Form):
     source = forms.ChoiceField(
         choices=[],
         widget=forms.Select(
-            attrs={"class": "form-control", "style": "width: 400px"}
+            attrs={'class': 'form-control', 'style': 'width: 400px'}
         ),
     )
 
     def __init__(self, *args, **kwargs):
-        user = kwargs.pop("user")
+        user = kwargs.pop('user')
 
         super().__init__(*args, **kwargs)
 
@@ -73,12 +73,12 @@ class ContainerTemplateSelectorForm(forms.Form):
             ]
 
         choices_project = [
-            (f"project:{obj.id}", f"[Project-wide] {obj.get_display_name()}")
+            (f'project:{obj.id}', f'[Project-wide] {obj.get_display_name()}')
             for obj in queryset_project
         ]
         choices_site = [
-            (f"site:{obj.id}", f"[Site-wide] {obj.get_display_name()}")
+            (f'site:{obj.id}', f'[Site-wide] {obj.get_display_name()}')
             for obj in queryset_site
         ]
 
-        self.fields["source"].choices = chain(choices_site, choices_project)
+        self.fields['source'].choices = chain(choices_site, choices_project)

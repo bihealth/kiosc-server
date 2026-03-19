@@ -18,26 +18,26 @@ class TestContainerTemplateSiteModel(TestBase):
         super().setUp()
         self.create_one_containertemplatesite()
         self.data = {
-            "title": "some title",
+            'title': 'some title',
         }
 
     def test_initialization(self):
         containertemplate = ContainerTemplateSite.objects.create(**self.data)
         expected = {
             **self.data,
-            "repository": None,
-            "tag": None,
-            "description": None,
-            "command": None,
-            "container_port": ContainerTemplateSite.container_port.field.default,
-            "timeout": ContainerTemplateSite.timeout.field.default,
-            "environment": None,
-            "container_path": "",
-            "heartbeat_url": None,
-            "id": containertemplate.id,
-            "sodar_uuid": containertemplate.sodar_uuid,
-            "max_retries": containertemplate.max_retries,
-            "inactivity_threshold": containertemplate.inactivity_threshold,
+            'repository': None,
+            'tag': None,
+            'description': None,
+            'command': None,
+            'container_port': ContainerTemplateSite.container_port.field.default,
+            'timeout': ContainerTemplateSite.timeout.field.default,
+            'environment': None,
+            'container_path': '',
+            'heartbeat_url': None,
+            'id': containertemplate.id,
+            'sodar_uuid': containertemplate.sodar_uuid,
+            'max_retries': containertemplate.max_retries,
+            'inactivity_threshold': containertemplate.inactivity_threshold,
         }
         self.assertEqual(model_to_dict(containertemplate), expected)
 
@@ -50,7 +50,7 @@ class TestContainerTemplateSiteModel(TestBase):
     def test___repr__(self):
         self.assertEqual(
             repr(self.containertemplatesite1),
-            "ContainerTemplateSite({}, {})".format(
+            'ContainerTemplateSite({}, {})'.format(
                 self.containertemplatesite1.title,
                 self.containertemplatesite1.get_repos_full(),
             ),
@@ -59,22 +59,22 @@ class TestContainerTemplateSiteModel(TestBase):
     def test_get_repos_full(self):
         self.assertEqual(
             self.containertemplatesite1.get_repos_full(),
-            "{}:{}".format(
+            '{}:{}'.format(
                 self.containertemplatesite1.repository,
                 self.containertemplatesite1.tag,
             ),
         )
 
     def test_get_repos_full_no_repository(self):
-        self.containertemplatesite1.repository = ""
+        self.containertemplatesite1.repository = ''
         self.containertemplatesite1.save()
         self.assertEqual(
             self.containertemplatesite1.get_repos_full(),
-            f"<no_repository>:{self.containertemplatesite1.tag}",
+            f'<no_repository>:{self.containertemplatesite1.tag}',
         )
 
     def test_get_repos_full_no_tag(self):
-        self.containertemplatesite1.tag = ""
+        self.containertemplatesite1.tag = ''
         self.containertemplatesite1.save()
         self.assertEqual(
             self.containertemplatesite1.get_repos_full(),
@@ -82,18 +82,18 @@ class TestContainerTemplateSiteModel(TestBase):
         )
 
     def test_get_repos_full_no_repository_no_tag(self):
-        self.containertemplatesite1.tag = ""
-        self.containertemplatesite1.repository = ""
+        self.containertemplatesite1.tag = ''
+        self.containertemplatesite1.repository = ''
         self.containertemplatesite1.save()
         self.assertEqual(
             self.containertemplatesite1.get_repos_full(),
-            "<no_repository>",
+            '<no_repository>',
         )
 
     def test_get_display_name(self):
         self.assertEqual(
             self.containertemplatesite1.get_display_name(),
-            "{} ({})".format(
+            '{} ({})'.format(
                 self.containertemplatesite1.title,
                 self.containertemplatesite1.get_repos_full(),
             ),
@@ -103,7 +103,7 @@ class TestContainerTemplateSiteModel(TestBase):
         self.assertEqual(
             self.containertemplatesite1.get_date_created(),
             localtime(self.containertemplatesite1.date_created).strftime(
-                "%Y-%m-%d %H:%M"
+                '%Y-%m-%d %H:%M'
             ),
         )
 
@@ -111,7 +111,7 @@ class TestContainerTemplateSiteModel(TestBase):
         self.assertEqual(
             self.containertemplatesite1.get_date_modified(),
             localtime(self.containertemplatesite1.date_modified).strftime(
-                "%Y-%m-%d %H:%M"
+                '%Y-%m-%d %H:%M'
             ),
         )
 
@@ -119,9 +119,9 @@ class TestContainerTemplateSiteModel(TestBase):
         self.assertEqual(
             self.containertemplatesite1.get_absolute_url(),
             reverse(
-                "containertemplates:site-detail",
+                'containertemplates:site-detail',
                 kwargs={
-                    "containertemplatesite": self.containertemplatesite1.sodar_uuid
+                    'containertemplatesite': self.containertemplatesite1.sodar_uuid
                 },
             ),
         )
@@ -134,29 +134,29 @@ class TestContainerTemplateProjectModel(TestBase):
         super().setUp()
         self.create_one_containertemplateproject()
         self.data = {
-            "title": "some title",
-            "project": self.project,
+            'title': 'some title',
+            'project': self.project,
         }
 
     def test_initialization(self):
         containertemplate = ContainerTemplateProject.objects.create(**self.data)
         expected = {
             **self.data,
-            "containertemplatesite": None,
-            "repository": None,
-            "tag": None,
-            "description": None,
-            "command": None,
-            "container_port": ContainerTemplateProject.container_port.field.default,
-            "timeout": ContainerTemplateProject.timeout.field.default,
-            "environment": None,
-            "container_path": "",
-            "heartbeat_url": None,
-            "id": containertemplate.id,
-            "sodar_uuid": containertemplate.sodar_uuid,
-            "max_retries": containertemplate.max_retries,
-            "project": self.project.pk,
-            "inactivity_threshold": containertemplate.inactivity_threshold,
+            'containertemplatesite': None,
+            'repository': None,
+            'tag': None,
+            'description': None,
+            'command': None,
+            'container_port': ContainerTemplateProject.container_port.field.default,
+            'timeout': ContainerTemplateProject.timeout.field.default,
+            'environment': None,
+            'container_path': '',
+            'heartbeat_url': None,
+            'id': containertemplate.id,
+            'sodar_uuid': containertemplate.sodar_uuid,
+            'max_retries': containertemplate.max_retries,
+            'project': self.project.pk,
+            'inactivity_threshold': containertemplate.inactivity_threshold,
         }
         self.assertEqual(model_to_dict(containertemplate), expected)
 
@@ -169,7 +169,7 @@ class TestContainerTemplateProjectModel(TestBase):
     def test___repr__(self):
         self.assertEqual(
             repr(self.containertemplateproject1),
-            "ContainerTemplateProject({}, {}, {})".format(
+            'ContainerTemplateProject({}, {}, {})'.format(
                 self.containertemplateproject1.project,
                 self.containertemplateproject1.title,
                 self.containertemplateproject1.get_repos_full(),
@@ -179,22 +179,22 @@ class TestContainerTemplateProjectModel(TestBase):
     def test_get_repos_full(self):
         self.assertEqual(
             self.containertemplateproject1.get_repos_full(),
-            "{}:{}".format(
+            '{}:{}'.format(
                 self.containertemplateproject1.repository,
                 self.containertemplateproject1.tag,
             ),
         )
 
     def test_get_repos_full_no_repository(self):
-        self.containertemplateproject1.repository = ""
+        self.containertemplateproject1.repository = ''
         self.containertemplateproject1.save()
         self.assertEqual(
             self.containertemplateproject1.get_repos_full(),
-            f"<no_repository>:{self.containertemplateproject1.tag}",
+            f'<no_repository>:{self.containertemplateproject1.tag}',
         )
 
     def test_get_repos_full_no_tag(self):
-        self.containertemplateproject1.tag = ""
+        self.containertemplateproject1.tag = ''
         self.containertemplateproject1.save()
         self.assertEqual(
             self.containertemplateproject1.get_repos_full(),
@@ -202,18 +202,18 @@ class TestContainerTemplateProjectModel(TestBase):
         )
 
     def test_get_repos_full_no_repository_no_tag(self):
-        self.containertemplateproject1.tag = ""
-        self.containertemplateproject1.repository = ""
+        self.containertemplateproject1.tag = ''
+        self.containertemplateproject1.repository = ''
         self.containertemplateproject1.save()
         self.assertEqual(
             self.containertemplateproject1.get_repos_full(),
-            "<no_repository>",
+            '<no_repository>',
         )
 
     def test_get_display_name(self):
         self.assertEqual(
             self.containertemplateproject1.get_display_name(),
-            "{} / {} ({})".format(
+            '{} / {} ({})'.format(
                 self.containertemplateproject1.project,
                 self.containertemplateproject1.title,
                 self.containertemplateproject1.get_repos_full(),
@@ -224,7 +224,7 @@ class TestContainerTemplateProjectModel(TestBase):
         self.assertEqual(
             self.containertemplateproject1.get_date_created(),
             localtime(self.containertemplateproject1.date_created).strftime(
-                "%Y-%m-%d %H:%M"
+                '%Y-%m-%d %H:%M'
             ),
         )
 
@@ -232,7 +232,7 @@ class TestContainerTemplateProjectModel(TestBase):
         self.assertEqual(
             self.containertemplateproject1.get_date_modified(),
             localtime(self.containertemplateproject1.date_modified).strftime(
-                "%Y-%m-%d %H:%M"
+                '%Y-%m-%d %H:%M'
             ),
         )
 
@@ -240,9 +240,9 @@ class TestContainerTemplateProjectModel(TestBase):
         self.assertEqual(
             self.containertemplateproject1.get_absolute_url(),
             reverse(
-                "containertemplates:project-detail",
+                'containertemplates:project-detail',
                 kwargs={
-                    "containertemplateproject": self.containertemplateproject1.sodar_uuid
+                    'containertemplateproject': self.containertemplateproject1.sodar_uuid
                 },
             ),
         )

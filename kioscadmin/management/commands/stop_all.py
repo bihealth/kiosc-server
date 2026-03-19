@@ -16,13 +16,13 @@ class Command(BaseCommand):
     """Implementation for stopping all containers."""
 
     #: Help message displayed on the command line.
-    help = "Stop containers all containers."
+    help = 'Stop containers all containers.'
 
     @transaction.atomic
     def handle(self, *args, **options):
         """Perform stopping all containers."""
 
-        msg_fin = "Command successfully finished"
+        msg_fin = 'Command successfully finished'
         cli = connect_docker()
         user = User.objects.get(username=settings.PROJECTROLES_DEFAULT_ADMIN)
 
@@ -39,7 +39,7 @@ class Command(BaseCommand):
 
             else:
                 bg_job = BackgroundJob.objects.create(
-                    name="Stop container",
+                    name='Stop container',
                     project=container.project,
                     job_type=ContainerBackgroundJob.spec_name,
                     user=user,
@@ -52,11 +52,11 @@ class Command(BaseCommand):
                 )
 
                 container_task.apply_async(
-                    kwargs={"job_id": job.id}, countdown=0.5
+                    kwargs={'job_id': job.id}, countdown=0.5
                 )
 
                 self.stdout.write(
-                    self.style.NOTICE("{} stopped".format(container.title))
+                    self.style.NOTICE('{} stopped'.format(container.title))
                 )
 
         self.stdout.write(self.style.SUCCESS(msg_fin))

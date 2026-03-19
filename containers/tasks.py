@@ -42,12 +42,12 @@ plugin_api = PluginAPI()
 logger = logging.getLogger(__name__)
 
 # Increase the timeout for communication with Docker daemon.
-APP_NAME = "containers"
+APP_NAME = 'containers'
 DEFAULT_GRACE_PERIOD_CONTAINER_STATUS = 180
 
 # SODAR constants
-SITE_MODE_TARGET = SODAR_CONSTANTS["SITE_MODE_TARGET"]
-SITE_MODE_SOURCE = SODAR_CONSTANTS["SITE_MODE_SOURCE"]
+SITE_MODE_TARGET = SODAR_CONSTANTS['SITE_MODE_TARGET']
+SITE_MODE_SOURCE = SODAR_CONSTANTS['SITE_MODE_SOURCE']
 
 
 class State:
@@ -60,10 +60,10 @@ def sync_container_state(container):
     cli = connect_docker()
     try:
         data = cli.inspect_container(container.container_id)
-        actual_state = data.get("State", {}).get("Status")
+        actual_state = data.get('State', {}).get('Status')
         if container.state != actual_state:
             logger.warning(
-                "%s: Container state our of sync", container.sodar_uuid
+                '%s: Container state our of sync', container.sodar_uuid
             )
             container.date_last_status_update = timezone.now()
             container.state = actual_state
@@ -71,14 +71,14 @@ def sync_container_state(container):
     except docker.errors.NullResource as ex:
         if container.state not in (STATE_INITIAL, STATE_FAILED):
             logger.error(
-                "%s: %s (state is %s)",
+                '%s: %s (state is %s)',
                 container.sodar_uuid,
                 ex,
                 container.state,
             )
             container.date_last_status_update = timezone.now()
             container.state = STATE_FAILED
-            container.container_id = ""
+            container.container_id = ''
             container.save()
     except docker.errors.NotFound as ex:
         # We mark it as failed. STATE_DELETED could also be an option,
@@ -87,7 +87,7 @@ def sync_container_state(container):
         logger.error(ex)
         container.date_last_status_update = timezone.now()
         container.state = STATE_FAILED
-        container.container_id = ""
+        container.container_id = ''
         container.save()
 
 
@@ -95,7 +95,7 @@ def sync_container_state(container):
 def container_task(_self, job_id):
     """Task to change a container state"""
     job = ContainerBackgroundJob.objects.get(pk=job_id)
-    timeline = plugin_api.get_backend_api("timeline_backend")
+    timeline = plugin_api.get_backend_api('timeline_backend')
     container = job.container
     user = job.bg_job.user
     tl_event = None
@@ -108,17 +108,17 @@ def container_task(_self, job_id):
             project=job.project,
             app_name=APP_NAME,
             user=user,
-            event_name="container_task",
-            description="{action} container {container}",
+            event_name='container_task',
+            description='{action} container {container}',
         )
         tl_event.add_object(
             obj=job.container,
-            label="container",
+            label='container',
             name=job.container.get_display_name(),
         )
         tl_event.add_object(
             obj=job,
-            label="action",
+            label='action',
             name=job.action,
         )
 
@@ -131,10 +131,10 @@ def container_task(_self, job_id):
         except docker.errors.NotFound as e:
             logger.error(e)
             job.add_log_entry(
-                f"Action failed: {job.action}", level=LOG_LEVEL_ERROR
+                f'Action failed: {job.action}', level=LOG_LEVEL_ERROR
             )
             job.container.log_entries.create(
-                text=f"Action failed: {job.action}",
+                text=f'Action failed: {job.action}',
                 process=PROCESS_TASK,
                 user=user,
                 level=LOG_LEVEL_ERROR,
@@ -149,8 +149,8 @@ def container_task(_self, job_id):
 
             with transaction.atomic():
                 job.container.refresh_from_db()
-                job.container.container_id = ""
-                job.container.image_id = ""
+                job.container.container_id = ''
+                job.container.image_id = ''
                 job.container.state = STATE_FAILED
                 job.container.save()
 
@@ -158,10 +158,10 @@ def container_task(_self, job_id):
             logger.error(e)
             # Catch Docker-specific exceptions
             job.add_log_entry(
-                f"Action failed: {job.action}", level=LOG_LEVEL_ERROR
+                f'Action failed: {job.action}', level=LOG_LEVEL_ERROR
             )
             container.log_entries.create(
-                text=f"Action failed: {job.action}",
+                text=f'Action failed: {job.action}',
                 process=PROCESS_TASK,
                 user=user,
                 level=LOG_LEVEL_ERROR,
@@ -182,10 +182,10 @@ def container_task(_self, job_id):
         except statemachine.exceptions.StateMachineError as e:
             logger.error(e)
             job.add_log_entry(
-                f"Action failed: {job.action}", level=LOG_LEVEL_ERROR
+                f'Action failed: {job.action}', level=LOG_LEVEL_ERROR
             )
             container.log_entries.create(
-                text=f"Action failed: {job.action} ({e})",
+                text=f'Action failed: {job.action} ({e})',
                 process=PROCESS_TASK,
                 user=user,
                 level=LOG_LEVEL_ERROR,
@@ -194,11 +194,11 @@ def container_task(_self, job_id):
         except ContainerActionLock.CoolDown as e:
             logger.warning(e)
             job.add_log_entry(
-                f"Action not performed: {job.action} (cool-down)",
+                f'Action not performed: {job.action} (cool-down)',
                 level=LOG_LEVEL_WARNING,
             )
             container.log_entries.create(
-                text=f"Action not performed: {job.action}. Cool-down is active ({settings.KIOSC_DOCKER_ACTION_MIN_DELAY}s)",
+                text=f'Action not performed: {job.action}. Cool-down is active ({settings.KIOSC_DOCKER_ACTION_MIN_DELAY}s)',
                 process=PROCESS_TASK,
                 user=user,
                 level=LOG_LEVEL_WARNING,
@@ -208,10 +208,10 @@ def container_task(_self, job_id):
             logger.error(e)
             # Catch all exceptions that are not coming from Docker
             job.add_log_entry(
-                f"Action failed: {job.action}", level=LOG_LEVEL_ERROR
+                f'Action failed: {job.action}', level=LOG_LEVEL_ERROR
             )
 
-            for line in traceback.format_exc().split("\n"):
+            for line in traceback.format_exc().split('\n'):
                 container.log_entries.create(
                     text=line,
                     process=PROCESS_TASK,
@@ -220,8 +220,8 @@ def container_task(_self, job_id):
                 )
 
             container.log_entries.create(
-                text="Action failed: {}{}".format(
-                    job.action, f" ({str(e)})" if str(e) else ""
+                text='Action failed: {}{}'.format(
+                    job.action, f' ({str(e)})' if str(e) else ''
                 ),
                 process=PROCESS_TASK,
                 user=user,

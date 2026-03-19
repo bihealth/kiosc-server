@@ -4,7 +4,6 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
         ('containers', '0004_auto_20210723_1118'),
     ]
@@ -13,12 +12,18 @@ class Migration(migrations.Migration):
         migrations.AddField(
             model_name='container',
             name='description',
-            field=models.TextField(blank=True, help_text='Description of the container.', null=True),
+            field=models.TextField(
+                blank=True, help_text='Description of the container.', null=True
+            ),
         ),
         migrations.AddField(
             model_name='container',
             name='title',
-            field=models.CharField(default='Please add me!', help_text='Title of the container.', max_length=512),
+            field=models.CharField(
+                default='Please add me!',
+                help_text='Title of the container.',
+                max_length=512,
+            ),
             preserve_default=False,
         ),
     ]

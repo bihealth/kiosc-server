@@ -42,7 +42,7 @@ class TestContainerTask(TestBase):
         )
         self.cli = connect_docker()
 
-    @tag("docker-server")
+    @tag('docker-server')
     def tearDown(self):
         for container in Container.objects.all():
             if container.container_id and not len(container.container_id) < 3:
@@ -55,20 +55,20 @@ class TestContainerTask(TestBase):
         self.cli.prune_containers()
         self.cli.prune_images()
 
-    @override_settings(KIOSC_NETWORK_MODE="host")
-    @patch("containers.tasks.sync_container_state")
-    @patch("docker.api.client.APIClient.remove_container")
-    @patch("docker.api.client.APIClient.unpause")
-    @patch("docker.api.client.APIClient.pause")
-    @patch("docker.api.client.APIClient.stop")
-    @patch("docker.api.client.APIClient.start")
-    @patch("docker.api.client.APIClient.pull")
-    @patch("docker.api.client.APIClient.inspect_container")
-    @patch("docker.api.client.APIClient.inspect_image")
-    @patch("docker.api.client.APIClient.create_host_config")
-    @patch("docker.api.client.APIClient.create_networking_config")
-    @patch("docker.api.client.APIClient.create_endpoint_config")
-    @patch("docker.api.client.APIClient.create_container")
+    @override_settings(KIOSC_NETWORK_MODE='host')
+    @patch('containers.tasks.sync_container_state')
+    @patch('docker.api.client.APIClient.remove_container')
+    @patch('docker.api.client.APIClient.unpause')
+    @patch('docker.api.client.APIClient.pause')
+    @patch('docker.api.client.APIClient.stop')
+    @patch('docker.api.client.APIClient.start')
+    @patch('docker.api.client.APIClient.pull')
+    @patch('docker.api.client.APIClient.inspect_container')
+    @patch('docker.api.client.APIClient.inspect_image')
+    @patch('docker.api.client.APIClient.create_host_config')
+    @patch('docker.api.client.APIClient.create_networking_config')
+    @patch('docker.api.client.APIClient.create_endpoint_config')
+    @patch('docker.api.client.APIClient.create_container')
     def test_start_mocked_mode_host(
         self,
         create_container,
@@ -93,9 +93,9 @@ class TestContainerTask(TestBase):
         environment = dict(self.container1.environment)
         environment.update(
             {
-                "CONTAINER_PORT": self.container1.container_port,
-                "TITLE": self.container1.title,
-                "DESCRIPTION": self.container1.description,
+                'CONTAINER_PORT': self.container1.container_port,
+                'TITLE': self.container1.title,
+                'DESCRIPTION': self.container1.description,
             }
         )
 
@@ -109,7 +109,7 @@ class TestContainerTask(TestBase):
         # Assert mocks
         create_container.assert_called_once_with(
             detach=True,
-            image="repository0:latest",
+            image='repository0:latest',
             environment=environment,
             command=self.container1.command or None,
             ports=[self.container1.container_port],
@@ -118,9 +118,9 @@ class TestContainerTask(TestBase):
         create_host_config.assert_called_once_with(
             ulimits=[
                 {
-                    "Name": "nofile",
-                    "Soft": settings.KIOSC_DOCKER_MAX_ULIMIT_NOFILE_SOFT,
-                    "Hard": settings.KIOSC_DOCKER_MAX_ULIMIT_NOFILE_HARD,
+                    'Name': 'nofile',
+                    'Soft': settings.KIOSC_DOCKER_MAX_ULIMIT_NOFILE_SOFT,
+                    'Hard': settings.KIOSC_DOCKER_MAX_ULIMIT_NOFILE_HARD,
                 }
             ],
             port_bindings={
@@ -143,20 +143,20 @@ class TestContainerTask(TestBase):
         unpause.assert_not_called()
         remove_container.assert_not_called()
 
-    @override_settings(KIOSC_NETWORK_MODE="docker-shared")
-    @patch("containers.tasks.sync_container_state")
-    @patch("docker.api.client.APIClient.remove_container")
-    @patch("docker.api.client.APIClient.unpause")
-    @patch("docker.api.client.APIClient.pause")
-    @patch("docker.api.client.APIClient.stop")
-    @patch("docker.api.client.APIClient.start")
-    @patch("docker.api.client.APIClient.pull")
-    @patch("docker.api.client.APIClient.inspect_container")
-    @patch("docker.api.client.APIClient.inspect_image")
-    @patch("docker.api.client.APIClient.create_host_config")
-    @patch("docker.api.client.APIClient.create_networking_config")
-    @patch("docker.api.client.APIClient.create_endpoint_config")
-    @patch("docker.api.client.APIClient.create_container")
+    @override_settings(KIOSC_NETWORK_MODE='docker-shared')
+    @patch('containers.tasks.sync_container_state')
+    @patch('docker.api.client.APIClient.remove_container')
+    @patch('docker.api.client.APIClient.unpause')
+    @patch('docker.api.client.APIClient.pause')
+    @patch('docker.api.client.APIClient.stop')
+    @patch('docker.api.client.APIClient.start')
+    @patch('docker.api.client.APIClient.pull')
+    @patch('docker.api.client.APIClient.inspect_container')
+    @patch('docker.api.client.APIClient.inspect_image')
+    @patch('docker.api.client.APIClient.create_host_config')
+    @patch('docker.api.client.APIClient.create_networking_config')
+    @patch('docker.api.client.APIClient.create_endpoint_config')
+    @patch('docker.api.client.APIClient.create_container')
     def test_start_mocked_mode_docker_shared(
         self,
         create_container,
@@ -185,9 +185,9 @@ class TestContainerTask(TestBase):
         environment = dict(self.container1.environment)
         environment.update(
             {
-                "CONTAINER_PORT": self.container1.container_port,
-                "TITLE": self.container1.title,
-                "DESCRIPTION": self.container1.description,
+                'CONTAINER_PORT': self.container1.container_port,
+                'TITLE': self.container1.title,
+                'DESCRIPTION': self.container1.description,
             }
         )
 
@@ -201,7 +201,7 @@ class TestContainerTask(TestBase):
         # Assert mocks
         create_container.assert_called_once_with(
             detach=True,
-            image="repository0:latest",
+            image='repository0:latest',
             environment=environment,
             command=self.container1.command or None,
             ports=[self.container1.container_port],
@@ -211,9 +211,9 @@ class TestContainerTask(TestBase):
         create_host_config.assert_called_once_with(
             ulimits=[
                 {
-                    "Name": "nofile",
-                    "Soft": settings.KIOSC_DOCKER_MAX_ULIMIT_NOFILE_SOFT,
-                    "Hard": settings.KIOSC_DOCKER_MAX_ULIMIT_NOFILE_HARD,
+                    'Name': 'nofile',
+                    'Soft': settings.KIOSC_DOCKER_MAX_ULIMIT_NOFILE_SOFT,
+                    'Hard': settings.KIOSC_DOCKER_MAX_ULIMIT_NOFILE_HARD,
                 }
             ],
         )
@@ -236,19 +236,19 @@ class TestContainerTask(TestBase):
         remove_container.assert_not_called()
 
     @override_settings(KIOSC_DOCKER_ACTION_MIN_DELAY=10)
-    @patch("containers.tasks.sync_container_state")
-    @patch("docker.api.client.APIClient.remove_container")
-    @patch("docker.api.client.APIClient.unpause")
-    @patch("docker.api.client.APIClient.pause")
-    @patch("docker.api.client.APIClient.stop")
-    @patch("docker.api.client.APIClient.start")
-    @patch("docker.api.client.APIClient.pull")
-    @patch("docker.api.client.APIClient.inspect_container")
-    @patch("docker.api.client.APIClient.inspect_image")
-    @patch("docker.api.client.APIClient.create_host_config")
-    @patch("docker.api.client.APIClient.create_networking_config")
-    @patch("docker.api.client.APIClient.create_endpoint_config")
-    @patch("docker.api.client.APIClient.create_container")
+    @patch('containers.tasks.sync_container_state')
+    @patch('docker.api.client.APIClient.remove_container')
+    @patch('docker.api.client.APIClient.unpause')
+    @patch('docker.api.client.APIClient.pause')
+    @patch('docker.api.client.APIClient.stop')
+    @patch('docker.api.client.APIClient.start')
+    @patch('docker.api.client.APIClient.pull')
+    @patch('docker.api.client.APIClient.inspect_container')
+    @patch('docker.api.client.APIClient.inspect_image')
+    @patch('docker.api.client.APIClient.create_host_config')
+    @patch('docker.api.client.APIClient.create_networking_config')
+    @patch('docker.api.client.APIClient.create_endpoint_config')
+    @patch('docker.api.client.APIClient.create_container')
     def test_start_stop_second_blocked_mocked(
         self,
         create_container,
@@ -270,7 +270,7 @@ class TestContainerTask(TestBase):
             project=self.project,
             user=self.superuser,
             container=self.container1,
-            action="stop",
+            action='stop',
         )
 
         create_container.side_effect = [DockerMock.create_container]
@@ -284,9 +284,9 @@ class TestContainerTask(TestBase):
         environment = dict(self.container1.environment)
         environment.update(
             {
-                "CONTAINER_PORT": self.container1.container_port,
-                "TITLE": self.container1.title,
-                "DESCRIPTION": self.container1.description,
+                'CONTAINER_PORT': self.container1.container_port,
+                'TITLE': self.container1.title,
+                'DESCRIPTION': self.container1.description,
             }
         )
 
@@ -298,13 +298,13 @@ class TestContainerTask(TestBase):
 
         self.assertEqual(
             self.container1.log_entries.last().text,
-            f"Action not performed: {bg_job2.action}. Cool-down is active ({settings.KIOSC_DOCKER_ACTION_MIN_DELAY}s)",
+            f'Action not performed: {bg_job2.action}. Cool-down is active ({settings.KIOSC_DOCKER_ACTION_MIN_DELAY}s)',
         )
 
         # Assert mocks
         create_container.assert_called_once_with(
             detach=True,
-            image="repository0:latest",
+            image='repository0:latest',
             environment=environment,
             command=self.container1.command or None,
             ports=[self.container1.container_port],
@@ -313,9 +313,9 @@ class TestContainerTask(TestBase):
         create_host_config.assert_called_once_with(
             ulimits=[
                 {
-                    "Name": "nofile",
-                    "Soft": settings.KIOSC_DOCKER_MAX_ULIMIT_NOFILE_SOFT,
-                    "Hard": settings.KIOSC_DOCKER_MAX_ULIMIT_NOFILE_HARD,
+                    'Name': 'nofile',
+                    'Soft': settings.KIOSC_DOCKER_MAX_ULIMIT_NOFILE_SOFT,
+                    'Hard': settings.KIOSC_DOCKER_MAX_ULIMIT_NOFILE_HARD,
                 }
             ],
             port_bindings={
@@ -339,19 +339,19 @@ class TestContainerTask(TestBase):
         remove_container.assert_not_called()
 
     @override_settings(KIOSC_DOCKER_ACTION_MIN_DELAY=0)
-    @patch("containers.tasks.sync_container_state")
-    @patch("docker.api.client.APIClient.remove_container")
-    @patch("docker.api.client.APIClient.unpause")
-    @patch("docker.api.client.APIClient.pause")
-    @patch("docker.api.client.APIClient.stop")
-    @patch("docker.api.client.APIClient.start")
-    @patch("docker.api.client.APIClient.pull")
-    @patch("docker.api.client.APIClient.inspect_container")
-    @patch("docker.api.client.APIClient.inspect_image")
-    @patch("docker.api.client.APIClient.create_host_config")
-    @patch("docker.api.client.APIClient.create_networking_config")
-    @patch("docker.api.client.APIClient.create_endpoint_config")
-    @patch("docker.api.client.APIClient.create_container")
+    @patch('containers.tasks.sync_container_state')
+    @patch('docker.api.client.APIClient.remove_container')
+    @patch('docker.api.client.APIClient.unpause')
+    @patch('docker.api.client.APIClient.pause')
+    @patch('docker.api.client.APIClient.stop')
+    @patch('docker.api.client.APIClient.start')
+    @patch('docker.api.client.APIClient.pull')
+    @patch('docker.api.client.APIClient.inspect_container')
+    @patch('docker.api.client.APIClient.inspect_image')
+    @patch('docker.api.client.APIClient.create_host_config')
+    @patch('docker.api.client.APIClient.create_networking_config')
+    @patch('docker.api.client.APIClient.create_endpoint_config')
+    @patch('docker.api.client.APIClient.create_container')
     def test_start_stop_mocked(
         self,
         create_container,
@@ -373,7 +373,7 @@ class TestContainerTask(TestBase):
             project=self.project,
             user=self.superuser,
             container=self.container1,
-            action="stop",
+            action='stop',
         )
 
         create_container.side_effect = [DockerMock.create_container]
@@ -390,9 +390,9 @@ class TestContainerTask(TestBase):
         environment = dict(self.container1.environment)
         environment.update(
             {
-                "CONTAINER_PORT": self.container1.container_port,
-                "TITLE": self.container1.title,
-                "DESCRIPTION": self.container1.description,
+                'CONTAINER_PORT': self.container1.container_port,
+                'TITLE': self.container1.title,
+                'DESCRIPTION': self.container1.description,
             }
         )
 
@@ -403,12 +403,12 @@ class TestContainerTask(TestBase):
         self.container1.refresh_from_db()
 
         self.assertEqual(
-            self.container1.log_entries.last().text, "Stopping succeeded"
+            self.container1.log_entries.last().text, 'Stopping succeeded'
         )
 
         create_container.assert_called_once_with(
             detach=True,
-            image="repository0:latest",
+            image='repository0:latest',
             environment=environment,
             command=self.container1.command or None,
             ports=[self.container1.container_port],
@@ -417,9 +417,9 @@ class TestContainerTask(TestBase):
         create_host_config.assert_called_once_with(
             ulimits=[
                 {
-                    "Name": "nofile",
-                    "Soft": settings.KIOSC_DOCKER_MAX_ULIMIT_NOFILE_SOFT,
-                    "Hard": settings.KIOSC_DOCKER_MAX_ULIMIT_NOFILE_HARD,
+                    'Name': 'nofile',
+                    'Soft': settings.KIOSC_DOCKER_MAX_ULIMIT_NOFILE_SOFT,
+                    'Hard': settings.KIOSC_DOCKER_MAX_ULIMIT_NOFILE_HARD,
                 }
             ],
             port_bindings={
@@ -444,19 +444,19 @@ class TestContainerTask(TestBase):
         unpause.assert_not_called()
         remove_container.assert_not_called()
 
-    @patch("containers.tasks.sync_container_state")
-    @patch("docker.api.client.APIClient.remove_container")
-    @patch("docker.api.client.APIClient.unpause")
-    @patch("docker.api.client.APIClient.pause")
-    @patch("docker.api.client.APIClient.stop")
-    @patch("docker.api.client.APIClient.start")
-    @patch("docker.api.client.APIClient.pull")
-    @patch("docker.api.client.APIClient.inspect_container")
-    @patch("docker.api.client.APIClient.inspect_image")
-    @patch("docker.api.client.APIClient.create_host_config")
-    @patch("docker.api.client.APIClient.create_networking_config")
-    @patch("docker.api.client.APIClient.create_endpoint_config")
-    @patch("docker.api.client.APIClient.create_container")
+    @patch('containers.tasks.sync_container_state')
+    @patch('docker.api.client.APIClient.remove_container')
+    @patch('docker.api.client.APIClient.unpause')
+    @patch('docker.api.client.APIClient.pause')
+    @patch('docker.api.client.APIClient.stop')
+    @patch('docker.api.client.APIClient.start')
+    @patch('docker.api.client.APIClient.pull')
+    @patch('docker.api.client.APIClient.inspect_container')
+    @patch('docker.api.client.APIClient.inspect_image')
+    @patch('docker.api.client.APIClient.create_host_config')
+    @patch('docker.api.client.APIClient.create_networking_config')
+    @patch('docker.api.client.APIClient.create_endpoint_config')
+    @patch('docker.api.client.APIClient.create_container')
     def test_stop_mocked(
         self,
         create_container,
@@ -476,8 +476,8 @@ class TestContainerTask(TestBase):
         # Prepare
         self.bg_job.action = ACTION_STOP
         self.bg_job.save()
-        self.container1.image_id = DockerMock.inspect_image.get("Id")
-        self.container1.container_id = DockerMock.create_container.get("Id")
+        self.container1.image_id = DockerMock.inspect_image.get('Id')
+        self.container1.container_id = DockerMock.create_container.get('Id')
         self.container1.state = STATE_RUNNING
         self.container1.save()
         create_host_config.side_effect = [DockerMock.create_host_config]
@@ -505,19 +505,19 @@ class TestContainerTask(TestBase):
         unpause.assert_not_called()
         remove_container.assert_not_called()
 
-    @patch("containers.tasks.sync_container_state")
-    @patch("docker.api.client.APIClient.remove_container")
-    @patch("docker.api.client.APIClient.unpause")
-    @patch("docker.api.client.APIClient.pause")
-    @patch("docker.api.client.APIClient.stop")
-    @patch("docker.api.client.APIClient.start")
-    @patch("docker.api.client.APIClient.pull")
-    @patch("docker.api.client.APIClient.inspect_container")
-    @patch("docker.api.client.APIClient.inspect_image")
-    @patch("docker.api.client.APIClient.create_host_config")
-    @patch("docker.api.client.APIClient.create_networking_config")
-    @patch("docker.api.client.APIClient.create_endpoint_config")
-    @patch("docker.api.client.APIClient.create_container")
+    @patch('containers.tasks.sync_container_state')
+    @patch('docker.api.client.APIClient.remove_container')
+    @patch('docker.api.client.APIClient.unpause')
+    @patch('docker.api.client.APIClient.pause')
+    @patch('docker.api.client.APIClient.stop')
+    @patch('docker.api.client.APIClient.start')
+    @patch('docker.api.client.APIClient.pull')
+    @patch('docker.api.client.APIClient.inspect_container')
+    @patch('docker.api.client.APIClient.inspect_image')
+    @patch('docker.api.client.APIClient.create_host_config')
+    @patch('docker.api.client.APIClient.create_networking_config')
+    @patch('docker.api.client.APIClient.create_endpoint_config')
+    @patch('docker.api.client.APIClient.create_container')
     def test_restart_mocked(
         self,
         create_container,
@@ -537,8 +537,8 @@ class TestContainerTask(TestBase):
         # Prepare
         self.bg_job.action = ACTION_RESTART
         self.bg_job.save()
-        self.container1.image_id = DockerMock.inspect_image.get("Id")
-        self.container1.container_id = DockerMock.create_container.get("Id")
+        self.container1.image_id = DockerMock.inspect_image.get('Id')
+        self.container1.container_id = DockerMock.create_container.get('Id')
         self.container1.state = STATE_RUNNING
         self.container1.save()
         create_container.side_effect = [DockerMock.create_container]
@@ -551,9 +551,9 @@ class TestContainerTask(TestBase):
         environment = dict(self.container1.environment)
         environment.update(
             {
-                "CONTAINER_PORT": self.container1.container_port,
-                "TITLE": self.container1.title,
-                "DESCRIPTION": self.container1.description,
+                'CONTAINER_PORT': self.container1.container_port,
+                'TITLE': self.container1.title,
+                'DESCRIPTION': self.container1.description,
             }
         )
 
@@ -567,7 +567,7 @@ class TestContainerTask(TestBase):
         # Assert mocks
         create_container.assert_called_once_with(
             detach=True,
-            image="repository0:latest",
+            image='repository0:latest',
             environment=environment,
             command=self.container1.command or None,
             ports=[self.container1.container_port],
@@ -576,9 +576,9 @@ class TestContainerTask(TestBase):
         create_host_config.assert_called_once_with(
             ulimits=[
                 {
-                    "Name": "nofile",
-                    "Soft": settings.KIOSC_DOCKER_MAX_ULIMIT_NOFILE_SOFT,
-                    "Hard": settings.KIOSC_DOCKER_MAX_ULIMIT_NOFILE_HARD,
+                    'Name': 'nofile',
+                    'Soft': settings.KIOSC_DOCKER_MAX_ULIMIT_NOFILE_SOFT,
+                    'Hard': settings.KIOSC_DOCKER_MAX_ULIMIT_NOFILE_HARD,
                 }
             ],
             port_bindings={
@@ -605,19 +605,19 @@ class TestContainerTask(TestBase):
             self.container1.container_id, force=True
         )
 
-    @patch("containers.tasks.sync_container_state")
-    @patch("docker.api.client.APIClient.remove_container")
-    @patch("docker.api.client.APIClient.unpause")
-    @patch("docker.api.client.APIClient.pause")
-    @patch("docker.api.client.APIClient.stop")
-    @patch("docker.api.client.APIClient.start")
-    @patch("docker.api.client.APIClient.pull")
-    @patch("docker.api.client.APIClient.inspect_container")
-    @patch("docker.api.client.APIClient.inspect_image")
-    @patch("docker.api.client.APIClient.create_host_config")
-    @patch("docker.api.client.APIClient.create_networking_config")
-    @patch("docker.api.client.APIClient.create_endpoint_config")
-    @patch("docker.api.client.APIClient.create_container")
+    @patch('containers.tasks.sync_container_state')
+    @patch('docker.api.client.APIClient.remove_container')
+    @patch('docker.api.client.APIClient.unpause')
+    @patch('docker.api.client.APIClient.pause')
+    @patch('docker.api.client.APIClient.stop')
+    @patch('docker.api.client.APIClient.start')
+    @patch('docker.api.client.APIClient.pull')
+    @patch('docker.api.client.APIClient.inspect_container')
+    @patch('docker.api.client.APIClient.inspect_image')
+    @patch('docker.api.client.APIClient.create_host_config')
+    @patch('docker.api.client.APIClient.create_networking_config')
+    @patch('docker.api.client.APIClient.create_endpoint_config')
+    @patch('docker.api.client.APIClient.create_container')
     def test_pause_mocked(
         self,
         create_container,
@@ -637,8 +637,8 @@ class TestContainerTask(TestBase):
         # Prepare
         self.bg_job.action = ACTION_PAUSE
         self.bg_job.save()
-        self.container1.image_id = DockerMock.inspect_image.get("Id")
-        self.container1.container_id = DockerMock.create_container.get("Id")
+        self.container1.image_id = DockerMock.inspect_image.get('Id')
+        self.container1.container_id = DockerMock.create_container.get('Id')
         self.container1.state = STATE_RUNNING
         self.container1.save()
         inspect_container.side_effect = [DockerMock.inspect_container_paused]
@@ -664,19 +664,19 @@ class TestContainerTask(TestBase):
         unpause.assert_not_called()
         remove_container.assert_not_called()
 
-    @patch("containers.tasks.sync_container_state")
-    @patch("docker.api.client.APIClient.remove_container")
-    @patch("docker.api.client.APIClient.unpause")
-    @patch("docker.api.client.APIClient.pause")
-    @patch("docker.api.client.APIClient.stop")
-    @patch("docker.api.client.APIClient.start")
-    @patch("docker.api.client.APIClient.pull")
-    @patch("docker.api.client.APIClient.inspect_container")
-    @patch("docker.api.client.APIClient.inspect_image")
-    @patch("docker.api.client.APIClient.create_host_config")
-    @patch("docker.api.client.APIClient.create_networking_config")
-    @patch("docker.api.client.APIClient.create_endpoint_config")
-    @patch("docker.api.client.APIClient.create_container")
+    @patch('containers.tasks.sync_container_state')
+    @patch('docker.api.client.APIClient.remove_container')
+    @patch('docker.api.client.APIClient.unpause')
+    @patch('docker.api.client.APIClient.pause')
+    @patch('docker.api.client.APIClient.stop')
+    @patch('docker.api.client.APIClient.start')
+    @patch('docker.api.client.APIClient.pull')
+    @patch('docker.api.client.APIClient.inspect_container')
+    @patch('docker.api.client.APIClient.inspect_image')
+    @patch('docker.api.client.APIClient.create_host_config')
+    @patch('docker.api.client.APIClient.create_networking_config')
+    @patch('docker.api.client.APIClient.create_endpoint_config')
+    @patch('docker.api.client.APIClient.create_container')
     def test_unpause_mocked(
         self,
         create_container,
@@ -696,8 +696,8 @@ class TestContainerTask(TestBase):
         # Prepare
         self.bg_job.action = ACTION_UNPAUSE
         self.bg_job.save()
-        self.container1.image_id = DockerMock.inspect_image.get("Id")
-        self.container1.container_id = DockerMock.create_container.get("Id")
+        self.container1.image_id = DockerMock.inspect_image.get('Id')
+        self.container1.container_id = DockerMock.create_container.get('Id')
         self.container1.state = STATE_PAUSED
         self.container1.save()
         inspect_container.side_effect = [DockerMock.inspect_container_started]
@@ -723,19 +723,19 @@ class TestContainerTask(TestBase):
         unpause.assert_called_once_with(self.container1.container_id)
         remove_container.assert_not_called()
 
-    @patch("containers.tasks.sync_container_state")
-    @patch("docker.api.client.APIClient.remove_container")
-    @patch("docker.api.client.APIClient.unpause")
-    @patch("docker.api.client.APIClient.pause")
-    @patch("docker.api.client.APIClient.stop")
-    @patch("docker.api.client.APIClient.start")
-    @patch("docker.api.client.APIClient.pull")
-    @patch("docker.api.client.APIClient.inspect_container")
-    @patch("docker.api.client.APIClient.inspect_image")
-    @patch("docker.api.client.APIClient.create_host_config")
-    @patch("docker.api.client.APIClient.create_networking_config")
-    @patch("docker.api.client.APIClient.create_endpoint_config")
-    @patch("docker.api.client.APIClient.create_container")
+    @patch('containers.tasks.sync_container_state')
+    @patch('docker.api.client.APIClient.remove_container')
+    @patch('docker.api.client.APIClient.unpause')
+    @patch('docker.api.client.APIClient.pause')
+    @patch('docker.api.client.APIClient.stop')
+    @patch('docker.api.client.APIClient.start')
+    @patch('docker.api.client.APIClient.pull')
+    @patch('docker.api.client.APIClient.inspect_container')
+    @patch('docker.api.client.APIClient.inspect_image')
+    @patch('docker.api.client.APIClient.create_host_config')
+    @patch('docker.api.client.APIClient.create_networking_config')
+    @patch('docker.api.client.APIClient.create_endpoint_config')
+    @patch('docker.api.client.APIClient.create_container')
     def test_delete_initial_mocked(
         self,
         create_container,
@@ -753,10 +753,10 @@ class TestContainerTask(TestBase):
         sync_container_state,
     ):
         # Prepare
-        container_id = DockerMock.create_container.get("Id")
+        container_id = DockerMock.create_container.get('Id')
         self.bg_job.action = ACTION_DELETE
         self.bg_job.save()
-        self.container1.image_id = DockerMock.inspect_image.get("Id")
+        self.container1.image_id = DockerMock.inspect_image.get('Id')
         self.container1.container_id = container_id
         self.container1.state = STATE_INITIAL
         self.container1.save()
@@ -782,19 +782,19 @@ class TestContainerTask(TestBase):
         unpause.assert_not_called()
         remove_container.assert_not_called()
 
-    @patch("containers.tasks.sync_container_state")
-    @patch("docker.api.client.APIClient.remove_container")
-    @patch("docker.api.client.APIClient.unpause")
-    @patch("docker.api.client.APIClient.pause")
-    @patch("docker.api.client.APIClient.stop")
-    @patch("docker.api.client.APIClient.start")
-    @patch("docker.api.client.APIClient.pull")
-    @patch("docker.api.client.APIClient.inspect_container")
-    @patch("docker.api.client.APIClient.inspect_image")
-    @patch("docker.api.client.APIClient.create_host_config")
-    @patch("docker.api.client.APIClient.create_networking_config")
-    @patch("docker.api.client.APIClient.create_endpoint_config")
-    @patch("docker.api.client.APIClient.create_container")
+    @patch('containers.tasks.sync_container_state')
+    @patch('docker.api.client.APIClient.remove_container')
+    @patch('docker.api.client.APIClient.unpause')
+    @patch('docker.api.client.APIClient.pause')
+    @patch('docker.api.client.APIClient.stop')
+    @patch('docker.api.client.APIClient.start')
+    @patch('docker.api.client.APIClient.pull')
+    @patch('docker.api.client.APIClient.inspect_container')
+    @patch('docker.api.client.APIClient.inspect_image')
+    @patch('docker.api.client.APIClient.create_host_config')
+    @patch('docker.api.client.APIClient.create_networking_config')
+    @patch('docker.api.client.APIClient.create_endpoint_config')
+    @patch('docker.api.client.APIClient.create_container')
     def test_delete_running_mocked(
         self,
         create_container,
@@ -812,10 +812,10 @@ class TestContainerTask(TestBase):
         sync_container_state,
     ):
         # Prepare
-        container_id = DockerMock.create_container.get("Id")
+        container_id = DockerMock.create_container.get('Id')
         self.bg_job.action = ACTION_DELETE
         self.bg_job.save()
-        self.container1.image_id = DockerMock.inspect_image.get("Id")
+        self.container1.image_id = DockerMock.inspect_image.get('Id')
         self.container1.container_id = container_id
         self.container1.state = STATE_RUNNING
         self.container1.save()
@@ -842,19 +842,19 @@ class TestContainerTask(TestBase):
         unpause.assert_not_called()
         remove_container.assert_called_once_with(container_id, force=True)
 
-    @patch("containers.tasks.sync_container_state")
-    @patch("docker.api.client.APIClient.remove_container")
-    @patch("docker.api.client.APIClient.unpause")
-    @patch("docker.api.client.APIClient.pause")
-    @patch("docker.api.client.APIClient.stop")
-    @patch("docker.api.client.APIClient.start")
-    @patch("docker.api.client.APIClient.pull")
-    @patch("docker.api.client.APIClient.inspect_container")
-    @patch("docker.api.client.APIClient.inspect_image")
-    @patch("docker.api.client.APIClient.create_host_config")
-    @patch("docker.api.client.APIClient.create_networking_config")
-    @patch("docker.api.client.APIClient.create_endpoint_config")
-    @patch("docker.api.client.APIClient.create_container")
+    @patch('containers.tasks.sync_container_state')
+    @patch('docker.api.client.APIClient.remove_container')
+    @patch('docker.api.client.APIClient.unpause')
+    @patch('docker.api.client.APIClient.pause')
+    @patch('docker.api.client.APIClient.stop')
+    @patch('docker.api.client.APIClient.start')
+    @patch('docker.api.client.APIClient.pull')
+    @patch('docker.api.client.APIClient.inspect_container')
+    @patch('docker.api.client.APIClient.inspect_image')
+    @patch('docker.api.client.APIClient.create_host_config')
+    @patch('docker.api.client.APIClient.create_networking_config')
+    @patch('docker.api.client.APIClient.create_endpoint_config')
+    @patch('docker.api.client.APIClient.create_container')
     def test_delete_exited_mocked(
         self,
         create_container,
@@ -872,10 +872,10 @@ class TestContainerTask(TestBase):
         sync_container_state,
     ):
         # Prepare
-        container_id = DockerMock.create_container.get("Id")
+        container_id = DockerMock.create_container.get('Id')
         self.bg_job.action = ACTION_DELETE
         self.bg_job.save()
-        self.container1.image_id = DockerMock.inspect_image.get("Id")
+        self.container1.image_id = DockerMock.inspect_image.get('Id')
         self.container1.container_id = container_id
         self.container1.state = STATE_EXITED
         self.container1.save()
@@ -901,11 +901,11 @@ class TestContainerTask(TestBase):
         unpause.assert_not_called()
         remove_container.assert_called_once_with(container_id, force=True)
 
-    @tag("docker-server")
+    @tag('docker-server')
     @override_settings(KIOSC_DOCKER_ACTION_MIN_DELAY=0)
     def test_start_stop(self):
-        self.container1.repository = "brndnmtthws/nginx-echo-headers"
-        self.container1.tag = "latest"
+        self.container1.repository = 'brndnmtthws/nginx-echo-headers'
+        self.container1.tag = 'latest'
         self.container1.save()
 
         # Start
@@ -913,8 +913,8 @@ class TestContainerTask(TestBase):
         self.container1.refresh_from_db()
         self.assertEqual(
             self.cli.inspect_container(self.container1.container_id)
-            .get("State")
-            .get("Status"),
+            .get('State')
+            .get('Status'),
             STATE_RUNNING,
         )
         self.assertEqual(self.container1.state, STATE_RUNNING)
@@ -926,17 +926,17 @@ class TestContainerTask(TestBase):
         self.container1.refresh_from_db()
         self.assertEqual(
             self.cli.inspect_container(self.container1.container_id)
-            .get("State")
-            .get("Status"),
+            .get('State')
+            .get('Status'),
             STATE_EXITED,
         )
         self.assertEqual(self.container1.state, STATE_EXITED)
 
-    @tag("docker-server")
+    @tag('docker-server')
     @override_settings(KIOSC_DOCKER_ACTION_MIN_DELAY=0)
     def test_start_pause_unpause(self):
-        self.container1.repository = "brndnmtthws/nginx-echo-headers"
-        self.container1.tag = "latest"
+        self.container1.repository = 'brndnmtthws/nginx-echo-headers'
+        self.container1.tag = 'latest'
         self.container1.save()
 
         # Start
@@ -944,8 +944,8 @@ class TestContainerTask(TestBase):
         self.container1.refresh_from_db()
         self.assertEqual(
             self.cli.inspect_container(self.container1.container_id)
-            .get("State")
-            .get("Status"),
+            .get('State')
+            .get('Status'),
             STATE_RUNNING,
         )
         self.assertEqual(self.container1.state, STATE_RUNNING)
@@ -957,8 +957,8 @@ class TestContainerTask(TestBase):
         self.container1.refresh_from_db()
         self.assertEqual(
             self.cli.inspect_container(self.container1.container_id)
-            .get("State")
-            .get("Status"),
+            .get('State')
+            .get('Status'),
             STATE_PAUSED,
         )
         self.assertEqual(self.container1.state, STATE_PAUSED)
@@ -970,17 +970,17 @@ class TestContainerTask(TestBase):
         self.container1.refresh_from_db()
         self.assertEqual(
             self.cli.inspect_container(self.container1.container_id)
-            .get("State")
-            .get("Status"),
+            .get('State')
+            .get('Status'),
             STATE_RUNNING,
         )
         self.assertEqual(self.container1.state, STATE_RUNNING)
 
-    @tag("docker-server")
+    @tag('docker-server')
     @override_settings(KIOSC_DOCKER_ACTION_MIN_DELAY=0)
     def test_start_restart(self):
-        self.container1.repository = "brndnmtthws/nginx-echo-headers"
-        self.container1.tag = "latest"
+        self.container1.repository = 'brndnmtthws/nginx-echo-headers'
+        self.container1.tag = 'latest'
         self.container1.save()
 
         # Start
@@ -988,8 +988,8 @@ class TestContainerTask(TestBase):
         self.container1.refresh_from_db()
         self.assertEqual(
             self.cli.inspect_container(self.container1.container_id)
-            .get("State")
-            .get("Status"),
+            .get('State')
+            .get('Status'),
             STATE_RUNNING,
         )
         self.assertEqual(self.container1.state, STATE_RUNNING)
@@ -1001,17 +1001,17 @@ class TestContainerTask(TestBase):
         self.container1.refresh_from_db()
         self.assertEqual(
             self.cli.inspect_container(self.container1.container_id)
-            .get("State")
-            .get("Status"),
+            .get('State')
+            .get('Status'),
             STATE_RUNNING,
         )
         self.assertEqual(self.container1.state, STATE_RUNNING)
 
-    @tag("docker-server")
+    @tag('docker-server')
     @override_settings(KIOSC_DOCKER_ACTION_MIN_DELAY=0)
     def test_start_delete(self):
-        self.container1.repository = "brndnmtthws/nginx-echo-headers"
-        self.container1.tag = "latest"
+        self.container1.repository = 'brndnmtthws/nginx-echo-headers'
+        self.container1.tag = 'latest'
         self.container1.save()
 
         # Start
@@ -1019,8 +1019,8 @@ class TestContainerTask(TestBase):
         self.container1.refresh_from_db()
         self.assertEqual(
             self.cli.inspect_container(self.container1.container_id)
-            .get("State")
-            .get("Status"),
+            .get('State')
+            .get('Status'),
             STATE_RUNNING,
         )
         self.assertEqual(self.container1.state, STATE_RUNNING)

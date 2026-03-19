@@ -5,7 +5,6 @@ import django.db.models.deletion
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
         ('containers', '0002_auto_20210630_1146'),
     ]
@@ -14,10 +13,42 @@ class Migration(migrations.Migration):
         migrations.CreateModel(
             name='ContainerActionLock',
             fields=[
-                ('id', models.AutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('date_of_action', models.DateTimeField(auto_now=True, help_text='DateTime of action')),
-                ('action', models.CharField(choices=[('start', 'start'), ('restart', 'restart'), ('stop', 'stop'), ('pause', 'pause'), ('unpause', 'unpause')], max_length=32)),
-                ('container', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='action_lock', to='containers.container')),
+                (
+                    'id',
+                    models.AutoField(
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name='ID',
+                    ),
+                ),
+                (
+                    'date_of_action',
+                    models.DateTimeField(
+                        auto_now=True, help_text='DateTime of action'
+                    ),
+                ),
+                (
+                    'action',
+                    models.CharField(
+                        choices=[
+                            ('start', 'start'),
+                            ('restart', 'restart'),
+                            ('stop', 'stop'),
+                            ('pause', 'pause'),
+                            ('unpause', 'unpause'),
+                        ],
+                        max_length=32,
+                    ),
+                ),
+                (
+                    'container',
+                    models.ForeignKey(
+                        on_delete=django.db.models.deletion.CASCADE,
+                        related_name='action_lock',
+                        to='containers.container',
+                    ),
+                ),
             ],
         ),
     ]

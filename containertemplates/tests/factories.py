@@ -16,25 +16,25 @@ class ProjectFactory(factory.django.DjangoModelFactory):
     class Meta:
         model = Project
 
-    title = factory.Sequence(lambda n: "Project %03d" % n)
-    type = SODAR_CONSTANTS["PROJECT_TYPE_PROJECT"]
+    title = factory.Sequence(lambda n: 'Project %03d' % n)
+    type = SODAR_CONSTANTS['PROJECT_TYPE_PROJECT']
     parent = None
-    description = factory.Sequence(lambda n: "This is project %03d" % n)
+    description = factory.Sequence(lambda n: 'This is project %03d' % n)
 
 
 class ContainerTemplateFactoryBase(factory.django.DjangoModelFactory):
     """Base factory for ``ContainerTemplate`` model."""
 
-    title = factory.Sequence(lambda n: f"Container Template {n}")
-    description = "Some description"
-    repository = factory.Sequence(lambda n: f"repository{n}")
-    tag = "latest"
+    title = factory.Sequence(lambda n: f'Container Template {n}')
+    description = 'Some description'
+    repository = factory.Sequence(lambda n: f'repository{n}')
+    tag = 'latest'
     container_port = 80
-    container_path = ""
-    heartbeat_url = ""
+    container_path = ''
+    heartbeat_url = ''
     timeout = 60
-    environment = "{}"
-    command = ""
+    environment = '{}'
+    command = ''
     inactivity_threshold = 7
     max_retries = 5
 

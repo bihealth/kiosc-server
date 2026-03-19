@@ -29,10 +29,10 @@ from containers.tests.helpers import TestBase
 
 def build_testdata_container(cli, dockerfile_name):
     dockerfile_path = (
-        Path(__file__).parent / "testdata" / (dockerfile_name + ".Dockerfile")
+        Path(__file__).parent / 'testdata' / (dockerfile_name + '.Dockerfile')
     )
-    with open(dockerfile_path, "rb") as f:
-        stream = cli.build(fileobj=f, tag=dockerfile_name + ":testing")
+    with open(dockerfile_path, 'rb') as f:
+        stream = cli.build(fileobj=f, tag=dockerfile_name + ':testing')
     # Block until building is done
     _ = list(stream)
 
@@ -43,13 +43,13 @@ class TestContainerCrash(TestBase):
         super().setUp()
         self.cli = connect_docker()
         # Build the sample container image
-        build_testdata_container(self.cli, "sample-app-logging")
-        build_testdata_container(self.cli, "sample-app-instacrash")
+        build_testdata_container(self.cli, 'sample-app-logging')
+        build_testdata_container(self.cli, 'sample-app-instacrash')
 
         self.container = ContainerFactory(
             project=self.project,
-            repository="sample-app-logging",
-            tag="testing",
+            repository='sample-app-logging',
+            tag='testing',
             host_port=0,
             container_id=None,
         )
@@ -64,16 +64,16 @@ class TestContainerCrash(TestBase):
         # Test from the database
         self.container.refresh_from_db()
         logs = [log.text for log in ContainerLogEntry.objects.all()]
-        self.assertIn("Starting succeeded", logs)
+        self.assertIn('Starting succeeded', logs)
         self.assertEqual(self.container.state, STATE_RUNNING)
-        self.assertTrue(self.container.image_id.startswith("sha256:"))
+        self.assertTrue(self.container.image_id.startswith('sha256:'))
         # Test from the daemon
         for container in self.cli.containers():
-            if container["Id"] == self.container.container_id:
-                self.assertEqual(container["State"], STATE_RUNNING)
+            if container['Id'] == self.container.container_id:
+                self.assertEqual(container['State'], STATE_RUNNING)
                 break
         else:
-            raise RuntimeError("Container is not running")
+            raise RuntimeError('Container is not running')
 
     def _test_container_pause(self):
         self.assertEqual(self.container.state, STATE_RUNNING)
@@ -86,15 +86,15 @@ class TestContainerCrash(TestBase):
         # Test from the database
         self.container.refresh_from_db()
         logs = [log.text for log in ContainerLogEntry.objects.all()]
-        self.assertIn("Pausing succeeded", logs)
+        self.assertIn('Pausing succeeded', logs)
         self.assertEqual(self.container.state, STATE_PAUSED)
         # Test from the daemon
         for container in self.cli.containers():
-            if container["Id"] == self.container.container_id:
-                self.assertEqual(container["State"], STATE_PAUSED)
+            if container['Id'] == self.container.container_id:
+                self.assertEqual(container['State'], STATE_PAUSED)
                 break
         else:
-            raise RuntimeError("Container is not paused")
+            raise RuntimeError('Container is not paused')
 
     def _test_container_unpause(self):
         self.assertEqual(self.container.state, STATE_PAUSED)
@@ -107,15 +107,15 @@ class TestContainerCrash(TestBase):
         # Test from the database
         self.container.refresh_from_db()
         logs = [log.text for log in ContainerLogEntry.objects.all()]
-        self.assertIn("Unpausing succeeded", logs)
+        self.assertIn('Unpausing succeeded', logs)
         self.assertEqual(self.container.state, STATE_RUNNING)
         # Test from the daemon
         for container in self.cli.containers():
-            if container["Id"] == self.container.container_id:
-                self.assertEqual(container["State"], STATE_RUNNING)
+            if container['Id'] == self.container.container_id:
+                self.assertEqual(container['State'], STATE_RUNNING)
                 break
         else:
-            raise RuntimeError("Container is not unpaused")
+            raise RuntimeError('Container is not unpaused')
 
     def _test_container_stop(self):
         self.assertEqual(self.container.state, STATE_RUNNING)
@@ -129,12 +129,12 @@ class TestContainerCrash(TestBase):
         # Test from the database
         self.container.refresh_from_db()
         logs = [log.text for log in ContainerLogEntry.objects.all()]
-        self.assertIn("Stopping succeeded", logs)
+        self.assertIn('Stopping succeeded', logs)
         self.assertEqual(self.container.state, STATE_EXITED)
         # Test from the daemon (container should not be found)
         for container in self.cli.containers():
-            if container["ImageID"] == image_id:
-                raise RuntimeError("Container did not stop successfully")
+            if container['ImageID'] == image_id:
+                raise RuntimeError('Container did not stop successfully')
 
     def _test_container_restart(self):
         self.assertEqual(self.container.state, STATE_EXITED)
@@ -148,17 +148,17 @@ class TestContainerCrash(TestBase):
         # Test from the database
         self.container.refresh_from_db()
         logs = [log.text for log in ContainerLogEntry.objects.all()]
-        self.assertIn("Deleting succeeded", logs)
+        self.assertIn('Deleting succeeded', logs)
         container_id_after = self.container.container_id
         self.assertNotEqual(container_id_before, container_id_after)
         self.assertEqual(self.container.state, STATE_RUNNING)
         # Test from the daemon
         for container in self.cli.containers():
-            if container["Id"] == self.container.container_id:
-                self.assertEqual(container["State"], STATE_RUNNING)
+            if container['Id'] == self.container.container_id:
+                self.assertEqual(container['State'], STATE_RUNNING)
                 break
         else:
-            raise RuntimeError("Container did not restart")
+            raise RuntimeError('Container did not restart')
 
     def _test_container_delete(self, initial=STATE_RUNNING):
         self.assertEqual(self.container.state, initial)
@@ -174,8 +174,8 @@ class TestContainerCrash(TestBase):
         self.assertEqual(self.container.state, STATE_DELETED)
         # Test from the daemon (container should not be found)
         for container in self.cli.containers():
-            if container["ImageID"] == image_id:
-                raise RuntimeError("Container was not deleted successfully")
+            if container['ImageID'] == image_id:
+                raise RuntimeError('Container was not deleted successfully')
 
     def test_container_lifecycle(self):
         self._test_container_start()
@@ -203,7 +203,7 @@ class TestContainerCrash(TestBase):
         sync_container_state(self.container)
         self.container.refresh_from_db()
         self.assertEqual(self.container.state, STATE_FAILED)
-        self.assertEqual(self.container.container_id, "")
+        self.assertEqual(self.container.container_id, '')
         # No need to delete the container again
 
     def test_container_delete_unsynced(self):

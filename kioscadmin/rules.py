@@ -15,4 +15,4 @@ import rules
 
 # Permissions ------------------------------------------------------------
 
-rules.add_perm("kioscadmin.admin", rules.is_superuser)
+rules.add_perm('kioscadmin.admin', rules.is_superuser)

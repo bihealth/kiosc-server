@@ -6,7 +6,7 @@ from projectroles import rules as pr_rules  # To access common predicates
 
 # Allow listing containers and viewing details.
 rules.add_perm(
-    "containers.view_container",
+    'containers.view_container',
     pr_rules.is_project_owner
     | pr_rules.is_project_delegate
     | pr_rules.is_project_contributor
@@ -15,7 +15,7 @@ rules.add_perm(
 
 # Allow creating containers
 rules.add_perm(
-    "containers.create_container",
+    'containers.create_container',
     pr_rules.can_modify_project_data
     & (
         pr_rules.is_project_owner
@@ -26,7 +26,7 @@ rules.add_perm(
 
 # Allow updating containers
 rules.add_perm(
-    "containers.edit_container",
+    'containers.edit_container',
     pr_rules.can_modify_project_data
     & (
         pr_rules.is_project_owner
@@ -37,7 +37,7 @@ rules.add_perm(
 
 # Allow deleting containers
 rules.add_perm(
-    "containers.delete_container",
+    'containers.delete_container',
     pr_rules.can_modify_project_data
     & (
         pr_rules.is_project_owner
@@ -48,7 +48,7 @@ rules.add_perm(
 
 # Allow starting containers
 rules.add_perm(
-    "containers.start_container",
+    'containers.start_container',
     pr_rules.can_modify_project_data
     & (
         pr_rules.is_project_owner
@@ -59,7 +59,7 @@ rules.add_perm(
 
 # Allow stopping containers
 rules.add_perm(
-    "containers.stop_container",
+    'containers.stop_container',
     pr_rules.can_modify_project_data
     & (
         pr_rules.is_project_owner
@@ -70,7 +70,7 @@ rules.add_perm(
 
 # Allow pausing containers
 rules.add_perm(
-    "containers.pause_container",
+    'containers.pause_container',
     pr_rules.can_modify_project_data
     & (
         pr_rules.is_project_owner
@@ -81,7 +81,7 @@ rules.add_perm(
 
 # Allow unpausing containers
 rules.add_perm(
-    "containers.unpause_container",
+    'containers.unpause_container',
     pr_rules.can_modify_project_data
     & (
         pr_rules.is_project_owner
@@ -92,7 +92,7 @@ rules.add_perm(
 
 # Allow using the proxy
 rules.add_perm(
-    "containers.proxy",
+    'containers.proxy',
     pr_rules.is_project_owner
     | pr_rules.is_project_delegate
     | pr_rules.is_project_contributor
@@ -101,7 +101,7 @@ rules.add_perm(
 
 # Allow viewing container logs
 rules.add_perm(
-    "containers.view_logs",
+    'containers.view_logs',
     pr_rules.is_project_owner
     | pr_rules.is_project_delegate
     | pr_rules.is_project_contributor,

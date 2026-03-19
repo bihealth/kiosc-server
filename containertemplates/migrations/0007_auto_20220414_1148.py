@@ -4,7 +4,6 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
         ('containertemplates', '0006_auto_20210804_1510'),
     ]
@@ -13,11 +12,21 @@ class Migration(migrations.Migration):
         migrations.AlterField(
             model_name='containertemplateproject',
             name='container_path',
-            field=models.CharField(blank=True, default='', help_text='Path segment of the container URL', max_length=512),
+            field=models.CharField(
+                blank=True,
+                default='',
+                help_text='Path segment of the container URL',
+                max_length=512,
+            ),
         ),
         migrations.AlterField(
             model_name='containertemplatesite',
             name='container_path',
-            field=models.CharField(blank=True, default='', help_text='Path segment of the container URL', max_length=512),
+            field=models.CharField(
+                blank=True,
+                default='',
+                help_text='Path segment of the container URL',
+                max_length=512,
+            ),
         ),
     ]

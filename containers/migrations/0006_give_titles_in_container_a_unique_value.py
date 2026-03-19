@@ -6,16 +6,17 @@ from django.db import migrations
 def set_unique_title_value(apps, schema_editor):
     Container = apps.get_model('containers', 'Container')
     for row in Container.objects.all():
-        row.title += f" {row.id}"
+        row.title += f' {row.id}'
         row.save(update_fields=['title'])
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
         ('containers', '0005_add_title_to_container'),
     ]
 
     operations = [
-        migrations.RunPython(set_unique_title_value, reverse_code=migrations.RunPython.noop)
+        migrations.RunPython(
+            set_unique_title_value, reverse_code=migrations.RunPython.noop
+        )
     ]

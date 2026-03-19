@@ -17,7 +17,7 @@ class Command(BaseCommand):
         """Perform stopping unused containers."""
 
         msgs = stop_inactive_containers()
-        msg_fin = "Command successfully finished"
+        msg_fin = 'Command successfully finished'
 
         for msg in msgs:
             self.stdout.write(self.style.NOTICE(msg))

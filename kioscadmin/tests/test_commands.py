@@ -17,14 +17,14 @@ class TestCommandMixin:
 class TestStopAll(TestCommandMixin, TestBase):
     """Tests for management command ``stop_all``."""
 
-    command = "stop_all"
+    command = 'stop_all'
 
     def test_no_containers(self):
         out = self.run_command()
-        self.assertIn("Command successfully finished", out)
+        self.assertIn('Command successfully finished', out)
 
-    @patch("containers.tasks.container_task.apply_async")
-    @patch("docker.api.client.APIClient.inspect_container")
+    @patch('containers.tasks.container_task.apply_async')
+    @patch('docker.api.client.APIClient.inspect_container')
     def test_one_container(self, inspect_container, apply_async):
         self.create_one_container()
         self.container1.state = STATE_RUNNING
@@ -32,8 +32,8 @@ class TestStopAll(TestCommandMixin, TestBase):
 
         out = self.run_command()
 
-        self.assertIn("{} stopped".format(self.container1.title), out)
-        self.assertIn("Command successfully finished", out)
+        self.assertIn('{} stopped'.format(self.container1.title), out)
+        self.assertIn('Command successfully finished', out)
 
         inspect_container.assert_called()
         apply_async.assert_called()
@@ -42,13 +42,13 @@ class TestStopAll(TestCommandMixin, TestBase):
 class TestRemoveStopped(TestCommandMixin, TestBase):
     """Tests for management command ``remove_stopped``."""
 
-    command = "remove_stopped"
+    command = 'remove_stopped'
 
     def test_no_containers(self):
         out = self.run_command()
-        self.assertIn("Command successfully finished", out)
+        self.assertIn('Command successfully finished', out)
 
-    @patch("docker.api.client.APIClient.inspect_container")
+    @patch('docker.api.client.APIClient.inspect_container')
     def test_stopped_and_running_container_dry_run(self, inspect_container):
         self.create_two_containers()
         self.container1.state = STATE_RUNNING
@@ -60,11 +60,11 @@ class TestRemoveStopped(TestCommandMixin, TestBase):
 
         out = self.run_command()
 
-        self.assertIn("{} would be removed".format(self.container2.title), out)
-        self.assertIn("Command successfully finished (dry-run)", out)
+        self.assertIn('{} would be removed'.format(self.container2.title), out)
+        self.assertIn('Command successfully finished (dry-run)', out)
 
-    @patch("containers.tasks.container_task.run")
-    @patch("docker.api.client.APIClient.inspect_container")
+    @patch('containers.tasks.container_task.run')
+    @patch('docker.api.client.APIClient.inspect_container')
     def test_stopped_and_running_container(
         self, inspect_container, container_task
     ):
@@ -76,12 +76,12 @@ class TestRemoveStopped(TestCommandMixin, TestBase):
 
         inspect_container.side_effect = [DockerMock.inspect_container_stopped]
 
-        out = self.run_command("--remove")
+        out = self.run_command('--remove')
 
         container_task.assert_called()
 
-        self.assertIn("{} removed".format(self.container2.title), out)
-        self.assertIn("Command successfully finished", out)
+        self.assertIn('{} removed'.format(self.container2.title), out)
+        self.assertIn('Command successfully finished', out)
 
         self.assertEqual(Container.objects.count(), 1)
 
@@ -92,10 +92,10 @@ class TestStopUnused(TestCommandMixin, TestBase):
     Thoroughly tested in ``kioscadmin/test_tasks.py``
     """
 
-    command = "stop_unused"
+    command = 'stop_unused'
 
-    @patch("kioscadmin.tasks.stop_inactive_containers.run")
+    @patch('kioscadmin.tasks.stop_inactive_containers.run')
     def test_no_containers(self, stop_inactive_containers):
         out = self.run_command()
         stop_inactive_containers.assert_called()
-        self.assertIn("Command successfully finished", out)
+        self.assertIn('Command successfully finished', out)

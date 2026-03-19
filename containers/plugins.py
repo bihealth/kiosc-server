@@ -11,7 +11,7 @@ from projectroles.plugins import ProjectAppPluginPoint, PluginObjectLink
 from containers.models import Container
 from containers.urls import urlpatterns
 
-PROJECT_TYPE_PROJECT = SODAR_CONSTANTS["PROJECT_TYPE_PROJECT"]
+PROJECT_TYPE_PROJECT = SODAR_CONSTANTS['PROJECT_TYPE_PROJECT']
 
 
 # Samplesheets project app plugin ----------------------------------------------
@@ -23,10 +23,10 @@ class ProjectAppPlugin(ProjectAppPluginPoint):
     # Properties required by django-plugins ------------------------------
 
     #: Name (slug-safe, used in URLs)
-    name = "containers"
+    name = 'containers'
 
     #: Title (used in templates)
-    title = "Containers"
+    title = 'Containers'
 
     #: App URLs (will be included in settings by djangoplugins)
     urls = urlpatterns
@@ -57,31 +57,31 @@ class ProjectAppPlugin(ProjectAppPluginPoint):
     app_settings = []
 
     #: FontAwesome icon ID string
-    icon = "mdi:docker"
+    icon = 'mdi:docker'
 
     #: Entry point URL ID (must take project sodar_uuid as "project" argument)
-    entry_point_url_id = "containers:list"
+    entry_point_url_id = 'containers:list'
 
     #: Description string
-    description = "Create and manage Docker containers"
+    description = 'Create and manage Docker containers'
 
     #: Required permission for accessing the app
-    app_permission = "containers.view_container"
+    app_permission = 'containers.view_container'
 
     #: Enable or disable general search from project title bar
     search_enable = True
 
     #: List of search object types for the app
-    search_types = ["source", "sample", "file"]
+    search_types = ['source', 'sample', 'file']
 
     #: Search results template
-    search_template = "containers/_search_results.html"
+    search_template = 'containers/_search_results.html'
 
     #: App card template for the project details page
-    details_template = "containers/_details_card.html"
+    details_template = 'containers/_details_card.html'
 
     #: App card title for the project details page
-    details_title = "Containers overview"
+    details_title = 'Containers overview'
 
     #: Position in plugin ordering
     plugin_ordering = 20
@@ -119,7 +119,7 @@ class ProjectAppPlugin(ProjectAppPluginPoint):
         :param uuid: sodar_uuid of the referred object
         :return: PluginObjectLink or None if not found
         """
-        if model_str == "Container":
+        if model_str == 'Container':
             obj = self.get_object(Container, uuid)
             if obj is None:
                 # This happens when we try to show timeline events
@@ -127,13 +127,13 @@ class ProjectAppPlugin(ProjectAppPluginPoint):
                 return None
             return PluginObjectLink(
                 url=reverse(
-                    "containers:detail",
-                    kwargs={"container": obj.sodar_uuid},
+                    'containers:detail',
+                    kwargs={'container': obj.sodar_uuid},
                 ),
                 name=obj.get_display_name(),
                 blank=True,
             )
-        elif model_str == "ContainerBackgroundJob":
+        elif model_str == 'ContainerBackgroundJob':
             # TODO implement a view for background jobs
             pass
 

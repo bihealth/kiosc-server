@@ -4,7 +4,6 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
         ('containertemplates', '0001_initial'),
     ]
@@ -17,6 +16,10 @@ class Migration(migrations.Migration):
         migrations.AlterField(
             model_name='containertemplate',
             name='title',
-            field=models.CharField(help_text='Title of the container template.', max_length=512, unique=True),
+            field=models.CharField(
+                help_text='Title of the container template.',
+                max_length=512,
+                unique=True,
+            ),
         ),
     ]

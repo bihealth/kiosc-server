@@ -5,19 +5,18 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
-        ("containers", "0012_alter_containerbackgroundjob_bg_job"),
+        ('containers', '0012_alter_containerbackgroundjob_bg_job'),
     ]
 
     operations = [
         migrations.AlterField(
-            model_name="container",
-            name="environment",
+            model_name='container',
+            name='environment',
             field=models.JSONField(
                 blank=True,
                 encoder=django.core.serializers.json.DjangoJSONEncoder,
-                help_text="The environment variables to use",
+                help_text='The environment variables to use',
                 null=True,
             ),
         ),

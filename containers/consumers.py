@@ -23,7 +23,7 @@ class TunnelConsumer(WebsocketConsumer):
         # TODO: check project permissions for users
         # Get DockerApp information for querying the port information.
         container = Container.objects.get(
-            sodar_uuid=self.scope["url_route"]["kwargs"]["container"],
+            sodar_uuid=self.scope['url_route']['kwargs']['container'],
         )
 
         # Create web socket for writing data from inernal web socket to original client.
@@ -33,16 +33,16 @@ class TunnelConsumer(WebsocketConsumer):
 
         websocket.enableTrace(self.debug)
 
-        if settings.KIOSC_NETWORK_MODE == "docker-shared":
-            ws_url = "ws://%s:%d/%s" % (
+        if settings.KIOSC_NETWORK_MODE == 'docker-shared':
+            ws_url = 'ws://%s:%d/%s' % (
                 container.container_id[:12],
                 container.container_port,
-                self.scope["url_route"]["kwargs"]["path"],
+                self.scope['url_route']['kwargs']['path'],
             )
         else:
-            ws_url = "ws://localhost:%d/%s" % (
+            ws_url = 'ws://localhost:%d/%s' % (
                 container.host_port,
-                self.scope["url_route"]["kwargs"]["path"],
+                self.scope['url_route']['kwargs']['path'],
             )
 
         self.ws = websocket.WebSocketApp(ws_url, on_message=on_message)

@@ -25,24 +25,24 @@ class Command(BaseCommand):
     """Implementation for removing stopped containers."""
 
     #: Help message displayed on the command line.
-    help = "Remove stopped containers."
+    help = 'Remove stopped containers.'
 
     def add_arguments(self, parser):
         parser.add_argument(
-            "--remove",
-            help="Activate this flag to perform the removal",
-            action="store_true",
+            '--remove',
+            help='Activate this flag to perform the removal',
+            action='store_true',
         )
 
     @transaction.atomic
     def handle(self, *args, **options):
         """Perform removing stopped containers."""
 
-        if options["remove"]:
-            msg_fin = "Command successfully finished"
+        if options['remove']:
+            msg_fin = 'Command successfully finished'
 
         else:
-            msg_fin = "Command successfully finished (dry-run)"
+            msg_fin = 'Command successfully finished (dry-run)'
 
         cli = connect_docker()
         user = User.objects.filter(
@@ -51,18 +51,18 @@ class Command(BaseCommand):
 
         for container in Container.objects.filter(state=STATE_EXITED):
             if container.container_id:
-                timeline = plugin_api.get_backend_api("timeline_backend")
+                timeline = plugin_api.get_backend_api('timeline_backend')
                 container_info = cli.inspect_container(container.container_id)
-                state = container_info.get("State", {}).get("Status")
+                state = container_info.get('State', {}).get('Status')
                 project = container.project
 
                 # Double check if state is really EXITED
                 if not state == STATE_EXITED:
                     continue
 
-                if options["remove"]:
+                if options['remove']:
                     bg_job = BackgroundJob.objects.create(
-                        name="Delete container",
+                        name='Delete container',
                         project=project,
                         job_type=ContainerBackgroundJob.spec_name,
                         user=user,
@@ -76,7 +76,7 @@ class Command(BaseCommand):
 
                     # Add container log entry
                     container.log_entries.create(
-                        text="Delete",
+                        text='Delete',
                         process=PROCESS_ACTION,
                         user=user,
                     )
@@ -87,23 +87,23 @@ class Command(BaseCommand):
                     if timeline:
                         timeline.add_event(
                             project=project,
-                            app_name="kioscadmin",
+                            app_name='kioscadmin',
                             user=user,
-                            event_name="delete_container",
-                            description=f"deleted {container.get_display_name()}",
+                            event_name='delete_container',
+                            description=f'deleted {container.get_display_name()}',
                             status_type=timeline.TL_STATUS_OK,
                         )
 
                     container.delete()
 
                     self.stdout.write(
-                        self.style.NOTICE("{} removed".format(container.title))
+                        self.style.NOTICE('{} removed'.format(container.title))
                     )
 
                 else:
                     self.stdout.write(
                         self.style.NOTICE(
-                            "{} would be removed".format(container.title)
+                            '{} would be removed'.format(container.title)
                         )
                     )
 

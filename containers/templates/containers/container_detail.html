@@ -11,7 +11,7 @@
 
 {% block projectroles_extend %}
 
-{% has_perm "containers.view_logs" request.user project as can_view_logs %}
+{% has_perm "containers.view_logs" request.user object.project as can_view_logs %}
 {% get_django_setting "KIOSC_NETWORK_MODE" as network_mode %}
 {% get_django_setting "KIOSC_CONTAINER_DEFAULT_LOG_LINES" as default_log_lines %}
 

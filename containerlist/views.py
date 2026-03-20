@@ -7,7 +7,7 @@ from projectroles.views import (
 )
 
 
-class ContainerListView(
+class ContainerSiteListView(
     LoginRequiredMixin,
     LoggedInPermissionMixin,
     ListView,

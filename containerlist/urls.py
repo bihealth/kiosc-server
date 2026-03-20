@@ -9,7 +9,7 @@ app_name = "containerlist"
 urlpatterns = [
     path(
         "",
-        view=views.ContainerListView.as_view(),
+        view=views.ContainerSiteListView.as_view(),
         name="overview",
     ),
 ]

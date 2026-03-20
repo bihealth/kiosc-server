@@ -16,7 +16,7 @@ When projects and users start growing, creating and publishing these apps can be
 Kiosc provides an easy way to orchestrate web apps, organize them into projects, and regulate access control.
 Users can select docker containers packaging apps like `Plotly Dash <https://dash.plotly.com/>`__, `Shiny <https://shiny.posit.co/>`__, or `Quarto <https://quarto.org/docs/dashboards/>`__, and configure them to display the results of their analysis.
 Kiosc runs the containers with the appropriate network configuration and acts as a proxy to the web services running inside the containers.
-Using and managing Kiosc doesn't require being experts in either docker or network administration: it is specfically designed to handle simple scenarios suitable for a small, focused research group with minimal hardware and technical resources.
+Using and managing Kiosc doesn't require being experts in either docker or network administration, while still scaling up to a large number of containers and users.
 
 Users can authenticate in Kiosc through LDAP, SSO, OIDC, or local accounts created by the administrator.
 Then, they create projects, sub-projects, and docker containers within the projects.
@@ -28,7 +28,8 @@ A key question is how can users upload their own data in the containerized app.
 At this time, Kiosc doesn't enforce a specific method, but there are several possibilities.
 If the container supports it, users can pass environment variables or command-line flags pointing to the location of the data.
 Alternatively, users can override the entrypoint command of the container with a custom script that downloads the data and then starts the web service.
-Another possibility is to create a completely custom docker image that bundles the required data together with the web app.
+Another possibility is to create a completely custom docker image that bundles the required data together with the web app, although this is not recommended.
+Finally, users can upload small files (< 2GB) directly into Kiosc through the "Small Files" app (see :ref:`introduction_interface`).
 
 .. At this time, Kiosc doesn't support mounting remote filesystems, but this functionality is being considered.
 

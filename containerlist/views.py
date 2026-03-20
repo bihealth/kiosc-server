@@ -14,15 +14,16 @@ class ContainerSiteListView(
 ):
     """View for Container List app."""
 
-    permission_required = "containerlist.view"
-    template_name = "containerlist/containerlist.html"
+    permission_required = 'containerlist.view'
+    template_name = 'containerlist/containerlist.html'
     model = Container
 
     def get_queryset(self):
         res = []
         for container in Container.objects.all():
-            if self.request.user.has_perm('containers.view_container', container.project):
+            if self.request.user.has_perm(
+                'containers.view_container', container.project
+            ):
                 res.append(container)
 
         return res
-

@@ -50,6 +50,6 @@ def pretty_json(obj):
     return json.dumps(obj, indent=4, sort_keys=True)
 
 
-@register.inclusion_tag("containers/_container_controls.html")
+@register.inclusion_tag('containers/_container_controls.html')
 def container_controls(container, user, display=False):
-    return {"container": container, "user": user, "display": display}
+    return {'container': container, 'user': user, 'display': display}

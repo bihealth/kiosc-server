@@ -121,32 +121,31 @@ class ProjectAppPlugin(ProjectAppPluginPoint):
     #:         }
     #:     }
     project_list_columns = {
-        "containers": {
-            "title": "Containers",
-            "width": 50,
-            "description": (
-                "The current status of all containers "
-                "defined in this project"
+        'containers': {
+            'title': 'Containers',
+            'width': 50,
+            'description': (
+                'The current status of all containers defined in this project'
             ),
-            "active": True,
-            "ordering": 20,
-            "align": "center",
+            'active': True,
+            'ordering': 20,
+            'align': 'center',
         },
     }
 
     def get_statistics(self):
         return {
-            "container_count": {
-                "label": "Containers",
-                "value": Container.objects.all().count(),
+            'container_count': {
+                'label': 'Containers',
+                'value': Container.objects.all().count(),
             },
-            "containertemplates_site_count": {
-                "label": "Site-wide Container Templates",
-                "value": ContainerTemplateSite.objects.all().count(),
+            'containertemplates_site_count': {
+                'label': 'Site-wide Container Templates',
+                'value': ContainerTemplateSite.objects.all().count(),
             },
-            "containertemplates_project_count": {
-                "label": "Project Container Templates",
-                "value": ContainerTemplateProject.objects.all().count(),
+            'containertemplates_project_count': {
+                'label': 'Project Container Templates',
+                'value': ContainerTemplateProject.objects.all().count(),
             },
         }
 
@@ -167,8 +166,8 @@ class ProjectAppPlugin(ProjectAppPluginPoint):
         )
         container_states = (
             Container.objects.filter(project__in=children)
-            .values("state")
-            .annotate(count=Count("state"))
+            .values('state')
+            .annotate(count=Count('state'))
         )
         stats = []
         for state_entry in container_states:
@@ -176,9 +175,9 @@ class ProjectAppPlugin(ProjectAppPluginPoint):
                 PluginCategoryStatistic(
                     plugin=self,
                     title=f'Containers {state_entry["state"].title()}',
-                    value=state_entry["count"],
+                    value=state_entry['count'],
                     description=f'Number of {state_entry["state"]} containers in this category',
-                    icon="mdi:file",
+                    icon='mdi:file',
                 )
             )
         return stats
@@ -195,30 +194,30 @@ class ProjectAppPlugin(ProjectAppPluginPoint):
         :param user: User object (current user)
         :return: String (may contain HTML), integer or None
         """
-        if column_id != "containers":
+        if column_id != 'containers':
             raise ValueError(f'Unexpected column_id: "{column_id}"')
 
         container_states = (
             Container.objects.filter(project=project)
-            .values("state")
-            .annotate(count=Count("state"))
+            .values('state')
+            .annotate(count=Count('state'))
         )
         if not container_states:
-            return "0"
+            return '0'
 
         stats = []
         for el in container_states:
-            match el["state"]:
-                case "running" | "restarting" | "pulling":
-                    stats.append(str(el["count"]) + " running")
-                case "paused" | "stopped" | "created" | "initial":
-                    stats.append(str(el["count"]) + " stopped")
-                case "failed" | "exited" | "dead":
-                    stats.append(str(el["count"]) + " failed")
-                case "deleted" | "deleting":
+            match el['state']:
+                case 'running' | 'restarting' | 'pulling':
+                    stats.append(str(el['count']) + ' running')
+                case 'paused' | 'stopped' | 'created' | 'initial':
+                    stats.append(str(el['count']) + ' stopped')
+                case 'failed' | 'exited' | 'dead':
+                    stats.append(str(el['count']) + ' failed')
+                case 'deleted' | 'deleting':
                     pass
 
-        return ",</br>".join(stats)
+        return ',</br>'.join(stats)
 
     def get_object_link(
         self, model_str: str, uuid: Union[str, UUID]

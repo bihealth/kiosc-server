@@ -16,5 +16,5 @@ import rules
 # Permissions ------------------------------------------------------------
 
 rules.add_perm(
-    "containerlist.view", rules.is_superuser | rules.is_authenticated
+    'containerlist.view', rules.is_superuser | rules.is_authenticated
 )

@@ -3,7 +3,8 @@
 Cookbook
 ========
 
-.. contents::
+.. contents:: Contents
+   :local:
 
 Guest accessing the web interface of a container
 ------------------------------------------------
@@ -26,10 +27,11 @@ The difference is that in the crossed-out state Kiosc tries to start the
 container before accessing the web interface which might take some time
 while in the running state the web interface will be displayed immediately.
 
-Create a container running ...
+Creating a container running ...
 ------------------------------
 
-To create a container switch to the **Containers** app
+First, navigate to the project where you want to have the container, and make sure you have a role that allows you to create containers.
+To create the container, switch to the **Containers** app
 
 .. image:: figures/apps/containers/menu.png
   :alt: Container app
@@ -229,3 +231,20 @@ In addition to the user defined variables, the ``title``, ``description`` and
     $ export TITLE="Some unique title"
     $ export DESCRIPTION="Some description"
     $ export CONTAINER_PORT=8050
+
+Controlling a container
+-----------------------
+
+A Docker container can be in different states, and this is reflected in Kiosc.
+
+- **Initial**: The image was just downloaded and the container has not been started for the first time yet.
+- **Running**: The container is running and you can access the service provided by the container.
+- **Paused**: The processes inside the container are sleeping and do not consume resources, but can be restarted at any time.
+- **Stopped**: The container has been killed by a user.
+- **Failed**: Something went wrong inside the container, you should report this error to the container's authors.
+
+.. image:: figures/introduction/cookbook/container_controls.png
+  :alt: Container controls
+
+Controlling a container means changing its state.
+If you have the appropriate permission, you can do so by opening the container's page and using the "Controls" button, as show in the figure.

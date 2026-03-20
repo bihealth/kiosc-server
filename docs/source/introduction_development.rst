@@ -90,8 +90,8 @@ and point your browser to https://127.0.0.1:8000 to access Kiosc.
 Configuration
 -------------
 
-The configuration for the development instance is similar to the one `described
-for the production environment <introduction_installation_configuration>`__.
+The configuration for the development instance is similar to the one :ref:`described
+for the production environment <introduction_installation_configuration>`.
 However, the ``env.example`` in the kiosc-server repository is more geared
 towards development.
 

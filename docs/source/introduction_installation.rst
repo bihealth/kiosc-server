@@ -4,7 +4,7 @@ Installation and configuration
 ==============================
 
 The code for Kiosc is hosted on `GitHub <https://github.com/bihealth/kiosc-server>`__.
-Kiosc itself is a python web app built using the `Django <https://djangoproject.com>`__ framework and in order to function properly it requires additional components.
+Kiosc itself is a python web app built using the `Django <https://www.djangoproject.com>`__ framework and in order to function properly it requires additional components.
 Thus, the easiest and most recommended way to install Kiosc is through docker compose.
 If you are not familiar with docker or docker compose, head to :ref:`this short guide <introduction_docker>` for a quick introduction.
 If you don't want to use docker compose, or if you want to contribute to the Kiosc development, the manual installation method is described in the :ref:`Development Environment <introduction_development>` section.

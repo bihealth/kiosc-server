@@ -43,8 +43,16 @@ description of the main options. When done, start the Docker containers::
 
     $ docker compose --profile=deploy up
 
-The Kiosc installation can now be reached by accessing `localhost
-<https://localhost>`_ with your browser.
+Before you can access Kiosc, you need to create at least one superuser.
+To do so, run this command and follow the interactive prompts::
+
+    $ docker compose exec kiosc-web ./manage.py createsuperuser
+
+At this point, you may create local user accounts or connect Kiosc to an existing authentication provider, such as LDAP, SSO, or OIDC.
+See the :ref:`<_introduction_installation_configuration>` section for further instructions.
+
+The Kiosc installation can now be reached by accessing `localhost <https://localhost>`_ with your browser.
+You should be able to access with the superuser account you just created, or as any of the regular users, if you have set them up.
 
 
 .. _introduction_installation_configuration:

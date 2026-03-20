@@ -51,6 +51,14 @@ Kiosc is NOT
     introduction_overview
     Docker concepts <introduction_docker>
     introduction_installation
+
+.. toctree::
+    :maxdepth: 2
+    :caption: Usage
+    :name: usage
+    :hidden:
+    :titlesonly:
+
     introduction_interface
     introduction_roles
     introduction_cookbook

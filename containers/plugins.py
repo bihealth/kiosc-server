@@ -4,12 +4,26 @@ from typing import Optional, Union
 from uuid import UUID
 
 # Projectroles dependency
+from django.contrib.auth import get_user_model
+from django.db.models import Count
 from django.urls import reverse
-from projectroles.models import SODAR_CONSTANTS
-from projectroles.plugins import ProjectAppPluginPoint, PluginObjectLink
+from projectroles.models import Project, SODAR_CONSTANTS, CAT_DELIMITER
+from projectroles.plugins import (
+    ProjectAppPluginPoint,
+    PluginObjectLink,
+    PluginCategoryStatistic,
+)
 
 from containers.models import Container
 from containers.urls import urlpatterns
+
+from containertemplates.models import (
+    ContainerTemplateSite,
+    ContainerTemplateProject,
+)
+
+
+User = get_user_model()
 
 PROJECT_TYPE_PROJECT = SODAR_CONSTANTS['PROJECT_TYPE_PROJECT']
 
@@ -86,6 +100,12 @@ class ProjectAppPlugin(ProjectAppPluginPoint):
     #: Position in plugin ordering
     plugin_ordering = 20
 
+    #: Display application for categories in addition to projects
+    category_enable = False
+
+    #: Names of plugin specific Django settings to display in siteinfo
+    info_settings = []
+
     #: Optional custom project list column definition
     #:
     #: Example ::
@@ -100,13 +120,104 @@ class ProjectAppPlugin(ProjectAppPluginPoint):
     #:             'align': 'left'  # Alignment of content
     #:         }
     #:     }
-    project_list_columns = {}
+    project_list_columns = {
+        'containers': {
+            'title': 'Containers',
+            'width': 50,
+            'description': (
+                'The current status of all containers defined in this project'
+            ),
+            'active': True,
+            'ordering': 20,
+            'align': 'center',
+        },
+    }
 
-    #: Display application for categories in addition to projects
-    category_enable = False
+    def get_statistics(self):
+        return {
+            'container_count': {
+                'label': 'Containers',
+                'value': Container.objects.all().count(),
+            },
+            'containertemplates_site_count': {
+                'label': 'Site-wide Container Templates',
+                'value': ContainerTemplateSite.objects.all().count(),
+            },
+            'containertemplates_project_count': {
+                'label': 'Project Container Templates',
+                'value': ContainerTemplateProject.objects.all().count(),
+            },
+        }
 
-    #: Names of plugin specific Django settings to display in siteinfo
-    info_settings = []
+    def get_category_stats(
+        self, category: Project
+    ) -> list[PluginCategoryStatistic]:
+        """
+        Return app statistics for the given category. Expected to return
+        cumulative statistics for all projects under the category and its
+        possible subcategories.
+
+        :param category: Project object of CATEGORY type
+        :return: List of PluginCategoryStatistic objects
+        """
+        children = Project.objects.filter(
+            type=PROJECT_TYPE_PROJECT,
+            full_title__startswith=category.full_title + CAT_DELIMITER,
+        )
+        container_states = (
+            Container.objects.filter(project__in=children)
+            .values('state')
+            .annotate(count=Count('state'))
+        )
+        stats = []
+        for state_entry in container_states:
+            stats.append(
+                PluginCategoryStatistic(
+                    plugin=self,
+                    title=f'Containers {state_entry["state"].title()}',
+                    value=state_entry['count'],
+                    description=f'Number of {state_entry["state"]} containers in this category',
+                    icon='mdi:file',
+                )
+            )
+        return stats
+
+    def get_project_list_value(
+        self, column_id: str, project: Project, user: User
+    ) -> Union[str, int, None]:
+        """
+        Return a value for the optional additional project list column specific
+        to a project.
+
+        :param column_id: ID of the column (string)
+        :param project: Project object
+        :param user: User object (current user)
+        :return: String (may contain HTML), integer or None
+        """
+        if column_id != 'containers':
+            raise ValueError(f'Unexpected column_id: "{column_id}"')
+
+        container_states = (
+            Container.objects.filter(project=project)
+            .values('state')
+            .annotate(count=Count('state'))
+        )
+        if not container_states:
+            return '0'
+
+        stats = []
+        for el in container_states:
+            match el['state']:
+                case 'running' | 'restarting' | 'pulling':
+                    stats.append(str(el['count']) + ' running')
+                case 'paused' | 'stopped' | 'created' | 'initial':
+                    stats.append(str(el['count']) + ' stopped')
+                case 'failed' | 'exited' | 'dead':
+                    stats.append(str(el['count']) + ' failed')
+                case 'deleted' | 'deleting':
+                    pass
+
+        return ',</br>'.join(stats)
 
     def get_object_link(
         self, model_str: str, uuid: Union[str, UUID]

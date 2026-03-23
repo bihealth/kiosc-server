@@ -6,32 +6,66 @@ Cookbook
 .. contents:: Contents
    :local:
 
-Guest accessing the web interface of a container
-------------------------------------------------
+Creating a project
+------------------
 
-You are a guest of a project. You can list the containers
-of the project, and access the details of each container. You can't
-change the status of a container, except indirectly by viewing
-a container that is not running. Probably you like to access
-the web interface provided by the container.
+After you log in, you should see the home page with the projects list.
+In Kiosc, like in `SODAR <https://github.com/bihealth/sodar-server>`__, projects are organized hierarchically in *categories*.
+A category is a directory that can contain projects or other categories.
+If no project exists, you can create one yourself within an existing category.
+Only the administrator can create top-level categories, by clicking on "Create Category" in the left side menu.
 
-To proceed, click on a project and then select the **Container** app.
-This will display a list of all containers in the project. On the right-hand
-side of each container is a button with an eye icon. The button might be
-either gray-outlined with a crossed-out eye, or with a blue background
-with an open eye. The crossed-out eye indicates that the container is
-not running and this will also be reflected in the state. The blue open
-eye indicates that the container is available. No matter the state,
-clicking the icon will open the web interface provided by the container.
-The difference is that in the crossed-out state Kiosc tries to start the
-container before accessing the web interface which might take some time
-while in the running state the web interface will be displayed immediately.
+To create a project, navigate to the desired category, then click on "Create Project or Category" in the menu on the left side.
+The project page will show you an overview of the containers, container templates, and files that belong to this project.
+Initially, everything will be empty.
+
+Accessing a container running in an existing project
+----------------------------------------------------
+
+If the administrator or another user has created a project, they may have given you access to it.
+In Kiosc, users can have various roles in a project; check out the :ref:`relevant documentation <introduction_roles>` for reference.
+If you are a member of the project, you will be able to see the containers in that project.
+Depending on your role, you may or may not be able to modify the container, stop it, and restart it.
+To access the web app inside the container, browse to the project of interest, find the container, and click on its title.
+You should see the container status page, and if you click on the eye icon, you'll be redirected to the container app.
+
+The button with the eye icon also indicates the status of the container.
+If they button is colored in gray and the eye is crossed-out, it means that the container is not running.
+If the button is blue with an open eye, it means that the container is running.
+Even if the container is not running, clicking on the button will start it and redirect you to the web app.
+
+.. note::
+
+    If the container needs to be started, it may take some time before it becomes available.
+    When Kiosc says that the container is running, but you cannot access it, it means that the container is starting up.
+    Please be patient and come back after several minutes.
+    If, after one hour, the container is still inaccessible, report this to the project owner or the container developer.
+
+Controlling a container
+-----------------------
+
+A Docker container can be in different states, and this is reflected in Kiosc.
+
+- **Initial**: The image was just downloaded and the container has not been started for the first time yet.
+- **Running**: The container is running and you can access the service provided by the container.
+- **Paused**: The processes inside the container are sleeping and do not consume resources, but can be restarted at any time.
+- **Stopped**: The container has been killed by a user.
+- **Failed**: Something went wrong inside the container, you should report this error to the container's authors.
+
+.. image:: figures/introduction/cookbook/container_controls.png
+  :alt: Container controls
+
+Controlling a container means changing its state.
+If you have the appropriate permission, you can do so by opening the container's page and using the "Controls" button, as show in the figure.
 
 Creating a container running ...
-------------------------------
+--------------------------------
 
-First, navigate to the project where you want to have the container, and make sure you have a role that allows you to create containers.
-To create the container, switch to the **Containers** app
+This section illustrates how to create containers.
+For concreteness, we describe a few real-world use cases that, in our experience, occur often in practice.
+
+If you want to create a container, navigate to the project where you want to have it, and make sure you have a :ref:`role <introduction_roles>` that allows you to create containers.
+Switch to the **Containers** app
 
 .. image:: figures/apps/containers/menu.png
   :alt: Container app
@@ -41,6 +75,12 @@ for the following tutorials.
 
 .. image:: figures/apps/containers/overview_create.png
   :alt: Project overview
+
+At this point you can simply fill out the form with the container details.
+You'll need to know the repository where the container should be downloaded from (typically `Docker Hub <hub.docker.com>`__, `GitHub Container Registry <ghcr.io>`__, or a similar platform).
+You will also need to know the port on which the app inside the container listens to; this should be specified in the container's documentation.
+If you want, you can pass environment variables to the app or customize the command to run.
+The following subsections will describe in detail how to set up a container using specific examples.
 
 After the creation of the container you will be redirected
 the details of the container. The state will be set to
@@ -56,7 +96,7 @@ Shiny (using environment variables)
 .. image:: figures/introduction/cookbook/proxy_shiny.png
   :alt: Shiny proxy
 
-*For this tutorial we provide you with a pre-build*
+*For this tutorial we provide you with a pre-built*
 `Docker image with a Shiny application <https://github.com/bihealth/kiosc-example-shiny/>`_.
 *Use the linked repository as a base to create your own Docker image.*
 
@@ -88,7 +128,7 @@ Dash (using environment variables)
 .. image:: figures/introduction/cookbook/proxy_dash.png
   :alt: Dash proxy
 
-*For this tutorial we provide you with a pre-build*
+*For this tutorial we provide you with a pre-built*
 `Docker image with a Dash application <https://github.com/bihealth/kiosc-example-dash/>`_.
 *Use the linked repository as a base to create your own Docker image.*
 
@@ -124,7 +164,7 @@ seaPiper
 .. image:: figures/introduction/cookbook/proxy_seapiper.png
   :alt: seaPiper proxy
 
-*For this tutorial we provide you with a pre-build*
+*For this tutorial we provide you with a pre-built*
 `Docker image with a seaPiper application <https://github.com/bihealth/kiosc-seapiper-demo/>`_.
 *Use the linked repository as a base to create your own Docker image.*
 
@@ -137,14 +177,14 @@ seaPiper is based on Shiny. Fill out the following fields and click **Create**:
 **Container Port**  ``8080``
 ==================  ==================================================================
 
-cellxgene (using a command)
+CELLxGENE (using a command)
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 .. image:: figures/introduction/cookbook/proxy_cellxgene.png
-  :alt: cellxgene proxy
+  :alt: CELLxGENE proxy
 
 This example takes a publicly available container and passes a command that is run
-when starting the container. In this case, the cellxgene application is started
+when starting the container. In this case, the CELLxGENE application is started
 immediately when running the container. The data is loaded by passing the data
 URL to the command. Fill out the following fields and click **Create**:
 
@@ -156,11 +196,11 @@ URL to the command. Fill out the following fields and click **Create**:
 **Command**         ``cellxgene launch https://cellxgene-example-data.czi.technology/pbmc3k.h5ad -p 8050 --host 0.0.0.0 --verbose``
 ==================  ==================================================================
 
-cellxgene (using a command with small files)
+CELLxGENE (using a command with small files)
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 .. image:: figures/introduction/cookbook/proxy_cellxgene.png
-  :alt: cellxgene proxy
+  :alt: CELLxGENE proxy
 
 This example is the same as above but using a file uploaded to Kiosc.
 A command to copy-and-paste can't be provided as the link to the file
@@ -232,19 +272,3 @@ In addition to the user defined variables, the ``title``, ``description`` and
     $ export DESCRIPTION="Some description"
     $ export CONTAINER_PORT=8050
 
-Controlling a container
------------------------
-
-A Docker container can be in different states, and this is reflected in Kiosc.
-
-- **Initial**: The image was just downloaded and the container has not been started for the first time yet.
-- **Running**: The container is running and you can access the service provided by the container.
-- **Paused**: The processes inside the container are sleeping and do not consume resources, but can be restarted at any time.
-- **Stopped**: The container has been killed by a user.
-- **Failed**: Something went wrong inside the container, you should report this error to the container's authors.
-
-.. image:: figures/introduction/cookbook/container_controls.png
-  :alt: Container controls
-
-Controlling a container means changing its state.
-If you have the appropriate permission, you can do so by opening the container's page and using the "Controls" button, as show in the figure.

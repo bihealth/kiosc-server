@@ -18,7 +18,7 @@ Users can select docker containers packaging apps like `Plotly Dash <https://das
 Kiosc runs the containers with the appropriate network configuration and acts as a proxy to the web services running inside the containers.
 Using and managing Kiosc doesn't require being experts in either docker or network administration, while still scaling up to a large number of containers and users.
 
-Users can authenticate in Kiosc through LDAP, SSO, OIDC, or local accounts created by the administrator.
+Users can authenticate in Kiosc through LDAP, OIDC, or local accounts created by the administrator.
 Then, they create projects, sub-projects, and docker containers within the projects.
 Kiosc offers functionality to create, configure, manage and control Docker containers from existing Docker images, allowing to customize the environment variable and the entrypoint command of the container.
 Furthermore, Kiosc gives access to the web services running within the containers by acting as a reverse proxy and allowing access to the containers only for authorized users (public access is also an option).

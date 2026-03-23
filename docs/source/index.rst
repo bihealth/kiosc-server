@@ -15,7 +15,7 @@ What Kiosc is and what it is not
 
 Kiosc is a web interface where users can:
 
-- Authenticate through LDAP, SSO, OIDC, or local accounts
+- Authenticate through LDAP, OIDC, or local accounts
 - Download existing docker images and create containers from them
 - Organize containers into projects and subprojects
 - Access the web services running inside the containers

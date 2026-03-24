@@ -153,3 +153,5 @@ PROJECTROLES_APP_SETTINGS_TEST = None
 CELERY_TASK_ALWAYS_EAGER = True
 # http://docs.celeryproject.org/en/latest/userguide/configuration.html#task-eager-propagates
 CELERY_TASK_EAGER_PROPAGATES = True
+
+ASGI_APPLICATION = 'config.asgi.application'

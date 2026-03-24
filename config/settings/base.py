@@ -157,6 +157,7 @@ MANAGERS = ADMINS
 # See: https://django-environ.readthedocs.io/en/latest/#supported-types
 DATABASES = {'default': env.db('DATABASE_URL', default='postgres:///kiosc')}
 DATABASES['default']['ATOMIC_REQUESTS'] = False
+DATABASES['default']['TEST'] = {'NAME': 'test_kiosc'}
 
 DEFAULT_AUTO_FIELD = 'django.db.models.AutoField'
 

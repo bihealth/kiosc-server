@@ -230,15 +230,19 @@
     function createWebSocket() {
       const socket = new WebSocket(
         `ws://` +
-        `${window.location.host}/` +
+        `${window.location.host}` +
         `{% url "log-watcher" container=object.sodar_uuid %}`
       );
+      const initialString = "Waiting for logs...";
       socket.addEventListener("open", (event) => {
-        logsElement.innerText = "Waiting for logs...";
+        logsElement.innerText = initialString;
         setCookie("log_lines", logLinesInput.value);
         socket.send(logLinesInput.value);
       });
       socket.addEventListener("message", (event) => {
+        if (logsElement.innerText == initialString) {
+          logsElement.innerText = "";
+        }
         logsElement.append(event.data);
         let scrollBuffer = logsElement.getBoundingClientRect()["height"] + 100;
         if (logsElement.scrollHeight - logsElement.scrollTop < scrollBuffer) {

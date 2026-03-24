@@ -1,7 +1,7 @@
 .. _manual_main:
 
 Welcome to the Kiosc documentation!
-========================================
+===================================
 
 Kiosc is a web application to orchestrate containerized web services and
 interactive reports across projects and users. It allows you to create and

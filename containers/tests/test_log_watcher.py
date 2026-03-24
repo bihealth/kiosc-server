@@ -113,7 +113,6 @@ class TestLogWatcherConsumerLive(
     def setUp(self):
         super().setUp()
 
-        self.chrome_options = []
         self.set_up_selenium()
 
         # Setup project

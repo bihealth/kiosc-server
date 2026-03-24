@@ -119,9 +119,9 @@ websocket_urlpatterns = [
         consumers.TunnelConsumer.as_asgi(),
     ),
     re_path(
-        r"^containers/watcher/logs/(?P<container>[0-9a-f-]+)",
+        r'^containers/watcher/logs/(?P<container>[0-9a-f-]+)',
         consumers.LogWatcherConsumer.as_asgi(),
-        name="log-watcher",
+        name='log-watcher',
     ),
 ]
 

@@ -124,19 +124,19 @@ class LogWatcherConsumer(WebsocketConsumer):
                 ):
                     # If we are here, it means that the header is not empty.
                     # Decode the content length as int.
-                    _, length = struct.unpack(">BxxxL", header)
+                    _, length = struct.unpack('>BxxxL', header)
                     if not length:
                         break
                     data = res.raw.read(length)
                     if not data:
                         # Something terrible happened.
                         raise ValueError(
-                            "No data from docker log stream socket"
+                            'No data from docker log stream socket'
                         )
                     if self.event.is_set():
                         # Check if thread was killed during socket timeout.
                         break
-                    self.send(data.decode("utf-8"))
+                    self.send(data.decode('utf-8'))
             except ReadTimeoutError:
                 # This is totally normal and prevents the socket from blocking.
                 continue
@@ -146,15 +146,15 @@ class LogWatcherConsumer(WebsocketConsumer):
             # find the underlying socket object
             # based on api.client._get_raw_response_socket
             sock_fp = res.raw._fp.fp
-            if hasattr(sock_fp, "raw"):
+            if hasattr(sock_fp, 'raw'):
                 sock_raw = sock_fp.raw
-                if hasattr(sock_raw, "sock"):
+                if hasattr(sock_raw, 'sock'):
                     sock = sock_raw.sock
-                elif hasattr(sock_raw, "_sock"):
+                elif hasattr(sock_raw, '_sock'):
                     sock = sock_raw._sock
             else:
                 sock = sock_fp._sock
-            if hasattr(urllib3.contrib, "pyopenssl") and isinstance(
+            if hasattr(urllib3.contrib, 'pyopenssl') and isinstance(
                 sock, urllib3.contrib.pyopenssl.WrappedSocket
             ):
                 sock = sock.socket
@@ -168,52 +168,52 @@ class LogWatcherConsumer(WebsocketConsumer):
             target=self._watch_logs, args=(self.container_id, tail), daemon=True
         )
         self.task.start()
-        logger.info(f"{self.__class__.__name__} thread started.")
+        logger.info(f'{self.__class__.__name__} thread started.')
 
     def stop_watching(self):
         """Kill the thread that monitors the logs"""
         self.event.set()
         try:
             self.task.join()
-            logger.info(f"{self.__class__.__name__} thread terminated.")
+            logger.info(f'{self.__class__.__name__} thread terminated.')
         except (AttributeError, RuntimeError):
             logger.debug(
-                f"{self.__class__.__name__} disconnection before thread start."
+                f'{self.__class__.__name__} disconnection before thread start.'
             )
 
     def connect(self):
         """Called upon websocket connect events"""
-        user = self.scope["user"]
-        container_sodar_uuid = self.scope["url_route"]["kwargs"]["container"]
+        user = self.scope['user']
+        container_sodar_uuid = self.scope['url_route']['kwargs']['container']
         container_obj = Container.objects.get(sodar_uuid=container_sodar_uuid)
         logger.info(
-            f"New connection request to {self.__class__.__name__} "
-            f"for {container_sodar_uuid} from {user.username}"
+            f'New connection request to {self.__class__.__name__} '
+            f'for {container_sodar_uuid} from {user.username}'
         )
         logger.debug(
-            "Currently active threads: %s",
+            'Currently active threads: %s',
             [thread.name for thread in threading.enumerate()],
         )
         self.container_id = container_obj.container_id
         self.event = threading.Event()
         self.task = None
         if not user.has_perm(
-            "containers.view_container", container_obj.project
+            'containers.view_container', container_obj.project
         ):
-            self.close(code=403, reason="Forbidden")
+            self.close(code=403, reason='Forbidden')
             return
         if not self.container_id:
-            self.close(code=404, reason="Container not running")
+            self.close(code=404, reason='Container not running')
             return
         self.accept()
 
     def disconnect(self, close_code: int):
         """Called upon websocket disconnect events"""
-        user = self.scope["user"]
-        container_sodar_uuid = self.scope["url_route"]["kwargs"]["container"]
+        user = self.scope['user']
+        container_sodar_uuid = self.scope['url_route']['kwargs']['container']
         logger.info(
-            f"{self.__class__.__name__} disconnection request for "
-            f"{container_sodar_uuid} from {user.username}"
+            f'{self.__class__.__name__} disconnection request for '
+            f'{container_sodar_uuid} from {user.username}'
         )
         self.stop_watching()
 

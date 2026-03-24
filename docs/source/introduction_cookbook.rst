@@ -9,63 +9,77 @@ Cookbook
 Creating a project
 ------------------
 
-After you log in, you should see the home page with the projects list.
-In Kiosc, like in `SODAR <https://github.com/bihealth/sodar-server>`__, projects are organized hierarchically in *categories*.
-A category is a directory that can contain projects or other categories.
-If no project exists, you can create one yourself within an existing category.
-Only the administrator can create top-level categories, by clicking on "Create Category" in the left side menu.
+After you log in, you should see the home page with the projects list. In Kiosc,
+like in `SODAR <https://github.com/bihealth/sodar-server>`__, projects are
+organized hierarchically in *categories*. A category is a directory that can
+contain projects or other categories. If no project exists, you can create
+one yourself within an existing category. Only the administrator can create
+top-level categories, by clicking on "Create Category" in the left side menu.
 
-To create a project, navigate to the desired category, then click on "Create Project or Category" in the menu on the left side.
-The project page will show you an overview of the containers, container templates, and files that belong to this project.
-Initially, everything will be empty.
+To create a project, navigate to the desired category, then click on "Create
+Project or Category" in the menu on the left side. The project page will show
+you an overview of the containers, container templates, and files that belong to
+this project. Initially, everything will be empty.
 
 Accessing a container running in an existing project
 ----------------------------------------------------
 
-If the administrator or another user has created a project, they may have given you access to it.
-In Kiosc, users can have various roles in a project; check out the :ref:`relevant documentation <introduction_roles>` for reference.
-If you are a member of the project, you will be able to see the containers in that project.
-Depending on your role, you may or may not be able to modify the container, stop it, and restart it.
-To access the web app inside the container, browse to the project of interest, find the container, and click on its title.
-You should see the container status page, and if you click on the eye icon, you'll be redirected to the container app.
+If the administrator or another user has created a project, they may have given
+you access to it. In Kiosc, users can have various roles in a project; check out
+the :ref:`relevant documentation <introduction_roles>` for reference. If you are
+a member of the project, you will be able to see the containers in that project.
+Depending on your role, you may or may not be able to modify the container,
+stop it, and restart it. To access the web app inside the container, browse
+to the project of interest, find the container, and click on its title. You
+should see the container status page, and if you click on the eye icon, you'll
+be redirected to the container app.
 
-The button with the eye icon also indicates the status of the container.
-If they button is colored in gray and the eye is crossed-out, it means that the container is not running.
-If the button is blue with an open eye, it means that the container is running.
-Even if the container is not running, clicking on the button will start it and redirect you to the web app.
+The button with the eye icon also indicates the status of the container. If
+they button is colored in gray and the eye is crossed-out, it means that the
+container is not running. If the button is blue with an open eye, it means that
+the container is running. Even if the container is not running, clicking on the
+button will start it and redirect you to the web app.
 
 .. note::
 
-    If the container needs to be started, it may take some time before it becomes available.
-    When Kiosc says that the container is running, but you cannot access it, it means that the container is starting up.
-    Please be patient and come back after several minutes.
-    If, after one hour, the container is still inaccessible, report this to the project owner or the container developer.
+    If the container needs to be started, it may take some time before it
+    becomes available. When Kiosc says that the container is running, but
+    you cannot access it, it means that the container is starting up. Please
+    be patient and come back after several minutes. If, after one hour, the
+    container is still inaccessible, report this to the project owner or the
+    container developer.
 
 Controlling a container
 -----------------------
 
 A Docker container can be in different states, and this is reflected in Kiosc.
 
-- **Initial**: The image was just downloaded and the container has not been started for the first time yet.
-- **Running**: The container is running and you can access the service provided by the container.
-- **Paused**: The processes inside the container are sleeping and do not consume resources, but can be restarted at any time.
+- **Initial**: The image was just downloaded and the container has not been
+  started for the first time yet.
+- **Running**: The container is running and you can access the service provided
+  by the container.
+- **Paused**: The processes inside the container are sleeping and do not consume
+  resources, but can be restarted at any time.
 - **Stopped**: The container has been killed by a user.
-- **Failed**: Something went wrong inside the container, you should report this error to the container's authors.
+- **Failed**: Something went wrong inside the container, you should report this
+  error to the container's authors.
 
 .. image:: figures/introduction/cookbook/container_controls.png
   :alt: Container controls
 
-Controlling a container means changing its state.
-If you have the appropriate permission, you can do so by opening the container's page and using the "Controls" button, as show in the figure.
+Controlling a container means changing its state. If you have the appropriate
+permission, you can do so by opening the container's page and using the
+"Controls" button, as show in the figure.
 
 Creating a container running ...
 --------------------------------
 
-This section illustrates how to create containers.
-For concreteness, we describe a few real-world use cases that, in our experience, occur often in practice.
+This section illustrates how to create containers. For concreteness, we describe
+a few real-world use cases that, in our experience, occur often in practice.
 
-If you want to create a container, navigate to the project where you want to have it, and make sure you have a :ref:`role <introduction_roles>` that allows you to create containers.
-Switch to the **Containers** app
+If you want to create a container, navigate to the project where you want to
+have it, and make sure you have a :ref:`role <introduction_roles>` that allows
+you to create containers. Switch to the **Containers** app
 
 .. image:: figures/apps/containers/menu.png
   :alt: Container app
@@ -77,18 +91,20 @@ for the following tutorials.
   :alt: Project overview
 
 At this point you can simply fill out the form with the container details.
-You'll need to know the repository where the container should be downloaded from (typically `Docker Hub <hub.docker.com>`__, `GitHub Container Registry <ghcr.io>`__, or a similar platform).
-You will also need to know the port on which the app inside the container listens to; this should be specified in the container's documentation.
-If you want, you can pass environment variables to the app or customize the command to run.
-The following subsections will describe in detail how to set up a container using specific examples.
+You'll need to know the repository where the container should be downloaded
+from (typically `Docker Hub <hub.docker.com>`__, `GitHub Container Registry
+<ghcr.io>`__, or a similar platform). You will also need to know the port on
+which the app inside the container listens to; this should be specified in the
+container's documentation. If you want, you can pass environment variables to
+the app or customize the command to run. The following subsections will describe
+in detail how to set up a container using specific examples.
 
-After the creation of the container you will be redirected
-the details of the container. The state will be set to
-``initial`` which indicates that there is the container object
-but no actual Docker container (yet). You can find the operations menu (cog icon)
-on the top right of the details page. Open the dropdown
-menu by clicking the cog icon and select **Start**, or click
-the crossed-out eye icon to start and access the container directly.
+After the creation of the container you will be redirected the details of the
+container. The state will be set to ``initial`` which indicates that there
+is the container object but no actual Docker container (yet). You can find
+the operations menu (cog icon) on the top right of the details page. Open the
+dropdown menu by clicking the cog icon and select **Start**, or click the
+crossed-out eye icon to start and access the container directly.
 
 Shiny (using environment variables)
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -100,9 +116,9 @@ Shiny (using environment variables)
 `Docker image with a Shiny application <https://github.com/bihealth/kiosc-example-shiny/>`_.
 *Use the linked repository as a base to create your own Docker image.*
 
-This example sets up a simple Shiny application loading the popular iris dataset.
-The data set is loaded by setting the ``dataset`` variable in the environment.
-Fill out the following fields and click **Create**:
+This example sets up a simple Shiny application loading the popular iris
+dataset. The data set is loaded by setting the ``dataset`` variable in the
+environment. Fill out the following fields and click **Create**:
 
 ==================  ==================================================================
 **Title**           *Set a unique title that helps you identify the container easily.*
@@ -112,12 +128,15 @@ Fill out the following fields and click **Create**:
 **Environment**     ``{"title": "Kiosc Shiny App example", "dataset": "iris"}``
 ==================  ==================================================================
 
-The **Environment** field should contain a `JSON object literal <https://www.w3schools.com/js/js_json_objects.asp>`_,
-which corresponds to a Python dictionary with the exception that only double quotes are allowed, or nothing.
+The **Environment** field should contain a `JSON object literal
+<https://www.w3schools.com/js/js_json_objects.asp>`_, which corresponds to a
+Python dictionary with the exception that only double quotes are allowed, or
+nothing.
 
-The value in the **Environment** field will be transformed and passed to the environment of
-the container. In the above example, the Docker container will hold two environment variables.
-Imagine that inside the container the following lines will be performed upon start::
+The value in the **Environment** field will be transformed and passed to the
+environment of the container. In the above example, the Docker container will
+hold two environment variables. Imagine that inside the container the following
+lines will be performed upon start::
 
     $ export title="Kiosc Shiny App example"
     $ export dataset=iris
@@ -132,14 +151,14 @@ Dash (using environment variables)
 `Docker image with a Dash application <https://github.com/bihealth/kiosc-example-dash/>`_.
 *Use the linked repository as a base to create your own Docker image.*
 
-In this example we are running a Dash application. As we are behind
-a reverse proxy, the Dash application needs some tweaks to make it load
-all scripts and stylesheets into the container when started. The Dash
-application was extended by accepting an environmental variable named
-``PUBLIC_URL_PREFIX``, and for this to work, you have to set up this
-environment variable and set it to the value ``__KIOSC_URL_PREFIX__``.
-This acts as a place holder that is substituted with the path to the
-container how it is known to the outside. Fill out the following fields and click **Create**:
+In this example we are running a Dash application. As we are behind a reverse
+proxy, the Dash application needs some tweaks to make it load all scripts and
+stylesheets into the container when started. The Dash application was extended
+by accepting an environmental variable named ``PUBLIC_URL_PREFIX``, and for this
+to work, you have to set up this environment variable and set it to the value
+``__KIOSC_URL_PREFIX__``. This acts as a place holder that is substituted with
+the path to the container how it is known to the outside. Fill out the following
+fields and click **Create**:
 
 ==================  ==================================================================
 **Title**           *Set a unique title that helps you identify the container easily.*
@@ -149,12 +168,15 @@ container how it is known to the outside. Fill out the following fields and clic
 **Environment**     ``{"PUBLIC_URL_PREFIX": "__KIOSC_URL_PREFIX__"}``
 ==================  ==================================================================
 
-The **Environment** field should contain a `JSON object literal <https://www.w3schools.com/js/js_json_objects.asp>`_,
-which corresponds to a Python dictionary with the exception that only double quotes are allowed, or nothing.
+The **Environment** field should contain a `JSON object literal
+<https://www.w3schools.com/js/js_json_objects.asp>`_, which corresponds to a
+Python dictionary with the exception that only double quotes are allowed, or
+nothing.
 
-The value in the **Environment** field will be transformed and passed to the environment of
-the container. In the above example, the Docker container will hold two environment variables.
-Imagine that inside the container the following lines will be performed upon start::
+The value in the **Environment** field will be transformed and passed to the
+environment of the container. In the above example, the Docker container will
+hold two environment variables. Imagine that inside the container the following
+lines will be performed upon start::
 
     $ export PUBLIC_URL_PREFIX=containers/proxy/abcdef123...
 

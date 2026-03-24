@@ -3,19 +3,28 @@
 Installation and configuration
 ==============================
 
-The code for Kiosc is hosted on `GitHub <https://github.com/bihealth/kiosc-server>`__.
-Kiosc itself is a python web app built using the `Django <https://www.djangoproject.com>`__ framework and in order to function properly it requires additional components.
-Thus, the easiest and most recommended way to install Kiosc is through docker compose.
-If you are not familiar with docker or docker compose, head to :ref:`this short guide <introduction_docker>` for a quick introduction.
-If you don't want to use docker compose, or if you want to contribute to the Kiosc development, the manual installation method is described in the :ref:`Development Environment <introduction_development>` section.
+The code for Kiosc is hosted on `GitHub
+<https://github.com/bihealth/kiosc-server>`__. Kiosc itself is a python web
+app built using the `Django <https://www.djangoproject.com>`__ framework and
+in order to function properly it requires additional components. Thus, the
+easiest and most recommended way to install Kiosc is through docker compose. If
+you are not familiar with docker or docker compose, head to :ref:`this short
+guide <introduction_docker>` for a quick introduction. If you don't want to
+use docker compose, or if you want to contribute to the Kiosc development, the
+manual installation method is described in the :ref:`Development Environment
+<introduction_development>` section.
 
 Installation via docker compose
 -------------------------------
 
-We provide a `separate repository <https://github.com/bihealth/kiosc-docker-compose>`__ containing the master ``docker-compose.yml`` file for Kiosc.
-It encloses all the apps and services needed to deploy and develop Kiosc.
-We crafted this docker compose so that it uses the latest stable Kiosc image, which is itself built from the main `kiosc-server repository <https://github.com/bihealth/kiosc-server>`__ and uploaded to the GitHub Container Registry (*ghcr*).
-Here we describe how to deploying Kiosc using the ``kiosc-docker-compose`` repository.
+We provide a `separate repository
+<https://github.com/bihealth/kiosc-docker-compose>`__ containing the master
+``docker-compose.yml`` file for Kiosc. It encloses all the apps and services
+needed to deploy and develop Kiosc. We crafted this docker compose so that
+it uses the latest stable Kiosc image, which is itself built from the main
+`kiosc-server repository <https://github.com/bihealth/kiosc-server>`__ and
+uploaded to the GitHub Container Registry (*ghcr*). Here we describe how to
+deploying Kiosc using the ``kiosc-docker-compose`` repository.
 
 Start by cloning the repository::
 
@@ -48,11 +57,14 @@ To do so, run this command and follow the interactive prompts::
 
     $ docker compose exec kiosc-web ./manage.py createsuperuser
 
-At this point, you may create local user accounts or connect Kiosc to an existing authentication provider, such as LDAP or OIDC.
-See the :ref:`introduction_installation_configuration` section for further instructions.
+At this point, you may create local user accounts or connect Kiosc to
+an existing authentication provider, such as LDAP or OIDC. See the
+:ref:`introduction_installation_configuration` section for further instructions.
 
-The Kiosc installation can now be reached by accessing `localhost <https://localhost>`_ with your browser.
-You should be able to access with the superuser account you just created, or as any of the regular users, if you have set them up.
+The Kiosc installation can now be reached by accessing `localhost
+<https://localhost>`_ with your browser. You should be able to access with the
+superuser account you just created, or as any of the regular users, if you have
+set them up.
 
 
 .. _introduction_installation_configuration:

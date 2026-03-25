@@ -222,7 +222,7 @@
     var logWatcherSocket = createWebSocket();
     const logsElement = document.querySelector("#id_logs");
     const logLinesInput = document.querySelector("#id_log_lines");
-    logLinesCookie = getCookie("log_lines");
+    const logLinesCookie = getCookie("log_lines");
     if (logLinesCookie !== null) {
       logLinesInput.value = logLinesCookie;
     }
@@ -233,14 +233,12 @@
         `${window.location.host}` +
         `{% url "log-watcher" container=object.sodar_uuid %}`
       );
-      const initialString = "Waiting for logs...";
       socket.addEventListener("open", (event) => {
-        logsElement.innerText = initialString;
         setCookie("log_lines", logLinesInput.value);
         socket.send(logLinesInput.value);
       });
       socket.addEventListener("message", (event) => {
-        if (logsElement.innerText == initialString) {
+        if (logsElement.innerHTML.match("Loading logs...")) {
           logsElement.innerText = "";
         }
         logsElement.append(event.data);
@@ -250,10 +248,15 @@
         }
       });
       socket.addEventListener("close", (event) => {
-        if (event.code <= 1000) {
-          logsElement.innerText = `Failed to fetch logs.`;
+        if (event.code == 4403) {
+          logsElement.innerText = "You are not authorized to see the container logs.";
+        } else if (event.code == 4404) {
+          logsElement.innerText = "Container not found.";
+        } else if (event.code != 1000 && event.code != 1001) {
+          // 1000 and 1001 indicate regular closing events.
+          logsElement.innerText = "Failed to fetch logs.";
+          console.error(event);
         }
-        console.error(event);
       });
       return socket;
     }

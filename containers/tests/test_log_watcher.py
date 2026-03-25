@@ -158,7 +158,6 @@ class TestLogWatcherConsumerLive(
         )
         elem = self.selenium.find_element(By.ID, 'id_logs')
         initial_text = elem.text
-        self.assertEqual(initial_text, 'Waiting for logs...')
         WebDriverWait(elem, 10).until(lambda el: el.text != initial_text)
         final_text = elem.text
         # This container logs the numbers from 1 to 100.

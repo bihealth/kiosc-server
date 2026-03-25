@@ -197,15 +197,15 @@ class LogWatcherConsumer(WebsocketConsumer):
         self.container_id = container_obj.container_id
         self.event = threading.Event()
         self.task = None
+        self.accept()
         if not user.has_perm(
             'containers.view_container', container_obj.project
         ):
-            self.close(code=403, reason='Forbidden')
+            self.close(code=4403, reason='Forbidden')
             return
         if not self.container_id:
-            self.close(code=404, reason='Container not running')
+            self.close(code=4404, reason='Container not found')
             return
-        self.accept()
 
     def disconnect(self, close_code: int):
         """Called upon websocket disconnect events"""

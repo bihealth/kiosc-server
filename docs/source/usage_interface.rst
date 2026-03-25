@@ -62,15 +62,25 @@ in the figure, are:
    containers (:ref:`detailed docs <apps_containertemplates>`);
 2. **Containers**, for creating and controlling Docker containers
    (:ref:`detailed docs <apps_containers>`);
-3. **Small Files**, for uploading small files (< 2GB) that the containers
+3. **Files**, for uploading small files (< 2GB) that the containers
    can then access (:ref:`detailed docs <apps_filesfolders>`).
 
-.. image:: figures/introduction/interface/settings_menu.png
-  :alt: Settings menu
+The other buttons allow you to access the **Timeline** events (a log of
+everything that happens in Kiosc related to the project), and the **Background
+Jobs** (container actions that run in the background). Depending on your role
+in the project, you may also see buttons to **Update** the project or invite
+**Members** to it.
 
-Additionally, in the top-right corner is a drop-down menu for account settings and
-site apps. This gives access to the site-wide container template app. This hosts
-container templates that are accessible site-wide and not project-wide.
+.. image:: figures/introduction/interface/settings_menu.png
+  :alt: User menu
+
+Moreover, by clicking on the user menu at the top right of the screen, you'll be
+able to access two other useful apps. The difference is that the former apps are
+project-specific, but these are site-wide. One is the :guilabel:`Container list`
+app, where you can find and manage a list of all your containers, regardless
+of the project they are in. The other app is :guilabel:`Container templates`,
+where you can find site-wide container templates. Only administrators can create
+site-wide templates, but then they are accessible to any user.
 
 Searching Containers and Logs
 -----------------------------

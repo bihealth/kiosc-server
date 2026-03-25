@@ -5,16 +5,16 @@ Welcome to the Kiosc documentation!
 
 Kiosc is a web application to orchestrate containerized web services and
 interactive reports across projects and users. It allows you to create and
-manage docker containers, organize them into projects and sub-projects, and
-control who can access the containers in a multi-user setting. If you are
-familiar with Kubernetes, Kiosc is an easier alternative for simple yet scalable
-use cases, such as showcasing the results of data science projects through
-interactive apps. In particular, it allows users to autonomously create and
-organize *ad hoc* web services without being experts in either docker or web
-administration. Kiosc takes care of running the container in the appropriate
-network and letting the users access it, acting as a proxy to the docker
-containers. Running and administering Kiosc is as simple as starting a docker
-container and only requires a single machine.
+manage :ref:`Docker containers <introduction_docker>`, organize them into
+categories and projects, and control who can access the containers in a
+multi-user setting. If you are familiar with Kubernetes, Kiosc is an easier
+alternative for simple yet scalable use cases, such as showcasing the results
+of data science projects through interactive apps. In particular, it allows
+users to autonomously create and organize *ad hoc* web services without being
+experts in either Docker or web administration. Kiosc takes care of running the
+container in the appropriate network and letting users access it, acting as a
+proxy to the Docker containers. Running and administering Kiosc is as simple as
+starting a Docker container and only requires a single machine.
 
 What Kiosc is and what it is not
 --------------------------------
@@ -22,7 +22,7 @@ What Kiosc is and what it is not
 Kiosc is a web interface where users can:
 
 - Authenticate through LDAP, OIDC, or local accounts;
-- Download existing docker images and create containers from them;
+- Download existing Docker images and create containers from them;
 - Organize containers into projects and subprojects;
 - Access the web services running inside the containers;
 - Control who else can access their containers ;
@@ -30,7 +30,7 @@ Kiosc is a web interface where users can:
 
 Kiosc is NOT
 
-- A tool to create docker images;
+- A tool to create Docker images;
 - For constraining and scaling resources allocated to containers;
 - For running Docker images without webserver (you can do that, but you likely
   won't benefit much from it);
@@ -39,7 +39,7 @@ Kiosc is NOT
 
 .. tip::
 
-    If your group also use `SODAR <https://github.com/bihealth/sodar-server>`__, projects and users can be directly imported from there.
+    If your group uses the `SODAR <https://github.com/bihealth/sodar-server>`__ data management system, selected projects and their users can be synchronized into Kiosc for federated access management.
 
 
 .. note::
@@ -59,6 +59,7 @@ Kiosc is NOT
     introduction_overview
     Docker concepts <introduction_docker>
     introduction_installation
+    glossary
 
 .. toctree::
     :maxdepth: 2
@@ -67,9 +68,9 @@ Kiosc is NOT
     :hidden:
     :titlesonly:
 
-    introduction_interface
-    introduction_roles
-    introduction_cookbook
+    usage_interface
+    usage_roles
+    usage_cookbook
 
 .. toctree::
     :maxdepth: 2

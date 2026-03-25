@@ -16,10 +16,9 @@ available:
 - The Kiosc django web app
 - A celery daemon for distributed background tasks
 - A celerybeat process for scheduled recurrent tasks
-- A database to store project and container metadata (we recommend
-  PostgreSQL v16)
-- Redis (we recommend v8), used as celery broker and generic
-  cache provider
+- A PostgreSQL database to store project and container metadata (the minimum
+  supported version is v12, but we recommend v16)
+- Redis (we recommend v8), used as celery broker and generic cache provider
 
 The Kiosc repository provides scripts and Makefile rules to conveniently run
 the django web app through an ASGI server, as well as the celery daemon and
@@ -27,14 +26,16 @@ the celerybeat process, but you are still required to install and run the
 database and redis. These services can be installed manually as well; we
 refer the interested reader to the relevant documentation for `PostgreSQL
 <https://www.postgresql.org/>`__ and `Redis <https://github.com/redis/redis>`__.
-However, the same docker compose used for the production deployment can also be
-used as a development environment which provides just PostgreSQL and Redis. We
-describe this setup in detail here.
+However, the same Docker Compose file used for the production deployment can
+also be used as a development environment which provides just PostgreSQL and
+Redis. We describe this setup in detail here.
 
 After cloning the `docker compose repository
-<https://github.com/bihealth/kiosc-docker-compose>`__, pass the ``--profile
-dev`` argument, so that only the services strictly required by Kiosc will
-run [#footnote-make-dev]_.
+<https://github.com/bihealth/kiosc-docker-compose>`__, follow the instructions
+in the README file to create the volume mountpoints and configure the
+environment variables and secret keys. When you are ready, run ``docker
+compose`` with the ``--profile dev`` argument, so that only the services
+strictly required by Kiosc will run [#footnote-make-dev]_.
 
 .. code-block:: console
 

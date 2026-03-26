@@ -10,7 +10,7 @@ from containertemplates.tests.factories import (
 )
 
 
-PROJECT_TYPE_PROJECT = SODAR_CONSTANTS["PROJECT_TYPE_PROJECT"]
+PROJECT_TYPE_PROJECT = SODAR_CONSTANTS['PROJECT_TYPE_PROJECT']
 
 
 class TestContainerTemplateSitePermissions(ProjectPermissionTestBase):
@@ -383,34 +383,6 @@ class TestContainerTemplateProjectPermissionsReadOnly(
         )
         good_users = [
             self.superuser,
-        self.assert_response(url, good_users, 200, method="POST", data=data)
-        self.assert_response(url, bad_users, 302, method="POST", data=data)
-
-
-class TestSearchPermissions(ProjectPermissionTestBase):
-    """Test permissions for searching."""
-
-    def setUp(self):
-        super().setUp()
-        self.other_project = self.make_project(
-            "other_project",
-            PROJECT_TYPE_PROJECT,
-            self.category,
-            description="description",
-        )
-        self.template_site = ContainerTemplateSiteFactory()
-        self.template_project = ContainerTemplateProjectFactory(
-            project=self.project
-        )
-        self.other_template_project = ContainerTemplateProjectFactory(
-            project=self.other_project
-        )
-        # Promote user to guest
-        self.make_assignment(
-            self.other_project, self.user_finder_cat, self.role_guest
-        )
-        self.url = reverse("projectroles:search")
-        self.good_users = [
             self.user_owner,
             self.user_delegate,
             self.user_contributor,
@@ -529,6 +501,37 @@ class TestSearchPermissions(ProjectPermissionTestBase):
         bad_users = [self.anonymous]
         self.assert_response(url, good_users, 200, method='POST', data=data)
         self.assert_response(url, bad_users, 302, method='POST', data=data)
+
+
+class TestSearchPermissions(ProjectPermissionTestBase):
+    """Test permissions for searching."""
+
+    def setUp(self):
+        super().setUp()
+        self.other_project = self.make_project(
+            'other_project',
+            PROJECT_TYPE_PROJECT,
+            self.category,
+            description='description',
+        )
+        self.template_site = ContainerTemplateSiteFactory()
+        self.template_project = ContainerTemplateProjectFactory(
+            project=self.project
+        )
+        self.other_template_project = ContainerTemplateProjectFactory(
+            project=self.other_project
+        )
+        # Promote user to guest
+        self.make_assignment(
+            self.other_project, self.user_finder_cat, self.role_guest
+        )
+        self.url = reverse('projectroles:search')
+        self.good_users = [
+            self.user_owner,
+            self.user_delegate,
+            self.user_contributor,
+            self.user_guest,
+        ]
         self.bad_users = [self.user_viewer, self.user_no_roles]
 
     def _get_search_results(self, user, data):
@@ -536,19 +539,19 @@ class TestSearchPermissions(ProjectPermissionTestBase):
             res = self.client.get(self.url, data)
             context = res.context
         self.assertEqual(res.status_code, 200)
-        self.assertEqual(context["search_input"], data["s"])
-        for app in context["app_results"]:
-            if app["plugin"].name == "containers":
-                return app["results"]
+        self.assertEqual(context['search_input'], data['s'])
+        for app in context['app_results']:
+            if app['plugin'].name == 'containers':
+                return app['results']
 
     def test_search_term(self):
         """Test permissions for search view."""
-        data = {"s": "description"}
+        data = {'s': 'description'}
 
         # Superuser sees everything
         results = self._get_search_results(self.superuser, data)
         self.assertEqual(
-            set(results["all"].items),
+            set(results['all'].items),
             set(
                 [
                     self.template_site,
@@ -562,19 +565,19 @@ class TestSearchPermissions(ProjectPermissionTestBase):
         for user in self.good_users:
             results = self._get_search_results(user, data)
             self.assertEqual(
-                set(results["all"].items),
+                set(results['all'].items),
                 set([self.template_project, self.template_site]),
             )
 
         # Bad users should only see the site template
         for user in self.bad_users:
             results = self._get_search_results(user, data)
-            self.assertEqual(results["all"].items, [self.template_site])
+            self.assertEqual(results['all'].items, [self.template_site])
 
         # Special users
         results = self._get_search_results(self.user_contributor_cat, data)
         self.assertEqual(
-            set(results["all"].items),
+            set(results['all'].items),
             set(
                 [
                     self.template_project,
@@ -585,7 +588,7 @@ class TestSearchPermissions(ProjectPermissionTestBase):
         )
         results = self._get_search_results(self.user_finder_cat, data)
         self.assertEqual(
-            set(results["all"].items),
+            set(results['all'].items),
             set([self.other_template_project, self.template_site]),
         )
 
@@ -596,17 +599,17 @@ class TestSearchPermissions(ProjectPermissionTestBase):
     def test_search_term_with_type_and_keyword(self):
         """Test permissions for search view limited by type and project."""
         data = {
-            "s": (
-                "repository "
-                "type:containertemplate "
-                f"project:{self.project.sodar_uuid}"
+            's': (
+                'repository '
+                'type:containertemplate '
+                f'project:{self.project.sodar_uuid}'
             )
         }
 
         # Superuser sees everything
         results = self._get_search_results(self.superuser, data)
         self.assertEqual(
-            set(results["all"].items),
+            set(results['all'].items),
             set([self.template_project, self.template_site]),
         )
 
@@ -614,23 +617,23 @@ class TestSearchPermissions(ProjectPermissionTestBase):
         for user in self.good_users:
             results = self._get_search_results(user, data)
             self.assertEqual(
-                set(results["all"].items),
+                set(results['all'].items),
                 set([self.template_project, self.template_site]),
             )
 
         # Bad users should only see the site template
         for user in self.bad_users:
             results = self._get_search_results(user, data)
-            self.assertEqual(results["all"].items, [self.template_site])
+            self.assertEqual(results['all'].items, [self.template_site])
 
         # Special users
         results = self._get_search_results(self.user_contributor_cat, data)
         self.assertEqual(
-            set(results["all"].items),
+            set(results['all'].items),
             set([self.template_project, self.template_site]),
         )
         results = self._get_search_results(self.user_finder_cat, data)
-        self.assertEqual(results["all"].items, [self.template_site])
+        self.assertEqual(results['all'].items, [self.template_site])
 
         # Anonymous
         res = self.client.get(self.url, data)
@@ -638,6 +641,6 @@ class TestSearchPermissions(ProjectPermissionTestBase):
 
     def test_search_empty(self):
         """Test permissions for search view with empty results."""
-        data = {"s": "repository type:containerlogentry"}
+        data = {'s': 'repository type:containerlogentry'}
         results = self._get_search_results(self.superuser, data)
-        self.assertEqual(results["all"].items, [])
+        self.assertEqual(results['all'].items, [])

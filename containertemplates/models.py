@@ -162,7 +162,7 @@ class ContainerTemplateSiteManager(models.Manager):
                 term_query.add(Q(sodar_uuid=uuid.UUID(t)), Q.OR)
             except ValueError:
                 pass
-        return super().get_queryset().filter(term_query).order_by("title")
+        return super().get_queryset().filter(term_query).order_by('title')
 
 
 class ContainerTemplateSite(ContainerTemplateBase):
@@ -207,13 +207,13 @@ class ContainerTemplateProjectManager(models.Manager):
             term_query.add(Q(title__icontains=t), Q.OR)
             term_query.add(Q(description__icontains=t), Q.OR)
             try:
-                uuid.UUID(t.replace("-", ""))
+                uuid.UUID(t.replace('-', ''))
                 term_query.add(Q(sodar_uuid=t), Q.OR)
             except ValueError:
                 pass
-        if keywords and "project" in keywords:
+        if keywords and 'project' in keywords:
             try:
-                project = Project.objects.get(sodar_uuid=keywords["project"])
+                project = Project.objects.get(sodar_uuid=keywords['project'])
                 term_query.add(
                     Q(project__full_title__startswith=project.full_title), Q.AND
                 )
@@ -221,7 +221,7 @@ class ContainerTemplateProjectManager(models.Manager):
                 return ContainerTemplateProject.objects.none()
             except ValidationError:
                 return ContainerTemplateProject.objects.none()
-        return super().get_queryset().filter(term_query).order_by("title")
+        return super().get_queryset().filter(term_query).order_by('title')
 
 
 class ContainerTemplateProject(ContainerTemplateBase):

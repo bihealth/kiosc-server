@@ -98,10 +98,10 @@ class ProjectAppPlugin(
 
     #: List of search object types for the app
     search_types = [
-        "container",
-        "containerbackgroundjob",
-        "containerlogentry",
-        "containertemplate",
+        'container',
+        'containerbackgroundjob',
+        'containerlogentry',
+        'containertemplate',
     ]
 
     #: Search results template
@@ -308,20 +308,20 @@ class ProjectAppPlugin(
         :return: List of PluginSearchResult objects
         """
         items = []
-        if not search_type or search_type == "container":
+        if not search_type or search_type == 'container':
             items.extend(Container.objects.find(search_terms, keywords))
-        if not search_type or search_type == "containertemplate":
+        if not search_type or search_type == 'containertemplate':
             items.extend(
                 ContainerTemplateProject.objects.find(search_terms, keywords)
             )
             items.extend(
                 ContainerTemplateSite.objects.find(search_terms, keywords)
             )
-        if not search_type or search_type == "containerbackgroundjob":
+        if not search_type or search_type == 'containerbackgroundjob':
             items.extend(
                 ContainerBackgroundJob.objects.find(search_terms, keywords)
             )
-        if not search_type or search_type == "containerlogentry":
+        if not search_type or search_type == 'containerlogentry':
             items.extend(ContainerLogEntry.objects.find(search_terms, keywords))
         filtered_items = []
         for item in items:
@@ -329,22 +329,22 @@ class ProjectAppPlugin(
                 case ContainerTemplateSite():
                     filtered_items.append(item)
                 case Container() | ContainerTemplateProject():
-                    if user.has_perm("containers.view_container", item.project):
+                    if user.has_perm('containers.view_container', item.project):
                         filtered_items.append(item)
                 case ContainerBackgroundJob() | ContainerLogEntry():
                     if user.has_perm(
-                        "containers.view_container", item.container.project
+                        'containers.view_container', item.container.project
                     ):
                         filtered_items.append(item)
                 case _:
-                    logger.debug(f"Unexpected search result: {item}")
+                    logger.debug(f'Unexpected search result: {item}')
         ret = PluginSearchResult(
-            category="all",
-            title="Containers, Background Jobs, and Logs",
+            category='all',
+            title='Containers, Background Jobs, and Logs',
             search_types=[
-                "container",
-                "containerbackgroundjob",
-                "containerlogentry",
+                'container',
+                'containerbackgroundjob',
+                'containerlogentry',
             ],
             items=filtered_items,
         )

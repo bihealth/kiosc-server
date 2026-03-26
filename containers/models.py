@@ -188,9 +188,9 @@ class ContainerManager(models.Manager):
                 term_query.add(Q(sodar_uuid=uuid.UUID(t)), Q.OR)
             except ValueError:
                 pass
-        if keywords and "project" in keywords:
+        if keywords and 'project' in keywords:
             try:
-                project = Project.objects.get(sodar_uuid=keywords["project"])
+                project = Project.objects.get(sodar_uuid=keywords['project'])
                 term_query.add(
                     Q(project__full_title__startswith=project.full_title), Q.AND
                 )
@@ -198,7 +198,7 @@ class ContainerManager(models.Manager):
                 return Container.objects.none()
             except ValidationError:
                 return Container.objects.none()
-        return super().get_queryset().filter(term_query).order_by("title")
+        return super().get_queryset().filter(term_query).order_by('title')
 
 
 class Container(models.Model):
@@ -469,9 +469,9 @@ class ContainerBackgroundJobManager(models.Manager):
                 term_query.add(Q(sodar_uuid=uuid.UUID(t)), Q.OR)
             except ValueError:
                 pass
-        if keywords and "project" in keywords:
+        if keywords and 'project' in keywords:
             try:
-                project = Project.objects.get(sodar_uuid=keywords["project"])
+                project = Project.objects.get(sodar_uuid=keywords['project'])
                 term_query.add(
                     Q(project__full_title__startswith=project.full_title), Q.AND
                 )
@@ -483,7 +483,7 @@ class ContainerBackgroundJobManager(models.Manager):
             super()
             .get_queryset()
             .filter(term_query)
-            .order_by("container__title")
+            .order_by('container__title')
         )
 
 
@@ -606,9 +606,9 @@ class ContainerLogEntryManager(models.Manager):
                 term_query.add(Q(sodar_uuid=uuid.UUID(t)), Q.OR)
             except ValueError:
                 pass
-        if keywords and "project" in keywords:
+        if keywords and 'project' in keywords:
             try:
-                project = Project.objects.get(sodar_uuid=keywords["project"])
+                project = Project.objects.get(sodar_uuid=keywords['project'])
                 term_query.add(
                     Q(project__full_title__startswith=project.full_title), Q.AND
                 )
@@ -620,7 +620,7 @@ class ContainerLogEntryManager(models.Manager):
             super()
             .get_queryset()
             .filter(term_query)
-            .order_by("container", "-date_created")
+            .order_by('container', '-date_created')
         )
 
 

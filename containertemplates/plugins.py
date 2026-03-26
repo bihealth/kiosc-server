@@ -76,11 +76,13 @@ class ProjectAppPlugin(ProjectAppPluginPoint):
     #: Required permission for accessing the app
     app_permission = 'containertemplates.project_view'
 
-    #: Enable or disable general search from project title bar
-    search_enable = True
+    #: Enable or disable general search from project title bar.
+    #: NOTE: searching for container templates is implemented in the containers
+    #: app plugin.
+    search_enable = False
 
     #: List of search object types for the app
-    search_types = ['source', 'sample', 'file']
+    search_types = []
 
     #: Search results template
     search_template = 'containertemplates/_search_results.html'

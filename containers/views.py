@@ -131,9 +131,9 @@ class ContainerModifyMixin:
         :return: True if the action succeeded, False otherwise
         """
         project = container.project
-        timeline = plugin_api.get_backend_api("timeline_backend")
+        timeline = plugin_api.get_backend_api('timeline_backend')
         bg_job = BackgroundJob.objects.create(
-            name="Delete container",
+            name='Delete container',
             project=project,
             job_type=ContainerBackgroundJob.spec_name,
             user=user,
@@ -147,7 +147,7 @@ class ContainerModifyMixin:
 
         # Add container log entry
         container.log_entries.create(
-            text="Delete",
+            text='Delete',
             process=PROCESS_ACTION,
             user=user,
         )
@@ -163,12 +163,12 @@ class ContainerModifyMixin:
                     project=project,
                     app_name=APP_NAME,
                     user=user,
-                    event_name="delete_container",
-                    description=f"deleting of {container.get_display_name()} failed",
+                    event_name='delete_container',
+                    description=f'deleting of {container.get_display_name()} failed',
                     status_type=timeline.TL_STATUS_FAILED,
                 )
             logger.error(
-                f"Failed deleting container {container.get_display_name()}",
+                f'Failed deleting container {container.get_display_name()}',
             )
             return False
 
@@ -178,8 +178,8 @@ class ContainerModifyMixin:
                 project=project,
                 app_name=APP_NAME,
                 user=user,
-                event_name="delete_container",
-                description=f"deleted {container.get_display_name()}",
+                event_name='delete_container',
+                description=f'deleted {container.get_display_name()}',
                 status_type=timeline.TL_STATUS_OK,
             )
         return True

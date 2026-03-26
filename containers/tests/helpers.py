@@ -37,7 +37,7 @@ from projectroles.models import (
 from projectroles.tests.base import APIViewTestBase
 
 
-PROJECT_ROLE_OWNER = SODAR_CONSTANTS["PROJECT_ROLE_OWNER"]
+PROJECT_ROLE_OWNER = SODAR_CONSTANTS['PROJECT_ROLE_OWNER']
 
 
 class TestContainerCreationMixin:
@@ -85,7 +85,7 @@ class TestBase(TestContainerCreationMixin, TestCase):
         self.superuser.is_superuser = True
         self.superuser.save()
 
-        self.user = self.make_user("alice")
+        self.user = self.make_user('alice')
         self.user.save()
 
         self.role_owner = Role.objects.get_or_create(

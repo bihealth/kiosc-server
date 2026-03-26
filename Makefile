@@ -39,7 +39,7 @@ serve:
 
 .PHONY: asgi
 asgi:
-	python -m uvicorn config.asgi:application
+	python -m uvicorn --reload config.asgi:application
 
 
 .PHONY: serve_target

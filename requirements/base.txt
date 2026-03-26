@@ -106,4 +106,4 @@ websocket-client==1.9.0
 django-redis==6.0.0
 
 # Requests fails with 2.32.0
-requests==2.32.5
+requests==2.33.0

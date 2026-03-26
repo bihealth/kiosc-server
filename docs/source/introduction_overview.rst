@@ -1,51 +1,76 @@
 .. _introduction_overview:
 
+.. image:: figures/introduction/overview/logo.png
+  :align: center
+  :alt: Kiosc Logo
+
 Overview
 ========
 
-.. image:: figures/introduction/overview/logo.png
-  :alt: Logo
+Interactive web apps and dashboards are useful in many data analysis projects,
+with use cases ranging from exploratory analyses to results visualization.
+These interactive reports can then be shared with customers, collaborators,
+or the general public. When projects and users start growing, creating and
+publishing these apps can become cumbersome. Kiosc provides an easy way
+to orchestrate web apps, organize them into projects, and regulate access
+control. Users can select Docker containers packaging apps like `Plotly Dash
+<https://dash.plotly.com/>`__, `Shiny <https://shiny.posit.co/>`__, or `Quarto
+<https://quarto.org/docs/dashboards/>`__, and configure them to display the
+results of their analysis. Kiosc runs the containers with the appropriate
+network configuration and acts as a proxy to the web services running inside the
+containers. Using and managing Kiosc doesn't require being experts in either
+Docker or network administration, while still scaling up to a large number of
+containers and users.
 
-General Idea
-------------
+Users can authenticate in Kiosc through LDAP, OIDC, or local accounts created by
+the administrator. Then, they create categories, projects, and Docker containers
+within the projects. Kiosc offers functionality to create, configure, manage and
+control Docker containers from existing Docker images, allowing to customize the
+environment variable and the entrypoint command of the container. Furthermore,
+Kiosc gives access to the web services running within the containers by acting
+as a reverse proxy and allowing access to the containers only for authorized
+users (public access is also an option). Technically, Kiosc can be used to pull
+and start any Docker image, however, one would not benefit much from that as
+Kiosc is specifically designed for running interactive Docker containers hosting
+a web server.
 
-Kiosc was developed to share analysis results with customers
-and collaborators that are best displayed using an app – an interactive
-client-side tool that is based on a webserver. The idea was to bundle the
-webserver in a custom-build Docker image with an application of
-choice.  Upon starting, the container loads the data by setting the
-environment variables or passing a parameter to the command when starting
-the Docker container.
+A key question is how can users upload their own data in the containerized
+app. At this time, Kiosc doesn't enforce a specific method, but there are
+several possibilities. If the container supports it, users can pass environment
+variables or command-line flags pointing to the location of the data.
+Alternatively, users can override the entrypoint command of the container
+with a custom script that downloads the data and then starts the web service.
+Another possibility is to create a completely custom Docker image that bundles
+the required data together with the web app, although this is not recommended.
+Finally, users can upload small files (< 2GB) directly into Kiosc through the
+"Small Files" app (see :ref:`introduction_interface`).
 
-Kiosc takes the role of providing functionality to create, configure,
-manage and control Docker containers from such Docker images, allowing to
-set up the environment variables or the start command of the container, and
-to give access to the web interface of the container using a reverse proxy.
-Technically, Kiosc can be used to pull and start any Docker image, however,
-one would not benefit from that as it is specifically designed for Docker
-images hosting a web server.
+.. At this time, Kiosc doesn't support mounting remote filesystems, but this functionality is being considered.
 
 A typical workflow scheme is then as follows:
 
-1. Kiosc launches a previously configured docker container
-2. The container downloads and initializes necessary data objects and starts a web server on a
-   specified port serving the preconfigured app
-3. Kiosc allows the access to the webserver via reverse proxy.
-4. Users can navigate to the app served by the container from the Kiosc
-   entry page.
+1. The user logs into Kiosc, navigates to a project, and adds a preconfigured
+   Docker container, which is downloaded on demand if necessary
+2. Kiosc launches the container, which is expected to contain or download the
+   user's data and spin up a web server
+3. Kiosc establishes a reverse proxy to dispatch the user requests to the
+   appropriate container
+4. Authorized users can browse the container's web server from the Kiosc
+   interface
+5. Authorized users can stop, pause, restart, or delete containers, as well as
+   checking their health status and logs
 
 SODAR Universe
 --------------
 
 Kiosc is based on the `SODAR Core <https://github.com/bihealth/sodar-core>`__
-framework and be linked to an upstream SODAR instance to receive projects,
-users and role assignments. Based on the project information, Docker containers
-can be created from available Docker images and shared with collaborators and
-customers.
+framework and can be linked to an upstream SODAR instance to receive projects,
+users and role assignments. Docker containers will only be shared with users who
+have access to the corresponding project.
 
-Technical Description
----------------------
+.. Technical Description
+.. ---------------------
 
-- Docker environment
-- Technical description of networks
-- Reverse proxy
+.. - Docker environment
+.. - Technical description of networks
+.. - Reverse proxy

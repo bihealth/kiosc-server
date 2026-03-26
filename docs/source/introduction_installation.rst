@@ -1,25 +1,32 @@
 .. _introduction_installation:
 
-Installation
-============
+Installation and configuration
+==============================
 
-The easiest way to start using Kiosc is through Docker. We
-provide a docker-compose file (in a `separate repository
-<https://github.com/bihealth/kiosc-docker-compose>`__) which contains everything
-you need for deploying and/or developing Kiosc. This chapter describes how to
-use Kiosc with our docker-compose, and the rest of the manual assumes that you
-are using this method. If you want to contribute to the development of Kiosc,
-the :ref:`Development Environment <introduction_development>` chapter shows you how
-to prepare a development environment.
+The code for Kiosc is hosted on `GitHub
+<https://github.com/bihealth/kiosc-server>`__. Kiosc itself is a python web
+app built using the `Django <https://www.djangoproject.com>`__ framework and
+in order to function properly it requires additional components. Thus, the
+easiest and most recommended way to install Kiosc is through Docker Compose. If
+you are not familiar with Docker or Docker Compose, head to :ref:`this short
+guide <introduction_docker>` for a quick introduction. If you don't want to
+use Docker Compose, or if you want to contribute to the Kiosc development, the
+manual installation method is described in the :ref:`Development Environment
+<introduction_development>` section.
 
-The Kiosc Docker container is build from the `kiosc-server
-<https://github.com/bihealth/kiosc-server>`__ repository and is served via
-Github Container Registry (*gchr*).
+Installation via Docker Compose
+-------------------------------
 
-Docker compose
---------------
+We provide a `separate repository
+<https://github.com/bihealth/kiosc-docker-compose>`__ containing the master
+``docker-compose.yml`` file for Kiosc. It encloses all the apps and services
+needed to deploy and develop Kiosc. We crafted this Docker Compose so that
+it uses the latest stable Kiosc image, which is itself built from the main
+`kiosc-server repository <https://github.com/bihealth/kiosc-server>`__ and
+uploaded to the GitHub Container Registry (*ghcr*). Here we describe how to
+deploying Kiosc using the ``kiosc-docker-compose`` repository.
 
-Set up the Docker compose by cloning the repository::
+Start by cloning the repository::
 
     $ git clone https://github.com/bihealth/kiosc-docker-compose.git
     $ cd kiosc-docker-compose
@@ -45,8 +52,18 @@ description of the main options. When done, start the Docker containers::
 
     $ docker compose --profile=deploy up
 
-The Kiosc installation can now be reached by accessing `localhost
-<https://localhost>`_ with your browser.
+Before you can access Kiosc, you need to create at least one superuser.
+To do so, run this command and follow the interactive prompts::
+
+    $ docker compose exec kiosc-web ./manage.py createsuperuser
+
+At this point, you may create local user accounts or connect Kiosc to
+an existing authentication provider, such as LDAP or OIDC. See the
+:ref:`introduction_installation_configuration` section for further instructions.
+
+The Kiosc installation can now be reached by accessing https://localhost:443
+with your browser. You should be able to access with the superuser account you
+just created, or as any of the regular users, if you have set them up.
 
 
 .. _introduction_installation_configuration:
@@ -55,7 +72,7 @@ Configuration
 -------------
 
 Kiosc can be configured via environment variables. The Kiosc container running
-in our docker compose reads the environment variables from the ``.env`` file,
+in our Docker Compose reads the environment variables from the ``.env`` file,
 which is preconfigured for running a demo instance, but you'll need to make some
 tweaks to adapt it to your specific requirements.
 
@@ -65,13 +82,13 @@ Here is a description of the most important options.
     Name of the network where the Kiosc web server will run.
 
 ``KIOSC_SERVER_VERSION``
-    Version tag for the Kiosc docker image.
+    Version tag for the Kiosc Docker image.
 
 ``REDIS_VERSION``
-    Version tag for the redis docker image.
+    Version tag for the redis Docker image.
 
 ``TRAEFIK_VERSION``
-    Version tag for the traefik docker image.
+    Version tag for the traefik Docker image.
 
 ``KIOSC_DATABASE_URL``
     URL of the database used by Kiosc (do not change this unless you know what
@@ -133,6 +150,14 @@ Here is a description of the most important options.
     is not exhaustive. Consult the SODAR Core documentation to find out more:
     https://sodar-core.readthedocs.io/en/latest/app_projectroles_settings.html
 
+Configuring authentication may require a special set up, since
+it will be highly dependent on the environment where Kiosc
+is hosted. Local users can be created from the Django admin
+page or with the ``manage.py`` script (see the `Django docs
+<https://docs.djangoproject.com/en/5.2/topics/auth/default/>`__). For federated
+authentication through LDAP or OIDC, refer to the `relevant documentation
+<https://sodar-core.readthedocs.io/en/latest/app_projectroles_settings.html>`__
+in SODAR Core for more details.
 
 Additionally, there are some environment variables which affect specifically the
 Kiosc apps (as opposed to the whole website). These should also be set in the

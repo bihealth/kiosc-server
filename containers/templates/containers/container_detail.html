@@ -59,7 +59,10 @@
       </div>
     </div>
     <div class="card-body">
+      <p>Real time logs:</p>
       <pre id="id_logs" class="p-2 text-light overflow-auto bg-dark border border-dark rounded-lg" style="height: 400px; font-size: 87.5%;"><i class="iconify" data-icon="eos-icons:bubble-loading"></i> <em>Loading logs ...</em></pre>
+      <p>Container history:</p>
+      <pre id="id_messages" class="p-2 overflow-auto rounded-lg border border-dark" style="height: 400px; font-size: 87.5%;"><i class="iconify" data-icon="eos-icons:bubble-loading"></i> <em>Loading history ...</em></pre>
     </div>
   </div>
   {% endif %}
@@ -251,7 +254,7 @@
         if (event.code == 4403) {
           logsElement.innerText = "You are not authorized to see the container logs.";
         } else if (event.code == 4404) {
-          logsElement.innerText = "Container not found.";
+          logsElement.innerText = "Container not found, please restart it.";
         } else if (event.code != 1000 && event.code != 1001) {
           // 1000 and 1001 indicate regular closing events.
           logsElement.innerText = "Failed to fetch logs.";
@@ -269,6 +272,11 @@
         setInterval(getDynamicDetails, 30000);
     });
 
+    function scrollLogs() {
+        var logs = $("#id_messages");
+        logs.animate({scrollTop: logs.prop("scrollHeight")}, 2000);
+    }
+
     function getDynamicDetails() {
         var url = $("#id_details").data("url") + "?log_lines=" + getCookie("log_lines");
 
@@ -279,10 +287,10 @@
                     let element = $("#id_" + key);
 
                     if (key === "logs") {
-                        return;
+                        $("#id_messages").text(value)
                     }
 
-                    if (key === "state") {
+                    else if (key === "state") {
                         element.text(value);
                         element.removeClass();
                         element.addClass(data["state_color"]);
@@ -342,6 +350,7 @@
                         }
                     }
                 });
+                scrollLogs()
             }
         });
     }

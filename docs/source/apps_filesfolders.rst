@@ -1,7 +1,7 @@
 .. _apps_filesfolders:
 
-Small Files
-===========
+Files
+=====
 
 Overview
 --------
@@ -9,11 +9,11 @@ Overview
 Kiosc has activated an app provided by SODAR Core that allows the
 user to upload files of smaller size (several MB, but not GB).
 
-Find the ``Small Files`` icon in the left-hand menu to open the Small Files
+Find the ``Files`` icon in the left-hand menu to open the Files and Folders
 app. This will list all uploaded files and allow to upload or delete files.
 
 .. image:: figures/apps/smallfiles/menu.png
-  :alt: Small Files app
+  :alt: Files and Folders app
 
 Those files then can be accessed by the containers created. For this
 to work, a dropdown menu of files uploaded to a project is provided

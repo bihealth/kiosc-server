@@ -4,6 +4,13 @@ Kiosc Changelog
 Changelog for the **Kiosc** Django app package.
 Loosely follows the `Keep a Changelog <http://keepachangelog.com/en/1.0.0/>`_ guidelines.
 
+v0.5.1 (2026-03-27)
+===================
+
+General
+-------
+
+- Fix bug in containerlist app template which prevented viewing containers
 
 v0.5.0 (2026-03-27)
 ===================

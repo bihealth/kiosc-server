@@ -5,8 +5,8 @@ Changelog for the **Kiosc** Django app package.
 Loosely follows the `Keep a Changelog <http://keepachangelog.com/en/1.0.0/>`_ guidelines.
 
 
-HEAD (unreleased)
-=================
+v0.5.0 (2026-03-27)
+===================
 
 General
 -------
@@ -17,14 +17,34 @@ General
 - Fix broken async small file serving (#147)
 - Fix broken ``django-revproxy`` dependency
 - Fix parallel testing errors with Docker (#152)
-- Updated to ``sodar-core`` version 1.3.2
-- Updated other dependencies to current versions
-- Updated supported Python versions to 3.11-3.13
+- Updated to ``sodar-core`` version 1.3.2 (#174)
+- Updated other dependencies to current versions (#174)
+- Updated supported Python versions to 3.11-3.13 (#174)
+- Updated ``env.example`` and documentation (#176, #209)
+- Set ``PROJECTROLES_ENABLE_MODIFY_API=True`` (previously False) (#178)
+- Enable support for read-only mode (#179)
+- Enable search function for container, container templates, and logs (#194)
+- Fix error when displaying timeline events for deleted containers (#199)
+- Stop and remove containers when the corresponding project is deleted (#178)
+- Synchronization container state from docker daemon before showing it in Kiosc (#200)
+- Replace Black and Flake8 with Ruff (#208)
+
+Layout and UI
+-------------
+
+- Improve app detail card with no content (#181)
+- Pretty-print JSON fields in container update forms (#138)
+
+Containerlist
+-------------
+
+- Add this new app to list all containers
 
 Kioscadmin
 ----------
 
 - Fixed broken kioscadmin url (#132)
+- Prune zombie containers periodically (#200)
 
 Container
 ---------
@@ -33,6 +53,8 @@ Container
 - Added visual response to proxy lobby when starting a container via the eye icon (#143)
 - Fixed permission rights when fetching container details (#143)
 - Speed improvement when displaying logs (#143)
+- Use image name instead of ID when creating containers, for easier human filtering in `docker ps` (#200)
+- Only pull images if they don't already exist (#200)
 
 
 v0.4.0 (2021-11-08)

@@ -45,7 +45,7 @@ Kiosc terms
 SODAR terms
 ^^^^^^^^^^^
 
-    `SODAR <https://github.com/bihealth/sodar>`__
+    `SODAR <https://github.com/bihealth/sodar-server>`__
         System for Omics Data Access and Retrieval. An omics research data
         management system which is the origin of the reusable SODAR Core
         framework.

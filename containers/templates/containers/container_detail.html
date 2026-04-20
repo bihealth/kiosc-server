@@ -68,6 +68,14 @@
           <dt class="col-sm-3">Repository:Tag</dt>
           <dd class="col-sm-9">{{ object.get_repos_full }}</dd>
         </dl>
+        <dl class="row">
+          <dt class="col-sm-3">Registry credentials</dt>
+          {% if object.registry_user %}
+            <dd class="col-sm-9">User/password authentication required</dd>
+          {% else %}
+            <dd class="col-sm-9">No credentials</dd>
+          {% endif %}
+        </dl>
         {% if network_mode == "host" %}
           <dl class="row">
             <dt class="col-sm-3">Host Port</dt>

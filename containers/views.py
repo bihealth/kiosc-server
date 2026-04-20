@@ -68,6 +68,7 @@ from containers.models import (
     STATE_DELETED,
     STATE_INITIAL,
     LOG_LEVEL_ERROR,
+    MASKED_KEYWORD,
 )
 from containers.tasks import container_task, sync_container_state
 from containertemplates.forms import ContainerTemplateSelectorForm
@@ -311,6 +312,16 @@ class ContainerUpdateView(
     def get_initial(self):
         initial = super().get_initial()
         initial['environment'] = self.object.get_environment_masked()
+        initial['registry_user'] = (
+            MASKED_KEYWORD
+            if self.object.registry_user
+            else self.object.registry_user
+        )
+        initial['registry_password'] = (
+            MASKED_KEYWORD
+            if self.object.registry_password
+            else self.object.registry_password
+        )
         return initial
 
     def get_context_data(self, *args, **kwargs):

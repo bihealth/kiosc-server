@@ -234,6 +234,36 @@ class TestContainerCreateView(TestBase):
             # Assert updated properties
             self.assertDictEqual(result, self.post_data_all)
 
+    def test_post_success_registry_fields(self):
+        with self.login(self.superuser):
+            self.post_data_all.update(
+                {
+                    'registry_user': 'maxmustermann',
+                    'registry_password': 'secretPassword123',
+                }
+            )
+            response = self.client.post(
+                reverse(
+                    'containers:create',
+                    kwargs={'project': self.project.sodar_uuid},
+                ),
+                self.post_data_all,
+            )
+
+            self.assertEqual(Container.objects.count(), 1)
+            container = Container.objects.first()
+
+            self.assertRedirects(
+                response,
+                reverse(
+                    'containers:detail',
+                    kwargs={'container': container.sodar_uuid},
+                ),
+            )
+
+            self.assertEqual(container.registry_user, 'maxmustermann')
+            self.assertEqual(container.registry_password, 'secretPassword123')
+
 
 class TestContainerDeleteView(TestBase):
     """Tests for ``ContainerDeleteView``."""
@@ -390,6 +420,28 @@ class TestContainerUpdateView(TestBase):
             self.assertEqual(
                 response.context['form']['environment'].value(),
                 '{"secret": "%s", "not_so_secret": "lalala"}' % MASKED_KEYWORD,
+            )
+
+    def test_get_success_registry_masked(self):
+        """Test that the registry credentials are masked"""
+        self.container1.registry_user = 'maxmustermann'
+        self.container1.registry_password = 'secretpass123'
+        self.container1.save()
+
+        with self.login(self.superuser):
+            response = self.client.get(
+                reverse(
+                    'containers:update',
+                    kwargs={'container': self.container1.sodar_uuid},
+                )
+            )
+            self.assertEqual(
+                response.context['form']['registry_user'].value(),
+                MASKED_KEYWORD,
+            )
+            self.assertEqual(
+                response.context['form']['registry_password'].value(),
+                MASKED_KEYWORD,
             )
 
     def test_get_non_existent(self):

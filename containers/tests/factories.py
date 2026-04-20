@@ -38,6 +38,8 @@ class ContainerFactory(factory.django.DjangoModelFactory):
     description = 'Some description'
     repository = factory.Sequence(lambda n: 'repository%i' % n)
     tag = 'latest'
+    registry_user = None
+    registry_password = None
     project = factory.SubFactory(ProjectFactory)
     image_id = ''
     container_id = 'abcdefghijklmnopqrstuvwxyz'

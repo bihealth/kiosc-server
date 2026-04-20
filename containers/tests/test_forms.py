@@ -30,6 +30,8 @@ class TestContainerForm(TestBase):
         self.form_data_all = {
             **self.form_data_min_mode_host,
             'description': 'some description',
+            'registry_user': 'someuser',
+            'registry_password': 'somepassword',
             'container_path': 'some/path',
             'heartbeat_url': 'https://heartbeat.url',
             'environment': '{"test": 1}',
@@ -195,3 +197,13 @@ class TestContainerForm(TestBase):
         form = ContainerForm(self.form_data_all, instance=self.container1)
         self.assertTrue(form.is_valid())
         self.assertEqual(form.cleaned_data['environment'], {'secret': 'new'})
+
+    def test_registry_no_password(self):
+        self.form_data_all.update(
+            {
+                'registry_user': 'maxmusti',
+                'registry_password': None,
+            }
+        )
+        form = ContainerForm(self.form_data_all)
+        self.assertFalse(form.is_valid())

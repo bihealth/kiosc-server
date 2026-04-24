@@ -27,6 +27,8 @@ class ContainerForm(forms.ModelForm):
             'description',
             'repository',
             'tag',
+            'registry_user',
+            'registry_password',
             'container_port',
             'container_path',
             'containertemplatesite',

@@ -1,6 +1,5 @@
 import logging
 from datetime import timedelta
-import socket
 
 import docker
 import docker.errors
@@ -253,12 +252,9 @@ def prune_zombie_containers(_self):
 
     cli = connect_docker()
     for container in cli.containers():
-        # socket.gethostname() returns the current container Id
-        # (if we are running inside one)
-        if (
-            container['Id'].startswith(socket.gethostname())
-            or settings.KIOSC_DOCKER_NETWORK
-            not in container['NetworkSettings']['Networks']
+        container_networks = container['NetworkSettings']['Networks']
+        if len(container_networks) > 1 or not container_networks.get(
+            settings.KIOSC_DOCKER_NETWORK
         ):
             # Leave this container alone, it doesn't belong to KIOSC
             # (or it is kiosc itself)

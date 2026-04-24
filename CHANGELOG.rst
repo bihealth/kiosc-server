@@ -4,6 +4,14 @@ Kiosc Changelog
 Changelog for the **Kiosc** Django app package.
 Loosely follows the `Keep a Changelog <http://keepachangelog.com/en/1.0.0/>`_ guidelines.
 
+v0.5.2 (2026-04-24)
+===================
+
+General
+-------
+
+- Fix bug in kioscadmin which made kiosc crash (#220)
+
 v0.5.1 (2026-03-27)
 ===================
 

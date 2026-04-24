@@ -36,6 +36,36 @@
       </p>
     </div>
   </div>
+  {% if can_view_logs %}
+  <div class="card">
+    <div class="card-header">
+      <div class="row">
+        <div class="col-9">
+          <h4 class="float-left">
+            Logs
+          </h4>
+        </div>
+        <div class="col-3">
+          <div class="input-group">
+            <div class="input-group-prepend">
+              <span class="input-group-text">Log lines</span>
+            </div>
+            <input type="number" class="form-control" id="id_log_lines" value="{{ default_log_lines }}" />
+            <div class="input-group-append">
+              <button type="button" class="btn btn-info" onclick="setLogLinesTail()">Apply</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="card-body">
+      <p>Real time logs:</p>
+      <pre id="id_logs" class="p-2 text-light overflow-auto bg-dark border border-dark rounded-lg" style="height: 400px; font-size: 87.5%;"><i class="iconify" data-icon="eos-icons:bubble-loading"></i> <em>Loading logs ...</em></pre>
+      <p>Container history:</p>
+      <pre id="id_messages" class="p-2 overflow-auto rounded-lg border border-dark" style="height: 400px; font-size: 87.5%;"><i class="iconify" data-icon="eos-icons:bubble-loading"></i> <em>Loading history ...</em></pre>
+    </div>
+  </div>
+  {% endif %}
   <div class="card" id="id_details" data-url="{% url "containers:ajax-get-dynamic-details" container=object.sodar_uuid %}">
     <div class="card-header"><h4>Details</h4></div>
     <div class="card-body">
@@ -184,65 +214,66 @@
       </p>
     </div>
   </div>
-  {% if can_view_logs %}
-  <div class="card">
-    <div class="card-header">
-      <div class="row">
-        <div class="col-9">
-          <h4 class="float-left">
-            Logs
-          </h4>
-        </div>
-        <div class="col-3">
-          <div class="input-group">
-            <div class="input-group-prepend">
-              <span class="input-group-text">Log lines</span>
-            </div>
-            <input type="number" class="form-control" id="id_log_lines" value="{{ default_log_lines }}" />
-            <div class="input-group-append">
-              <button type="button" class="btn btn-info" onclick="setLogLinesCookie()">Apply</button>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-    <div class="card-body">
-      <pre id="id_logs" class="p-2 text-light overflow-auto bg-dark border border-dark rounded-lg" style="height: 400px"><i class="iconify" data-icon="eos-icons:bubble-loading"></i> <em>Loading logs ...</em></pre>
-    </div>
-  </div>
-  {% endif %}
 </div>
 {% endwith %}
 
 {% endblock projectroles_extend %}
 
 {% block javascript %}
-    {{ block.super }}
-    <script>
+  {{ block.super }}
+  <script>
+    var logWatcherSocket = createWebSocket();
+    const logsElement = document.querySelector("#id_logs");
+    const logLinesInput = document.querySelector("#id_log_lines");
+    const logLinesCookie = getCookie("log_lines");
+    if (logLinesCookie !== null) {
+      logLinesInput.value = logLinesCookie;
+    }
+    logLinesInput.value
+    function createWebSocket() {
+      const socket = new WebSocket(
+        `ws://` +
+        `${window.location.host}` +
+        `{% url "log-watcher" container=object.sodar_uuid %}`
+      );
+      socket.addEventListener("open", (event) => {
+        setCookie("log_lines", logLinesInput.value);
+        socket.send(logLinesInput.value);
+      });
+      socket.addEventListener("message", (event) => {
+        if (logsElement.innerHTML.match("Loading logs...")) {
+          logsElement.innerText = "";
+        }
+        logsElement.append(event.data);
+        let scrollBuffer = logsElement.getBoundingClientRect()["height"] + 100;
+        if (logsElement.scrollHeight - logsElement.scrollTop < scrollBuffer) {
+          logsElement.scrollTop = logsElement.scrollHeight;
+        }
+      });
+      socket.addEventListener("close", (event) => {
+        if (event.code == 4403) {
+          logsElement.innerText = "You are not authorized to see the container logs.";
+        } else if (event.code == 4404) {
+          logsElement.innerText = "Container not found, please restart it.";
+        } else if (event.code != 1000 && event.code != 1001) {
+          // 1000 and 1001 indicate regular closing events.
+          logsElement.innerText = "Failed to fetch logs.";
+          console.error(event);
+        }
+      });
+      return socket;
+    }
+    function setLogLinesTail(event) {
+      logWatcherSocket.close();
+      logWatcherSocket = createWebSocket();
+    }
     $(document).ready(function () {
-        setLogLinesField();
         getDynamicDetails();
         setInterval(getDynamicDetails, 30000);
     });
 
-    function setLogLinesCookie() {
-        let log_lines = $("#id_log_lines").val();
-        setCookie("log_lines", log_lines);
-        getDynamicDetails();
-    }
-
-    function setLogLinesField() {
-        let log_lines = getCookie("log_lines");
-        if (log_lines === null) {
-            setCookie("log_lines", $("#id_log_lines").val())
-        }
-        else {
-          $("#id_log_lines").val(log_lines);
-        }
-    }
-
     function scrollLogs() {
-        var logs = $("#id_logs");
+        var logs = $("#id_messages");
         logs.animate({scrollTop: logs.prop("scrollHeight")}, 2000);
     }
 
@@ -255,7 +286,11 @@
                 $.each(data, function(key, value) {
                     let element = $("#id_" + key);
 
-                    if (key === "state") {
+                    if (key === "logs") {
+                        $("#id_messages").text(value)
+                    }
+
+                    else if (key === "state") {
                         element.text(value);
                         element.removeClass();
                         element.addClass(data["state_color"]);
@@ -315,10 +350,9 @@
                         }
                     }
                 });
-
-                scrollLogs();
+                scrollLogs()
             }
         });
     }
-    </script>
+  </script>
 {% endblock javascript %}

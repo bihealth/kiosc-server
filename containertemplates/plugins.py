@@ -91,7 +91,7 @@ class ProjectAppPlugin(ProjectAppPluginPoint):
     details_template = 'containertemplates/project_details_card.html'
 
     #: App card title for the project details page
-    details_title = 'Container Templates overview'
+    details_title = 'Container Templates Overview'
 
     #: Position in plugin ordering
     plugin_ordering = 10
@@ -198,7 +198,7 @@ class SiteAppPlugin(SiteAppPluginPoint):
     search_enable = True
 
     #: App card title for the project details page
-    details_title = 'Container Templates overview'
+    details_title = 'Container Templates Overview'
 
     #: List of names for plugin specific Django settings to display in siteinfo
     info_settings = []

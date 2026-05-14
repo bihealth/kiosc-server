@@ -3,12 +3,17 @@
 Containers
 ==========
 
-Container objects hold the information to create and afterwards to control the underlying
-Docker containers. All information the user enters is used during the creation of the
-container (which happens when the container is started). They also hold information
-about the current state and include the logs reported by any process associated
-with the container.
+Container objects hold the information to create and afterwards to control the
+underlying Docker containers. All information the user enters is used during the
+creation of the container (which happens when the container is started). They
+also hold information about the current state and include the logs reported by
+any process associated with the container.
 
+Starting from v0.5.3, each container is given a persistent [Docker
+volume](https://docs.docker.com/engine/storage/volumes/) which can be used for
+persistent storage. The volume is mounted at `/kiosc`, and the container can
+read or write files in this path at will. The next time the container starts up,
+the files will still be there.
 
 .. toctree::
    :maxdepth: 3

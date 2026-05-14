@@ -455,7 +455,7 @@ class ContainerMachine(StateMachine):
         if self.container.volume_name:
             kiosc_volume_mountpoint = '/kiosc'
             volume_name = str(self.container.volume_name)
-            volume = self.cli.create_volume(volume_name)
+            self.cli.create_volume(volume_name)
             options_host_config['binds'] = {
                 volume_name: {
                     'bind': kiosc_volume_mountpoint,
@@ -578,7 +578,9 @@ class ContainerMachine(StateMachine):
         # NOTE: this will also remove the volumes associated with the container
         # (thanks to the v=True flag in remove_container())
         try:
-            self.cli.remove_container(self.container.container_id, force=True, v=True)
+            self.cli.remove_container(
+                self.container.container_id, force=True, v=True
+            )
 
         except docker.errors.NullResource as ex:
             logger.error('Failed to delete container: %s', ex)

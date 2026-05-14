@@ -4,7 +4,6 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
         ('containers', '0013_alter_container_environment'),
     ]
@@ -13,6 +12,11 @@ class Migration(migrations.Migration):
         migrations.AddField(
             model_name='container',
             name='volume_name',
-            field=models.UUIDField(default=None, help_text='Name of the Docker volume associated to the container', null=True, unique=True),
+            field=models.UUIDField(
+                default=None,
+                help_text='Name of the Docker volume associated to the container',
+                null=True,
+                unique=True,
+            ),
         ),
     ]

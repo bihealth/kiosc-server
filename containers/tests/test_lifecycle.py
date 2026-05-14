@@ -2,6 +2,7 @@
 
 from pathlib import Path
 import time
+import docker.errors
 
 from django.test import override_settings, tag
 
@@ -237,7 +238,9 @@ class TestContainerVolumes(TestBase):
         for container in Container.objects.all():
             if container.container_id and not len(container.container_id) < 3:
                 try:
-                    self.cli.remove_container(container.container_id, force=True, v=True)
+                    self.cli.remove_container(
+                        container.container_id, force=True, v=True
+                    )
                 except docker.errors.NotFound:
                     pass
 
@@ -253,7 +256,9 @@ class TestContainerVolumes(TestBase):
         self.assertEqual(self.container.state, STATE_EXITED)
         for daemon_container in self.cli.containers(all=True):
             if daemon_container['Id'] == self.container.container_id:
-                self.assertTrue(daemon_container['Status'].startswith(f'Exited ({status})'))
+                self.assertTrue(
+                    daemon_container['Status'].startswith(f'Exited ({status})')
+                )
 
     def test_volume_mount(self):
         """Test that the volume is mounted in the running container"""
@@ -275,7 +280,10 @@ class TestContainerVolumes(TestBase):
                         print(x)
                 self.assertEqual(container['State'], STATE_RUNNING)
                 for mount in container['Mounts']:
-                    if mount['Name'] == str(self.container.volume_name) and mount['Destination'] == '/kiosc':
+                    if (
+                        mount['Name'] == str(self.container.volume_name)
+                        and mount['Destination'] == '/kiosc'
+                    ):
                         break
                 else:
                     raise RuntimeError('Problem in volume mount')

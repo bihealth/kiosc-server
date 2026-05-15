@@ -64,9 +64,6 @@ class ContainerForm(forms.ModelForm):
         environment = cleaned_data.get('environment', {})
         secret_keys = cleaned_data.get('environment_secret_keys')
 
-        if not environment:
-            return
-
         # Environment must be a dict
         if not isinstance(environment, dict):
             self.add_error('environment', 'Environment must be a dictionary!')

@@ -343,10 +343,10 @@ class Container(models.Model):
         null=False,
     )
 
-    #: Define the environment variables to use, as an array of dicts with keys "name" and "value".
-    #: This guarantees that the order of environment variable definitions does not change.
+    #: Define the environment variables to use, as a dictionary with keys "name" and "value".
     environment = JSONField(
-        help_text='The environment variables to use',
+        help_text='The environment variables to use, as a JSON object where the keys are variable names.',
+        default=dict,
         blank=True,
         null=True,
         encoder=DjangoJSONEncoder,

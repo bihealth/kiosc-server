@@ -6,6 +6,13 @@ from urllib3.exceptions import NewConnectionError
 from urllib3.response import is_fp_closed
 from wsgiref.util import FileWrapper
 
+from django import forms
+from django.conf import settings
+from django.contrib import messages
+from django.contrib.auth import get_user_model
+from django.contrib.auth.mixins import LoginRequiredMixin
+from django.db import transaction
+from django.forms import inlineformset_factory
 from django.http import (
     HttpResponse,
     HttpResponseBadRequest,
@@ -14,11 +21,6 @@ from django.http import (
     JsonResponse,
     StreamingHttpResponse,
 )
-from django.conf import settings
-from django.contrib import messages
-from django.contrib.auth import get_user_model
-from django.contrib.auth.mixins import LoginRequiredMixin
-from django.db import transaction
 from django.shortcuts import redirect
 from django.urls import reverse
 from django.views import View
@@ -53,6 +55,7 @@ from projectroles.views import (
 from containers.forms import ContainerForm, FileSelectorForm
 from containers.models import (
     Container,
+    ContainerRemoteMount,
     ContainerBackgroundJob,
     ACTION_START,
     ACTION_STOP,
@@ -185,11 +188,37 @@ class ContainerModifyMixin:
         return True
 
 
+class RemoteMountsMixin:
+    def _get_remote_mount_formset(self):
+        """
+        Generate an inline formset factory for remote mounts
+        """
+        return inlineformset_factory(
+            Container,
+            ContainerRemoteMount,
+            fields=[
+                'volume_name',
+                'source',
+                'dest',
+                'date_downloaded',
+                'dirty',
+            ],
+            widgets={
+                'volume_name': forms.HiddenInput(),
+                'date_downloaded': forms.DateTimeInput(
+                    attrs={'disabled': True}
+                ),
+            },
+            extra=2,
+        )
+
+
 class ContainerCreateView(
     LoginRequiredMixin,
     LoggedInPermissionMixin,
     ProjectPermissionMixin,
     ProjectContextMixin,
+    RemoteMountsMixin,
     CreateView,
 ):
     """View for creating a container."""
@@ -203,6 +232,10 @@ class ContainerCreateView(
         context['containertemplate_form'] = ContainerTemplateSelectorForm(
             auto_id='containertemplate_%s', user=self.request.user
         )
+        RemoteMountFormSet = self._get_remote_mount_formset(
+            instance=self.object  # NOTE: this object does not exist yet
+        )
+        context['remote_mounts_formset'] = RemoteMountFormSet()
 
         if settings.KIOSC_EMBEDDED_FILES:
             context['files_form'] = FileSelectorForm(project=self.get_project())
@@ -217,6 +250,24 @@ class ContainerCreateView(
 
     def form_valid(self, form):
         response = super().form_valid(form)
+        try:
+            RemoteMountFormSet = self._get_remote_mount_formset()
+            data = RemoteMountFormSet(
+                self.request.POST, instance=self.object, prefix='remote_mounts'
+            )
+            if not data.is_valid():
+                logger.error('RemoteMountFormSet is not valid: ', data)
+                print(data.errors)
+                print(data.non_form_errors)
+                messages.error(self.request, data.errors)
+                messages.error(self.request, data.non_form_errors)
+                return self.form_invalid(form)
+            data.save()
+        except Exception as ex:
+            logger.error(ex)
+            messages.error(self.request, f'Could not update mount points: {ex}')
+            return self.form_invalid(form)
+
         timeline = plugin_api.get_backend_api('timeline_backend')
 
         # Add timeline event
@@ -297,6 +348,7 @@ class ContainerUpdateView(
     LoggedInPermissionMixin,
     ProjectPermissionMixin,
     ProjectContextMixin,
+    RemoteMountsMixin,
     UpdateView,
 ):
     """View for updating a container."""
@@ -317,6 +369,10 @@ class ContainerUpdateView(
         context = super().get_context_data(*args, **kwargs)
         context['containertemplate_form'] = ContainerTemplateSelectorForm(
             auto_id='containertemplate_%s', user=self.request.user
+        )
+        RemoteMountFormSet = self._get_remote_mount_formset()
+        context['remote_mounts_formset'] = RemoteMountFormSet(
+            instance=self.object
         )
 
         if settings.KIOSC_EMBEDDED_FILES:
@@ -339,6 +395,35 @@ class ContainerUpdateView(
 
     def form_valid(self, form):
         response = super().form_valid(form)
+        try:
+            RemoteMountFormSet = self._get_remote_mount_formset()
+            data = RemoteMountFormSet(
+                self.request.POST, instance=self.object, prefix='remote_mounts'
+            )
+            if not data.is_valid():
+                logger.error(
+                    'RemoteMountFormSet is not valid: %s, %s',
+                    data.errors,
+                    data.non_form_errors(),
+                )
+                messages.error(self.request, data.non_form_errors())
+                for form_id, error in enumerate(data.errors):
+                    for field, errs in error.items():
+                        for err in errs:
+                            messages.error(
+                                self.request,
+                                f'{data.prefix}-{form_id}-{field}: {err}',
+                            )
+                return self.form_invalid(form)
+            data.save()
+            print(data.changed_objects)
+            print(data.deleted_objects)
+            print(data.new_objects)
+        except Exception as ex:
+            logger.error(ex)
+            messages.error(self.request, f'Could not update mount points: {ex}')
+            return self.form_invalid(form)
+
         timeline = plugin_api.get_backend_api('timeline_backend')
 
         if timeline:

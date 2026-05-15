@@ -550,6 +550,56 @@ class ContainerBackgroundJob(JobModelMessageContextManagerMixin, models.Model):
     objects = ContainerBackgroundJobManager()
 
 
+class ContainerRemoteMount(models.Model):
+    """Model for container remote mounts."""
+
+    container = models.ForeignKey(
+        Container,
+        related_name='remote_mounts',
+        blank=False,
+        null=False,
+        on_delete=models.CASCADE,
+    )
+
+    #: Name of the Docker volume.
+    volume_name = models.UUIDField(
+        default=uuid.uuid4,
+        unique=True,
+        null=True,
+        help_text='Name of the Docker volume associated to the container.',
+    )
+
+    #: URL of the data to download.
+    source = models.URLField(
+        help_text='URL of the data to download.',
+        blank=False,
+        null=False,
+    )
+
+    #: Path in the container where the data will be found.
+    dest = models.CharField(
+        max_length=4096,
+        help_text='Path in the container where the data will be found.',
+        blank=False,
+        null=False,
+    )
+
+    #: Whether the data should be re-downloaded.
+    dirty = models.BooleanField(
+        help_text='Whether the data should be re-downloaded.',
+        default=True,
+        blank=True,
+        null=False,
+    )
+
+    #: DateTime of last download
+    date_downloaded = models.DateTimeField(
+        help_text='DateTime of the last download.',
+        blank=True,
+        null=True,  # Allowed to be null only upon creation, before the first download
+    )
+
+
 class ContainerLogEntryManager(models.Manager):
     def merge_order(self, *args, **kwargs):
         is_superuser = (

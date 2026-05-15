@@ -33,7 +33,7 @@
       </button>
     </div>
   </div>
-  <form method="post" enctype="multipart/form-data">
+  <form id="container-form" method="post" enctype="multipart/form-data">
     {% csrf_token %}
     {# Non-field errors #}
     {{ form.non_field_errors }}
@@ -53,6 +53,29 @@
     {{ form.timeout|as_crispy_field }}
     {{ form.environment|as_crispy_field }}
     {{ form.environment_secret_keys|as_crispy_field }}
+    <fieldset>
+      <label>Remote mount points</label>
+      {{ remote_mounts_formset.management_form }}
+      {% for mount_form in remote_mounts_formset %}
+        <div class="mb-3 p-3 border rounded d-flex flex-wrap align-items-center justify-content-between">
+          {{ mount_form.id }}
+          {{ mount_form.volume_name|as_crispy_field }}
+          {{ mount_form.source|as_crispy_field }}
+          {{ mount_form.dest|as_crispy_field }}
+          {{ mount_form.date_downloaded|as_crispy_field }}
+          {{ mount_form.dirty|as_crispy_field }}
+          {% if remote_mounts_formset.can_delete %}
+            <div class="form-group">
+              <div class="form-check">
+                {{ mount_form.DELETE }}
+                <label class="form-check-label">Delete</label>
+                <small class="form-text text-muted">Whether this volume should be deleted.</small>
+              </div>
+            </div>
+          {% endif %}
+        </div>
+      {% endfor %}
+    </fieldset>
     {{ form.max_retries|as_crispy_field }}
     {{ form.inactivity_threshold|as_crispy_field }}
     {% if filesfolders_active %}

@@ -2,6 +2,8 @@ import os
 import shlex
 import shutil
 import subprocess
+
+from datetime import datetime
 from urllib.parse import urlsplit
 
 import docker
@@ -476,8 +478,9 @@ class ContainerMachine(StateMachine):
                 volume = self.cli.inspect_volume(volume_name)
             except docker.errors.APIError as ex:
                 volume = self.cli.create_volume(volume_name, labels={'kiosc.owner': 'kiosc'})
-            mountpoint = volume['Mountpoint']
+                remote_mount.dirty = True
             if remote_mount.dirty:
+                mountpoint = volume['Mountpoint']
                 print(f'Downloading data from {remote_mount.source} to {remote_mount.dest} ({mountpoint})')
                 for entry in os.scandir(mountpoint):
                     if entry.is_file() or entry.is_symlink():
@@ -494,16 +497,19 @@ class ContainerMachine(StateMachine):
                     print(out, err)
                     print('My proces exited with ', proc.returncode)
                     assert proc.returncode == 0
-                for root, dirs, files in os.scandir(mountpoint):
+                for root, dirs, files in os.walk(mountpoint):
                     for dir in dirs:
-                        os.chmod(dir, 777)
+                        os.chmod(os.path.join(root, dir), 0o0777)
                     for file in files:
-                        os.chmod(file, 777)
-                options_host_config['binds'][volume_name] = {
-                        'bind': remote_mount.dest,
-                        'mode': 'rw',
-                }
-                options['volumes'].append(remote_mount.dest)
+                        os.chmod(os.path.join(root, file), 0o0777)
+                remote_mount.dirty = False
+                remote_mount.date_downloaded = datetime.now()
+                remote_mount.save()
+            options_host_config['binds'][volume_name] = {
+                    'bind': remote_mount.dest,
+                    'mode': 'rw',
+            }
+            options['volumes'].append(remote_mount.dest)
 
         # Create container
         container_info = self.cli.create_container(
@@ -617,7 +623,9 @@ class ContainerMachine(StateMachine):
 
         # Removing container and erasing container_id
         # NOTE: this will also remove the volumes associated with the container
-        # (thanks to the v=True flag in remove_container())
+        # (thanks to the v=True flag in remove_container()).
+        # NOTE: We'll need to be careful if we ever implement sharing volumes
+        # among containers.
         try:
             self.cli.remove_container(
                 self.container.container_id, force=True, v=True

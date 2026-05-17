@@ -210,6 +210,7 @@ class RemoteMountsMixin:
                 ),
             },
             extra=2,
+            can_delete_extra=False,
         )
 
 
@@ -416,9 +417,16 @@ class ContainerUpdateView(
                             )
                 return self.form_invalid(form)
             data.save()
-            print(data.changed_objects)
-            print(data.deleted_objects)
-            print(data.new_objects)
+            # Invalidate changed and new objects, irrespectively of the user's choice
+            # NOTE: maybe a better interface would be that users are only allowed to
+            # invalidate, delete, or create a new volume. Changing a volume without
+            # invalidating it doesn't make sense.
+            for (changed_object, fields) in data.changed_objects:
+                changed_object.dirty = True
+                changed_object.save()
+            for new_object in data.new_objects:
+                new_object.dirty = True
+                new_object.save()
         except Exception as ex:
             logger.error(ex)
             messages.error(self.request, f'Could not update mount points: {ex}')

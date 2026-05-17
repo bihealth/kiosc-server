@@ -1,4 +1,8 @@
+import os
 import shlex
+import shutil
+import subprocess
+from urllib.parse import urlsplit
 
 import docker
 import docker.errors
@@ -451,18 +455,55 @@ class ContainerMachine(StateMachine):
             }
         )
 
-        # Volume
+        # Persistent /kiosc volume
+        options_host_config['binds'] = {}
+        options['volumes'] = []
         if self.container.volume_name:
             kiosc_volume_mountpoint = '/kiosc'
             volume_name = str(self.container.volume_name)
-            self.cli.create_volume(volume_name)
-            options_host_config['binds'] = {
-                volume_name: {
+            self.cli.create_volume(volume_name, labels={'kiosc.owner': 'kiosc'})
+            options_host_config['binds'][volume_name] = {
                     'bind': kiosc_volume_mountpoint,
                     'mode': 'rw',
-                },
             }
-            options['volumes'] = [kiosc_volume_mountpoint]
+            options['volumes'].append(kiosc_volume_mountpoint)
+
+        # Dynamic volumes with remote content
+        for remote_mount in self.container.remote_mounts.all():
+            volume_name = str(remote_mount.volume_name)
+            # Create the volume if it doesn't exists
+            try:
+                volume = self.cli.inspect_volume(volume_name)
+            except docker.errors.APIError as ex:
+                volume = self.cli.create_volume(volume_name, labels={'kiosc.owner': 'kiosc'})
+            mountpoint = volume['Mountpoint']
+            if remote_mount.dirty:
+                print(f'Downloading data from {remote_mount.source} to {remote_mount.dest} ({mountpoint})')
+                for entry in os.scandir(mountpoint):
+                    if entry.is_file() or entry.is_symlink():
+                        os.remove(entry)
+                    elif entry.is_dir():
+                        shutil.rmtree(entry)
+                cut_dirs = urlsplit(remote_mount.source).path.rstrip('/').count('/')
+                args = [shutil.which('wget'), '-P', mountpoint, '-r', '-nH', '-np', '--cut-dirs', str(cut_dirs), remote_mount.source]
+                print(' '.join(args))
+                with subprocess.Popen(args, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True, pipesize=1) as proc:
+                    for line in proc.stdout:
+                        print(line)
+                    out, err = proc.communicate(timeout=5)
+                    print(out, err)
+                    print('My proces exited with ', proc.returncode)
+                    assert proc.returncode == 0
+                for root, dirs, files in os.scandir(mountpoint):
+                    for dir in dirs:
+                        os.chmod(dir, 777)
+                    for file in files:
+                        os.chmod(file, 777)
+                options_host_config['binds'][volume_name] = {
+                        'bind': remote_mount.dest,
+                        'mode': 'rw',
+                }
+                options['volumes'].append(remote_mount.dest)
 
         # Create container
         container_info = self.cli.create_container(

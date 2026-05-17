@@ -64,7 +64,7 @@
           {{ mount_form.dest|as_crispy_field }}
           {{ mount_form.date_downloaded|as_crispy_field }}
           {{ mount_form.dirty|as_crispy_field }}
-          {% if remote_mounts_formset.can_delete %}
+          {% if remote_mounts_formset.can_delete and mount_form.DELETE %}
             <div class="form-group">
               <div class="form-check">
                 {{ mount_form.DELETE }}

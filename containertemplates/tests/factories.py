@@ -29,6 +29,8 @@ class ContainerTemplateFactoryBase(factory.django.DjangoModelFactory):
     description = 'Some description'
     repository = factory.Sequence(lambda n: f'repository{n}')
     tag = 'latest'
+    registry_user = None
+    registry_password = None
     container_port = 80
     container_path = ''
     heartbeat_url = ''

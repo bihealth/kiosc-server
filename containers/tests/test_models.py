@@ -65,6 +65,8 @@ class TestContainerModel(TestBase):
             'image_id': None,
             'date_last_status_update': None,
             'project': self.project.pk,
+            'registry_user': None,
+            'registry_password': None,
             'id': container.id,
             'sodar_uuid': container.sodar_uuid,
             'max_retries': container.max_retries,
@@ -96,6 +98,8 @@ class TestContainerModel(TestBase):
             'image_id': None,
             'date_last_status_update': None,
             'project': self.project.pk,
+            'registry_user': None,
+            'registry_password': None,
             'id': container.id,
             'sodar_uuid': container.sodar_uuid,
             'max_retries': container.max_retries,
@@ -122,6 +126,8 @@ class TestContainerModel(TestBase):
             'image_id': None,
             'date_last_status_update': None,
             'project': self.project.pk,
+            'registry_user': None,
+            'registry_password': None,
             'id': container.id,
             'sodar_uuid': container.sodar_uuid,
             'max_retries': container.max_retries,
@@ -150,6 +156,8 @@ class TestContainerModel(TestBase):
             'image_id': None,
             'date_last_status_update': None,
             'project': self.project.pk,
+            'registry_user': None,
+            'registry_password': None,
             'id': container.id,
             'sodar_uuid': container.sodar_uuid,
             'max_retries': container.max_retries,
@@ -167,6 +175,52 @@ class TestContainerModel(TestBase):
             }
         )
 
+        with self.assertRaises(IntegrityError):
+            Container.objects.create(**self.data)
+
+    def test_initialization_with_private_registry(self):
+        """Test Container object initialization with private registry fields"""
+        self.data.update(
+            {
+                'registry_user': 'maxmustermann',
+                'registry_password': 'FakePassword!11!$%',
+            }
+        )
+        container = Container.objects.create(**self.data)
+        expected = {
+            **self.data,
+            'description': None,
+            'command': None,
+            'container_ip': container.container_ip,
+            'container_id': None,
+            'container_path': '',
+            'containertemplatesite': None,
+            'containertemplateproject': None,
+            'heartbeat_url': None,
+            'host_port': None,
+            'environment': None,
+            'environment_secret_keys': None,
+            'image_id': None,
+            'date_last_status_update': None,
+            'project': self.project.pk,
+            'id': container.id,
+            'sodar_uuid': container.sodar_uuid,
+            'max_retries': container.max_retries,
+            'inactivity_threshold': container.inactivity_threshold,
+        }
+        self.assertEqual(model_to_dict(container), expected)
+        self.assertEqual(container.registry_user, 'maxmustermann')
+
+    def test_private_registry_constraint(self):
+        """Test Container constraint on registry user/password"""
+        # If you specify either registry_user or registry_password,
+        # you must specify both
+        self.data.update(
+            {
+                'registry_user': 'maxmustermann',
+                'registry_password': None,
+            }
+        )
         with self.assertRaises(IntegrityError):
             Container.objects.create(**self.data)
 

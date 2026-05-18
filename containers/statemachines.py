@@ -374,6 +374,32 @@ class ContainerMachine(StateMachine):
                 break
 
         if need_to_pull:
+            need_to_login = self.container.registry_user is not None
+            registry = self.container.repository.split('/')[0]
+            if need_to_login:
+                try:
+                    logger.info(
+                        'Logging in to registry %s for %s/%s on behalf of %s',
+                        registry,
+                        self.container.project.title,
+                        self.container.title,
+                        self.user,
+                    )
+                    self.cli.login(
+                        self.container.registry_user,
+                        self.container.registry_password,
+                        registry=registry,
+                    )
+                except Exception as ex:
+                    logger.error('Failed to login to registry: %s', ex)
+                    self.container.log_entries.create(
+                        text=str(ex),
+                        process=PROCESS_DOCKER,
+                        date_docker_log=timezone.now(),
+                        user=self.user,
+                    )
+                    self.job.add_log_entry(str(ex))
+                    return
             for line in self.cli.pull(
                 repository=self.container.repository,
                 tag=self.container.tag,

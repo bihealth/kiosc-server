@@ -22,6 +22,7 @@ from projectroles.views import (
     ProjectPermissionMixin,
 )
 
+from containers.models import MASKED_KEYWORD
 from containertemplates.forms import (
     ContainerTemplateSiteForm,
     ContainerTemplateProjectForm,
@@ -117,6 +118,21 @@ class ContainerTemplateSiteUpdateView(
     model = ContainerTemplateSite
     slug_url_kwarg = 'containertemplatesite'
     slug_field = 'sodar_uuid'
+
+    def get_initial(self):
+        """Set masked fields."""
+        initial = super().get_initial()
+        initial['registry_user'] = (
+            MASKED_KEYWORD
+            if self.object.registry_user
+            else self.object.registry_user
+        )
+        initial['registry_password'] = (
+            MASKED_KEYWORD
+            if self.object.registry_password
+            else self.object.registry_password
+        )
+        return initial
 
     def form_valid(self, form):
         response = super().form_valid(form)
@@ -317,9 +333,19 @@ class ContainerTemplateProjectUpdateView(
     slug_field = 'sodar_uuid'
 
     def get_initial(self):
-        """Set hidden project field."""
+        """Set hidden project and masked fields."""
         initial = super().get_initial()
         initial['project'] = self.get_project()
+        initial['registry_user'] = (
+            MASKED_KEYWORD
+            if self.object.registry_user
+            else self.object.registry_user
+        )
+        initial['registry_password'] = (
+            MASKED_KEYWORD
+            if self.object.registry_password
+            else self.object.registry_password
+        )
         return initial
 
     def form_valid(self, form):

@@ -18,6 +18,8 @@ fields = [
     'command',
     'repository',
     'tag',
+    'registry_user',
+    'registry_password',
     'max_retries',
     'inactivity_threshold',
 ]

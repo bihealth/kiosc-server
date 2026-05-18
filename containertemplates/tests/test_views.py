@@ -7,6 +7,7 @@ from django.contrib.messages import get_messages
 from django.forms import model_to_dict
 from django.urls import reverse
 
+from containers.models import MASKED_KEYWORD
 from containertemplates.forms import ContainerTemplateSelectorForm
 from containertemplates.models import (
     ContainerTemplateSite,
@@ -100,6 +101,8 @@ class TestContainerTemplateSiteCreateView(TestBase):
             'environment': '{"test": 1}',
             'repository': 'repository',
             'tag': 'tag',
+            'registry_user': 'maxmustermann',
+            'registry_password': 'SecretPass123$%^',
             'container_port': 80,
             'timeout': 60,
             'container_path': 'some/path',
@@ -273,6 +276,8 @@ class TestContainerTemplateSiteUpdateView(TestBase):
             'environment': '{"updated": 1234}',
             'repository': 'another_repository',
             'tag': 'another_tag',
+            'registry_user': 'maxi',
+            'registry_password': 'musti',
             'container_port': self.containertemplatesite1.container_port + 100,
             'timeout': self.containertemplatesite1.timeout + 60,
             'container_path': 'updated/path',
@@ -335,6 +340,30 @@ class TestContainerTemplateSiteUpdateView(TestBase):
             )
 
             self.assertEqual(response.status_code, 404)
+
+    def test_get_success_registry_masked(self):
+        """Test that the registry credentials are masked"""
+        self.containertemplatesite1.registry_user = 'maxmustermann'
+        self.containertemplatesite1.registry_password = 'secretpass123'
+        self.containertemplatesite1.save()
+
+        with self.login(self.superuser):
+            response = self.client.get(
+                reverse(
+                    'containertemplates:site-update',
+                    kwargs={
+                        'containertemplatesite': self.containertemplatesite1.sodar_uuid
+                    },
+                )
+            )
+            self.assertEqual(
+                response.context['form']['registry_user'].value(),
+                MASKED_KEYWORD,
+            )
+            self.assertEqual(
+                response.context['form']['registry_password'].value(),
+                MASKED_KEYWORD,
+            )
 
 
 class TestContainerTemplateSiteDetailView(TestBase):
@@ -573,6 +602,8 @@ class TestContainerTemplateProjectCreateView(TestBase):
             'environment': '{"test": 1}',
             'repository': 'repository',
             'tag': 'tag',
+            'registry_user': 'maxmustermann',
+            'registry_password': 'SecretPass123$%^',
             'container_port': 80,
             'timeout': 60,
             'container_path': 'some/path',
@@ -756,6 +787,8 @@ class TestContainerTemplateProjectUpdateView(TestBase):
             'environment': '{"updated": 1234}',
             'repository': 'another_repository',
             'tag': 'another_tag',
+            'registry_user': 'maxmustermann',
+            'registry_password': 'SecretPass123$%^',
             'container_port': self.containertemplateproject1.container_port
             + 100,
             'timeout': self.containertemplateproject1.timeout + 60,
@@ -820,6 +853,30 @@ class TestContainerTemplateProjectUpdateView(TestBase):
             )
 
             self.assertEqual(response.status_code, 404)
+
+    def test_get_success_registry_masked(self):
+        """Test that the registry credentials are masked"""
+        self.containertemplateproject1.registry_user = 'maxmustermann'
+        self.containertemplateproject1.registry_password = 'secretpass123'
+        self.containertemplateproject1.save()
+
+        with self.login(self.superuser):
+            response = self.client.get(
+                reverse(
+                    'containertemplates:project-update',
+                    kwargs={
+                        'containertemplateproject': self.containertemplateproject1.sodar_uuid
+                    },
+                )
+            )
+            self.assertEqual(
+                response.context['form']['registry_user'].value(),
+                MASKED_KEYWORD,
+            )
+            self.assertEqual(
+                response.context['form']['registry_password'].value(),
+                MASKED_KEYWORD,
+            )
 
 
 class TestContainerTemplateProjectDetailView(TestBase):

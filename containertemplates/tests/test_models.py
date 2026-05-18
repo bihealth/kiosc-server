@@ -1,5 +1,6 @@
 """Tests for the container models"""
 
+from django.core.exceptions import ValidationError
 from django.forms import model_to_dict
 from django.urls import reverse
 from django.utils.timezone import localtime
@@ -27,6 +28,8 @@ class TestContainerTemplateSiteModel(TestBase):
             **self.data,
             'repository': None,
             'tag': None,
+            'registry_user': None,
+            'registry_password': None,
             'description': None,
             'command': None,
             'container_port': ContainerTemplateSite.container_port.field.default,
@@ -125,6 +128,53 @@ class TestContainerTemplateSiteModel(TestBase):
                 },
             ),
         )
+
+    def test_initialization_with_private_registry(self):
+        """Test ContainerTemplate initialization with private registry fields"""
+        self.data.update(
+            {
+                'registry_user': 'maxmustermann',
+                'registry_password': 'FakePassword!11!$%',
+            }
+        )
+        template = ContainerTemplateProject.objects.create(**self.data)
+        expected = {
+            **self.data,
+            'description': None,
+            'command': None,
+            'container_ip': template.container_ip,
+            'container_id': None,
+            'container_path': '',
+            'containertemplatesite': None,
+            'containertemplateproject': None,
+            'heartbeat_url': None,
+            'host_port': None,
+            'environment': None,
+            'environment_secret_keys': None,
+            'image_id': None,
+            'date_last_status_update': None,
+            'project': self.project.pk,
+            'id': template.id,
+            'sodar_uuid': template.sodar_uuid,
+            'max_retries': template.max_retries,
+            'inactivity_threshold': template.inactivity_threshold,
+        }
+        self.assertEqual(model_to_dict(template), expected)
+        self.assertEqual(template.registry_user, 'maxmustermann')
+
+    def test_private_registry_constraint(self):
+        """Test ContainerTemplate constraint on registry user/password"""
+        # If you specify either registry_user or registry_password,
+        # you must specify both
+        self.data.update(
+            {
+                'registry_user': 'maxmustermann',
+                'registry_password': None,
+            }
+        )
+        ct = ContainerTemplateSite.objects.create(**self.data)
+        with self.assertRaises(ValidationError):
+            ct.validate_constraints()
 
 
 class TestContainerTemplateProjectModel(TestBase):

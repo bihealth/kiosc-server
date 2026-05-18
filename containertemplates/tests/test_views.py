@@ -100,6 +100,8 @@ class TestContainerTemplateSiteCreateView(TestBase):
             'environment': '{"test": 1}',
             'repository': 'repository',
             'tag': 'tag',
+            'registry_user': 'maxmustermann',
+            'registry_password': 'SecretPass123$%^',
             'container_port': 80,
             'timeout': 60,
             'container_path': 'some/path',

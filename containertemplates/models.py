@@ -15,6 +15,22 @@ class ContainerTemplateBase(models.Model):
 
     class Meta:
         abstract = True
+        constraints = [
+            models.CheckConstraint(
+                condition=(
+                    Q(
+                        registry_user__isnull=False,
+                        registry_password__isnull=False,
+                    )
+                    | Q(
+                        registry_user__isnull=True,
+                        registry_password__isnull=True,
+                    )
+                ),
+                name='%(app_label)s_%(class)s_registry_credentials_not_null_individually',
+                violation_error_message='Registry user and password should either both be null or both be specified, you cannot leave blank only one of them.',
+            ),
+        ]
 
     #: Title of the template
     title = models.CharField(
@@ -52,6 +68,24 @@ class ContainerTemplateBase(models.Model):
     tag = models.CharField(
         max_length=128,
         help_text='The tag of the image.',
+        blank=True,
+        null=True,
+    )
+
+    #: The user for the private container registry (optional)
+    registry_user = models.CharField(
+        max_length=512,
+        help_text='The user name for the container registry, '
+        'if it is e.g. a private Gitlab registry.',
+        blank=True,
+        null=True,
+    )
+
+    #: The password or token for the private container registry (optional)
+    registry_password = models.CharField(
+        max_length=512,
+        help_text='The password or token for the container registry, '
+        'if it is a private Gitlab registry.',
         blank=True,
         null=True,
     )

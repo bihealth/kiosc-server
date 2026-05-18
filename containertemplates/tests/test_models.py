@@ -1,6 +1,6 @@
 """Tests for the container models"""
 
-from django.core.exceptions import ValidationError
+from django.db.utils import IntegrityError
 from django.forms import model_to_dict
 from django.urls import reverse
 from django.utils.timezone import localtime
@@ -167,9 +167,8 @@ class TestContainerTemplateSiteModel(TestBase):
                 'registry_password': None,
             }
         )
-        ct = ContainerTemplateSite.objects.create(**self.data)
-        with self.assertRaises(ValidationError):
-            ct.validate_constraints()
+        with self.assertRaises(IntegrityError):
+            ContainerTemplateSite.objects.create(**self.data)
 
 
 class TestContainerTemplateProjectModel(TestBase):
@@ -305,23 +304,20 @@ class TestContainerTemplateProjectModel(TestBase):
         template = ContainerTemplateProject.objects.create(**self.data)
         expected = {
             **self.data,
+            'containertemplatesite': None,
+            'repository': None,
+            'tag': None,
             'description': None,
             'command': None,
-            'container_ip': template.container_ip,
-            'container_id': None,
-            'container_path': '',
-            'containertemplatesite': None,
-            'containertemplateproject': None,
-            'heartbeat_url': None,
-            'host_port': None,
+            'container_port': ContainerTemplateProject.container_port.field.default,
+            'timeout': ContainerTemplateProject.timeout.field.default,
             'environment': None,
-            'environment_secret_keys': None,
-            'image_id': None,
-            'date_last_status_update': None,
-            'project': self.project.pk,
+            'container_path': '',
+            'heartbeat_url': None,
             'id': template.id,
             'sodar_uuid': template.sodar_uuid,
             'max_retries': template.max_retries,
+            'project': self.project.pk,
             'inactivity_threshold': template.inactivity_threshold,
         }
         self.assertEqual(model_to_dict(template), expected)
@@ -337,6 +333,5 @@ class TestContainerTemplateProjectModel(TestBase):
                 'registry_password': None,
             }
         )
-        ct = ContainerTemplateProject.objects.create(**self.data)
-        with self.assertRaises(ValidationError):
-            ct.validate_constraints()
+        with self.assertRaises(IntegrityError):
+            ContainerTemplateProject.objects.create(**self.data)

@@ -4,7 +4,6 @@ import json
 from datetime import timedelta
 
 from django.db import IntegrityError
-from django.core.exceptions import ValidationError
 from django.forms import model_to_dict
 from django.urls import reverse
 from django.utils import timezone
@@ -222,9 +221,8 @@ class TestContainerModel(TestBase):
                 'registry_password': None,
             }
         )
-        ct = Container.objects.create(**self.data)
-        with self.assertRaises(ValidationError):
-            ct.validate_constraints()
+        with self.assertRaises(IntegrityError):
+            Container.objects.create(**self.data)
 
     def test___str__(self):
         self.assertEqual(

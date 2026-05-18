@@ -56,6 +56,24 @@ class ContainerTemplateBase(models.Model):
         null=True,
     )
 
+    #: The user for the private container registry (optional)
+    registry_user = models.CharField(
+        max_length=512,
+        help_text='The user name for the container registry, '
+        'if it is e.g. a private Gitlab registry.',
+        blank=True,
+        null=True,
+    )
+
+    #: The password or token for the private container registry (optional)
+    registry_password = models.CharField(
+        max_length=512,
+        help_text='The password or token for the container registry, '
+        'if it is a private Gitlab registry.',
+        blank=True,
+        null=True,
+    )
+
     #: UUID of the container template.
     sodar_uuid = models.UUIDField(
         default=uuid.uuid4,
@@ -170,7 +188,26 @@ class ContainerTemplateSite(ContainerTemplateBase):
 
     class Meta:
         ordering = ('-date_created',)
-        unique_together = ('title',)
+        constraints = [
+            models.UniqueConstraint(
+                fields=['title'],
+                name='%(app_label)s_%(class)s_unique_title',
+            ),
+            models.CheckConstraint(
+                condition=(
+                    Q(
+                        registry_user__isnull=False,
+                        registry_password__isnull=False,
+                    )
+                    | Q(
+                        registry_user__isnull=True,
+                        registry_password__isnull=True,
+                    )
+                ),
+                name='%(app_label)s_%(class)s_registry_credentials_not_null_individually',
+                violation_error_message='Registry user and password should either both be null or both be specified, you cannot leave blank only one of them.',
+            ),
+        ]
 
     # Set manager for custom queries
     objects = ContainerTemplateSiteManager()
@@ -227,6 +264,29 @@ class ContainerTemplateProjectManager(models.Manager):
 class ContainerTemplateProject(ContainerTemplateBase):
     """Model for a ContainerTemplateProject instance."""
 
+    class Meta:
+        ordering = ('-date_created',)
+        constraints = [
+            models.UniqueConstraint(
+                fields=['project', 'title'],
+                name='%(app_label)s_%(class)s_unique_project_title',
+            ),
+            models.CheckConstraint(
+                condition=(
+                    Q(
+                        registry_user__isnull=False,
+                        registry_password__isnull=False,
+                    )
+                    | Q(
+                        registry_user__isnull=True,
+                        registry_password__isnull=True,
+                    )
+                ),
+                name='%(app_label)s_%(class)s_registry_credentials_not_null_individually',
+                violation_error_message='Registry user and password should either both be null or both be specified, you cannot leave blank only one of them.',
+            ),
+        ]
+
     #: Project the containertemplate belongs to.
     project = models.ForeignKey(
         Project,
@@ -247,13 +307,6 @@ class ContainerTemplateProject(ContainerTemplateBase):
 
     # Set manager for custom queries
     objects = ContainerTemplateProjectManager()
-
-    class Meta:
-        ordering = ('-date_created',)
-        unique_together = (
-            'title',
-            'project',
-        )
 
     def get_display_name(self):
         return f'{self.project} / {self.title} ({self.get_repos_full()})'

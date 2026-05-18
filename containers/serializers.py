@@ -14,6 +14,8 @@ class ContainerSerializer(SODARProjectModelSerializer):
             'project',
             'date_last_status_update',
             'repository',
+            'registry_user',
+            'registry_password',
             'tag',
             'image_id',
             'container_id',

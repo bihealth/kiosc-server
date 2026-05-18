@@ -206,8 +206,11 @@ class Container(models.Model):
 
     class Meta:
         ordering = ('-date_created',)
-        unique_together = ('project', 'title')
         constraints = [
+            models.UniqueConstraint(
+                fields=['project', 'title'],
+                name='%(app_label)s_%(class)s_unique_project_title',
+            ),
             models.CheckConstraint(
                 name='%(app_label)s_%(class)s_site_or_project_or_null_template',
                 check=(

@@ -4,61 +4,60 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
         (
-            "containers",
-            "0014_container_registry_password_container_registry_user_and_more",
+            'containers',
+            '0014_container_registry_password_container_registry_user_and_more',
         ),
         (
-            "containertemplates",
-            "0008_containertemplateproject_registry_password_and_more",
+            'containertemplates',
+            '0008_containertemplateproject_registry_password_and_more',
         ),
-        ("projectroles", "0039_remove_project_public_guest_access"),
+        ('projectroles', '0039_remove_project_public_guest_access'),
     ]
 
     operations = [
         migrations.RemoveConstraint(
-            model_name="container",
-            name="containers_container_registry_credentials_not_null_individually",
+            model_name='container',
+            name='containers_container_registry_credentials_not_null_individually',
         ),
         migrations.AlterUniqueTogether(
-            name="container",
+            name='container',
             unique_together=set(),
         ),
         migrations.AlterField(
-            model_name="container",
-            name="registry_user",
+            model_name='container',
+            name='registry_user',
             field=models.CharField(
                 blank=True,
-                help_text="The user name for the container registry, if it is e.g. a private Gitlab registry.",
+                help_text='The user name for the container registry, if it is e.g. a private Gitlab registry.',
                 max_length=512,
                 null=True,
             ),
         ),
         migrations.AddConstraint(
-            model_name="container",
+            model_name='container',
             constraint=models.UniqueConstraint(
-                fields=("project", "title"),
-                name="containers_container_unique_project_title",
+                fields=('project', 'title'),
+                name='containers_container_unique_project_title',
             ),
         ),
         migrations.AddConstraint(
-            model_name="container",
+            model_name='container',
             constraint=models.CheckConstraint(
                 condition=models.Q(
                     models.Q(
-                        ("registry_password__isnull", False),
-                        ("registry_user__isnull", False),
+                        ('registry_password__isnull', False),
+                        ('registry_user__isnull', False),
                     ),
                     models.Q(
-                        ("registry_password__isnull", True),
-                        ("registry_user__isnull", True),
+                        ('registry_password__isnull', True),
+                        ('registry_user__isnull', True),
                     ),
-                    _connector="OR",
+                    _connector='OR',
                 ),
-                name="containers_container_registry_credentials_not_null_individually",
-                violation_error_message="Registry user and password should either both be null or both be specified, you cannot leave blank only one of them.",
+                name='containers_container_registry_credentials_not_null_individually',
+                violation_error_message='Registry user and password should either both be null or both be specified, you cannot leave blank only one of them.',
             ),
         ),
     ]

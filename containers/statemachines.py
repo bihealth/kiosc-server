@@ -1,3 +1,6 @@
+from asgiref.sync import async_to_sync
+from channels.layers import get_channel_layer
+
 import shlex
 
 import docker
@@ -34,7 +37,7 @@ from containers.models import (
 
 
 logger = logging.getLogger(__name__)
-
+channel_layer = get_channel_layer()
 
 # Increase the timeout for communication with Docker daemon.
 APP_NAME = 'containers'
@@ -360,10 +363,15 @@ class ContainerMachine(StateMachine):
             f'Pulling image {self.container.get_repos_full()} ...'
         )
         self.container.log_entries.create(
-            text='Pulling image ...',
+            text=f'Pulling image {self.container.get_repos_full()} ...',
             process=PROCESS_TASK,
             user=self.user,
         )
+        print('FROM TASK:', self.container.sodar_uuid)
+        async_to_sync(channel_layer.group_send)(str(self.container.sodar_uuid), {
+            'type': 'container_task.message',
+            'text': f'Pulling image {self.container.get_repos_full()} ...',
+        })
         self.container.state = STATE_PULLING
         self.container.save()
 
@@ -385,21 +393,43 @@ class ContainerMachine(StateMachine):
                         self.container.title,
                         self.user,
                     )
+                    self.container.log_entries.create(
+                        text=f'Logging in to registry {registry} with user credentials...',
+                        process=PROCESS_TASK,
+                        user=self.user,
+                    )
+                    async_to_sync(channel_layer.group_send)(str(self.container.sodar_uuid), {
+                        'type': 'container_task.message',
+                        'text': f'Logging in to registry {registry} with user credentials...',
+                    })
                     self.cli.login(
                         self.container.registry_user,
                         self.container.registry_password,
                         registry=registry,
                     )
+                    self.container.log_entries.create(
+                        text='Logged in successfully.',
+                        process=PROCESS_TASK,
+                        user=self.user,
+                    )
+                    async_to_sync(channel_layer.group_send)(str(self.container.sodar_uuid), {
+                        'type': 'container_task.message',
+                        'text': 'Logged in successfully.',
+                    })
                 except Exception as ex:
                     logger.error('Failed to login to registry: %s', ex)
                     self.container.log_entries.create(
-                        text=str(ex),
+                        text=f'Login failed: {ex}',
                         process=PROCESS_DOCKER,
                         date_docker_log=timezone.now(),
                         user=self.user,
                     )
+                    async_to_sync(channel_layer.group_send)(str(self.container.sodar_uuid), {
+                        'type': 'container_task.message',
+                        'text': f'Login failed: {ex}',
+                    })
                     self.job.add_log_entry(str(ex))
-                    return
+                    raise ex
             for line in self.cli.pull(
                 repository=self.container.repository,
                 tag=self.container.tag,
@@ -419,10 +449,14 @@ class ContainerMachine(StateMachine):
 
                 self.container.log_entries.create(
                     text=docker_log_line,
-                    process=PROCESS_DOCKER,
-                    date_docker_log=timezone.now(),
+                    process=PROCESS_TASK,
                     user=self.user,
                 )
+                print(docker_log_line)
+                async_to_sync(channel_layer.group_send)(str(self.container.sodar_uuid), {
+                    'type': 'container_task.message',
+                    'text': docker_log_line,
+                })
                 self.job.add_log_entry(docker_log_line)
 
         image_details = self.cli.inspect_image(self.container.get_repos_full())
@@ -434,6 +468,10 @@ class ContainerMachine(StateMachine):
             process=PROCESS_TASK,
             user=self.user,
         )
+        async_to_sync(channel_layer.group_send)(str(self.container.sodar_uuid), {
+            'type': 'container_task.message',
+            'text': 'Pulling image succeeded',
+        })
 
         options = {}
         options_host_config = {}
@@ -477,6 +515,18 @@ class ContainerMachine(StateMachine):
             }
         )
 
+        self.job.add_log_entry('Initializing the container...')
+        self.container.log_entries.create(
+            text='Initializing the container...',
+            process=PROCESS_TASK,
+            user=self.user,
+        )
+        print(self.container.sodar_uuid)
+        async_to_sync(channel_layer.group_send)(str(self.container.sodar_uuid), {
+            'type': 'container_task.message',
+            'text': 'Initializing the container...',
+        })
+
         # Create container
         container_info = self.cli.create_container(
             detach=True,
@@ -502,6 +552,18 @@ class ContainerMachine(StateMachine):
         )
         self.container.container_id = container_info.get('Id')
         self.container.save()
+
+        self.job.add_log_entry('Container initialized successfully.')
+        self.container.log_entries.create(
+            text='Container initialized successfully.',
+            process=PROCESS_TASK,
+            user=self.user,
+        )
+        async_to_sync(channel_layer.group_send)(str(self.container.sodar_uuid), {
+            'type': 'container_task.message',
+            'text': 'Container initialized successfully.',
+        })
+
         self._update_status(container_info)
 
     def on_pull_deleted(self):

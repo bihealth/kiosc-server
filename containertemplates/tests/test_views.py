@@ -1260,3 +1260,14 @@ class TestContainerTemplateSelectorApiView(TestBase):
             self.assertEqual(
                 response.json(), {'msg': 'No ContainerTemplateSite with id 999'}
             )
+
+    def test_post_blank(self):
+        """Test POST for blank template"""
+        with self.login(self.superuser):
+            response = self.client.post(
+                reverse('containertemplates:ajax-get-containertemplate'),
+                {'containertemplate_id': 'blank', 'site_or_project': 'site'},
+            )
+
+            self.assertEqual(response.status_code, 200)
+            self.assertEqual(response.json(), {})

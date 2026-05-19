@@ -83,4 +83,8 @@ class ContainerTemplateSelectorForm(forms.Form):
             for obj in queryset_site
         ]
 
-        self.fields['source'].choices = chain(choices_site, choices_project)
+        self.fields['source'].choices = chain(
+            [('site:blank', '[Do not use a template]')],
+            choices_site,
+            choices_project,
+        )

@@ -123,6 +123,10 @@ class TestContainerTemplateSelectorForm(TestBase):
             form.fields['source'].choices,
             [
                 (
+                    'site:blank',
+                    '[Do not use a template]',
+                ),
+                (
                     f'site:{self.containertemplatesite2.id}',
                     f'[Site-wide] {self.containertemplatesite2.get_display_name()}',
                 ),
@@ -160,6 +164,10 @@ class TestContainerTemplateSelectorForm(TestBase):
         self.assertListEqual(
             form.fields['source'].choices,
             [
+                (
+                    'site:blank',
+                    '[Do not use a template]',
+                ),
                 (
                     f'site:{self.containertemplatesite2.id}',
                     f'[Site-wide] {self.containertemplatesite2.get_display_name()}',

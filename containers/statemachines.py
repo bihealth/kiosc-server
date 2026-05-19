@@ -399,7 +399,7 @@ class ContainerMachine(StateMachine):
                         user=self.user,
                     )
                     self.job.add_log_entry(str(ex))
-                    return
+                    raise ex
             for line in self.cli.pull(
                 repository=self.container.repository,
                 tag=self.container.tag,

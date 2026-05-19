@@ -455,13 +455,10 @@ class ContainerMachine(StateMachine):
                         date_docker_log=timezone.now(),
                         user=self.user,
                     )
-                    async_to_sync(channel_layer.group_send)(
-                        str(self.container.sodar_uuid),
-                        {
-                            'type': 'container_task.message',
-                            'text': f'Login failed: {ex}',
-                        },
-                    )
+                    async_to_sync(channel_layer.group_send)(str(self.container.sodar_uuid), {
+                        'type': 'container_task.message',
+                        'text': f'Login failed: {ex}',
+                    })
                     self.job.add_log_entry(str(ex))
                     raise ex
             for line in self.cli.pull(
@@ -591,6 +588,19 @@ class ContainerMachine(StateMachine):
                 },
             }
             options['volumes'] = [kiosc_volume_mountpoint]
+
+        self.job.add_log_entry('Initializing the container...')
+        self.container.log_entries.create(
+            text='Initializing the container...',
+            process=PROCESS_TASK,
+            user=self.user,
+        )
+        print(self.container.sodar_uuid)
+        async_to_sync(channel_layer.group_send)(str(self.container.sodar_uuid), {
+            'type': 'container_task.message',
+            'text': 'Initializing the container...',
+        })
+
 
         # Create container
         container_info = self.cli.create_container(

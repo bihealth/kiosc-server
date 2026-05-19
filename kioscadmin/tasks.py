@@ -264,7 +264,9 @@ def prune_zombie_containers(_self):
             container = Container.objects.get(container_id=container['Id'])
         except Container.DoesNotExist:
             logger.warning('Found zombie container: %s', container['Id'])
-            cli.remove_container(container['Id'], force=True)
+            # NOTE: this will also remove the volumes associated with the
+            # container (thanks to the v=True flag in remove_container())
+            cli.remove_container(container['Id'], force=True, v=True)
 
 
 @app.on_after_finalize.connect

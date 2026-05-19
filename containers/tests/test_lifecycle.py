@@ -1,10 +1,13 @@
 """Test state machines."""
 
 from pathlib import Path
+import time
+import docker.errors
 
-from django.test import override_settings
+from django.test import override_settings, tag
 
 from containers.models import (
+    Container,
     ContainerLogEntry,
     ACTION_START,
     ACTION_STOP,
@@ -212,3 +215,113 @@ class TestContainerCrash(TestBase):
         self.container.state = STATE_EXITED  # But it's actually still running
         self.container.save()
         self._test_container_delete(initial=STATE_EXITED)
+
+
+@override_settings(KIOSC_DOCKER_ACTION_MIN_DELAY=0)
+class TestContainerVolumes(TestBase):
+    def setUp(self):
+        super().setUp()
+        self.cli = connect_docker()
+        # Build the sample container image
+        build_testdata_container(self.cli, 'sample-app-volume')
+
+        self.container = ContainerFactory(
+            project=self.project,
+            repository='sample-app-volume',
+            tag='testing',
+            host_port=0,
+            container_id=None,
+        )
+
+    @tag('docker-server')
+    def tearDown(self):
+        for container in Container.objects.all():
+            if container.container_id and not len(container.container_id) < 3:
+                try:
+                    self.cli.remove_container(
+                        container.container_id, force=True, v=True
+                    )
+                except docker.errors.NotFound:
+                    pass
+
+    def _check_exit_status(self, container, status):
+        for i in range(5):
+            container.refresh_from_db()
+            if container.state == STATE_RUNNING:
+                time.sleep(1)
+            else:
+                break
+        else:
+            raise RuntimeError('Container did not stop')
+        self.assertEqual(self.container.state, STATE_EXITED)
+        for daemon_container in self.cli.containers(all=True):
+            if daemon_container['Id'] == self.container.container_id:
+                self.assertTrue(
+                    daemon_container['Status'].startswith(f'Exited ({status})')
+                )
+
+    def test_volume_mount(self):
+        """Test that the volume is mounted in the running container"""
+        self.container.command = 'watch "ls /kiosc"'
+        self.container.save()
+        bg_job = ContainerBackgroundJobFactory(
+            user=self.superuser,
+            action=ACTION_START,
+            container=self.container,
+        )
+        container_task(job_id=bg_job.pk)
+        self.container.refresh_from_db()
+        self.assertEqual(self.container.state, STATE_RUNNING)
+        # Test from the daemon
+        for container in self.cli.containers():
+            if container['Id'] == self.container.container_id:
+                for x in self.cli.containers(all=True):
+                    if x['Id'] == self.container.container_id:
+                        print(x)
+                self.assertEqual(container['State'], STATE_RUNNING)
+                for mount in container['Mounts']:
+                    if (
+                        mount['Name'] == str(self.container.volume_name)
+                        and mount['Destination'] == '/kiosc'
+                    ):
+                        break
+                else:
+                    raise RuntimeError('Problem in volume mount')
+                break
+        else:
+            raise RuntimeError('Container is not running')
+
+    def test_data_persistence(self):
+        """Test data persistence in container-associated volume"""
+        # This command should fail because /kiosc/test does not exist
+        self.container.command = 'cat /kiosc/test'
+        self.container.save()
+        bg_job = ContainerBackgroundJobFactory(
+            user=self.superuser,
+            action=ACTION_START,
+            container=self.container,
+        )
+        container_task(job_id=bg_job.pk)
+        self._check_exit_status(self.container, 1)
+
+        # Now we create the file
+        self.container.command = 'touch /kiosc/test'
+        self.container.save()
+        bg_job = ContainerBackgroundJobFactory(
+            user=self.superuser,
+            action=ACTION_START,
+            container=self.container,
+        )
+        container_task(job_id=bg_job.pk)
+        self._check_exit_status(self.container, 0)
+
+        # Now it should succeed
+        self.container.command = 'cat /kiosc/test'
+        self.container.save()
+        bg_job = ContainerBackgroundJobFactory(
+            user=self.superuser,
+            action=ACTION_START,
+            container=self.container,
+        )
+        container_task(job_id=bg_job.pk)
+        self._check_exit_status(self.container, 0)

@@ -3,7 +3,6 @@ from datetime import timedelta
 
 import docker
 import docker.errors
-import dateutil.parser
 
 from bgjobs.models import BackgroundJob
 from celery.schedules import crontab
@@ -27,8 +26,6 @@ from containers.models import (
     STATE_INITIAL,
     STATE_DELETED,
     PROCESS_TASK,
-    PROCESS_DOCKER,
-    LOG_LEVEL_WARNING,
     PROCESS_PROXY,
     STATE_RUNNING,
     STATE_PAUSED,
@@ -113,9 +110,7 @@ def stop_inactive_containers(_self):
 
             logger.warning('Submitting job to stop {}'.format(container.title))
 
-            container_task.apply_async(
-                kwargs={'job_id': job.id}, countdown=0.5
-            )
+            container_task.apply_async(kwargs={'job_id': job.id}, countdown=0.5)
 
             msgs.append('Submitted job to stop {}'.format(container.title))
 

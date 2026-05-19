@@ -1,5 +1,6 @@
 """Django Channel consumers (for forwarding data only)."""
 
+from asgiref.sync import async_to_sync
 import docker
 import logging
 import struct
@@ -182,14 +183,22 @@ class LogWatcherConsumer(WebsocketConsumer):
             )
 
     def connect(self):
-        """Called upon websocket connect events"""
+        """Called upon websocket connect events
+
+        This consumer can receive messages from the Channel Layer
+        (https://channels.readthedocs.io/en/latest/topics/channel_layers.html).
+        It belongs to a group named with the corresponding container sodar_uuid.
+        """
         user = self.scope['user']
         container_sodar_uuid = self.scope['url_route']['kwargs']['container']
+        print('CONSUMER CONNECTING')
+        async_to_sync(self.channel_layer.group_add)(container_sodar_uuid, self.channel_name)
         container_obj = Container.objects.get(sodar_uuid=container_sodar_uuid)
         logger.info(
             f'New connection request to {self.__class__.__name__} '
             f'for {container_sodar_uuid} from {user.username}'
         )
+        logger.error(self.channel_name)
         logger.debug(
             'Currently active threads: %s',
             [thread.name for thread in threading.enumerate()],
@@ -203,9 +212,10 @@ class LogWatcherConsumer(WebsocketConsumer):
         ):
             self.close(code=4403, reason='Forbidden')
             return
-        if not self.container_id:
-            self.close(code=4404, reason='Container not found')
-            return
+        # Maybe we are pulling and the container_id doesn't exist yet!
+        # if not self.container_id:
+        #     self.close(code=4404, reason='Container not found')
+        #     return
 
     def disconnect(self, close_code: int):
         """Called upon websocket disconnect events"""
@@ -215,6 +225,8 @@ class LogWatcherConsumer(WebsocketConsumer):
             f'{self.__class__.__name__} disconnection request for '
             f'{container_sodar_uuid} from {user.username}'
         )
+        async_to_sync(self.channel_layer.group_discard)(container_sodar_uuid, self.channel_name)
+        print('CONSUMER DISCONNECTED')
         self.stop_watching()
 
     def receive(
@@ -223,5 +235,10 @@ class LogWatcherConsumer(WebsocketConsumer):
         bytes_data: Optional[bytes] = None,
     ):
         """Called upon message received from the websocket"""
-        self.stop_watching()
-        self.start_watching(int(text_data))
+        pass
+        # self.stop_watching()
+        # self.start_watching(int(text_data))
+
+    def container_task_message(self, event):
+        print('CONSUMER:', event)
+        self.send(event["text"])

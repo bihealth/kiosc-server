@@ -2,6 +2,7 @@
 
 from asgiref.sync import async_to_sync
 import docker
+import json
 import logging
 import struct
 from channels.generic.websocket import WebsocketConsumer
@@ -15,6 +16,7 @@ import socket
 from django.conf import settings
 from .models import Container
 
+from containers.models import STATE_INITIAL, STATE_PULLING
 from containers.statemachines import connect_docker
 
 
@@ -87,21 +89,28 @@ class LogWatcherConsumer(WebsocketConsumer):
 
         const socket = new WebSocket("https://kiosc.org/log-watcher");
 
-    1b. We verify user authorization and accept the connection.
-    2a. The client sends a message with the amount of log lines they want:
+    1b. We verify user authorization and accept the connection. We immediately
+        send any existing ContainerLogEntries to the client. We also start
+        receiving and forwarding additional log entries in real time through
+        a Channel Layer.
+    2.  We periodically send messages regarding the state of the container
+    3a. The client sends a message with the amount of log lines they want:
 
         socket.send(1000)
 
-    2b. We start a thread that fetches the latest 1000 logs and starts streaming
+        This is only accepted if the container is running, otherwise it's
+        ignored. Ideally, the client will wait until a "running" status message
+        from us before sending this message.
+    3b. We start a thread that fetches the latest 1000 logs and starts streaming
         the logs from that moment onwards.
-    3a. The client receives the lines and is supposed to print them.
-    3b. If the client sends another message, we repeat the cycle from 2a.
-    4a. The client closes the browser or refreshes the page, closing the
+    4a. The client receives the lines and is supposed to print them.
+    4b. If the client sends another message, we repeat the cycle from 2a.
+    5a. The client closes the browser or refreshes the page, closing the
         websocket.
-    4b. We kill the thread.
+    5b. We kill the threads for logs watching and state polling.
     """
 
-    def _watch_logs(self, container_id: str, tail: int):
+    def _watch_logs(self, tail: int):
         """
         Stream docker logs and send them throug the websocket as they occur.
 
@@ -112,11 +121,30 @@ class LogWatcherConsumer(WebsocketConsumer):
         need it to prevent blocking.
         """
         cli = connect_docker(timeout=5)
-        logs_generator = cli.logs(
-            container_id, tail=tail, stream=True, follow=True, timestamps=True
-        )
+        try:
+            logs_generator = cli.logs(
+                self.container.container_id,
+                tail=tail,
+                stream=True,
+                follow=True,
+                timestamps=True,
+            )
+        except docker.errors.NullResource as ex:
+            msg = {
+                'type': 'container_rt_logs',
+                'text': f'Cannot fetch logs: {ex}',
+            }
+            self.send(json.dumps(msg))
+            return
+        except docker.errors.APIError as ex:
+            msg = {
+                'type': 'container_rt_logs',
+                'text': f'Cannot fetch logs: {ex}',
+            }
+            self.send(json.dumps(msg))
+            return
         res = logs_generator._response
-        while not self.event.wait(1):
+        while not self.logs_signal.wait(1):
             try:
                 # Header can be either empty or a byte string or a
                 # ReadTimeoutError exception.
@@ -134,10 +162,14 @@ class LogWatcherConsumer(WebsocketConsumer):
                         raise ValueError(
                             'No data from docker log stream socket'
                         )
-                    if self.event.is_set():
+                    if self.logs_signal.is_set():
                         # Check if thread was killed during socket timeout.
                         break
-                    self.send(data.decode('utf-8'))
+                    msg = {
+                        'type': 'container_rt_logs',
+                        'text': data.decode('utf-8'),
+                    }
+                    self.send(json.dumps(msg))
             except ReadTimeoutError:
                 # This is totally normal and prevents the socket from blocking.
                 continue
@@ -162,21 +194,92 @@ class LogWatcherConsumer(WebsocketConsumer):
             sock.shutdown(socket.SHUT_RDWR)
             sock.close()
 
-    def start_watching(self, tail: int):
-        """Start a thread to monitor the logs"""
-        self.event.clear()
-        self.task = threading.Thread(
-            target=self._watch_logs, args=(self.container_id, tail), daemon=True
-        )
-        self.task.start()
-        logger.info(f'{self.__class__.__name__} thread started.')
+    def _poll_state(self):
+        cli = connect_docker(timeout=5)
+        while True:
+            self.container.refresh_from_db()
+            if self.container.state == STATE_INITIAL:
+                msg = {
+                    'type': 'container_state',
+                    'state': STATE_INITIAL,
+                    'text': 'The container is not running yet, please start it.',
+                }
+                self.send(json.dumps(msg))
+            elif self.container.state == STATE_PULLING:
+                msg = {
+                    'type': 'container_state',
+                    'state': STATE_PULLING,
+                    'text': 'The container is being pulled, please be patient.',
+                }
+                self.send(json.dumps(msg))
+            elif not self.container.container_id:
+                msg = {
+                    'type': 'container_state',
+                    'state': 'NOT_EXISTING',
+                    'text': 'Something went wrong, please restart the container.',
+                }
+                self.send(json.dumps(msg))
+            else:
+                try:
+                    instance = cli.inspect_container(
+                        self.container.container_id
+                    )
+                    state = instance.get('State', {}).get('Status')
+                    msg = {
+                        'type': 'container_state',
+                        'state': state,
+                        'text': f'The container is {state}.',
+                    }
+                    self.send(json.dumps(msg))
+                except docker.errors.APIError as ex:
+                    logger.error(
+                        '%s: %s (state is %s)',
+                        self.container.sodar_uuid,
+                        ex,
+                        self.container.state,
+                    )
+                    msg = {
+                        'type': 'container_state',
+                        'state': 'DOCKER_API_ERROR',
+                        'text': 'Something went wrong, please restart the container.',
+                    }
+                    self.send(json.dumps(msg))
+            if self.state_signal.wait(5):
+                break
 
-    def stop_watching(self):
+    def start_logs_watching(self, tail: int):
+        """Start a thread to monitor the logs"""
+        self.logs_signal.clear()
+        self.logs_task = threading.Thread(
+            target=self._watch_logs, args=(tail,), daemon=True
+        )
+        self.logs_task.start()
+        logger.info(f'{self.__class__.__name__} logs thread started.')
+
+    def start_state_polling(self):
+        """Start a thread to monitor the container state"""
+        self.state_signal.clear()
+        self.state_task = threading.Thread(target=self._poll_state, daemon=True)
+        self.state_task.start()
+        logger.info(f'{self.__class__.__name__} state thread started.')
+
+    def stop_logs_watching(self):
         """Kill the thread that monitors the logs"""
-        self.event.set()
+        self.logs_signal.set()
         try:
-            self.task.join()
-            logger.info(f'{self.__class__.__name__} thread terminated.')
+            self.logs_task.join()
+            logger.info(f'{self.__class__.__name__} logs thread terminated.')
+        except (AttributeError, RuntimeError):
+            logger.debug(
+                f'{self.__class__.__name__} disconnection before thread start.'
+            )
+
+    def stop_state_polling(self):
+        """Kill the thread that monitors the state"""
+        self.state_signal.set()
+        try:
+            self.state_task.join()
+            logger.info(f'{self.__class__.__name__} state thread terminated.')
         except (AttributeError, RuntimeError):
             logger.debug(
                 f'{self.__class__.__name__} disconnection before thread start.'
@@ -191,31 +294,34 @@ class LogWatcherConsumer(WebsocketConsumer):
         """
         user = self.scope['user']
         container_sodar_uuid = self.scope['url_route']['kwargs']['container']
-        print('CONSUMER CONNECTING')
-        async_to_sync(self.channel_layer.group_add)(container_sodar_uuid, self.channel_name)
-        container_obj = Container.objects.get(sodar_uuid=container_sodar_uuid)
+        self.container = Container.objects.get(sodar_uuid=container_sodar_uuid)
         logger.info(
             f'New connection request to {self.__class__.__name__} '
             f'for {container_sodar_uuid} from {user.username}'
         )
-        logger.error(self.channel_name)
         logger.debug(
             'Currently active threads: %s',
             [thread.name for thread in threading.enumerate()],
         )
-        self.container_id = container_obj.container_id
-        self.event = threading.Event()
-        self.task = None
+        self.logs_signal = threading.Event()
+        self.logs_task = None
+        self.state_signal = threading.Event()
+        self.state_task = None
         self.accept()
         if not user.has_perm(
-            'containers.view_container', container_obj.project
+            'containers.view_container', self.container.project
         ):
             self.close(code=4403, reason='Forbidden')
             return
-        # Maybe we are pulling and the container_id doesn't exist yet!
-        # if not self.container_id:
-        #     self.close(code=4404, reason='Container not found')
-        #     return
+        # Start receiving new log entries in real time
+        async_to_sync(self.channel_layer.group_add)(
+            container_sodar_uuid, self.channel_name
+        )
+        # Send existing log entries
+        for log_entry in self.container.log_entries.all():
+            msg = {'type': 'container_static_logs', 'text': str(log_entry)}
+            self.send(json.dumps(msg))
+        self.start_state_polling()
 
     def disconnect(self, close_code: int):
         """Called upon websocket disconnect events"""
@@ -225,20 +331,28 @@ class LogWatcherConsumer(WebsocketConsumer):
             f'{self.__class__.__name__} disconnection request for '
             f'{container_sodar_uuid} from {user.username}'
         )
-        async_to_sync(self.channel_layer.group_discard)(container_sodar_uuid, self.channel_name)
-        print('CONSUMER DISCONNECTED')
-        self.stop_watching()
+        async_to_sync(self.channel_layer.group_discard)(
+            container_sodar_uuid, self.channel_name
+        )
+        self.stop_logs_watching()
+        self.stop_state_polling()
 
     def receive(
         self,
         text_data: Optional[str] = None,
         bytes_data: Optional[bytes] = None,
     ):
-        """Called upon message received from the websocket"""
-        pass
-        # self.stop_watching()
-        # self.start_watching(int(text_data))
+        """Called upon message received from the websocket
+
+        Right now, the only case this happens is when the client wants to start
+        watching logs or changing the number of log lines. Thus, we can assume
+        that text_data contains the number of log lines.
+        """
+        self.stop_logs_watching()
+        self.start_logs_watching(int(text_data))
 
     def container_task_message(self, event):
-        print('CONSUMER:', event)
-        self.send(event["text"])
+        # FIXME: make sure that we are done sending all static existing log entries (we could do this either in the client or here)
+        # FIXME: also make sure that we don't send these messages to users who don't have permission (this should be already taken care of by not adding the consumer to the channel group until we checked permissions)
+        msg = {'type': 'container_channel_logs', 'text': event['text']}
+        self.send(json.dumps(msg))

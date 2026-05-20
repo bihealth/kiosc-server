@@ -368,10 +368,13 @@ class ContainerMachine(StateMachine):
             user=self.user,
         )
         print('FROM TASK:', self.container.sodar_uuid)
-        async_to_sync(channel_layer.group_send)(str(self.container.sodar_uuid), {
-            'type': 'container_task.message',
-            'text': f'Pulling image {self.container.get_repos_full()} ...',
-        })
+        async_to_sync(channel_layer.group_send)(
+            str(self.container.sodar_uuid),
+            {
+                'type': 'container_task.message',
+                'text': f'Pulling image {self.container.get_repos_full()} ...',
+            },
+        )
         self.container.state = STATE_PULLING
         self.container.save()
 
@@ -398,10 +401,13 @@ class ContainerMachine(StateMachine):
                         process=PROCESS_TASK,
                         user=self.user,
                     )
-                    async_to_sync(channel_layer.group_send)(str(self.container.sodar_uuid), {
-                        'type': 'container_task.message',
-                        'text': f'Logging in to registry {registry} with user credentials...',
-                    })
+                    async_to_sync(channel_layer.group_send)(
+                        str(self.container.sodar_uuid),
+                        {
+                            'type': 'container_task.message',
+                            'text': f'Logging in to registry {registry} with user credentials...',
+                        },
+                    )
                     self.cli.login(
                         self.container.registry_user,
                         self.container.registry_password,
@@ -412,10 +418,13 @@ class ContainerMachine(StateMachine):
                         process=PROCESS_TASK,
                         user=self.user,
                     )
-                    async_to_sync(channel_layer.group_send)(str(self.container.sodar_uuid), {
-                        'type': 'container_task.message',
-                        'text': 'Logged in successfully.',
-                    })
+                    async_to_sync(channel_layer.group_send)(
+                        str(self.container.sodar_uuid),
+                        {
+                            'type': 'container_task.message',
+                            'text': 'Logged in successfully.',
+                        },
+                    )
                 except Exception as ex:
                     logger.error('Failed to login to registry: %s', ex)
                     self.container.log_entries.create(
@@ -424,10 +433,13 @@ class ContainerMachine(StateMachine):
                         date_docker_log=timezone.now(),
                         user=self.user,
                     )
-                    async_to_sync(channel_layer.group_send)(str(self.container.sodar_uuid), {
-                        'type': 'container_task.message',
-                        'text': f'Login failed: {ex}',
-                    })
+                    async_to_sync(channel_layer.group_send)(
+                        str(self.container.sodar_uuid),
+                        {
+                            'type': 'container_task.message',
+                            'text': f'Login failed: {ex}',
+                        },
+                    )
                     self.job.add_log_entry(str(ex))
                     raise ex
             for line in self.cli.pull(
@@ -453,10 +465,13 @@ class ContainerMachine(StateMachine):
                     user=self.user,
                 )
                 print(docker_log_line)
-                async_to_sync(channel_layer.group_send)(str(self.container.sodar_uuid), {
-                    'type': 'container_task.message',
-                    'text': docker_log_line,
-                })
+                async_to_sync(channel_layer.group_send)(
+                    str(self.container.sodar_uuid),
+                    {
+                        'type': 'container_task.message',
+                        'text': docker_log_line,
+                    },
+                )
                 self.job.add_log_entry(docker_log_line)
 
         image_details = self.cli.inspect_image(self.container.get_repos_full())
@@ -468,10 +483,13 @@ class ContainerMachine(StateMachine):
             process=PROCESS_TASK,
             user=self.user,
         )
-        async_to_sync(channel_layer.group_send)(str(self.container.sodar_uuid), {
-            'type': 'container_task.message',
-            'text': 'Pulling image succeeded',
-        })
+        async_to_sync(channel_layer.group_send)(
+            str(self.container.sodar_uuid),
+            {
+                'type': 'container_task.message',
+                'text': 'Pulling image succeeded',
+            },
+        )
 
         options = {}
         options_host_config = {}
@@ -534,10 +552,13 @@ class ContainerMachine(StateMachine):
             user=self.user,
         )
         print(self.container.sodar_uuid)
-        async_to_sync(channel_layer.group_send)(str(self.container.sodar_uuid), {
-            'type': 'container_task.message',
-            'text': 'Initializing the container...',
-        })
+        async_to_sync(channel_layer.group_send)(
+            str(self.container.sodar_uuid),
+            {
+                'type': 'container_task.message',
+                'text': 'Initializing the container...',
+            },
+        )
 
 
         # Create container
@@ -572,10 +593,13 @@ class ContainerMachine(StateMachine):
             process=PROCESS_TASK,
             user=self.user,
         )
-        async_to_sync(channel_layer.group_send)(str(self.container.sodar_uuid), {
-            'type': 'container_task.message',
-            'text': 'Container initialized successfully.',
-        })
+        async_to_sync(channel_layer.group_send)(
+            str(self.container.sodar_uuid),
+            {
+                'type': 'container_task.message',
+                'text': 'Container initialized successfully.',
+            },
+        )
 
         self._update_status(container_info)
 

@@ -679,12 +679,15 @@ class ContainerMachine(StateMachine):
         self.on_stop_running()
 
     def on_delete(self):
-        self.container.log_entries.create(
-            text='Deleting ...', process=PROCESS_TASK, user=self.user
-        )
         self.job.add_log_entry('Deleting container')
         self.container.state = STATE_DELETING
         self.container.save()
+        self.container.log_entries.all().delete()
+        self.container.log_entries.create(
+            text='Previous container was deleted.',
+            process=PROCESS_TASK,
+            user=self.user,
+        )
 
         # Removing container and erasing container_id
         # NOTE: this will also remove the volumes associated with the container

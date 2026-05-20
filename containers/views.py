@@ -2,7 +2,7 @@ import inspect
 import logging
 from ipaddress import ip_address
 from typing import AsyncGenerator, Optional
-from urllib3.exceptions import NewConnectionError
+from urllib3.exceptions import NewConnectionError, MaxRetryError
 from urllib3.response import is_fp_closed
 from wsgiref.util import FileWrapper
 
@@ -19,7 +19,7 @@ from django.contrib import messages
 from django.contrib.auth import get_user_model
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.db import transaction
-from django.shortcuts import redirect
+from django.shortcuts import redirect, render
 from django.urls import reverse
 from django.views import View
 from django.views.generic import (
@@ -673,69 +673,6 @@ class ContainerRestartView(
         )
 
 
-class ContainerProxyLobbyView(
-    LoginRequiredMixin,
-    LoggedInPermissionMixin,
-    ProjectPermissionMixin,
-    ProjectContextMixin,
-    DetailView,
-):
-    """View for proxy lobby."""
-
-    permission_required = 'containers.proxy'
-    model = Container
-    slug_url_kwarg = 'container'
-    slug_field = 'sodar_uuid'
-    template_name = 'containers/container_proxylobby.html'
-
-    @transaction.atomic
-    def get(self, request, *args, **kwargs):
-        project = self.get_project()
-        container = self.get_object()
-
-        if container.state == STATE_RUNNING:
-            return redirect(
-                reverse(
-                    'containers:proxy',
-                    kwargs={
-                        'container': container.sodar_uuid,
-                        'path': container.container_path,
-                    },
-                )
-            )
-
-        elif container.state == STATE_PAUSED:
-            action = ACTION_UNPAUSE
-
-        else:
-            action = ACTION_START
-
-        bg_job = BackgroundJob.objects.create(
-            name='Proxy lobby',
-            project=project,
-            job_type=ContainerBackgroundJob.spec_name,
-            user=request.user,
-        )
-
-        job = ContainerBackgroundJob.objects.create(
-            action=action,
-            project=project,
-            container=container,
-            bg_job=bg_job,
-        )
-
-        # Add container log entry
-        container.log_entries.create(
-            text='Proxy lobby',
-            process=PROCESS_ACTION,
-            user=request.user,
-        )
-
-        container_task.apply_async(kwargs={'job_id': job.id}, countdown=0.5)
-
-        return super().get(request, *args, **kwargs)
-
-
 class KioscProxyView(ProxyView):
     """Inheriting the ProxyView to adjust settings."""
 
@@ -755,7 +692,13 @@ class KioscProxyView(ProxyView):
         if redirect_to:
             return redirect(redirect_to)
 
-        proxy_response = self._created_proxy_response(request, path)
+        try:
+            proxy_response = self._created_proxy_response(request, path)
+        except MaxRetryError as ex:
+            logger.warning(
+                'Container not yet available for the reverse proxy: %s', str(ex)
+            )
+            raise MaxRetryError(ex.pool, ex.url)
 
         self._replace_host_on_redirect_location(request, proxy_response)
         self._set_content_type(request, proxy_response)
@@ -869,7 +812,16 @@ class ReverseProxyView(
         try:
             return super().dispatch(request, *args, **kwargs)
 
+        except MaxRetryError:
+            # The upstream app in the container is not ready yet
+            return render(
+                request,
+                'containers/container_proxylobby.html',
+                {'object': container},
+                status=299,
+            )
         except NewConnectionError as e:
+            logger.error(f'Connection error in proxy: {e}')
             container.log_entries.create(
                 text=str(e),
                 process=PROCESS_PROXY,

@@ -20,7 +20,7 @@
       {% endif %}
     </a>
   {% else %}
-    <a href="{% url 'containers:proxy-lobby' container=container.sodar_uuid %}"
+    <a href="{% url 'containers:proxy' container=container.sodar_uuid path=container.container_path %}"
         class="btn btn-outline-secondary {% if not display %} sodar-list-dropdown {% endif %}" target="_blank"
         data-toggle="tooltip" data-placement="top" title="App not running">
       <i class="iconify" data-icon="mdi:eye-off"></i>

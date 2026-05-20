@@ -59,13 +59,8 @@ ui_urlpatterns = [
     ),
     re_path(
         r'^proxy/(?P<container>[0-9a-f-]+)/(?P<path>.*)$',
-        view=csrf_exempt(views.ReverseProxyView.as_view()),
+        view=views.ReverseProxyView.as_view(),
         name='proxy',
-    ),
-    path(
-        'proxy/lobby/<uuid:container>',
-        view=views.ContainerProxyLobbyView.as_view(),
-        name='proxy-lobby',
     ),
     path(
         'file/serve/<uuid:file>/<str:filename>',

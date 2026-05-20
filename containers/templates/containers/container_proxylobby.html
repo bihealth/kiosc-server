@@ -137,32 +137,22 @@
       <script type="text/javascript" src="{% static 'js/project.js' %}"></script>
 
       <script type="text/javascript">
-        let interval = null;
-
         function checkIfContainerIsRunning() {
             $.ajax({
-                url: "{% url 'containers:ajax-get-dynamic-details' container=object.sodar_uuid %}?log_lines=0",
+                url: "{% url 'containers:api-detail' container=object.sodar_uuid %}",
                 type: 'GET',
                 dataType: 'json',
                 success: function(data) {
                     if (data["state"] === "running") {
-                        clearInterval(interval);
-                        $("#body").addClass("bg-success")
-                        $("#iconLoading").addClass("d-none")
-                        $("#iconSuccess").removeClass("d-none")
-                        $("#message").text("Container successfully started. Redirecting ...");
-                        window.location.replace("{% url 'containers:proxy' container=object.sodar_uuid path=object.path %}")
-                    }
-                    else if (data["state"] === "failed") {
-                        clearInterval(interval);
+                        window.location.replace("{% url 'containers:proxy' container=object.sodar_uuid path=object.path %}");
+                    } else {
                         $("#body").addClass("bg-danger")
                         $("#iconLoading").addClass("d-none")
                         $("#iconFail").removeClass("d-none")
-                        $("#message").text("Container failed to start. Please click the icon again or inform the project owner.");
+                        $("#message").text("The container is not running. Please try to restart it or inform the project owner.");
                     }
                 },
                 fail: function(jqXHR, textStatus, errorThrown) {
-                    clearInterval(interval);
                     $("#body").addClass("bg-danger")
                     $("#iconLoading").addClass("d-none")
                     $("#iconFail").removeClass("d-none")
@@ -172,7 +162,7 @@
         }
 
         $(document).ready(function() {
-            interval = setInterval(checkIfContainerIsRunning, 5000);
+            setTimeout(checkIfContainerIsRunning, 5000);
         });
       </script>
 

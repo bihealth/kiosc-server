@@ -194,7 +194,7 @@ class LogWatcherConsumer(WebsocketConsumer):
             sock.shutdown(socket.SHUT_RDWR)
             sock.close()
 
-    def _poll_state(self):
+    def _poll_state(self, interval_seconds=2):
         cli = connect_docker(timeout=5)
         while True:
             self.container.refresh_from_db()
@@ -251,7 +251,7 @@ class LogWatcherConsumer(WebsocketConsumer):
                         'text': 'Something went wrong, please restart the container.',
                     }
                     self.send(json.dumps(msg))
-            if self.state_signal.wait(5):
+            if self.state_signal.wait(interval_seconds):
                 break
 
     def start_logs_watching(self, tail: int):

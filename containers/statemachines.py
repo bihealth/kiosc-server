@@ -91,7 +91,7 @@ class ActionSwitch:
         elif state == STATE_CREATED:
             self.cm.start_created()
 
-        elif state == STATE_EXITED:
+        elif state == STATE_EXITED or state == STATE_TIMEOUT:
             self.cm.delete()
             self.cm.delete_success()
             self.cm.pull_deleted()
@@ -110,6 +110,9 @@ class ActionSwitch:
 
         elif state == STATE_PAUSED:
             self.cm.stop_paused()
+
+        elif state == STATE_EXITED:
+            pass
 
         else:
             raise RuntimeError(f'Action stop not allowed in state {state}')
@@ -146,7 +149,7 @@ class ActionSwitch:
             self.cm.pull_deleted()
             self.cm.start_pulled()
 
-        elif state == STATE_EXITED:
+        elif state == STATE_EXITED or state == STATE_TIMEOUT:
             self.cm.delete()
             self.cm.delete_success()
             self.cm.pull_deleted()
@@ -170,7 +173,7 @@ class ActionSwitch:
             self.cm.delete()
             self.cm.delete_success()
 
-        elif state == STATE_EXITED:
+        elif state == STATE_EXITED or state == STATE_TIMEOUT:
             self.cm.delete()
             self.cm.delete_success()
 
@@ -483,7 +486,6 @@ class ContainerMachine(StateMachine):
                     process=PROCESS_TASK,
                     user=self.user,
                 )
-                print(docker_log_line)
                 async_to_sync(channel_layer.group_send)(
                     str(self.container.sodar_uuid),
                     {
@@ -570,7 +572,6 @@ class ContainerMachine(StateMachine):
             process=PROCESS_TASK,
             user=self.user,
         )
-        print(self.container.sodar_uuid)
         async_to_sync(channel_layer.group_send)(
             str(self.container.sodar_uuid),
             {

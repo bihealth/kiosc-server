@@ -23,8 +23,10 @@ from projectroles.app_settings import AppSettingAPI
 from containers.models import (
     ContainerBackgroundJob,
     LOG_LEVEL_ERROR,
+    STATE_EXITED,
     STATE_INITIAL,
     STATE_FAILED,
+    STATE_TIMEOUT,
     PROCESS_TASK,
     PROCESS_DOCKER,
     LOG_LEVEL_WARNING,
@@ -61,7 +63,7 @@ def sync_container_state(container):
     try:
         data = cli.inspect_container(container.container_id)
         actual_state = data.get('State', {}).get('Status')
-        if container.state != actual_state:
+        if container.state == STATE_TIMEOUT and actual_state != STATE_EXITED or container.state != STATE_TIMEOUT and actual_state != container.state:
             logger.warning(
                 '%s: Container state our of sync', container.sodar_uuid
             )
@@ -84,7 +86,7 @@ def sync_container_state(container):
         # We mark it as failed. STATE_DELETED could also be an option,
         # but failed is more general. Besides, the container record in the db
         # is NOT deleted.
-        logger.error(ex)
+        logger.error('Container not found: %s', str(ex))
         container.date_last_status_update = timezone.now()
         container.state = STATE_FAILED
         container.container_id = ''
@@ -180,7 +182,7 @@ def container_task(_self, job_id):
                 container.save(force_update=True)
 
         except statemachine.exceptions.StateMachineError as e:
-            logger.error(e)
+            logger.error('StateMachineError: %s', e)
             job.add_log_entry(
                 f'Action failed: {job.action}', level=LOG_LEVEL_ERROR
             )
@@ -192,7 +194,7 @@ def container_task(_self, job_id):
             )
 
         except ContainerActionLock.CoolDown as e:
-            logger.warning(e)
+            logger.warning('Cooling down (%s)', e)
             job.add_log_entry(
                 f'Action not performed: {job.action} (cool-down)',
                 level=LOG_LEVEL_WARNING,
@@ -205,7 +207,7 @@ def container_task(_self, job_id):
             )
 
         except Exception as e:
-            logger.error(e)
+            logger.error('Unexpected bug in state machine: %s', e)
             # Catch all exceptions that are not coming from Docker
             job.add_log_entry(
                 f'Action failed: {job.action}', level=LOG_LEVEL_ERROR

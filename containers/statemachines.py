@@ -25,10 +25,12 @@ from containers.models import (
     STATE_PULLING,
     STATE_INITIAL,
     STATE_FAILED,
+    STATE_TIMEOUT,
     PROCESS_TASK,
     PROCESS_DOCKER,
     ACTION_START,
     ACTION_STOP,
+    ACTION_TIMEOUT,
     ACTION_RESTART,
     ACTION_PAUSE,
     ACTION_UNPAUSE,
@@ -48,6 +50,7 @@ ACTION_TO_EXPECTED_STATE = {
     ACTION_START: STATE_RUNNING,
     ACTION_RESTART: STATE_RUNNING,
     ACTION_STOP: STATE_EXITED,
+    ACTION_TIMEOUT: STATE_EXITED,
     ACTION_PAUSE: STATE_PAUSED,
     ACTION_UNPAUSE: STATE_RUNNING,
     ACTION_DELETE: STATE_DELETING,
@@ -69,6 +72,7 @@ class ActionSwitch:
         self._switches = {
             ACTION_START: self._start,
             ACTION_STOP: self._stop,
+            ACTION_TIMEOUT: self._timeout,
             ACTION_PAUSE: self._pause,
             ACTION_UNPAUSE: self._unpause,
             ACTION_RESTART: self._restart,
@@ -109,6 +113,16 @@ class ActionSwitch:
 
         else:
             raise RuntimeError(f'Action stop not allowed in state {state}')
+
+    def _timeout(self, state):
+        if state == STATE_RUNNING:
+            self.cm.timeout_running()
+
+        elif state == STATE_PAUSED:
+            self.cm.timeout_paused()
+
+        else:
+            raise RuntimeError(f'Action timeout not allowed in state {state}')
 
     def _pause(self, state):
         if state == STATE_RUNNING:
@@ -279,6 +293,12 @@ class ContainerMachine(StateMachine):
     #: Transition when stopping a paused container (action: stop).
     stop_paused = paused.to(exited)
 
+    #: Transition when timing out a running container (action: timeout).
+    timeout_running = running.to(exited)
+
+    #: Transition when timing out a paused container (action: timeout).
+    timeout_paused = paused.to(exited)
+
     #: Transition when deleting a stopped container (action: delete).
     delete = exited.to(deleting)
 
@@ -367,7 +387,6 @@ class ContainerMachine(StateMachine):
             process=PROCESS_TASK,
             user=self.user,
         )
-        print('FROM TASK:', self.container.sodar_uuid)
         async_to_sync(channel_layer.group_send)(
             str(self.container.sodar_uuid),
             {
@@ -677,6 +696,27 @@ class ContainerMachine(StateMachine):
 
     def on_stop_paused(self):
         self.on_stop_running()
+
+    def on_timeout_running(self):
+        self.container.log_entries.create(
+            text='Timing out ...', process=PROCESS_TASK, user=self.user
+        )
+        self.job.add_log_entry('Timing out container')
+
+        # Timing out container and updating status
+        self.cli.stop(self.container.container_id)
+        self.container.state = STATE_TIMEOUT
+        self.container.save()
+
+        self.container.log_entries.create(
+            text='Timing out succeeded',
+            process=PROCESS_TASK,
+            user=self.user,
+        )
+        self.job.add_log_entry('Timing out container succeeded')
+
+    def on_timeout_paused(self):
+        self.on_timeout_running()
 
     def on_delete(self):
         self.job.add_log_entry('Deleting container')

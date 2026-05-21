@@ -47,6 +47,9 @@ STATE_EXITED = 'exited'
 #: Token for 'dead' state of container.
 STATE_DEAD = 'dead'
 
+#: Token for 'timeout' state of container.
+STATE_TIMEOUT = 'timeout'
+
 #: Token for 'deleting' state of container (no existing Docker container state).
 STATE_DELETING = 'deleting'
 
@@ -87,6 +90,9 @@ ACTION_RESTART = 'restart'
 
 #: Background job action for stopping a container.
 ACTION_STOP = 'stop'
+
+#: Background job action for timing out a container.
+ACTION_TIMEOUT = 'timeout'
 
 #: Background job action for pausing a container.
 ACTION_PAUSE = 'pause'

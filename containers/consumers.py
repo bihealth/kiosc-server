@@ -16,7 +16,7 @@ import socket
 from django.conf import settings
 from .models import Container
 
-from containers.models import STATE_INITIAL, STATE_PULLING
+from containers.models import STATE_INITIAL, STATE_PULLING, STATE_TIMEOUT
 from containers.statemachines import connect_docker
 
 
@@ -210,6 +210,13 @@ class LogWatcherConsumer(WebsocketConsumer):
                     'type': 'container_state',
                     'state': STATE_PULLING,
                     'text': 'The container is being pulled, please be patient.',
+                }
+                self.send(json.dumps(msg))
+            elif self.container.state == STATE_TIMEOUT:
+                msg = {
+                    'type': 'container_state',
+                    'state': STATE_TIMEOUT,
+                    'text': 'The container was stopped due to inactivity, please start it again.',
                 }
                 self.send(json.dumps(msg))
             elif not self.container.container_id:

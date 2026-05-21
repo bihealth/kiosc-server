@@ -29,7 +29,7 @@ from containers.models import (
     PROCESS_PROXY,
     STATE_RUNNING,
     STATE_PAUSED,
-    ACTION_STOP,
+    ACTION_TIMEOUT,
 )
 from containers.statemachines import (
     connect_docker,
@@ -102,7 +102,7 @@ def stop_inactive_containers(_self):
                 ),
             )
             job = ContainerBackgroundJob.objects.create(
-                action=ACTION_STOP,
+                action=ACTION_TIMEOUT,
                 project=container.project,
                 container=container,
                 bg_job=bg_job,

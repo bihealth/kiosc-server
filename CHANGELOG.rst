@@ -4,6 +4,13 @@ Kiosc Changelog
 Changelog for the **Kiosc** Django app package.
 Loosely follows the `Keep a Changelog <http://keepachangelog.com/en/1.0.0/>`_ guidelines.
 
+Real time logs
+==============
+
+- Container log entries are deleted when the container is restarted (but not when it's stopped and started again)
+- Container log entries are not saved to the db anymore, but they are still visible in the container detail page (they come from the docker daemon)
+- Added TIMEOUT container state, more specific than "exited"
+
 v0.5.2 (2026-04-24)
 ===================
 

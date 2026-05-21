@@ -22,10 +22,10 @@ from projectroles.app_settings import AppSettingAPI
 from containers.models import (
     Container,
     ContainerBackgroundJob,
-    STATE_FAILED,
-    STATE_INITIAL,
-    STATE_DELETED,
-    PROCESS_TASK,
+    # STATE_FAILED,
+    # STATE_INITIAL,
+    # STATE_DELETED,
+    # PROCESS_TASK,
     PROCESS_PROXY,
     STATE_RUNNING,
     STATE_PAUSED,
@@ -33,7 +33,7 @@ from containers.models import (
 )
 from containers.statemachines import (
     connect_docker,
-    ACTION_TO_EXPECTED_STATE,
+    # ACTION_TO_EXPECTED_STATE,
 )
 
 User = auth.get_user_model()
@@ -126,73 +126,73 @@ def poll_docker_status(_self):
             continue
 
 
-@app.task(bind=True)
-def sync_container_state_with_last_user_action(_self):
-    cli = connect_docker()
+# @app.task(bind=True)
+# def sync_container_state_with_last_user_action(_self):
+#     cli = connect_docker()
 
-    for container in Container.objects.all():
-        if not container.container_id:
-            if container.state not in (
-                STATE_INITIAL,
-                STATE_DELETED,
-                STATE_FAILED,
-            ):
-                logger.error(
-                    '%s: Unexpected container state (%s) in kioscadmin task.',
-                    container.sodar_uuid,
-                    container.state,
-                )
-            continue
+#     for container in Container.objects.all():
+#         if not container.container_id:
+#             if container.state not in (
+#                 STATE_INITIAL,
+#                 STATE_DELETED,
+#                 STATE_FAILED,
+#             ):
+#                 logger.error(
+#                     '%s: Unexpected container state (%s) in kioscadmin task.',
+#                     container.sodar_uuid,
+#                     container.state,
+#                 )
+#             continue
 
-        try:
-            data = cli.inspect_container(container.container_id)
+#         try:
+#             data = cli.inspect_container(container.container_id)
 
-        except docker.errors.NotFound:
-            continue
+#         except docker.errors.NotFound:
+#             continue
 
-        state = data.get('State', {}).get('Status')
-        job = container.containerbackgroundjob.last()
+#         state = data.get('State', {}).get('Status')
+#         job = container.containerbackgroundjob.last()
 
-        if not (state and job and container.date_last_status_update):
-            continue
+#         if not (state and job and container.date_last_status_update):
+#             continue
 
-        # Do nothing, Docker state needs to be synced first
-        if not container.state == state:
-            logger.warning(
-                '%s: Container state out of sync. '
-                'Skipping job action synchronization.',
-                container.sodar_uuid,
-            )
-            continue
+#         # Do nothing, Docker state needs to be synced first
+#         if not container.state == state:
+#             logger.warning(
+#                 '%s: Container state out of sync. '
+#                 'Skipping job action synchronization.',
+#                 container.sodar_uuid,
+#             )
+#             continue
 
-        # Reset counter when action and state are in harmony
-        if ACTION_TO_EXPECTED_STATE[job.action] == state:
-            job.retries = 0
-            job.save()
-            continue
+#         # Reset counter when action and state are in harmony
+#         if ACTION_TO_EXPECTED_STATE[job.action] == state:
+#             job.retries = 0
+#             job.save()
+#             continue
 
-        logger.warning(
-            '%s: Container state (%s) out of sync with job action (%s)',
-            container.sodar_uuid,
-            state,
-            job.action,
-        )
+#         logger.warning(
+#             '%s: Container state (%s) out of sync with job action (%s)',
+#             container.sodar_uuid,
+#             state,
+#             job.action,
+#         )
 
-        if (
-            container.date_last_status_update
-            <= timezone.now()
-            - timedelta(seconds=DEFAULT_GRACE_PERIOD_CONTAINER_STATUS)
-            and job.retries < container.max_retries
-        ):
-            container.log_entries.create(
-                text=f'Syncing last registered container state ({container.state}) with current Docker state ({state})',
-                process=PROCESS_TASK,
-            )
+#         if (
+#             container.date_last_status_update
+#             <= timezone.now()
+#             - timedelta(seconds=DEFAULT_GRACE_PERIOD_CONTAINER_STATUS)
+#             and job.retries < container.max_retries
+#         ):
+#             container.log_entries.create(
+#                 text=f'Syncing last registered container state ({container.state}) with current Docker state ({state})',
+#                 process=PROCESS_TASK,
+#             )
 
-            # No async task
-            container_task(job.id)
-            job.retries += 1
-            job.save()
+#             # No async task
+#             container_task(job.id)
+#             job.retries += 1
+#             job.save()
 
 
 @app.task(bind=True)
@@ -225,9 +225,9 @@ def prune_zombie_containers(_self):
 def setup_periodic_tasks(sender, **_kwargs):
     """Register periodic tasks"""
     sender.add_periodic_task(30, sig=poll_docker_status.s())
-    sender.add_periodic_task(
-        60, sig=sync_container_state_with_last_user_action.s()
-    )
+    # sender.add_periodic_task(
+    #     60, sig=sync_container_state_with_last_user_action.s()
+    # )
     sender.add_periodic_task(
         crontab(hour=1, minute=11), sig=stop_inactive_containers.s()
     )

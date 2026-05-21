@@ -39,7 +39,7 @@ serve:
 
 .PHONY: asgi
 asgi:
-	python -m uvicorn --reload config.asgi:application
+	uvicorn --reload config.asgi:application
 
 
 .PHONY: serve_target
@@ -108,6 +108,4 @@ endif
 
 .PHONY: celery
 celery:
-	celery -A config.celery_app worker -l info --concurrency=4 --beat
-
-
+	celery -A config.celery_app worker -l info --concurrency=4 --beat -E

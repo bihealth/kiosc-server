@@ -63,7 +63,12 @@ def sync_container_state(container):
     try:
         data = cli.inspect_container(container.container_id)
         actual_state = data.get('State', {}).get('Status')
-        if container.state == STATE_TIMEOUT and actual_state != STATE_EXITED or container.state != STATE_TIMEOUT and actual_state != container.state:
+        if (
+            container.state == STATE_TIMEOUT
+            and actual_state != STATE_EXITED
+            or container.state != STATE_TIMEOUT
+            and actual_state != container.state
+        ):
             logger.warning(
                 '%s: Container state our of sync', container.sodar_uuid
             )

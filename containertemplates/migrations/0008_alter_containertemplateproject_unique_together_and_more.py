@@ -4,7 +4,6 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
         ('containertemplates', '0007_auto_20220414_1148'),
         ('projectroles', '0039_remove_project_public_guest_access'),
@@ -22,37 +21,91 @@ class Migration(migrations.Migration):
         migrations.AddField(
             model_name='containertemplateproject',
             name='registry_password',
-            field=models.CharField(blank=True, help_text='The password or token for the container registry, if it is a private Gitlab registry.', max_length=512, null=True),
+            field=models.CharField(
+                blank=True,
+                help_text='The password or token for the container registry, if it is a private Gitlab registry.',
+                max_length=512,
+                null=True,
+            ),
         ),
         migrations.AddField(
             model_name='containertemplateproject',
             name='registry_user',
-            field=models.CharField(blank=True, help_text='The user name for the container registry, if it is e.g. a private Gitlab registry.', max_length=512, null=True),
+            field=models.CharField(
+                blank=True,
+                help_text='The user name for the container registry, if it is e.g. a private Gitlab registry.',
+                max_length=512,
+                null=True,
+            ),
         ),
         migrations.AddField(
             model_name='containertemplatesite',
             name='registry_password',
-            field=models.CharField(blank=True, help_text='The password or token for the container registry, if it is a private Gitlab registry.', max_length=512, null=True),
+            field=models.CharField(
+                blank=True,
+                help_text='The password or token for the container registry, if it is a private Gitlab registry.',
+                max_length=512,
+                null=True,
+            ),
         ),
         migrations.AddField(
             model_name='containertemplatesite',
             name='registry_user',
-            field=models.CharField(blank=True, help_text='The user name for the container registry, if it is e.g. a private Gitlab registry.', max_length=512, null=True),
+            field=models.CharField(
+                blank=True,
+                help_text='The user name for the container registry, if it is e.g. a private Gitlab registry.',
+                max_length=512,
+                null=True,
+            ),
         ),
         migrations.AddConstraint(
             model_name='containertemplateproject',
-            constraint=models.UniqueConstraint(fields=('project', 'title'), name='containertemplates_containertemplateproject_unique_project_title'),
+            constraint=models.UniqueConstraint(
+                fields=('project', 'title'),
+                name='containertemplates_containertemplateproject_unique_project_title',
+            ),
         ),
         migrations.AddConstraint(
             model_name='containertemplateproject',
-            constraint=models.CheckConstraint(condition=models.Q(models.Q(('registry_password__isnull', False), ('registry_user__isnull', False)), models.Q(('registry_password__isnull', True), ('registry_user__isnull', True)), _connector='OR'), name='containertemplates_containertemplateproject_registry_credentials_not_null_individually', violation_error_message='Registry user and password should either both be null or both be specified, you cannot leave blank only one of them.'),
+            constraint=models.CheckConstraint(
+                condition=models.Q(
+                    models.Q(
+                        ('registry_password__isnull', False),
+                        ('registry_user__isnull', False),
+                    ),
+                    models.Q(
+                        ('registry_password__isnull', True),
+                        ('registry_user__isnull', True),
+                    ),
+                    _connector='OR',
+                ),
+                name='containertemplates_containertemplateproject_registry_credentials_not_null_individually',
+                violation_error_message='Registry user and password should either both be null or both be specified, you cannot leave blank only one of them.',
+            ),
         ),
         migrations.AddConstraint(
             model_name='containertemplatesite',
-            constraint=models.UniqueConstraint(fields=('title',), name='containertemplates_containertemplatesite_unique_title'),
+            constraint=models.UniqueConstraint(
+                fields=('title',),
+                name='containertemplates_containertemplatesite_unique_title',
+            ),
         ),
         migrations.AddConstraint(
             model_name='containertemplatesite',
-            constraint=models.CheckConstraint(condition=models.Q(models.Q(('registry_password__isnull', False), ('registry_user__isnull', False)), models.Q(('registry_password__isnull', True), ('registry_user__isnull', True)), _connector='OR'), name='containertemplates_containertemplatesite_registry_credentials_not_null_individually', violation_error_message='Registry user and password should either both be null or both be specified, you cannot leave blank only one of them.'),
+            constraint=models.CheckConstraint(
+                condition=models.Q(
+                    models.Q(
+                        ('registry_password__isnull', False),
+                        ('registry_user__isnull', False),
+                    ),
+                    models.Q(
+                        ('registry_password__isnull', True),
+                        ('registry_user__isnull', True),
+                    ),
+                    _connector='OR',
+                ),
+                name='containertemplates_containertemplatesite_registry_credentials_not_null_individually',
+                violation_error_message='Registry user and password should either both be null or both be specified, you cannot leave blank only one of them.',
+            ),
         ),
     ]

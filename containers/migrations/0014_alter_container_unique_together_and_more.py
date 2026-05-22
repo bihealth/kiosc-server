@@ -4,7 +4,6 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
         ('containers', '0013_alter_container_environment'),
         ('containertemplates', '0007_auto_20220414_1148'),
@@ -19,19 +18,46 @@ class Migration(migrations.Migration):
         migrations.AddField(
             model_name='container',
             name='registry_password',
-            field=models.CharField(blank=True, help_text='The password or token for the container registry, if it is a private Gitlab registry.', max_length=512, null=True),
+            field=models.CharField(
+                blank=True,
+                help_text='The password or token for the container registry, if it is a private Gitlab registry.',
+                max_length=512,
+                null=True,
+            ),
         ),
         migrations.AddField(
             model_name='container',
             name='registry_user',
-            field=models.CharField(blank=True, help_text='The user name for the container registry, if it is e.g. a private Gitlab registry.', max_length=512, null=True),
+            field=models.CharField(
+                blank=True,
+                help_text='The user name for the container registry, if it is e.g. a private Gitlab registry.',
+                max_length=512,
+                null=True,
+            ),
         ),
         migrations.AddConstraint(
             model_name='container',
-            constraint=models.UniqueConstraint(fields=('project', 'title'), name='containers_container_unique_project_title'),
+            constraint=models.UniqueConstraint(
+                fields=('project', 'title'),
+                name='containers_container_unique_project_title',
+            ),
         ),
         migrations.AddConstraint(
             model_name='container',
-            constraint=models.CheckConstraint(condition=models.Q(models.Q(('registry_password__isnull', False), ('registry_user__isnull', False)), models.Q(('registry_password__isnull', True), ('registry_user__isnull', True)), _connector='OR'), name='containers_container_registry_credentials_not_null_individually', violation_error_message='Registry user and password should either both be null or both be specified, you cannot leave blank only one of them.'),
+            constraint=models.CheckConstraint(
+                condition=models.Q(
+                    models.Q(
+                        ('registry_password__isnull', False),
+                        ('registry_user__isnull', False),
+                    ),
+                    models.Q(
+                        ('registry_password__isnull', True),
+                        ('registry_user__isnull', True),
+                    ),
+                    _connector='OR',
+                ),
+                name='containers_container_registry_credentials_not_null_individually',
+                violation_error_message='Registry user and password should either both be null or both be specified, you cannot leave blank only one of them.',
+            ),
         ),
     ]

@@ -848,6 +848,7 @@ class TestSyncContainerStateWithLastUserActionTask(TestBase):
             command=self.container1.command or None,
             ports=[self.container1.container_port],
             host_config=None,
+            volumes=['/kiosc'],
         )
         create_host_config.assert_called_once_with(
             ulimits=[
@@ -859,6 +860,12 @@ class TestSyncContainerStateWithLastUserActionTask(TestBase):
             ],
             port_bindings={
                 self.container1.container_port: self.container1.host_port
+            },
+            binds={
+                str(self.container1.volume_name): {
+                    'bind': '/kiosc',
+                    'mode': 'rw',
+                },
             },
         )
         (create_endpoint_config.assert_not_called(),)
@@ -878,7 +885,7 @@ class TestSyncContainerStateWithLastUserActionTask(TestBase):
         pause.assert_not_called()
         unpause.assert_not_called()
         remove_container.assert_called_once_with(
-            self.container1.container_id, force=True
+            self.container1.container_id, force=True, v=True
         )
 
         # Assert objects

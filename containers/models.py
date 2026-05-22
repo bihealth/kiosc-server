@@ -327,6 +327,14 @@ class Container(models.Model):
         null=False,
     )
 
+    #: Name of the Docker volume associated to the container.
+    volume_name = models.UUIDField(
+        default=uuid.uuid4,
+        unique=True,
+        null=True,
+        help_text='Name of the Docker volume associated to the container',
+    )
+
     #: The path segment of the container URL.
     container_path = models.CharField(
         max_length=512,

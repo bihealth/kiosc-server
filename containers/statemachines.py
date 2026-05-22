@@ -580,6 +580,17 @@ class ContainerMachine(StateMachine):
             },
         )
 
+        # Volume
+        if volume_name := str(self.container.volume_name):
+            kiosc_volume_mountpoint = '/kiosc'
+            self.cli.create_volume(volume_name)
+            options_host_config['binds'] = {
+                volume_name: {
+                    'bind': kiosc_volume_mountpoint,
+                    'mode': 'rw',
+                },
+            }
+            options['volumes'] = [kiosc_volume_mountpoint]
 
         # Create container
         container_info = self.cli.create_container(

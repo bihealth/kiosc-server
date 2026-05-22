@@ -478,9 +478,8 @@ class ContainerMachine(StateMachine):
         )
 
         # Volume
-        if self.container.volume_name:
+        if volume_name := str(self.container.volume_name):
             kiosc_volume_mountpoint = '/kiosc'
-            volume_name = str(self.container.volume_name)
             self.cli.create_volume(volume_name)
             options_host_config['binds'] = {
                 volume_name: {

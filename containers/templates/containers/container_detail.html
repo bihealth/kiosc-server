@@ -2,8 +2,10 @@
 {% extends 'projectroles/project_base.html' %}
 {% load rules %}
 {% load projectroles_common_tags %}
+{% load timeline_tags %}
 {% load container_tags %}
 {% load crispy_forms_filters %}
+{% load static %}
 
 {% block title %}
   Container {{ object.sodar_uuid }}
@@ -60,15 +62,37 @@
         </div>
       </div>
     </div>
-    <div class="card-body">
-      <pre id="id_logs" class="p-2 text-light overflow-auto bg-dark border border-dark rounded-lg" style="height: 400px; font-size: 87.5%;"><i class="iconify" data-icon="eos-icons:bubble-loading"></i> <em>Loading...</em></pre>
+    <div class="card-body p-0">
+      <pre id="id_logs" class="p-2 mb-0 text-light overflow-auto bg-dark" style="height: 400px; font-size: 87.5%;"><i class="iconify" data-icon="eos-icons:bubble-loading"></i> <em>Loading...</em></pre>
     </div>
   </div>
   <div class="card">
     <div class="card-header">
       <h4>Timeline</h4>
     </div>
-    <div class="card-body">
+    <div class="card-body p-0">
+      {% get_plugin_lookup as plugin_lookup %}
+      <table class="table table-striped sodar-card-table" id="kiosc-container-tl-table">
+        <thead>
+          {% include 'timeline/_list_header.html' with details_card_mode=True %}
+        </thead>
+        <tbody>
+          {% get_container_events object can_view_classified as events %}
+          {% if events|length > 0 %}
+            {% for event in events %}
+              {% include 'timeline/_list_item.html' with event=event details_card_mode=True %}
+            {% endfor %}
+          {% else %}
+            <tr>
+              <td class="bg-faded font-italic text-center" colspan="3">
+                No events found.
+              </td>
+            </tr>
+          {% endif %}
+        </tbody>
+      </table>
+      {# Event list JQuery #}
+      <script type="text/javascript" src="{% static 'timeline/js/timeline.js' %}"></script>
     </div>
   </div>
   {% endif %}

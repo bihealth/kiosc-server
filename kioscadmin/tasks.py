@@ -26,7 +26,6 @@ from containers.models import (
     # STATE_INITIAL,
     # STATE_DELETED,
     # PROCESS_TASK,
-    PROCESS_PROXY,
     STATE_RUNNING,
     STATE_PAUSED,
     ACTION_TIMEOUT,
@@ -70,20 +69,8 @@ def stop_inactive_containers(_self):
         if not state or state not in (STATE_RUNNING, STATE_PAUSED):
             continue
 
-        # Get latest proxy entry
-        obj = (
-            container.log_entries.filter(process=PROCESS_PROXY)
-            .order_by('-date_created')
-            .first()
-        )
-
-        if obj:
-            last_access = obj.date_created
-
-        else:
-            # XXX: possible bug: if the container is never accessed by anyone,
-            # it will never be stopped
-            continue
+        # Get latest proxy access datetime (or creation date if never accessed)
+        last_access = container.date_last_access
 
         threshold = last_access + timedelta(
             days=min(

@@ -1,8 +1,10 @@
 import json
 
 from django import template
+from django.db.models import QuerySet
 
 from containers.models import (
+    Container,
     STATE_FAILED,
     STATE_RUNNING,
     STATE_EXITED,
@@ -13,6 +15,8 @@ from containers.models import (
     ACTION_UNPAUSE,
     ACTION_RESTART,
 )
+
+from timeline.models import TimelineEvent
 
 
 register = template.Library()
@@ -43,6 +47,18 @@ def state_bell(state, last_action):
             return 'Should be exited'
 
     return ''
+
+
+@register.simple_tag
+def get_container_events(
+    container: Container, view_classified: bool = False
+) -> QuerySet:
+    """Return recent events for card on project details page"""
+    return TimelineEvent.objects.get_object_events(
+        project=container.project,
+        object_model='Container',
+        object_uuid=container.sodar_uuid,
+    )
 
 
 @register.filter

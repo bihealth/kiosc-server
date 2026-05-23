@@ -260,9 +260,9 @@ class Container(models.Model):
         auto_now=True, help_text='DateTime of last container modification'
     )
 
-    #: DateTime of last status update.
-    date_last_status_update = models.DateTimeField(
-        blank=True, null=True, help_text='DateTime of last status update'
+    #: DateTime when the container was accessed last.
+    date_last_access = models.DateTimeField(
+        auto_now_add=True, help_text='DateTime of latest app access'
     )
 
     #: The "repository" of the image.

@@ -35,8 +35,8 @@ from containers.models import (
     ACTION_PAUSE,
     ACTION_UNPAUSE,
     ACTION_DELETE,
+    LOG_LEVEL_ERROR,
 )
-
 
 logger = logging.getLogger(__name__)
 channel_layer = get_channel_layer()
@@ -202,10 +202,9 @@ class ActionSwitch:
         if not f:
             if self.tl_event:
                 self.tl_event.set_status('FAILED', 'action failed')
-                self.job.container.log_entries.create(
+                self.job.add_log_entry(
                     text=f'Unknown action: {action}',
-                    process=PROCESS_TASK,
-                    user=self.job.bg_job.user,
+                    level=LOG_LEVEL_ERROR,
                 )
             raise RuntimeError(f'Unknown action: {action}')
 
@@ -607,7 +606,6 @@ class ContainerMachine(StateMachine):
             },
         )
 
-
         # Create container
         container_info = self.cli.create_container(
             detach=True,
@@ -678,57 +676,30 @@ class ContainerMachine(StateMachine):
         self.on_start_pulled()
 
     def on_pause(self):
-        self.container.log_entries.create(
-            text='Pausing ...', process=PROCESS_TASK, user=self.user
-        )
         self.job.add_log_entry('Pausing container')
         self.cli.pause(self.container.container_id)
         self._update_status()
         self.job.add_log_entry('Pausing container succeeded')
-        self.container.log_entries.create(
-            text='Pausing succeeded',
-            process=PROCESS_TASK,
-            user=self.user,
-        )
 
     def on_unpause(self):
-        self.container.log_entries.create(
-            text='Unpausing ...', process=PROCESS_TASK, user=self.user
-        )
         self.job.add_log_entry('Unpausing container')
         self.cli.unpause(self.container.container_id)
         self._update_status()
         self.job.add_log_entry('Unpausing container succeeded')
-        self.container.log_entries.create(
-            text='Unpausing succeeded',
-            process=PROCESS_TASK,
-            user=self.user,
-        )
 
     def on_stop_running(self):
-        self.container.log_entries.create(
-            text='Stopping ...', process=PROCESS_TASK, user=self.user
-        )
         self.job.add_log_entry('Stopping container')
 
         # Stopping container and updating status
         self.cli.stop(self.container.container_id)
         self._update_status()
 
-        self.container.log_entries.create(
-            text='Stopping succeeded',
-            process=PROCESS_TASK,
-            user=self.user,
-        )
         self.job.add_log_entry('Stopping container succeeded')
 
     def on_stop_paused(self):
         self.on_stop_running()
 
     def on_timeout_running(self):
-        self.container.log_entries.create(
-            text='Timing out ...', process=PROCESS_TASK, user=self.user
-        )
         self.job.add_log_entry('Timing out container')
 
         # Timing out container and updating status
@@ -736,11 +707,6 @@ class ContainerMachine(StateMachine):
         self.container.state = STATE_TIMEOUT
         self.container.save()
 
-        self.container.log_entries.create(
-            text='Timing out succeeded',
-            process=PROCESS_TASK,
-            user=self.user,
-        )
         self.job.add_log_entry('Timing out container succeeded')
 
     def on_timeout_paused(self):
@@ -760,26 +726,9 @@ class ContainerMachine(StateMachine):
         # Removing container and erasing container_id
         # NOTE: this will also remove the volumes associated with the container
         # (thanks to the v=True flag in remove_container())
-        try:
-            self.cli.remove_container(
-                self.container.container_id, force=True, v=True
-            )
-
-        except docker.errors.NullResource as ex:
-            logger.error('Failed to delete container: %s', ex)
-            self.container.log_entries.create(
-                text="Empty container ID, don't know what to delete. Continuing.",
-                process=PROCESS_TASK,
-                user=self.user,
-            )
-
-        except docker.errors.NotFound as ex:
-            logger.error('Failed to delete container: %s', ex)
-            self.container.log_entries.create(
-                text=f'Container with {self.container.container_id} not found, nothing to delete',
-                process=PROCESS_TASK,
-                user=self.user,
-            )
+        self.cli.remove_container(
+            self.container.container_id, force=True, v=True
+        )
 
     def on_delete_failed(self):
         self.on_delete()

@@ -33,7 +33,7 @@
   <div class="card">
     <div class="card-header"><h4>Status</h4></div>
     <div class="card-body">
-      <p id="id_container_state" class="card-text mb-3"></p>
+      <p id="id_container_state" class="card-text mb-3">Loading...</p>
     </div>
   </div>
   <div class="card">
@@ -287,7 +287,7 @@
           if (data.type === "container_static_logs" || data.type == "container_channel_logs") {
             logsElement.append("\n");
           }
-          const scrollBuffer = logsElement.getBoundingClientRect()["height"] + 100;
+          const scrollBuffer = logsElement.getBoundingClientRect()["height"] + 50;
           if (logsElement.scrollHeight - logsElement.scrollTop < scrollBuffer) {
             logsElement.scrollTop = logsElement.scrollHeight;
           }

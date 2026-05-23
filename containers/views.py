@@ -438,12 +438,7 @@ class ContainerStartView(
             kwargs={'job_id': job.id}, countdown=CELERY_SUBMIT_COUNTDOWN
         )
 
-        return redirect(
-            reverse(
-                'containers:detail',
-                kwargs={'container': container.sodar_uuid},
-            )
-        )
+        return redirect(request.headers['Referer'])
 
 
 class ContainerStopView(
@@ -483,12 +478,7 @@ class ContainerStopView(
             kwargs={'job_id': job.id}, countdown=CELERY_SUBMIT_COUNTDOWN
         )
 
-        return redirect(
-            reverse(
-                'containers:detail',
-                kwargs={'container': container.sodar_uuid},
-            )
-        )
+        return redirect(request.headers['Referer'])
 
 
 class ContainerPauseView(
@@ -528,12 +518,7 @@ class ContainerPauseView(
             kwargs={'job_id': job.id}, countdown=CELERY_SUBMIT_COUNTDOWN
         )
 
-        return redirect(
-            reverse(
-                'containers:detail',
-                kwargs={'container': container.sodar_uuid},
-            )
-        )
+        return redirect(request.headers['Referer'])
 
 
 class ContainerUnpauseView(
@@ -573,12 +558,7 @@ class ContainerUnpauseView(
             kwargs={'job_id': job.id}, countdown=CELERY_SUBMIT_COUNTDOWN
         )
 
-        return redirect(
-            reverse(
-                'containers:detail',
-                kwargs={'container': container.sodar_uuid},
-            )
-        )
+        return redirect(request.headers['Referer'])
 
 
 class ContainerRestartView(
@@ -618,12 +598,7 @@ class ContainerRestartView(
             kwargs={'job_id': job.id}, countdown=CELERY_SUBMIT_COUNTDOWN
         )
 
-        return redirect(
-            reverse(
-                'containers:detail',
-                kwargs={'container': container.sodar_uuid},
-            )
-        )
+        return redirect(request.headers['Referer'])
 
 
 class KioscProxyView(ProxyView):
@@ -741,12 +716,7 @@ class ReverseProxyView(
         else:
             tl_event = None
 
-        _redirect = redirect(
-            reverse(
-                'containers:list',
-                kwargs={'project': container.project.sodar_uuid},
-            )
-        )
+        _redirect = redirect(request.headers['Referer'])
 
         if not container.state == STATE_RUNNING:
             if tl_event:

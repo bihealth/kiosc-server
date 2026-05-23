@@ -1,6 +1,7 @@
 """Django Channel consumers (for forwarding data only)."""
 
 from asgiref.sync import async_to_sync
+from itertools import batched
 import docker
 import json
 import logging
@@ -325,8 +326,11 @@ class LogWatcherConsumer(WebsocketConsumer):
             container_sodar_uuid, self.channel_name
         )
         # Send existing log entries
-        for log_entry in self.container.log_entries.all():
-            msg = {'type': 'container_static_logs', 'text': str(log_entry)}
+        for log_batch in batched(self.container.log_entries.all(), 1024):
+            msg = {
+                'type': 'container_static_logs',
+                'text': '\n'.join(str(log_entry) for log_entry in log_batch),
+            }
             self.send(json.dumps(msg))
         self.start_state_polling()
 

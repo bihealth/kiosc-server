@@ -474,12 +474,17 @@ class ContainerMachine(StateMachine):
                     and line['progressDetail'].get('current')
                     and line['progressDetail'].get('total')
                 ):
-                    docker_log_line = '{status} ({progressDetail[current]}/{progressDetail[total]})'.format(
+                    docker_log_line = '{id}: {status} ({progressDetail[current]}/{progressDetail[total]})'.format(
                         **line
                     )
+                elif line.get('id'):
+                    docker_log_line = '{line["id"]}: :{line["status"]}'
                 else:
                     docker_log_line = line['status']
 
+                # TODO: we could be a bit more clever about pulling logs, e.g.
+                # updating the record corresponding to the blob id instead of
+                # adding one record for every line.
                 self.container.log_entries.create(
                     text=docker_log_line,
                     process=PROCESS_TASK,

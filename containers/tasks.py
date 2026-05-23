@@ -194,7 +194,7 @@ def container_task(_self, job_id):
             job.add_log_entry(
                 f'Action failed: {job.action}: {e}', level=LOG_LEVEL_ERROR
             )
-            tl_event.set_status(TL_STATUS_FAILED)
+            tl_event.set_status(TL_STATUS_FAILED, str(e))
             with transaction.atomic():
                 job.container.refresh_from_db()
                 job.container.container_id = ''
@@ -212,7 +212,7 @@ def container_task(_self, job_id):
             job.add_log_entry(
                 f'Action failed: {job.action}: {e}', level=LOG_LEVEL_ERROR
             )
-            tl_event.set_status(TL_STATUS_FAILED)
+            tl_event.set_status(TL_STATUS_FAILED, str(e))
             with transaction.atomic():
                 container.refresh_from_db()
                 container.state = STATE_FAILED
@@ -228,7 +228,7 @@ def container_task(_self, job_id):
             job.add_log_entry(
                 f'Action failed: {job.action}: {e}', level=LOG_LEVEL_ERROR
             )
-            tl_event.set_status(TL_STATUS_FAILED)
+            tl_event.set_status(TL_STATUS_FAILED, str(e))
 
         except ContainerActionLock.CoolDown as e:
             logger.warning(
@@ -253,7 +253,7 @@ def container_task(_self, job_id):
             job.add_log_entry(
                 f'Action failed: {job.action}: {e}', level=LOG_LEVEL_ERROR
             )
-            tl_event.set_status(TL_STATUS_FAILED)
+            tl_event.set_status(TL_STATUS_FAILED, str(e))
 
             with transaction.atomic():
                 container.refresh_from_db()

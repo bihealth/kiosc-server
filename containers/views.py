@@ -705,7 +705,13 @@ class ReverseProxyView(
         container = self.get_object()
         kwargs.pop('container')
 
-        timeline = plugin_api.get_backend_api('timeline_backend')
+        # Kiosc will pass this header when doing automated checks; we don't need
+        # to track these accesses in the timeline.
+        if not request.headers.get('Kiosc-Preflight'):
+            timeline = plugin_api.get_backend_api('timeline_backend')
+        else:
+            timeline = None
+
         if timeline:
             tl_event = timeline.add_event(
                 project=container.project,
@@ -714,6 +720,11 @@ class ReverseProxyView(
                 event_name='access_container',
                 description=f'Accessing {container.get_display_name()}',
                 status_type=timeline.TL_STATUS_INIT,
+            )
+            tl_event.add_object(
+                obj=container,
+                label='container',
+                name=container.get_display_name(),
             )
         else:
             tl_event = None
@@ -749,13 +760,14 @@ class ReverseProxyView(
             container.date_last_access = timezone.now()
             container.save()
             if tl_event:
-                tl_event.set_status(TL_STATUS_FAILED)
+                tl_event.set_status(TL_STATUS_OK)
             return res
 
         except MaxRetryError:
             if tl_event:
                 tl_event.set_status(TL_STATUS_FAILED)
             # The upstream app in the container is not ready yet
+            # XXX: Maybe we should use a custom header instead of custom return code
             return render(
                 request,
                 'containers/container_proxylobby.html',

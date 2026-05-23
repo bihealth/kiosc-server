@@ -13,6 +13,7 @@ from django.urls import reverse
 from django.utils import timezone
 from docker.types import Ulimit
 from statemachine import StateMachine, State
+from statemachine.exceptions import StateMachineError
 
 from containers.models import (
     STATE_CREATED,
@@ -35,7 +36,6 @@ from containers.models import (
     ACTION_PAUSE,
     ACTION_UNPAUSE,
     ACTION_DELETE,
-    LOG_LEVEL_ERROR,
 )
 
 logger = logging.getLogger(__name__)
@@ -65,6 +65,12 @@ def connect_docker(
 
 
 class ActionSwitch:
+    """
+    State machine to switch container state.
+
+    Exceptions raised here are caught by ``containers.tasks.container_task()``.
+    """
+
     def __init__(self, cm, job, tl_event):
         self.tl_event = tl_event
         self.cm = cm
@@ -80,29 +86,46 @@ class ActionSwitch:
         }
 
     def _start(self, state):
-        if state == STATE_INITIAL:
-            self.cm.pull()
-            self.cm.start_pulled()
+        try:
+            if state == STATE_INITIAL:
+                self.cm.pull()
+                self.cm.start_pulled()
 
-        elif state == STATE_DELETED:
-            self.cm.pull_deleted()
-            self.cm.start_pulled()
+            elif state == STATE_DELETED:
+                self.cm.pull_deleted()
+                self.cm.start_pulled()
 
-        elif state == STATE_CREATED:
-            self.cm.start_created()
+            elif state == STATE_CREATED:
+                self.cm.start_created()
 
-        elif state == STATE_EXITED or state == STATE_TIMEOUT:
-            self.cm.delete()
-            self.cm.delete_success()
-            self.cm.pull_deleted()
-            self.cm.start_pulled()
+            elif state == STATE_EXITED or state == STATE_TIMEOUT:
+                self.cm.delete()
+                self.cm.delete_success()
+                self.cm.pull_deleted()
+                self.cm.start_pulled()
 
-        elif state == STATE_FAILED:
-            self.cm.pull_failed()
-            self.cm.start_pulled()
+            elif state == STATE_FAILED:
+                self.cm.pull_failed()
+                self.cm.start_pulled()
 
-        else:
-            raise RuntimeError(f'Action start not allowed in state {state}')
+            else:
+                raise StateMachineError(
+                    f'Action start not allowed in state {state}'
+                )
+        except Exception as ex:
+            self.job.container.log_entries.create(
+                text=f'Failed to start container: {ex}',
+                process=PROCESS_TASK,
+                user=self.job.bg_job.user,
+            )
+            async_to_sync(channel_layer.group_send)(
+                str(self.job.container.sodar_uuid),
+                {
+                    'type': 'container_task.message',
+                    'text': f'Failed to start container: {ex}',
+                },
+            )
+            raise ex
 
     def _stop(self, state):
         if state == STATE_RUNNING:
@@ -115,7 +138,7 @@ class ActionSwitch:
             pass
 
         else:
-            raise RuntimeError(f'Action stop not allowed in state {state}')
+            raise StateMachineError(f'Action stop not allowed in state {state}')
 
     def _timeout(self, state):
         if state == STATE_RUNNING:
@@ -125,21 +148,27 @@ class ActionSwitch:
             self.cm.timeout_paused()
 
         else:
-            raise RuntimeError(f'Action timeout not allowed in state {state}')
+            raise StateMachineError(
+                f'Action timeout not allowed in state {state}'
+            )
 
     def _pause(self, state):
         if state == STATE_RUNNING:
             self.cm.pause()
 
         else:
-            raise RuntimeError(f'Action pause not allowed in state {state}')
+            raise StateMachineError(
+                f'Action pause not allowed in state {state}'
+            )
 
     def _unpause(self, state):
         if state == STATE_PAUSED:
             self.cm.unpause()
 
         else:
-            raise RuntimeError(f'Action unpause not allowed in state {state}')
+            raise StateMachineError(
+                f'Action unpause not allowed in state {state}'
+            )
 
     def _restart(self, state):
         if state == STATE_RUNNING:
@@ -156,7 +185,9 @@ class ActionSwitch:
             self.cm.start_pulled()
 
         else:
-            raise RuntimeError(f'Action restart not allowed in state {state}')
+            raise StateMachineError(
+                f'Action restart not allowed in state {state}'
+            )
 
     def _delete(self, state):
         if state == STATE_INITIAL:
@@ -194,22 +225,15 @@ class ActionSwitch:
             self.cm.delete_success()
 
         else:
-            raise RuntimeError(f'Action delete not allowed in state {state}')
+            raise StateMachineError(
+                f'Action delete not allowed in state {state}'
+            )
 
     def do(self, action, state):
         f = self._switches.get(action)
 
         if not f:
-            if self.tl_event:
-                self.tl_event.set_status('FAILED', 'action failed')
-                self.job.add_log_entry(
-                    text=f'Unknown action: {action}',
-                    level=LOG_LEVEL_ERROR,
-                )
-            raise RuntimeError(f'Unknown action: {action}')
-
-        if self.tl_event:
-            self.tl_event.set_status('OK', 'action succeeded')
+            raise StateMachineError(f'Unknown action: {action}')
 
         action_locks = self.cm.container.action_lock.all()
 
@@ -478,7 +502,7 @@ class ContainerMachine(StateMachine):
                         **line
                     )
                 elif line.get('id'):
-                    docker_log_line = '{line["id"]}: :{line["status"]}'
+                    docker_log_line = f'{line["id"]}: {line["status"]}'
                 else:
                     docker_log_line = line['status']
 

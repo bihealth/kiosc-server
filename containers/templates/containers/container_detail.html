@@ -264,6 +264,7 @@
     const stateElement = document.querySelector("#id_container_state");
     const stateDetailElement = document.querySelector("#id_state");
     const logLinesInput = document.querySelector("#id_log_lines");
+    const firstUpdate = true;  // Used to scroll when the page is refreshed
     const logLinesCookie = getCookie("log_lines");
     if (logLinesCookie !== null) {
       logLinesInput.value = logLinesCookie;
@@ -283,12 +284,13 @@
           if (logsElement.innerHTML.match("Loading...")) {
             logsElement.innerText = "";
           }
+          let scrollHeightBefore = logsElement.scrollHeight;
           logsElement.append(data.text);
           if (data.type === "container_static_logs" || data.type == "container_channel_logs") {
             logsElement.append("\n");
           }
           const scrollBuffer = logsElement.getBoundingClientRect()["height"] + 50;
-          if (logsElement.scrollHeight - logsElement.scrollTop < scrollBuffer) {
+          if (logsElement.scrollHeight - scrollHeightBefore - logsElement.scrollTop < scrollBuffer) {
             logsElement.scrollTop = logsElement.scrollHeight;
           }
         } else if (data.type === "container_state") {
@@ -302,7 +304,14 @@
             // Do a pre-flight check of the app inside the container
             // Our server returns status 299 when the app is not running, but it redirects the client to the proxy lobby
             try {
-              const response = await fetch("{% url 'containers:proxy' container=object.sodar_uuid path=object.container_path %}");
+              const response = await fetch(
+                "{% url 'containers:proxy' container=object.sodar_uuid path=object.container_path %}",
+                {
+                  "headers": {
+                    "Kiosc-Preflight": "1",
+                  },
+                }
+              );
               if (!response.ok) {
                 console.error(response);
                 throw new Error(`The app responded with ${response.status}`);

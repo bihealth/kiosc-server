@@ -17,7 +17,12 @@ import socket
 from django.conf import settings
 from .models import Container
 
-from containers.models import STATE_INITIAL, STATE_PULLING, STATE_TIMEOUT
+from containers.models import (
+    STATE_INITIAL,
+    STATE_PULLING,
+    STATE_TIMEOUT,
+    STATE_FAILED,
+)
 from containers.statemachines import connect_docker
 
 
@@ -131,16 +136,24 @@ class LogWatcherConsumer(WebsocketConsumer):
                 timestamps=True,
             )
         except docker.errors.NullResource as ex:
-            msg = {
-                'type': 'container_rt_logs',
-                'text': f'Cannot fetch logs: {ex}',
-            }
-            self.send(json.dumps(msg))
-            return
+            if self.container.state not in (STATE_INITIAL, STATE_FAILED):
+                msg = {
+                    'type': 'container_rt_logs',
+                    'text': f'Cannot fetch logs: {ex}\n',
+                }
+                self.send(json.dumps(msg))
+                return
+            else:
+                msg = {
+                    'type': 'container_rt_logs',
+                    'text': 'The container is not running, try to start it.\n',
+                }
+                self.send(json.dumps(msg))
+                return
         except docker.errors.APIError as ex:
             msg = {
                 'type': 'container_rt_logs',
-                'text': f'Cannot fetch logs: {ex}',
+                'text': f'Cannot fetch logs: {ex}\n',
             }
             self.send(json.dumps(msg))
             return

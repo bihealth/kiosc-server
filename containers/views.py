@@ -434,6 +434,8 @@ class ContainerStartView(
         )
 
         # Schedule task
+        container.date_last_access = timezone.now()
+        container.save()
         container_task.apply_async(
             kwargs={'job_id': job.id}, countdown=CELERY_SUBMIT_COUNTDOWN
         )

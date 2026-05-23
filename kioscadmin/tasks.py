@@ -11,13 +11,14 @@ from django.conf import settings
 from django.utils import timezone
 
 from containers.tasks import container_task, sync_container_state
-from projectroles.models import SODAR_CONSTANTS
 
 from config.celery import app
 from django.contrib import auth
 
 # Projectroles dependency
 from projectroles.app_settings import AppSettingAPI
+from projectroles.models import SODAR_CONSTANTS
+from projectroles.plugins import PluginAPI
 
 from containers.models import (
     Container,
@@ -37,6 +38,7 @@ from containers.statemachines import (
 
 User = auth.get_user_model()
 app_settings = AppSettingAPI()
+plugin_api = PluginAPI()
 logger = logging.getLogger(__name__)
 
 # Increase the timeout for communication with Docker daemon.
@@ -69,7 +71,7 @@ def stop_inactive_containers(_self):
         if not state or state not in (STATE_RUNNING, STATE_PAUSED):
             continue
 
-        # Get latest proxy access datetime (or creation date if never accessed)
+        # Get latest proxy access datetime (or start date if never accessed)
         last_access = container.date_last_access
 
         threshold = last_access + timedelta(
@@ -106,11 +108,9 @@ def stop_inactive_containers(_self):
 
 @app.task(bind=True)
 def poll_docker_status(_self):
+    timeline = plugin_api.get_backend_api('timeline_backend')
     for container in Container.objects.all():
-        sync_container_state(container)
-        container.refresh_from_db()
-        if not container.container_id:
-            continue
+        sync_container_state(container, timeline)
 
 
 # @app.task(bind=True)

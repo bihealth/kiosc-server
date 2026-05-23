@@ -60,7 +60,7 @@ class State:
         self.state = state
 
 
-def sync_container_state(container):
+def sync_container_state(container, timeline=None):
     # Update container state
     cli = connect_docker()
     try:
@@ -78,10 +78,24 @@ def sync_container_state(container):
             container.date_last_status_update = timezone.now()
             container.state = actual_state
             container.save()
+            if timeline:
+                tl_event = timeline.add_event(
+                    project=container.project,
+                    app_name=APP_NAME,
+                    user=None,
+                    event_name='container_status_sync',
+                    description='Needed to sync container state',
+                    status=TL_STATUS_OK,
+                )
+                tl_event.add_object(
+                    obj=container,
+                    label='container',
+                    name=container.get_display_name(),
+                )
     except docker.errors.NullResource as ex:
         if container.state not in (STATE_INITIAL, STATE_FAILED):
             logger.error(
-                '%s: %s (state is %s)',
+                'Failed to sync state: %s: %s (state is %s)',
                 container.sodar_uuid,
                 ex,
                 container.state,
@@ -90,6 +104,20 @@ def sync_container_state(container):
             container.state = STATE_FAILED
             container.container_id = ''
             container.save()
+            if timeline:
+                tl_event = timeline.add_event(
+                    project=container.project,
+                    app_name=APP_NAME,
+                    user=None,
+                    event_name='container_status_sync',
+                    description=ex,
+                    status=TL_STATUS_FAILED,
+                )
+                tl_event.add_object(
+                    obj=container,
+                    label='container',
+                    name=container.get_display_name(),
+                )
     except docker.errors.NotFound as ex:
         # We mark it as failed. STATE_DELETED could also be an option,
         # but failed is more general. Besides, the container record in the db
@@ -99,6 +127,20 @@ def sync_container_state(container):
         container.state = STATE_FAILED
         container.container_id = ''
         container.save()
+        if timeline:
+            tl_event = timeline.add_event(
+                project=container.project,
+                app_name=APP_NAME,
+                user=None,
+                event_name='container_status_sync',
+                description=ex,
+                status=TL_STATUS_FAILED,
+            )
+            tl_event.add_object(
+                obj=container,
+                label='container',
+                name=container.get_display_name(),
+            )
 
 
 @app.task(bind=True)
@@ -110,7 +152,7 @@ def container_task(_self, job_id):
     container = job.container
     user = bg_job.user
     tl_event = None
-    sync_container_state(container)
+    sync_container_state(container, timeline)
 
     cm = ContainerMachine(State(container.state), job=job)
 

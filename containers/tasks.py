@@ -85,7 +85,7 @@ def sync_container_state(container, timeline=None):
                     user=None,
                     event_name='container_status_sync',
                     description='Needed to sync container state',
-                    status=TL_STATUS_OK,
+                    status_type=TL_STATUS_OK,
                 )
                 tl_event.add_object(
                     obj=container,
@@ -102,7 +102,7 @@ def sync_container_state(container, timeline=None):
             )
             container.date_last_status_update = timezone.now()
             container.state = STATE_FAILED
-            container.container_id = ''
+            # container.container_id = ''
             container.save()
             if timeline:
                 tl_event = timeline.add_event(
@@ -111,7 +111,7 @@ def sync_container_state(container, timeline=None):
                     user=None,
                     event_name='container_status_sync',
                     description=ex,
-                    status=TL_STATUS_FAILED,
+                    status_type=TL_STATUS_FAILED,
                 )
                 tl_event.add_object(
                     obj=container,
@@ -125,7 +125,7 @@ def sync_container_state(container, timeline=None):
         logger.error('Container not found: %s', str(ex))
         container.date_last_status_update = timezone.now()
         container.state = STATE_FAILED
-        container.container_id = ''
+        # container.container_id = ''
         container.save()
         if timeline:
             tl_event = timeline.add_event(
@@ -134,7 +134,7 @@ def sync_container_state(container, timeline=None):
                 user=None,
                 event_name='container_status_sync',
                 description=ex,
-                status=TL_STATUS_FAILED,
+                status_type=TL_STATUS_FAILED,
             )
             tl_event.add_object(
                 obj=container,
@@ -162,7 +162,7 @@ def container_task(_self, job_id):
             app_name=APP_NAME,
             user=user,
             event_name='container_task',
-            description='{action} container {container}',
+            description=f'{job.action} container {container.title}',
         )
         tl_event.add_object(
             obj=job.container,
@@ -197,7 +197,7 @@ def container_task(_self, job_id):
             tl_event.set_status(TL_STATUS_FAILED, str(e))
             with transaction.atomic():
                 job.container.refresh_from_db()
-                job.container.container_id = ''
+                # job.container.container_id = ''
                 job.container.image_id = ''
                 job.container.state = STATE_FAILED
                 job.container.save()

@@ -109,7 +109,7 @@ class ContainerCreateAPIView(
                     app_name=APP_NAME,
                     user=self.request.user,
                     event_name='create_container',
-                    description=f'Create {container}',
+                    description=f'Create container {container.title}',
                     status_type=timeline.TL_STATUS_OK,
                 )
                 tl_event.add_object(

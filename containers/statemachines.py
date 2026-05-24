@@ -171,6 +171,16 @@ class ActionSwitch:
             )
 
     def _restart(self, state):
+        if state == STATE_INITIAL:
+            self.cm.pull()
+            self.cm.start_pulled()
+
+        elif state == STATE_CREATED:
+            self.cm.delete_created()
+            self.cm.delete_success()
+            self.cm.pull_deleted()
+            self.cm.start_pulled()
+
         if state == STATE_RUNNING:
             self.cm.stop_running()
             self.cm.delete()
@@ -178,8 +188,21 @@ class ActionSwitch:
             self.cm.pull_deleted()
             self.cm.start_pulled()
 
-        elif state == STATE_EXITED or state == STATE_TIMEOUT:
+        elif state == STATE_PAUSED:
+            self.cm.stop_paused()
             self.cm.delete()
+            self.cm.delete_success()
+            self.cm.pull_deleted()
+            self.cm.start_pulled()
+
+        elif state in (STATE_EXITED, STATE_TIMEOUT):
+            self.cm.delete()
+            self.cm.delete_success()
+            self.cm.pull_deleted()
+            self.cm.start_pulled()
+
+        elif state == STATE_FAILED:
+            self.cm.delete_failed()
             self.cm.delete_success()
             self.cm.pull_deleted()
             self.cm.start_pulled()
@@ -760,7 +783,9 @@ class ContainerMachine(StateMachine):
         )
 
     def on_delete_failed(self):
+        print('deleting failed')
         self.on_delete()
+        print('deleting done')
 
     def on_delete_created(self):
         self.on_delete()

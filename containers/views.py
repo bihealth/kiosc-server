@@ -353,7 +353,7 @@ class ContainerUpdateView(
                 app_name=APP_NAME,
                 user=self.request.user,
                 event_name='update_container',
-                description='updated {container}',
+                description='Container "{container.title}" was updated.',
                 status_type=timeline.TL_STATUS_OK,
             )
             tl_event.add_object(
@@ -733,7 +733,7 @@ class ReverseProxyView(
 
         if not container.state == STATE_RUNNING:
             if tl_event:
-                tl_event.set_status(TL_STATUS_FAILED)
+                tl_event.set_status(TL_STATUS_FAILED, 'Tried to access the app while the container was not running')
             messages.error(
                 request, f"Container '{container.title}' not running."
             )
@@ -745,7 +745,7 @@ class ReverseProxyView(
 
             else:
                 if tl_event:
-                    tl_event.set_status(TL_STATUS_FAILED)
+                    tl_event.set_status(TL_STATUS_FAILED, 'The host port is not set, please update the container.')
                 messages.error(request, 'Host port not set.')
                 return _redirect
 
@@ -765,7 +765,7 @@ class ReverseProxyView(
 
         except MaxRetryError:
             if tl_event:
-                tl_event.set_status(TL_STATUS_FAILED)
+                tl_event.set_status(TL_STATUS_FAILED, 'The app is not ready to take connections, please wait a moment.')
             # The upstream app in the container is not ready yet
             # XXX: Maybe we should use a custom header instead of custom return code
             return render(
@@ -777,19 +777,7 @@ class ReverseProxyView(
         except NewConnectionError as e:
             logger.error(f'Connection error in proxy: {e}')
             if tl_event:
-                tl_event.set_status(TL_STATUS_FAILED)
-            # container.log_entries.create(
-            #     text=str(e),
-            #     process=PROCESS_PROXY,
-            #     user=request.user,
-            #     level=LOG_LEVEL_DEBUG,
-            # )
-            # container.log_entries.create(
-            #     text=f'Access {upstream} failed',
-            #     process=PROCESS_PROXY,
-            #     user=request.user,
-            #     level=LOG_LEVEL_ERROR,
-            # )
+                tl_event.set_status(TL_STATUS_FAILED, f'Error connecting to the app: {e}')
             messages.error(
                 request,
                 f"Web-interface of container '{container.title}' not reachable.",

@@ -64,6 +64,7 @@ from containers.models import (
     ACTION_DELETE,
     PROCESS_OBJECT,
     STATE_PAUSED,
+    STATE_PULLING,
     STATE_RUNNING,
     STATE_DELETED,
     STATE_INITIAL,
@@ -81,6 +82,13 @@ User = get_user_model()
 
 APP_NAME = 'containers'
 CELERY_SUBMIT_COUNTDOWN = 0.5
+LOBBY_WAITING_PHRASES = [
+    'The container is loading...',
+    'Updating Windows, please don\'t turn off your computer...',
+    'Just one more second...',
+    'This could take a while, go get a coffee...',
+    'You can close this page and come back later...',
+]
 
 
 async def _stream_response(
@@ -755,7 +763,7 @@ class ReverseProxyView(
 
         _redirect = redirect(request.headers['Referer'])
 
-        if not container.state == STATE_RUNNING:
+        if not container.state in (STATE_RUNNING, STATE_PULLING):
             if tl_event:
                 tl_event.set_status(TL_STATUS_FAILED, 'Tried to access the app while the container was not running')
             messages.error(
@@ -795,7 +803,7 @@ class ReverseProxyView(
             return render(
                 request,
                 'containers/container_proxylobby.html',
-                {'object': container},
+                {'object': container, 'waiting_phrases': LOBBY_WAITING_PHRASES},
                 status=299,
             )
         except NewConnectionError as e:

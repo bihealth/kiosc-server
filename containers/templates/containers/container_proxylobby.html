@@ -109,7 +109,7 @@
     {% endblock head_extend %}
   </head>
 
-  <body id="body" style="background-color: #4285F4">
+  <body id="body" style="background-color: #6a0846">
     <div class="container d-flex h-100 justify-content-center text-light">
       <div class="row align-content-center">
         <ul class="list-unstyled text-center">
@@ -119,10 +119,10 @@
             <i class="iconify d-none" id="iconSuccess" style="width:128px; height: 128px" data-icon="mdi:check-decagram"></i>
           </li>
           <li>
-            <em><strong id="message">Container is loading ...</strong></em>
+            <em><strong id="message">{{ waiting_phrases|random }}</strong></em>
           </li>
           <li>
-            Check the <a href="{% url 'containers:detail' container=object.sodar_uuid %}#card-logs">logs</a> for more info
+            <em><strong>Check the <a href="{% url 'containers:detail' container=object.sodar_uuid %}#card-logs">logs</a> for more info</strong></em>
           </li>
         </ul>
     </div>

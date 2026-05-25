@@ -377,6 +377,10 @@ class LogWatcherConsumer(WebsocketConsumer):
 
     def container_task_message(self, event):
         # FIXME: make sure that we are done sending all static existing log entries (we could do this either in the client or here)
-        # FIXME: also make sure that we don't send these messages to users who don't have permission (this should be already taken care of by not adding the consumer to the channel group until we checked permissions)
         msg = {'type': 'container_channel_logs', 'text': event['text']}
+        self.send(json.dumps(msg))
+
+    def container_pull_message(self, event):
+        # FIXME: make sure that we are done sending all static existing log entries (we could do this either in the client or here)
+        msg = {'type': 'container_pull_logs', 'status': event['status'], 'id': event.get('id')}
         self.send(json.dumps(msg))

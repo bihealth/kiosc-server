@@ -8,7 +8,6 @@ import docker.errors
 import logging
 
 from django.conf import settings
-from django.db import transaction
 from django.urls import reverse
 from django.utils import timezone
 from docker.types import Ulimit
@@ -275,8 +274,7 @@ class ActionSwitch:
                 f'Maximal one lock per container expected, got {action_locks.count()}'
             )
 
-        with transaction.atomic():
-            f(state)
+        f(state)
 
 
 class ContainerMachine(StateMachine):
@@ -521,30 +519,37 @@ class ContainerMachine(StateMachine):
                 stream=True,
                 decode=True,
             ):
-                docker_line = {'text': line.get('status')}
+                pull_log = {'text': line.get('status')}
                 if (line_id := line.get('id')) and (line_progress := line.get('progressDetail')):
-                    docker_line['id'] = line_id
-                    docker_line['status'] = f'{line_id}: {line.get("status")}'
+                    pull_log['id'] = line_id
+                    pull_log['status'] = f'{line_id}: {line.get("status")}'
                     if line_progress.get('current') and line_progress.get('total'):
-                        docker_line['status'] += f' [{line_progress.get('current')}/{line_progress.get('total')}]'
+                        pull_log['status'] += f' [{line_progress.get('current')}/{line_progress.get('total')}]'
                     elif line_progress.get('current') and line_progress.get('units'):
-                        docker_line['status'] += f' [{line_progress.get('current')}{line_progress.get('units')}]'
+                        pull_log['status'] += f' [{line_progress.get('current')}{line_progress.get('units')}]'
+                    else:
+                        # We create log entries only for status lines that don't change
+                        self.container.log_entries.create(
+                            text=pull_log['status'],
+                            process=PROCESS_TASK,
+                            user=self.user,
+                        )
                 else:
-                    docker_line = {'status': line.get('status')}
+                    pull_log = {'status': line.get('status')}
+                    self.container.log_entries.create(
+                        text=line.get('status'),
+                        process=PROCESS_TASK,
+                        user=self.user,
+                    )
 
-                # self.container.log_entries.create(
-                #     text=docker_log_line,
-                #     process=PROCESS_TASK,
-                #     user=self.user,
-                # )
                 async_to_sync(channel_layer.group_send)(
                     str(self.container.sodar_uuid),
                     {
-                        'type': 'container_task.message',
-                        'text': docker_line['status'],
+                        'type': 'container_pull.message',
+                        **pull_log,
                     },
                 )
-                self.job.add_log_entry(docker_line['status'])
+                self.job.add_log_entry(pull_log['status'])
 
         image_details = self.cli.inspect_image(self.container.get_repos_full())
         self.container.image_id = image_details.get('Id')

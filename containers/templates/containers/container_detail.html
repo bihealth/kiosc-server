@@ -51,7 +51,7 @@
     </div>
   </div>
   {% if can_view_logs %}
-  <div class="card">
+  <div class="card" id="card-logs">
     <div class="card-header">
       <div class="row">
         <h4>Logs</h4>
@@ -74,7 +74,7 @@
   </div>
   <div class="card">
     <div class="card-header">
-      <h4>Timeline</h4>
+      <h4>Recent events</h4>
     </div>
     <div class="card-body p-0">
       {% get_plugin_lookup as plugin_lookup %}
@@ -303,6 +303,21 @@
           const scrollBuffer = logsElement.getBoundingClientRect()["height"] + 50;
           if (logsElement.scrollHeight - scrollHeightBefore - logsElement.scrollTop < scrollBuffer) {
             logsElement.scrollTop = logsElement.scrollHeight;
+          }
+        } else if (data.type === "container_pull_logs") {
+          if (logsElement.innerHTML.match("Loading...")) {
+            logsElement.innerText = "";
+          }
+          if (data.id) {
+            const re = new RegExp(`^${data.id}.*`, 'm');
+            if (logsElement.innerText.search(re) != -1) {
+              // FIXME: we can use the output of search instead of replace.
+              logsElement.innerText = logsElement.innerText.replace(re, data.status);
+            } else {
+              logsElement.append(data.status + "\n");
+            }
+          } else {
+            logsElement.append(data.status + "\n");
           }
         } else if (data.type === "container_state") {
           if (data.state != containerState) {

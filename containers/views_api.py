@@ -109,7 +109,7 @@ class ContainerCreateAPIView(
                     app_name=APP_NAME,
                     user=self.request.user,
                     event_name='create_container',
-                    description=f'Create container {container.title}',
+                    description=f'Create container "{container.get_display_name()}"',
                     status_type=timeline.TL_STATUS_OK,
                 )
                 tl_event.add_object(
@@ -168,8 +168,9 @@ class ContainerDeleteAPIView(
                     app_name=APP_NAME,
                     user=request.user,
                     event_name='delete_container',
-                    description=f'deleting of {container.get_display_name()} failed',
+                    description='Delete container "{container.get_display_name()}"',
                     status_type=timeline.TL_STATUS_FAILED,
+                    status_desc=f'deleting of {container.get_display_name()} failed',
                 )
 
             return JsonResponse(
@@ -186,7 +187,7 @@ class ContainerDeleteAPIView(
                 app_name=APP_NAME,
                 user=request.user,
                 event_name='delete_container',
-                description=f'deleted {container.get_display_name()}',
+                description='Delete container "{container.get_display_name()}"',
                 status_type=timeline.TL_STATUS_OK,
             )
 

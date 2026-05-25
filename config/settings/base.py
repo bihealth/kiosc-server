@@ -325,7 +325,11 @@ CELERY_TASK_EAGER_PROPAGATES = False
 CHANNEL_LAYERS = {
     'default': {
         'BACKEND': 'channels_redis.core.RedisChannelLayer',
-        'CONFIG': {'hosts': [(env('REDIS_URL', default='127.0.0.1'), 6379)]},
+        'CONFIG': {
+            'hosts': [(env('REDIS_URL', default='127.0.0.1'), 6379)],
+            'capacity': 10_000,  # Default 100
+            'expiry': 10,  # Default 60
+        },
     },
 }
 

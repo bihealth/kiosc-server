@@ -108,6 +108,10 @@ class ActionSwitch:
                 self.cm.pull_failed()
                 self.cm.start_pulled()
 
+            elif state == STATE_RUNNING:
+                # Nothing to do, but we don't want to raise an exception
+                pass
+
             else:
                 raise StateMachineError(
                     f'Action start not allowed in state {state}'
@@ -181,7 +185,7 @@ class ActionSwitch:
             self.cm.pull_deleted()
             self.cm.start_pulled()
 
-        if state == STATE_RUNNING:
+        elif state == STATE_RUNNING:
             self.cm.stop_running()
             self.cm.delete()
             self.cm.delete_success()
@@ -444,6 +448,7 @@ class ContainerMachine(StateMachine):
             },
         )
         self.container.state = STATE_PULLING
+        self.container.container_id = None
         self.container.save()
 
         need_to_pull = True
@@ -516,35 +521,30 @@ class ContainerMachine(StateMachine):
                 stream=True,
                 decode=True,
             ):
-                if (
-                    line.get('progressDetail')
-                    and line['progressDetail'].get('current')
-                    and line['progressDetail'].get('total')
-                ):
-                    docker_log_line = '{id}: {status} ({progressDetail[current]}/{progressDetail[total]})'.format(
-                        **line
-                    )
-                elif line.get('id'):
-                    docker_log_line = f'{line["id"]}: {line["status"]}'
+                docker_line = {'text': line.get('status')}
+                if (line_id := line.get('id')) and (line_progress := line.get('progressDetail')):
+                    docker_line['id'] = line_id
+                    docker_line['status'] = f'{line_id}: {line.get("status")}'
+                    if line_progress.get('current') and line_progress.get('total'):
+                        docker_line['status'] += f' [{line_progress.get('current')}/{line_progress.get('total')}]'
+                    elif line_progress.get('current') and line_progress.get('units'):
+                        docker_line['status'] += f' [{line_progress.get('current')}{line_progress.get('units')}]'
                 else:
-                    docker_log_line = line['status']
+                    docker_line = {'status': line.get('status')}
 
-                # TODO: we could be a bit more clever about pulling logs, e.g.
-                # updating the record corresponding to the blob id instead of
-                # adding one record for every line.
-                self.container.log_entries.create(
-                    text=docker_log_line,
-                    process=PROCESS_TASK,
-                    user=self.user,
-                )
+                # self.container.log_entries.create(
+                #     text=docker_log_line,
+                #     process=PROCESS_TASK,
+                #     user=self.user,
+                # )
                 async_to_sync(channel_layer.group_send)(
                     str(self.container.sodar_uuid),
                     {
                         'type': 'container_task.message',
-                        'text': docker_log_line,
+                        'text': docker_line['status'],
                     },
                 )
-                self.job.add_log_entry(docker_log_line)
+                self.job.add_log_entry(docker_line['status'])
 
         image_details = self.cli.inspect_image(self.container.get_repos_full())
         self.container.image_id = image_details.get('Id')
@@ -617,20 +617,6 @@ class ContainerMachine(StateMachine):
             }
             options['volumes'] = [kiosc_volume_mountpoint]
 
-        self.job.add_log_entry('Initializing the container...')
-        self.container.log_entries.create(
-            text='Initializing the container...',
-            process=PROCESS_TASK,
-            user=self.user,
-        )
-        async_to_sync(channel_layer.group_send)(
-            str(self.container.sodar_uuid),
-            {
-                'type': 'container_task.message',
-                'text': 'Initializing the container...',
-            },
-        )
-
         # Volume
         if volume_name := str(self.container.volume_name):
             kiosc_volume_mountpoint = '/kiosc'
@@ -649,7 +635,6 @@ class ContainerMachine(StateMachine):
             process=PROCESS_TASK,
             user=self.user,
         )
-        print(self.container.sodar_uuid)
         async_to_sync(channel_layer.group_send)(
             str(self.container.sodar_uuid),
             {
@@ -775,17 +760,25 @@ class ContainerMachine(StateMachine):
             user=self.user,
         )
 
+        if not self.container.container_id:
+            # Nothing to do, the container probably doesn't even exist
+            logger.warning('Trying to delete container with no id')
+            return
+
         # Removing container and erasing container_id
         # NOTE: this will also remove the volumes associated with the container
         # (thanks to the v=True flag in remove_container())
-        self.cli.remove_container(
-            self.container.container_id, force=True, v=True
-        )
+        try:
+            self.cli.remove_container(
+                self.container.container_id, force=True, v=True
+            )
+        except docker.errors.NotFound as e:
+            # The container doesn't exist, so there is nothing to delete
+            logger.warning('Trying to delete container which doesn\'t exist')
+            pass
 
     def on_delete_failed(self):
-        print('deleting failed')
         self.on_delete()
-        print('deleting done')
 
     def on_delete_created(self):
         self.on_delete()

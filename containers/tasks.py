@@ -30,6 +30,7 @@ from containers.models import (
     LOG_LEVEL_ERROR,
     STATE_EXITED,
     STATE_INITIAL,
+    STATE_PULLING,
     STATE_FAILED,
     STATE_TIMEOUT,
     LOG_LEVEL_WARNING,
@@ -84,7 +85,7 @@ def sync_container_state(container, timeline=None):
                     app_name=APP_NAME,
                     user=None,
                     event_name='container_status_sync',
-                    description='Needed to sync container state',
+                    description='Sync container state {container}',
                     status_type=TL_STATUS_OK,
                 )
                 tl_event.add_object(
@@ -93,7 +94,7 @@ def sync_container_state(container, timeline=None):
                     name=container.get_display_name(),
                 )
     except docker.errors.NullResource as ex:
-        if container.state not in (STATE_INITIAL, STATE_FAILED):
+        if container.state not in (STATE_INITIAL, STATE_PULLING, STATE_FAILED):
             logger.error(
                 'Failed to sync state: %s: %s (state is %s)',
                 container.sodar_uuid,
@@ -102,7 +103,6 @@ def sync_container_state(container, timeline=None):
             )
             container.date_last_status_update = timezone.now()
             container.state = STATE_FAILED
-            # container.container_id = ''
             container.save()
             if timeline:
                 tl_event = timeline.add_event(
@@ -110,8 +110,9 @@ def sync_container_state(container, timeline=None):
                     app_name=APP_NAME,
                     user=None,
                     event_name='container_status_sync',
-                    description=ex,
+                    description='Sync container state {container}',
                     status_type=TL_STATUS_FAILED,
+                    status_desc=ex,
                 )
                 tl_event.add_object(
                     obj=container,
@@ -119,13 +120,16 @@ def sync_container_state(container, timeline=None):
                     name=container.get_display_name(),
                 )
     except docker.errors.NotFound as ex:
+        # If the state is failed, it is expected that sometimes the container
+        # doesn't exist. We don't need to add infinitely many logs for this.
+        if container.state == STATE_FAILED:
+            pass
         # We mark it as failed. STATE_DELETED could also be an option,
         # but failed is more general. Besides, the container record in the db
         # is NOT deleted.
         logger.error('Container not found: %s', str(ex))
         container.date_last_status_update = timezone.now()
         container.state = STATE_FAILED
-        # container.container_id = ''
         container.save()
         if timeline:
             tl_event = timeline.add_event(
@@ -133,8 +137,9 @@ def sync_container_state(container, timeline=None):
                 app_name=APP_NAME,
                 user=None,
                 event_name='container_status_sync',
-                description=ex,
+                description='Sync container state {container}',
                 status_type=TL_STATUS_FAILED,
+                status_desc=ex,
             )
             tl_event.add_object(
                 obj=container,
@@ -162,7 +167,7 @@ def container_task(_self, job_id):
             app_name=APP_NAME,
             user=user,
             event_name='container_task',
-            description=f'{job.action} container {container.title}',
+            description=f'{job.action} container {{container}}',
         )
         tl_event.add_object(
             obj=job.container,

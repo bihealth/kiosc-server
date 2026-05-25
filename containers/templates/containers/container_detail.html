@@ -84,10 +84,15 @@
         </thead>
         <tbody>
           {% get_container_events object as events %}
-          {% if events|length > 0 %}
-            {% for event in events %}
+          {% if events.count > 0 %}
+            {% for event in events|slice:":6" %}
               {% include 'timeline/_list_item.html' with event=event details_card_mode=True %}
             {% endfor %}
+            <tr>
+              <td colspan=3>
+                Click <a href="{% url 'timeline:list_object' project=object.project.sodar_uuid object_model='Container' object_uuid=object.sodar_uuid %}">here</a> to see the full timeline.
+              </td>
+            </tr>
           {% else %}
             <tr>
               <td class="bg-faded font-italic text-center" colspan="3">
@@ -325,9 +330,9 @@
               if (response.status == 299) {
                 throw new Error("The app is not reachable");
               }
-              stateElement.innerText = 'The app is running.';
+              stateElement.innerText = "The app is running.";
             } catch (error) {
-              stateElement.innerText = 'The app is not accepting connections; please be patient...';
+              stateElement.innerText = "The app is not accepting connections; please be patient...";
             }
           } else {
             stateElement.innerText = data.text;

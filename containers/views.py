@@ -153,7 +153,7 @@ class ContainerModifyMixin:
                 app_name=APP_NAME,
                 user=user,
                 event_name='delete_container',
-                description=f'Deleting {container.get_display_name()}',
+                description=f'Delete container "{container.get_display_name()}"',
                 status_type=timeline.TL_STATUS_SUBMIT,
             )
         else:
@@ -222,7 +222,7 @@ class ContainerCreateView(
                 app_name=APP_NAME,
                 user=self.request.user,
                 event_name='create_container',
-                description=f'Create {self.object}',
+                description=f'Create container "{self.object.get_display_name()}"',
                 status_type=timeline.TL_STATUS_OK,
             )
             tl_event.add_object(
@@ -331,17 +331,41 @@ class ContainerUpdateView(
         return context
 
     def get_success_url(self):
-        if self.object.state not in (STATE_RUNNING, STATE_PAUSED):
-            return super().get_success_url()
+        # if self.object.state not in (STATE_RUNNING, STATE_PAUSED):
+        #     return super().get_success_url()
+
+        container = self.get_object()
+
+        bg_job = BackgroundJob.objects.create(
+            name='Delete container',
+            project=container.project,
+            job_type=ContainerBackgroundJob.spec_name,
+            user=self.request.user,
+        )
+        job = ContainerBackgroundJob.objects.create(
+            action=ACTION_DELETE,
+            project=container.project,
+            container=container,
+            bg_job=bg_job,
+        )
+
+        # Schedule task synchronously
+        logger.info(f'The container object was updated, so we schedule a job to delete the Docker container. The container id is {container.container_id}')
+        container_task(job_id=job.id)
+        container.refresh_from_db()
+        logger.info('Container deleted after update')
+        print(container.state)
 
         messages.success(
             self.request,
-            'Container updated and restarted.',
+            'Container updated. Please restart it in order for the changes to take effect.',
         )
-        return reverse(
-            'containers:restart',
-            kwargs={'container': self.object.sodar_uuid},
-        )
+
+        return super().get_success_url()
+        # return reverse(
+        #     'containers:detail',
+        #     kwargs={'container': self.object.sodar_uuid},
+        # )
 
     def form_valid(self, form):
         response = super().form_valid(form)
@@ -353,7 +377,7 @@ class ContainerUpdateView(
                 app_name=APP_NAME,
                 user=self.request.user,
                 event_name='update_container',
-                description='Container "{container.title}" was updated.',
+                description='Update {container}',
                 status_type=timeline.TL_STATUS_OK,
             )
             tl_event.add_object(
@@ -718,7 +742,7 @@ class ReverseProxyView(
                 app_name=APP_NAME,
                 user=request.user,
                 event_name='access_container',
-                description=f'Accessing {container.get_display_name()}',
+                description='Access app {container}',
                 status_type=timeline.TL_STATUS_INIT,
             )
             tl_event.add_object(

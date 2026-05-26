@@ -288,6 +288,7 @@
       );
       socket.addEventListener("open", (event) => {
         setCookie("log_lines", logLinesInput.value);
+        socket.send('HELO');
       });
       socket.addEventListener("message", async (event) => {
         data = JSON.parse(event.data);

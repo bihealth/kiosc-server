@@ -345,18 +345,6 @@ class LogWatcherConsumer(WebsocketConsumer):
         ):
             self.close(code=4403, reason='Forbidden')
             return
-        # Start receiving new log entries in real time
-        async_to_sync(self.channel_layer.group_add)(
-            container_sodar_uuid, self.channel_name
-        )
-        # Send existing log entries
-        for log_batch in batched(self.container.log_entries.all(), 1024):
-            msg = {
-                'type': 'container_static_logs',
-                'text': '\n'.join(str(log_entry) for log_entry in log_batch),
-            }
-            self.send(json.dumps(msg))
-        self.start_state_polling()
 
     def disconnect(self, close_code: int):
         """Called upon websocket disconnect events"""
@@ -383,8 +371,24 @@ class LogWatcherConsumer(WebsocketConsumer):
         watching logs or changing the number of log lines. Thus, we can assume
         that text_data contains the number of log lines.
         """
-        self.stop_logs_watching()
-        self.start_logs_watching(int(text_data))
+        print('===========')
+        print(text_data)
+        if text_data == 'HELO':
+            # Start receiving new log entries in real time
+            async_to_sync(self.channel_layer.group_add)(
+                str(self.container.sodar_uuid), self.channel_name
+            )
+            # Send existing log entries
+            for log_batch in batched(self.container.log_entries.all(), 1024):
+                msg = {
+                    'type': 'container_static_logs',
+                    'text': '\n'.join(str(log_entry) for log_entry in log_batch),
+                }
+                self.send(json.dumps(msg))
+            self.start_state_polling()
+        else:
+            self.stop_logs_watching()
+            self.start_logs_watching(int(text_data))
 
     def container_task_message(self, event):
         # FIXME: make sure that we are done sending all static existing log entries (we could do this either in the client or here)

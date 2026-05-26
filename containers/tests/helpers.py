@@ -35,9 +35,15 @@ from projectroles.models import (
     ROLE_RANKING,
 )
 from projectroles.tests.base import APIViewTestBase
+from projectroles.plugins import PluginAPI
+from timeline.models import TL_STATUS_OK
 
 
 PROJECT_ROLE_OWNER = SODAR_CONSTANTS['PROJECT_ROLE_OWNER']
+APP_NAME = 'containers'
+
+plugin_api = PluginAPI()
+timeline = plugin_api.get_backend_api('timeline_backend')
 
 
 class TestContainerCreationMixin:
@@ -65,6 +71,23 @@ class TestContainerCreationMixin:
     def create_fake_uuid(self):
         """Create a fake UUID."""
         self.fake_uuid = uuid.uuid4()
+
+    def create_container_event(self, container, user=None, event_name='test_event', status_type=TL_STATUS_OK, status_description='status description'):
+        """Create a container event"""
+        tl_event = timeline.add_event(
+            project=container.project,
+            app_name=APP_NAME,
+            user=user,
+            event_name=event_name,
+            description='event description for {container}',
+        )
+        tl_event.add_object(
+            obj=container,
+            label='container',
+            name=container.get_display_name(),
+        )
+        tl_event.set_status(status_type, status_description)
+        return tl_event
 
 
 class TestBase(TestContainerCreationMixin, TestCase):

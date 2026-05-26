@@ -65,7 +65,7 @@ def get_container_events(container: Container) -> QuerySet:
 @register.simple_tag
 def get_container_last_errors(
     container: Container, user: Optional[User] = None, limit: int = 1
-) -> list:
+) -> list[str]:
     """Return the last errors for the project details page"""
     events = get_container_events(container)
     if user and user.is_superuser:
@@ -74,7 +74,9 @@ def get_container_last_errors(
         events = events.filter(Q(user=None) | Q(user=user))
     else:
         events = events.filter(Q(user=None))
-    failures = []
+    # We don't want duplicates, but we want to preserve insertion order,
+    # so we use a dict
+    failures = {}
     for event in events:
         if len(failures) >= limit:
             break
@@ -85,8 +87,8 @@ def get_container_last_errors(
             description = event.status_changes.last().description
             if not description:
                 description = event.description
-            failures.append(description)
-    return failures
+            failures[description] = None
+    return list(failures)
 
 
 @register.filter

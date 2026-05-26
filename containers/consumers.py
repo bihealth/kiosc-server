@@ -1,7 +1,7 @@
 """Django Channel consumers (for forwarding data only)."""
 
 from asgiref.sync import async_to_sync
-from itertools import batched
+import itertools
 import docker
 import json
 import logging
@@ -27,6 +27,17 @@ from containers.statemachines import connect_docker
 
 
 logger = logging.getLogger(__name__)
+
+
+# https://docs.python.org/3.12/library/itertools.html#itertools.batched
+# itertools.batched() is only available in Python 3.12
+def batched(iterable, n):
+    # batched('ABCDEFG', 3) → ABC DEF G
+    if n < 1:
+        raise ValueError('n must be at least one')
+    iterator = iter(iterable)
+    while batch := tuple(itertools.islice(iterator, n)):
+        yield batch
 
 
 class TunnelConsumer(WebsocketConsumer):

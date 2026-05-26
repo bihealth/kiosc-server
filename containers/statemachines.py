@@ -524,9 +524,9 @@ class ContainerMachine(StateMachine):
                     pull_log['id'] = line_id
                     pull_log['status'] = f'{line_id}: {line.get("status")}'
                     if line_progress.get('current') and line_progress.get('total'):
-                        pull_log['status'] += f' [{line_progress.get('current')}/{line_progress.get('total')}]'
+                        pull_log['status'] += f' [{line_progress.get("current")}/{line_progress.get("total")}]'
                     elif line_progress.get('current') and line_progress.get('units'):
-                        pull_log['status'] += f' [{line_progress.get('current')}{line_progress.get('units')}]'
+                        pull_log['status'] += f' [{line_progress.get("current")}{line_progress.get("units")}]'
                     else:
                         # We create log entries only for status lines that don't change
                         self.container.log_entries.create(

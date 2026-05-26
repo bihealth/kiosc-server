@@ -293,7 +293,7 @@
       socket.addEventListener("message", async (event) => {
         data = JSON.parse(event.data);
         if (data.type === "container_rt_logs" || data.type === "container_static_logs" || data.type === "container_channel_logs") {
-          if (logsElement.innerHTML.match("Loading...")) {
+          if (logsElement.innerText == " Loading...") {
             logsElement.innerText = "";
           }
           let scrollHeightBefore = logsElement.scrollHeight;
@@ -302,11 +302,12 @@
             logsElement.append("\n");
           }
           const scrollBuffer = logsElement.getBoundingClientRect()["height"] + 50;
-          if (logsElement.scrollHeight - scrollHeightBefore - logsElement.scrollTop < scrollBuffer) {
+          console.log(scrollHeightBefore, scrollBuffer, logsElement.scrollHeight, logsElement.scrollTop)
+          if (logsElement.scrollHeight - logsElement.scrollTop < scrollBuffer) {
             logsElement.scrollTop = logsElement.scrollHeight;
           }
         } else if (data.type === "container_pull_logs") {
-          if (logsElement.innerHTML.match("Loading...")) {
+          if (logsElement.innerText == " Loading...") {
             logsElement.innerText = "";
           }
           if (data.id) {
@@ -318,7 +319,7 @@
               logsElement.append(data.status + "\n");
             }
           } else {
-            logsElement.append(data.status + "\n");
+            // logsElement.append(data.status + "\n");
           }
         } else if (data.type === "container_state") {
           if (data.state != containerState) {
@@ -356,6 +357,9 @@
         } else {
           console.error("Unsupported websocket event data type.", data);
         }
+      });
+      socket.addEventListener("error", (event) => {
+        console.error(event);
       });
       socket.addEventListener("close", (event) => {
         if (event.code == 4403) {

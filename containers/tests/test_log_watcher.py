@@ -4,13 +4,22 @@ Tests for the websocket providing real-time logs in the container detail view.
 
 from asgiref.sync import sync_to_async
 
+from channels.layers import get_channel_layer
 from django.conf import settings
+from django.db import transaction
 from django.urls import re_path
+from django.test import TransactionTestCase
 from channels.routing import URLRouter
 from channels.testing import WebsocketCommunicator, ChannelsLiveServerTestCase
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
 
+from projectroles.models import (
+    Role,
+    RoleAssignment,
+    SODAR_CONSTANTS,
+    ROLE_RANKING,
+)
 from projectroles.tests.base import (
     SeleniumSetupMixin,
     LiveUserMixin,
@@ -29,8 +38,12 @@ from containers.tests.factories import (
     ContainerBackgroundJobFactory,
 )
 from containers.tests.test_lifecycle import build_testdata_container
-from containers.tests.helpers import TestBase
+from containers.tests.helpers import TestBase, TestContainerCreationMixin
 from containers.consumers import LogWatcherConsumer
+
+
+PROJECT_ROLE_OWNER = SODAR_CONSTANTS['PROJECT_ROLE_OWNER']
+channel_layer = get_channel_layer()
 
 
 class AuthMiddlewareTesting:
@@ -48,11 +61,27 @@ class AuthMiddlewareTesting:
         return await self.app(scope, receive, send)
 
 
-class TestLogWatcherConsumer(TestBase):
+class TestLogWatcherConsumer(TransactionTestCase, TestContainerCreationMixin, LiveUserMixin):
     def setUp(self):
         super().setUp()
-        self.cli = connect_docker()
+
+        # Setup project and users
+        self.project = ProjectFactory()
+        self.superuser = self.make_user(settings.PROJECTROLES_DEFAULT_ADMIN)
+        self.superuser.is_staff = True
+        self.superuser.is_superuser = True
+        self.superuser.save()
+        self.user = self.make_user('alice')
+        self.user.save()
+        self.role_owner = Role.objects.get_or_create(
+            name=PROJECT_ROLE_OWNER, rank=ROLE_RANKING[PROJECT_ROLE_OWNER]
+        )[0]
+        self.role_owner_as = RoleAssignment.objects.create(
+            project=self.project, user=self.user, role=self.role_owner
+        )
+
         # Build the sample container image
+        self.cli = connect_docker()
         build_testdata_container(self.cli, 'sample-app-logging')
 
         self.container = ContainerFactory(
@@ -92,11 +121,21 @@ class TestLogWatcherConsumer(TestBase):
             ),
             self.superuser,
         )
+        print('====================')
+        print(self.container.sodar_uuid)
         ws = WebsocketCommunicator(
             app, 'testws/' + str(self.container.sodar_uuid)
         )
         connected, subprotocol = await ws.connect()
         self.assertTrue(connected)
+        # 1. The server sends container logs from the db
+        response = await ws.receive_from(timeout=10)
+        print(response)
+
+        # 2. The server sends status polls every 2 seconds
+        # 3. The server sends messages from the channel layer
+        # 4. The client asks for a number of log lines, and the server starts sending logs from the docker daemon every second
+
         await ws.send_to(text_data='20')
         # This container logs the numbers from 1 to 100.
         # Here we check the first 20 lines of logs.

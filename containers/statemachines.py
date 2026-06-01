@@ -312,6 +312,9 @@ class ContainerMachine(StateMachine):
     #: State when container failed on action.
     failed = State(STATE_FAILED)
 
+    #: State when container is stopped due to inactivity.
+    timeout = State(STATE_TIMEOUT)
+
     # Transitions
 
     #: Transition when a freshly created container object is started (action: start).
@@ -345,10 +348,10 @@ class ContainerMachine(StateMachine):
     stop_paused = paused.to(exited)
 
     #: Transition when timing out a running container (action: timeout).
-    timeout_running = running.to(exited)
+    timeout_running = running.to(timeout)
 
     #: Transition when timing out a paused container (action: timeout).
-    timeout_paused = paused.to(exited)
+    timeout_paused = paused.to(timeout)
 
     #: Transition when deleting a stopped container (action: delete).
     delete = exited.to(deleting)

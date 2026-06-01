@@ -226,7 +226,7 @@ class ProjectAppPlugin(
             match el['state']:
                 case 'running' | 'restarting' | 'pulling':
                     stats.append(str(el['count']) + ' running')
-                case 'paused' | 'stopped' | 'created' | 'initial':
+                case 'paused' | 'timeout' | 'stopped' | 'created' | 'initial':
                     stats.append(str(el['count']) + ' stopped')
                 case 'failed' | 'exited' | 'dead':
                     stats.append(str(el['count']) + ' failed')

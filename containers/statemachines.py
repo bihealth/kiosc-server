@@ -25,12 +25,12 @@ from containers.models import (
     STATE_PULLING,
     STATE_INITIAL,
     STATE_FAILED,
-    STATE_TIMEOUT,
+    STATE_TERMINATED,
     PROCESS_TASK,
     PROCESS_DOCKER,
     ACTION_START,
     ACTION_STOP,
-    ACTION_TIMEOUT,
+    ACTION_TERMINATE,
     ACTION_RESTART,
     ACTION_PAUSE,
     ACTION_UNPAUSE,
@@ -49,7 +49,7 @@ ACTION_TO_EXPECTED_STATE = {
     ACTION_START: STATE_RUNNING,
     ACTION_RESTART: STATE_RUNNING,
     ACTION_STOP: STATE_EXITED,
-    ACTION_TIMEOUT: STATE_EXITED,
+    ACTION_TERMINATE: STATE_EXITED,
     ACTION_PAUSE: STATE_PAUSED,
     ACTION_UNPAUSE: STATE_RUNNING,
     ACTION_DELETE: STATE_DELETING,
@@ -77,7 +77,7 @@ class ActionSwitch:
         self._switches = {
             ACTION_START: self._start,
             ACTION_STOP: self._stop,
-            ACTION_TIMEOUT: self._timeout,
+            ACTION_TERMINATE: self._terminate,
             ACTION_PAUSE: self._pause,
             ACTION_UNPAUSE: self._unpause,
             ACTION_RESTART: self._restart,
@@ -97,7 +97,7 @@ class ActionSwitch:
             elif state == STATE_CREATED:
                 self.cm.start_created()
 
-            elif state == STATE_EXITED or state == STATE_TIMEOUT:
+            elif state == STATE_EXITED or state == STATE_TERMINATED:
                 self.cm.delete()
                 self.cm.delete_success()
                 self.cm.pull_deleted()
@@ -143,16 +143,16 @@ class ActionSwitch:
         else:
             raise StateMachineError(f'Action stop not allowed in state {state}')
 
-    def _timeout(self, state):
+    def _terminate(self, state):
         if state == STATE_RUNNING:
-            self.cm.timeout_running()
+            self.cm.terminate_running()
 
         elif state == STATE_PAUSED:
-            self.cm.timeout_paused()
+            self.cm.terminate_paused()
 
         else:
             raise StateMachineError(
-                f'Action timeout not allowed in state {state}'
+                f'Action terminate not allowed in state {state}'
             )
 
     def _pause(self, state):
@@ -198,7 +198,7 @@ class ActionSwitch:
             self.cm.pull_deleted()
             self.cm.start_pulled()
 
-        elif state in (STATE_EXITED, STATE_TIMEOUT):
+        elif state in (STATE_EXITED, STATE_TERMINATED):
             self.cm.delete()
             self.cm.delete_success()
             self.cm.pull_deleted()
@@ -230,7 +230,7 @@ class ActionSwitch:
             self.cm.delete()
             self.cm.delete_success()
 
-        elif state == STATE_EXITED or state == STATE_TIMEOUT:
+        elif state == STATE_EXITED or state == STATE_TERMINATED:
             self.cm.delete()
             self.cm.delete_success()
 
@@ -313,7 +313,7 @@ class ContainerMachine(StateMachine):
     failed = State(STATE_FAILED)
 
     #: State when container is stopped due to inactivity.
-    timeout = State(STATE_TIMEOUT)
+    terminated = State(STATE_TERMINATED)
 
     # Transitions
 
@@ -347,11 +347,11 @@ class ContainerMachine(StateMachine):
     #: Transition when stopping a paused container (action: stop).
     stop_paused = paused.to(exited)
 
-    #: Transition when timing out a running container (action: timeout).
-    timeout_running = running.to(timeout)
+    #: Transition when timing out a running container (action: terminate).
+    terminate_running = running.to(terminated)
 
-    #: Transition when timing out a paused container (action: timeout).
-    timeout_paused = paused.to(timeout)
+    #: Transition when timing out a paused container (action: terminate).
+    terminate_paused = paused.to(terminated)
 
     #: Transition when deleting a stopped container (action: delete).
     delete = exited.to(deleting)
@@ -744,18 +744,18 @@ class ContainerMachine(StateMachine):
     def on_stop_paused(self):
         self.on_stop_running()
 
-    def on_timeout_running(self):
+    def on_terminate_running(self):
         self.job.add_log_entry('Timing out container')
 
         # Timing out container and updating status
         self.cli.stop(self.container.container_id)
-        self.container.state = STATE_TIMEOUT
+        self.container.state = STATE_TERMINATED
         self.container.save()
 
         self.job.add_log_entry('Timing out container succeeded')
 
-    def on_timeout_paused(self):
-        self.on_timeout_running()
+    def on_terminate_paused(self):
+        self.on_terminate_running()
 
     def on_delete(self):
         self.job.add_log_entry('Deleting container')

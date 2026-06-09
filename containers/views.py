@@ -763,7 +763,7 @@ class ReverseProxyView(
 
         _redirect = redirect(request.headers['Referer'])
 
-        if not container.state in (STATE_RUNNING, STATE_PULLING):
+        if container.state not in (STATE_RUNNING, STATE_PULLING):
             if tl_event:
                 tl_event.set_status(TL_STATUS_FAILED, 'Tried to access the app while the container was not running')
             messages.error(

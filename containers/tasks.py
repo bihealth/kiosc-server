@@ -32,7 +32,7 @@ from containers.models import (
     STATE_INITIAL,
     STATE_PULLING,
     STATE_FAILED,
-    STATE_TIMEOUT,
+    STATE_TERMINATED,
     LOG_LEVEL_WARNING,
     ContainerActionLock,
 )
@@ -68,9 +68,9 @@ def sync_container_state(container, timeline=None):
         data = cli.inspect_container(container.container_id)
         actual_state = data.get('State', {}).get('Status')
         if (
-            container.state == STATE_TIMEOUT
+            container.state == STATE_TERMINATED
             and actual_state != STATE_EXITED
-            or container.state != STATE_TIMEOUT
+            or container.state != STATE_TERMINATED
             and actual_state != container.state
         ):
             logger.warning(

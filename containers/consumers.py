@@ -20,7 +20,7 @@ from .models import Container
 from containers.models import (
     STATE_INITIAL,
     STATE_PULLING,
-    STATE_TIMEOUT,
+    STATE_TERMINATED,
     STATE_FAILED,
 )
 from containers.statemachines import connect_docker
@@ -147,20 +147,11 @@ class LogWatcherConsumer(WebsocketConsumer):
                 timestamps=True,
             )
         except docker.errors.NullResource as ex:
-            if self.container.state not in (STATE_INITIAL, STATE_FAILED):
-                msg = {
-                    'type': 'container_rt_logs',
-                    'text': f'Cannot fetch logs: {ex}\n',
-                }
-                self.send(json.dumps(msg))
-                return
-            else:
-                msg = {
-                    'type': 'container_rt_logs',
-                    'text': 'The container is not running, try to start it.\n',
-                }
-                self.send(json.dumps(msg))
-                return
+            if self.container.state not in (STATE_INITIAL, STATE_PULLING, STATE_FAILED):
+                # This is likely a bug
+                logger.error('Cannot fetch logs: %s', ex)
+            # The container is not running
+            return
         except docker.errors.APIError as ex:
             msg = {
                 'type': 'container_rt_logs',
@@ -237,10 +228,10 @@ class LogWatcherConsumer(WebsocketConsumer):
                     'text': 'The container is being pulled, please be patient.',
                 }
                 self.send(json.dumps(msg))
-            elif self.container.state == STATE_TIMEOUT:
+            elif self.container.state == STATE_TERMINATED:
                 msg = {
                     'type': 'container_state',
-                    'state': STATE_TIMEOUT,
+                    'state': STATE_TERMINATED,
                     'text': 'The container was stopped due to inactivity, please start it again.',
                 }
                 self.send(json.dumps(msg))

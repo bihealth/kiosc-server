@@ -274,7 +274,6 @@
 
   <script>
     var logWatcherSocket = createWebSocket();
-    var containerState = null;
     const logsElement = document.querySelector("#id_logs");
     const stateElement = document.querySelector("#id_container_state");
     const stateDetailElement = document.querySelector("#id_state");
@@ -291,7 +290,7 @@
       );
       socket.addEventListener("open", (event) => {
         setCookie("log_lines", logLinesInput.value);
-        socket.send('HELO');
+        socket.send(logLinesInput.value);
       });
       socket.addEventListener("message", async (event) => {
         data = JSON.parse(event.data);
@@ -325,13 +324,9 @@
             // logsElement.append(data.status + "\n");
           }
         } else if (data.type === "container_state") {
-          if (data.state != containerState) {
-            containerState = data.state;
-            socket.send(logLinesInput.value);
-            stateDetailElement.innerText = data.state;
-            // TODO: dynamically update the controls buttons and colorize the state in the details.
-          }
-          if (containerState == 'running') {
+          stateDetailElement.innerText = data.state;
+          // TODO: dynamically update the controls buttons and colorize the state in the details.
+          if (data.state == 'running') {
             // Do a pre-flight check of the app inside the container
             // Our server returns status 299 when the app is not running, but it redirects the client to the proxy lobby
             try {

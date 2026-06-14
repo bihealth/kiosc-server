@@ -11,6 +11,8 @@ General
 -------
 
 - Updated GitHub Actions (#119)
+- Disabled CELERY_ALWAYS_EAGER in local settings (#119)
+  - After this, tasks will run asynchronously during development, like in the production configuration, allowing us to find more bugs before it's too late
 
 - Add LogWatcher websocket which monitors logs in real time (#119)
 - Container log entries are deleted when the container is restarted (but not when it's stopped and started again)

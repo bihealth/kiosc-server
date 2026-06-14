@@ -106,10 +106,14 @@ class LogWatcherConsumer(WebsocketConsumer):
 
         const socket = new WebSocket("https://kiosc.org/log-watcher");
 
-    1b. We verify user authorization and accept the connection. We immediately
-        send any existing ContainerLogEntries to the client. We also start
-        receiving and forwarding additional log entries in real time through
-        a Channel Layer.
+    1b. We verify user authorization and accept the connection.
+
+    2a. The client reacts to the "open" event and sends its configuration:
+        currently just the number of log lines it wants.
+
+    2b. We store the config We immediately send any existing ContainerLogEntries
+        to the client. We also start receiving and forwarding additional log
+        entries in real time through a Channel Layer.
     2.  We periodically send messages regarding the state of the container
     3a. The client sends a message with the amount of log lines they want:
 
@@ -212,34 +216,38 @@ class LogWatcherConsumer(WebsocketConsumer):
 
     def _poll_state(self, interval_seconds=2):
         cli = connect_docker(timeout=5)
+        container_state = None
         while True:
             self.container.refresh_from_db()
-            if self.container.state == STATE_INITIAL:
+            if self.container.state != container_state:
+                container_state = self.container.state
+                self.start_logs_watching(self.config['logs_tail'])
+            if container_state == STATE_INITIAL:
                 msg = {
                     'type': 'container_state',
                     'state': STATE_INITIAL,
                     'text': 'The container is not running yet, please start it.',
                 }
                 self.send(json.dumps(msg))
-            elif self.container.state == STATE_PULLING:
+            elif container_state == STATE_PULLING:
                 msg = {
                     'type': 'container_state',
                     'state': STATE_PULLING,
                     'text': 'The container is being pulled, please be patient.',
                 }
                 self.send(json.dumps(msg))
-            elif self.container.state == STATE_TERMINATED:
+            elif container_state == STATE_TERMINATED:
                 msg = {
                     'type': 'container_state',
                     'state': STATE_TERMINATED,
-                    'text': 'The container was stopped due to inactivity, please start it again.',
+                    'text': 'The container was terminated due to inactivity, please start it again.',
                 }
                 self.send(json.dumps(msg))
             elif not self.container.container_id:
                 msg = {
                     'type': 'container_state',
                     'state': 'NOT_EXISTING',
-                    'text': 'Something went wrong, please restart the container.',
+                    'text': 'Something went wrong, please reset the container.',
                 }
                 self.send(json.dumps(msg))
             else:
@@ -264,7 +272,7 @@ class LogWatcherConsumer(WebsocketConsumer):
                     msg = {
                         'type': 'container_state',
                         'state': 'DOCKER_API_ERROR',
-                        'text': 'Something went wrong, please restart the container.',
+                        'text': 'Something went wrong, please reset the container.',
                     }
                     self.send(json.dumps(msg))
             if self.state_signal.wait(interval_seconds):
@@ -330,6 +338,7 @@ class LogWatcherConsumer(WebsocketConsumer):
         self.logs_task = None
         self.state_signal = threading.Event()
         self.state_task = None
+        self.config = {}
         self.accept()
         if not user.has_perm(
             'containers.view_container', self.container.project
@@ -362,31 +371,37 @@ class LogWatcherConsumer(WebsocketConsumer):
         watching logs or changing the number of log lines. Thus, we can assume
         that text_data contains the number of log lines.
         """
-        print('===========')
-        print(text_data)
-        if text_data == 'HELO':
-            # Start receiving new log entries in real time
-            async_to_sync(self.channel_layer.group_add)(
-                str(self.container.sodar_uuid), self.channel_name
-            )
-            # Send existing log entries
-            for log_batch in batched(self.container.log_entries.all(), 1024):
-                msg = {
-                    'type': 'container_static_logs',
-                    'text': '\n'.join(str(log_entry) for log_entry in log_batch),
-                }
-                self.send(json.dumps(msg))
-            self.start_state_polling()
-        else:
-            self.stop_logs_watching()
-            self.start_logs_watching(int(text_data))
+        assert isnumeric(text_data)
+        self.stop_logs_watching()
+        self.stop_state_polling()
+        self.config['logs_tail'] = int(text_data)
+        # Start receiving new log entries in real time
+        async_to_sync(self.channel_layer.group_add)(
+            str(self.container.sodar_uuid), self.channel_name
+        )
+        # Send existing log entries, batched for efficiency
+        for log_batch in batched(self.container.log_entries.all(), 1024):
+            msg = {
+                'type': 'container_static_logs',
+                'text': '\n'.join(str(log_entry) for log_entry in log_batch),
+            }
+            self.send(json.dumps(msg))
+        self.start_state_polling()
 
     def container_task_message(self, event):
+        """Send a real-time message from the statemachine task.
+
+        This function is called by the Django channels layer.
+        """
         # FIXME: make sure that we are done sending all static existing log entries (we could do this either in the client or here)
         msg = {'type': 'container_channel_logs', 'text': event['text']}
         self.send(json.dumps(msg))
 
     def container_pull_message(self, event):
+        """Send a real-time message from the statemachine pulling task.
+
+        This function is called by the Django channels layer.
+        """
         # FIXME: make sure that we are done sending all static existing log entries (we could do this either in the client or here)
         msg = {'type': 'container_pull_logs', 'status': event['status'], 'id': event.get('id')}
         self.send(json.dumps(msg))

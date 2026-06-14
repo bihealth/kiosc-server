@@ -133,15 +133,6 @@
     <!-- Standard Javascript includes -->
     {# Include additional Javascript here #}
     {% block javascript %}
-      <!-- Settings -->
-      <script type="text/javascript">
-        {% get_django_setting name='PROJECTROLES_BROWSER_WARNING' js=True as browser_warning %}
-        window.sodarBrowserWarning = {{ browser_warning }};
-      </script>
-
-      <!-- General project Javascript -->
-      <script type="text/javascript" src="{% static 'js/project.js' %}"></script>
-
       <script type="text/javascript">
         function checkIfContainerIsRunning() {
             $.ajax({

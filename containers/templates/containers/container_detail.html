@@ -268,6 +268,10 @@
 
 {% block javascript %}
   {{ block.super }}
+
+  <!-- General project Javascript -->
+  <script type="text/javascript" src="{% static 'js/project.js' %}"></script>
+
   <script>
     var logWatcherSocket = createWebSocket();
     var containerState = null;
@@ -275,7 +279,6 @@
     const stateElement = document.querySelector("#id_container_state");
     const stateDetailElement = document.querySelector("#id_state");
     const logLinesInput = document.querySelector("#id_log_lines");
-    const firstUpdate = true;  // Used to scroll when the page is refreshed
     const logLinesCookie = getCookie("log_lines");
     if (logLinesCookie !== null) {
       logLinesInput.value = logLinesCookie;
@@ -301,10 +304,9 @@
           if (data.type === "container_static_logs" || data.type == "container_channel_logs") {
             logsElement.append("\n");
           }
-          const scrollBuffer = logsElement.getBoundingClientRect()["height"] + 50;
-          console.log(scrollHeightBefore, scrollBuffer, logsElement.scrollHeight, logsElement.scrollTop)
-          if (logsElement.scrollHeight - logsElement.scrollTop < scrollBuffer) {
-            logsElement.scrollTop = logsElement.scrollHeight;
+          const boundingHeight = logsElement.getBoundingClientRect()["height"];
+          if (scrollHeightBefore <= boundingHeight + logsElement.scrollTop + 20) {
+            logsElement.scrollTop = logsElement.scrollTopMax;
           }
         } else if (data.type === "container_pull_logs") {
           if (logsElement.innerText == " Loading...") {
@@ -319,6 +321,7 @@
               logsElement.append(data.status + "\n");
             }
           } else {
+            console.log(data)
             // logsElement.append(data.status + "\n");
           }
         } else if (data.type === "container_state") {

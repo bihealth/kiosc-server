@@ -7,6 +7,12 @@ Loosely follows the `Keep a Changelog <http://keepachangelog.com/en/1.0.0/>`_ gu
 Real time logs
 ==============
 
+General
+-------
+
+- Updated GitHub Actions (#119)
+
+- Add LogWatcher websocket which monitors logs in real time (#119)
 - Container log entries are deleted when the container is restarted (but not when it's stopped and started again)
 - Container log entries are not saved to the db anymore, but they are still visible in the container detail page (they come from the docker daemon)
 - Added TIMEOUT container state, more specific than "exited"

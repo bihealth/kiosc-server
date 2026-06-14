@@ -25,7 +25,6 @@ from containers.models import (
     STATE_RUNNING,
     STATE_PAUSED,
     STATE_EXITED,
-    STATE_STOPPED,
     STATE_DEAD,
     STATE_DELETING,
     STATE_DELETED,
@@ -238,9 +237,9 @@ class ProjectAppPlugin(
         for el in container_states:
             if el['state'] in (STATE_RUNNING, STATE_RESTARTING, STATE_PULLING):
                 stats.append(str(el['count']) + ' running')
-            elif el['state'] in (STATE_PAUSED, STATE_TERMINATED, STATE_STOPPED, STATE_CREATED, STATE_INITIAL):
+            elif el['state'] in (STATE_PAUSED, STATE_TERMINATED, STATE_EXITED, STATE_CREATED, STATE_INITIAL):
                 stats.append(str(el['count']) + ' stopped')
-            elif el['state'] in (STATE_FAILED, STATE_EXITED, STATE_DEAD):
+            elif el['state'] in (STATE_FAILED, STATE_DEAD):
                 stats.append(str(el['count']) + ' failed')
             elif el['state'] in (STATE_DELETED, STATE_DELETING):
                 pass

@@ -2,7 +2,7 @@ import inspect
 import logging
 from ipaddress import ip_address
 from typing import AsyncGenerator, Optional
-from urllib3.exceptions import NewConnectionError
+from urllib3.exceptions import NewConnectionError, MaxRetryError
 from urllib3.response import is_fp_closed
 from wsgiref.util import FileWrapper
 
@@ -19,7 +19,8 @@ from django.contrib import messages
 from django.contrib.auth import get_user_model
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.db import transaction
-from django.shortcuts import redirect
+from django.shortcuts import redirect, render
+from django.utils import timezone
 from django.urls import reverse
 from django.views import View
 from django.views.generic import (
@@ -39,7 +40,8 @@ from revproxy.utils import (
 from revproxy.views import ProxyView
 
 from config.settings.base import KIOSC_CONTAINER_DEFAULT_LOG_LINES
-from bgjobs.models import BackgroundJob, LOG_LEVEL_DEBUG
+from bgjobs.models import BackgroundJob
+from timeline.models import TL_STATUS_FAILED, TL_STATUS_OK
 from containers.templatetags.container_tags import colorize_state, state_bell
 from filesfolders.models import File, FileData
 from filesfolders.views import storage
@@ -61,13 +63,13 @@ from containers.models import (
     ACTION_RESTART,
     ACTION_DELETE,
     PROCESS_OBJECT,
-    PROCESS_ACTION,
-    PROCESS_PROXY,
     STATE_PAUSED,
+    STATE_PULLING,
     STATE_RUNNING,
     STATE_DELETED,
     STATE_INITIAL,
     LOG_LEVEL_ERROR,
+    LOG_LEVEL_INFO,
     MASKED_KEYWORD,
 )
 from containers.tasks import container_task, sync_container_state
@@ -80,6 +82,13 @@ User = get_user_model()
 
 APP_NAME = 'containers'
 CELERY_SUBMIT_COUNTDOWN = 0.5
+LOBBY_WAITING_PHRASES = [
+    'The container is loading...',
+    'Updating Windows, please don\'t turn off your computer...',
+    'Just one more second...',
+    'This could take a while, go get a coffee...',
+    'You can close this page and come back later...',
+]
 
 
 async def _stream_response(
@@ -145,13 +154,18 @@ class ContainerModifyMixin:
             container=container,
             bg_job=bg_job,
         )
-
-        # Add container log entry
-        container.log_entries.create(
-            text='Delete',
-            process=PROCESS_ACTION,
-            user=user,
-        )
+        job.add_log_entry('Deleting container...', level=LOG_LEVEL_INFO)
+        if timeline:
+            tl_event = timeline.add_event(
+                project=project,
+                app_name=APP_NAME,
+                user=user,
+                event_name='delete_container',
+                description=f'Delete container "{container.get_display_name()}"',
+                status_type=timeline.TL_STATUS_SUBMIT,
+            )
+        else:
+            tl_event = None
 
         # No async task
         container_task(job_id=job.id)
@@ -159,30 +173,19 @@ class ContainerModifyMixin:
 
         if container.state not in (STATE_INITIAL, STATE_DELETED):
             # Add timeline event
-            if timeline:
-                timeline.add_event(
-                    project=project,
-                    app_name=APP_NAME,
-                    user=user,
-                    event_name='delete_container',
-                    description=f'deleting of {container.get_display_name()} failed',
-                    status_type=timeline.TL_STATUS_FAILED,
-                )
             logger.error(
                 f'Failed deleting container {container.get_display_name()}',
             )
+            job.add_log_entry(
+                f'Failed deleting container {container.get_display_name()}',
+                level=LOG_LEVEL_ERROR,
+            )
+            if tl_event:
+                tl_event.set_status(TL_STATUS_FAILED)
             return False
 
-        # Add timeline event
-        if timeline:
-            timeline.add_event(
-                project=project,
-                app_name=APP_NAME,
-                user=user,
-                event_name='delete_container',
-                description=f'deleted {container.get_display_name()}',
-                status_type=timeline.TL_STATUS_OK,
-            )
+        if tl_event:
+            tl_event.set_status(TL_STATUS_OK)
         return True
 
 
@@ -227,7 +230,7 @@ class ContainerCreateView(
                 app_name=APP_NAME,
                 user=self.request.user,
                 event_name='create_container',
-                description='created {container}',
+                description=f'Create container "{self.object.get_display_name()}"',
                 status_type=timeline.TL_STATUS_OK,
             )
             tl_event.add_object(
@@ -336,17 +339,41 @@ class ContainerUpdateView(
         return context
 
     def get_success_url(self):
-        if self.object.state not in (STATE_RUNNING, STATE_PAUSED):
-            return super().get_success_url()
+        # if self.object.state not in (STATE_RUNNING, STATE_PAUSED):
+        #     return super().get_success_url()
+
+        container = self.get_object()
+
+        bg_job = BackgroundJob.objects.create(
+            name='Delete container',
+            project=container.project,
+            job_type=ContainerBackgroundJob.spec_name,
+            user=self.request.user,
+        )
+        job = ContainerBackgroundJob.objects.create(
+            action=ACTION_DELETE,
+            project=container.project,
+            container=container,
+            bg_job=bg_job,
+        )
+
+        # Schedule task synchronously
+        logger.info(f'The container object was updated, so we schedule a job to delete the Docker container. The container id is {container.container_id}')
+        container_task(job_id=job.id)
+        container.refresh_from_db()
+        logger.info('Container deleted after update')
+        print(container.state)
 
         messages.success(
             self.request,
-            'Container updated and restarted.',
+            'Container updated. Please restart it in order for the changes to take effect.',
         )
-        return reverse(
-            'containers:restart',
-            kwargs={'container': self.object.sodar_uuid},
-        )
+
+        return super().get_success_url()
+        # return reverse(
+        #     'containers:detail',
+        #     kwargs={'container': self.object.sodar_uuid},
+        # )
 
     def form_valid(self, form):
         response = super().form_valid(form)
@@ -358,7 +385,7 @@ class ContainerUpdateView(
                 app_name=APP_NAME,
                 user=self.request.user,
                 event_name='update_container',
-                description='updated {container}',
+                description='Update {container}',
                 status_type=timeline.TL_STATUS_OK,
             )
             tl_event.add_object(
@@ -366,13 +393,6 @@ class ContainerUpdateView(
                 label='container',
                 name=self.object.get_display_name(),
             )
-
-        # Add container log entry
-        self.object.log_entries.create(
-            text='Updated',
-            process=PROCESS_OBJECT,
-            user=self.request.user,
-        )
 
         return response
 
@@ -445,24 +465,14 @@ class ContainerStartView(
             bg_job=bg_job,
         )
 
-        # Add container log entry
-        container.log_entries.create(
-            text='Start',
-            process=PROCESS_ACTION,
-            user=request.user,
-        )
-
         # Schedule task
+        container.date_last_access = timezone.now()
+        container.save()
         container_task.apply_async(
             kwargs={'job_id': job.id}, countdown=CELERY_SUBMIT_COUNTDOWN
         )
 
-        return redirect(
-            reverse(
-                'containers:detail',
-                kwargs={'container': container.sodar_uuid},
-            )
-        )
+        return redirect(request.headers['Referer'])
 
 
 class ContainerStopView(
@@ -497,24 +507,12 @@ class ContainerStopView(
             bg_job=bg_job,
         )
 
-        # Add container log entry
-        container.log_entries.create(
-            text='Stop',
-            process=PROCESS_ACTION,
-            user=request.user,
-        )
-
         # Schedule task
         container_task.apply_async(
             kwargs={'job_id': job.id}, countdown=CELERY_SUBMIT_COUNTDOWN
         )
 
-        return redirect(
-            reverse(
-                'containers:detail',
-                kwargs={'container': container.sodar_uuid},
-            )
-        )
+        return redirect(request.headers['Referer'])
 
 
 class ContainerPauseView(
@@ -549,24 +547,12 @@ class ContainerPauseView(
             bg_job=bg_job,
         )
 
-        # Add container log entry
-        container.log_entries.create(
-            text='Pause',
-            process=PROCESS_ACTION,
-            user=request.user,
-        )
-
         # Schedule task
         container_task.apply_async(
             kwargs={'job_id': job.id}, countdown=CELERY_SUBMIT_COUNTDOWN
         )
 
-        return redirect(
-            reverse(
-                'containers:detail',
-                kwargs={'container': container.sodar_uuid},
-            )
-        )
+        return redirect(request.headers['Referer'])
 
 
 class ContainerUnpauseView(
@@ -601,24 +587,12 @@ class ContainerUnpauseView(
             bg_job=bg_job,
         )
 
-        # Add container log entry
-        container.log_entries.create(
-            text='Unpause',
-            process=PROCESS_ACTION,
-            user=request.user,
-        )
-
         # Schedule task
         container_task.apply_async(
             kwargs={'job_id': job.id}, countdown=CELERY_SUBMIT_COUNTDOWN
         )
 
-        return redirect(
-            reverse(
-                'containers:detail',
-                kwargs={'container': container.sodar_uuid},
-            )
-        )
+        return redirect(request.headers['Referer'])
 
 
 class ContainerRestartView(
@@ -653,87 +627,12 @@ class ContainerRestartView(
             bg_job=bg_job,
         )
 
-        # Add container log entry
-        container.log_entries.create(
-            text='Restart',
-            process=PROCESS_ACTION,
-            user=request.user,
-        )
-
         # Schedule task
         container_task.apply_async(
             kwargs={'job_id': job.id}, countdown=CELERY_SUBMIT_COUNTDOWN
         )
 
-        return redirect(
-            reverse(
-                'containers:detail',
-                kwargs={'container': container.sodar_uuid},
-            )
-        )
-
-
-class ContainerProxyLobbyView(
-    LoginRequiredMixin,
-    LoggedInPermissionMixin,
-    ProjectPermissionMixin,
-    ProjectContextMixin,
-    DetailView,
-):
-    """View for proxy lobby."""
-
-    permission_required = 'containers.proxy'
-    model = Container
-    slug_url_kwarg = 'container'
-    slug_field = 'sodar_uuid'
-    template_name = 'containers/container_proxylobby.html'
-
-    @transaction.atomic
-    def get(self, request, *args, **kwargs):
-        project = self.get_project()
-        container = self.get_object()
-
-        if container.state == STATE_RUNNING:
-            return redirect(
-                reverse(
-                    'containers:proxy',
-                    kwargs={
-                        'container': container.sodar_uuid,
-                        'path': container.container_path,
-                    },
-                )
-            )
-
-        elif container.state == STATE_PAUSED:
-            action = ACTION_UNPAUSE
-
-        else:
-            action = ACTION_START
-
-        bg_job = BackgroundJob.objects.create(
-            name='Proxy lobby',
-            project=project,
-            job_type=ContainerBackgroundJob.spec_name,
-            user=request.user,
-        )
-
-        job = ContainerBackgroundJob.objects.create(
-            action=action,
-            project=project,
-            container=container,
-            bg_job=bg_job,
-        )
-
-        # Add container log entry
-        container.log_entries.create(
-            text='Proxy lobby',
-            process=PROCESS_ACTION,
-            user=request.user,
-        )
-
-        container_task.apply_async(kwargs={'job_id': job.id}, countdown=0.5)
-
-        return super().get(request, *args, **kwargs)
+        return redirect(request.headers['Referer'])
 
 
 class KioscProxyView(ProxyView):
@@ -755,7 +654,13 @@ class KioscProxyView(ProxyView):
         if redirect_to:
             return redirect(redirect_to)
 
-        proxy_response = self._created_proxy_response(request, path)
+        try:
+            proxy_response = self._created_proxy_response(request, path)
+        except MaxRetryError as ex:
+            logger.warning(
+                'Container not yet available for the reverse proxy: %s', str(ex)
+            )
+            raise MaxRetryError(ex.pool, ex.url)
 
         self._replace_host_on_redirect_location(request, proxy_response)
         self._set_content_type(request, proxy_response)
@@ -832,14 +737,35 @@ class ReverseProxyView(
         container = self.get_object()
         kwargs.pop('container')
 
-        _redirect = redirect(
-            reverse(
-                'containers:list',
-                kwargs={'project': container.project.sodar_uuid},
-            )
-        )
+        # Kiosc will pass this header when doing automated checks; we don't need
+        # to track these accesses in the timeline.
+        if not request.headers.get('Kiosc-Preflight'):
+            timeline = plugin_api.get_backend_api('timeline_backend')
+        else:
+            timeline = None
 
-        if not container.state == STATE_RUNNING:
+        if timeline:
+            tl_event = timeline.add_event(
+                project=container.project,
+                app_name=APP_NAME,
+                user=request.user,
+                event_name='access_container',
+                description='Access app {container}',
+                status_type=timeline.TL_STATUS_INIT,
+            )
+            tl_event.add_object(
+                obj=container,
+                label='container',
+                name=container.get_display_name(),
+            )
+        else:
+            tl_event = None
+
+        _redirect = redirect(request.headers['Referer'])
+
+        if container.state not in (STATE_RUNNING, STATE_PULLING):
+            if tl_event:
+                tl_event.set_status(TL_STATUS_FAILED, 'Tried to access the app while the container was not running')
             messages.error(
                 request, f"Container '{container.title}' not running."
             )
@@ -850,6 +776,8 @@ class ReverseProxyView(
                 upstream = f'http://localhost:{container.host_port}'
 
             else:
+                if tl_event:
+                    tl_event.set_status(TL_STATUS_FAILED, 'The host port is not set, please update the container.')
                 messages.error(request, 'Host port not set.')
                 return _redirect
 
@@ -859,29 +787,29 @@ class ReverseProxyView(
         self.upstream = upstream
         self.suppress_empty_body = True
 
-        # Add container log entry
-        container.log_entries.create(
-            text=f'Accessing {upstream}',
-            process=PROCESS_PROXY,
-            user=request.user,
-        )
-
         try:
-            return super().dispatch(request, *args, **kwargs)
+            res = super().dispatch(request, *args, **kwargs)
+            container.date_last_access = timezone.now()
+            container.save()
+            if tl_event:
+                tl_event.set_status(TL_STATUS_OK)
+            return res
 
+        except MaxRetryError:
+            if tl_event:
+                tl_event.set_status(TL_STATUS_FAILED, 'The app is not ready to take connections, please wait a moment.')
+            # The upstream app in the container is not ready yet
+            # XXX: Maybe we should use a custom header instead of custom return code
+            return render(
+                request,
+                'containers/container_proxylobby.html',
+                {'object': container, 'waiting_phrases': LOBBY_WAITING_PHRASES},
+                status=299,
+            )
         except NewConnectionError as e:
-            container.log_entries.create(
-                text=str(e),
-                process=PROCESS_PROXY,
-                user=request.user,
-                level=LOG_LEVEL_DEBUG,
-            )
-            container.log_entries.create(
-                text=f'Access {upstream} failed',
-                process=PROCESS_PROXY,
-                user=request.user,
-                level=LOG_LEVEL_ERROR,
-            )
+            logger.error(f'Connection error in proxy: {e}')
+            if tl_event:
+                tl_event.set_status(TL_STATUS_FAILED, f'Error connecting to the app: {e}')
             messages.error(
                 request,
                 f"Web-interface of container '{container.title}' not reachable.",

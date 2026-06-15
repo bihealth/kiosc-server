@@ -20,7 +20,6 @@ from containers.models import (
     ACTION_START,
     ACTION_STOP,
     PROCESS_OBJECT,
-    PROCESS_ACTION,
     STATE_INITIAL,
     STATE_DELETED,
     ACTION_DELETE,
@@ -91,6 +90,7 @@ class ContainerCreateAPIView(
     permission_required = 'containers.create_container'
 
     def create(self, request, *args, **kwargs):
+        timeline = plugin_api.get_backend_api('timeline_backend')
         try:
             response = super().create(request, *args, **kwargs)
             # Add container log entry
@@ -102,6 +102,22 @@ class ContainerCreateAPIView(
                 process=PROCESS_OBJECT,
                 user=self.request.user,
             )
+            # Add timeline event
+            if timeline:
+                tl_event = timeline.add_event(
+                    project=self.get_project(),
+                    app_name=APP_NAME,
+                    user=self.request.user,
+                    event_name='create_container',
+                    description=f'Create container "{container.get_display_name()}"',
+                    status_type=timeline.TL_STATUS_OK,
+                )
+                tl_event.add_object(
+                    obj=self.object,
+                    label='container',
+                    name=self.object.get_display_name(),
+                )
+
             return response
 
         except IntegrityError as e:
@@ -140,13 +156,6 @@ class ContainerDeleteAPIView(
             bg_job=bg_job,
         )
 
-        # Add container log entry
-        container.log_entries.create(
-            text='Delete [API]',
-            process=PROCESS_ACTION,
-            user=request.user,
-        )
-
         # No async task
         container_task(job_id=job.id)
         container.refresh_from_db()
@@ -159,8 +168,9 @@ class ContainerDeleteAPIView(
                     app_name=APP_NAME,
                     user=request.user,
                     event_name='delete_container',
-                    description=f'deleting of {container.get_display_name()} failed',
+                    description='Delete container "{container.get_display_name()}"',
                     status_type=timeline.TL_STATUS_FAILED,
+                    status_desc=f'deleting of {container.get_display_name()} failed',
                 )
 
             return JsonResponse(
@@ -177,7 +187,7 @@ class ContainerDeleteAPIView(
                 app_name=APP_NAME,
                 user=request.user,
                 event_name='delete_container',
-                description=f'deleted {container.get_display_name()}',
+                description='Delete container "{container.get_display_name()}"',
                 status_type=timeline.TL_STATUS_OK,
             )
 
@@ -210,13 +220,6 @@ class ContainerStartAPIView(
             project=project,
             container=container,
             bg_job=bg_job,
-        )
-
-        # Add container log entry
-        container.log_entries.create(
-            text='Start [API]',
-            process=PROCESS_ACTION,
-            user=request.user,
         )
 
         # Schedule task
@@ -256,13 +259,6 @@ class ContainerStopAPIView(
             project=project,
             container=container,
             bg_job=bg_job,
-        )
-
-        # Add container log entry
-        container.log_entries.create(
-            text='Stop [API]',
-            process=PROCESS_ACTION,
-            user=request.user,
         )
 
         # Schedule task

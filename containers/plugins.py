@@ -21,6 +21,18 @@ from containers.models import (
     Container,
     ContainerBackgroundJob,
     ContainerLogEntry,
+    STATE_CREATED,
+    STATE_RUNNING,
+    STATE_PAUSED,
+    STATE_EXITED,
+    STATE_DEAD,
+    STATE_DELETING,
+    STATE_DELETED,
+    STATE_PULLING,
+    STATE_INITIAL,
+    STATE_RESTARTING,
+    STATE_FAILED,
+    STATE_TERMINATED,
 )
 from containers.urls import urlpatterns
 from containers.views import ContainerModifyMixin
@@ -223,15 +235,16 @@ class ProjectAppPlugin(
 
         stats = []
         for el in container_states:
-            match el['state']:
-                case 'running' | 'restarting' | 'pulling':
-                    stats.append(str(el['count']) + ' running')
-                case 'paused' | 'stopped' | 'created' | 'initial':
-                    stats.append(str(el['count']) + ' stopped')
-                case 'failed' | 'exited' | 'dead':
-                    stats.append(str(el['count']) + ' failed')
-                case 'deleted' | 'deleting':
-                    pass
+            if el['state'] in (STATE_RUNNING, STATE_RESTARTING, STATE_PULLING):
+                stats.append(str(el['count']) + ' running')
+            elif el['state'] in (STATE_PAUSED, STATE_TERMINATED, STATE_EXITED, STATE_CREATED, STATE_INITIAL):
+                stats.append(str(el['count']) + ' stopped')
+            elif el['state'] in (STATE_FAILED, STATE_DEAD):
+                stats.append(str(el['count']) + ' failed')
+            elif el['state'] in (STATE_DELETED, STATE_DELETING):
+                pass
+            else:
+                stats.append(str(el['count']) + ' unknown')
 
         return ',</br>'.join(stats)
 

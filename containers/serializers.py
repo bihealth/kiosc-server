@@ -12,7 +12,7 @@ class ContainerSerializer(SODARProjectModelSerializer):
             'date_created',
             'date_modified',
             'project',
-            'date_last_status_update',
+            'date_last_access',
             'repository',
             'registry_user',
             'registry_password',

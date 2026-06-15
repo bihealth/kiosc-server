@@ -160,6 +160,7 @@ MANAGERS = ADMINS
 # See: https://django-environ.readthedocs.io/en/latest/#supported-types
 DATABASES = {'default': env.db('DATABASE_URL', default='postgres:///kiosc')}
 DATABASES['default']['ATOMIC_REQUESTS'] = False
+DATABASES['default']['TEST'] = {'NAME': 'test_kiosc'}
 
 DEFAULT_AUTO_FIELD = 'django.db.models.AutoField'
 
@@ -320,6 +321,20 @@ CELERYD_TASK_SOFT_TIME_LIMIT = 60
 CELERY_TASK_ALWAYS_EAGER = False
 # http://docs.celeryproject.org/en/latest/userguide/configuration.html#task-eager-propagates
 CELERY_TASK_EAGER_PROPAGATES = False
+
+# Django Channels Configuration
+# ------------------------------------------------------------------------------
+
+CHANNEL_LAYERS = {
+    'default': {
+        'BACKEND': 'channels_redis.core.RedisChannelLayer',
+        'CONFIG': {
+            'hosts': [(env('REDIS_URL', default='127.0.0.1'), 6379)],
+            'capacity': 10_000,  # Default 100
+            'expiry': 10,  # Default 60
+        },
+    },
+}
 
 
 # API Settings

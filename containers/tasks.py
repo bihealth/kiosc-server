@@ -1,11 +1,9 @@
 import logging
-import traceback
 
 import docker
 import docker.errors
 import statemachine.exceptions
 
-from bgjobs.models import LOG_LEVEL_DEBUG
 from django.conf import settings
 
 from django.db import transaction
@@ -20,13 +18,21 @@ from django.contrib import auth
 # Projectroles dependency
 from projectroles.app_settings import AppSettingAPI
 
+from timeline.models import (
+    TL_STATUS_SUBMIT,
+    TL_STATUS_CANCEL,
+    TL_STATUS_FAILED,
+    TL_STATUS_OK,
+)
+
 from containers.models import (
     ContainerBackgroundJob,
     LOG_LEVEL_ERROR,
+    STATE_EXITED,
     STATE_INITIAL,
+    STATE_PULLING,
     STATE_FAILED,
-    PROCESS_TASK,
-    PROCESS_DOCKER,
+    STATE_TERMINATED,
     LOG_LEVEL_WARNING,
     ContainerActionLock,
 )
@@ -55,51 +61,103 @@ class State:
         self.state = state
 
 
-def sync_container_state(container):
+def sync_container_state(container, timeline=None):
     # Update container state
     cli = connect_docker()
     try:
         data = cli.inspect_container(container.container_id)
         actual_state = data.get('State', {}).get('Status')
-        if container.state != actual_state:
+        if (
+            container.state == STATE_TERMINATED
+            and actual_state != STATE_EXITED
+            or container.state != STATE_TERMINATED
+            and actual_state != container.state
+        ):
             logger.warning(
                 '%s: Container state our of sync', container.sodar_uuid
             )
             container.date_last_status_update = timezone.now()
             container.state = actual_state
             container.save()
+            if timeline:
+                tl_event = timeline.add_event(
+                    project=container.project,
+                    app_name=APP_NAME,
+                    user=None,
+                    event_name='container_status_sync',
+                    description='Sync container state {container}',
+                    status_type=TL_STATUS_OK,
+                )
+                tl_event.add_object(
+                    obj=container,
+                    label='container',
+                    name=container.get_display_name(),
+                )
     except docker.errors.NullResource as ex:
-        if container.state not in (STATE_INITIAL, STATE_FAILED):
+        if container.state not in (STATE_INITIAL, STATE_PULLING, STATE_FAILED):
             logger.error(
-                '%s: %s (state is %s)',
+                'Failed to sync state: %s: %s (state is %s)',
                 container.sodar_uuid,
                 ex,
                 container.state,
             )
             container.date_last_status_update = timezone.now()
             container.state = STATE_FAILED
-            container.container_id = ''
             container.save()
+            if timeline:
+                tl_event = timeline.add_event(
+                    project=container.project,
+                    app_name=APP_NAME,
+                    user=None,
+                    event_name='container_status_sync',
+                    description='Sync container state {container}',
+                    status_type=TL_STATUS_FAILED,
+                    status_desc=ex,
+                )
+                tl_event.add_object(
+                    obj=container,
+                    label='container',
+                    name=container.get_display_name(),
+                )
     except docker.errors.NotFound as ex:
+        # If the state is failed, it is expected that sometimes the container
+        # doesn't exist. We don't need to add infinitely many logs for this.
+        if container.state == STATE_FAILED:
+            pass
         # We mark it as failed. STATE_DELETED could also be an option,
         # but failed is more general. Besides, the container record in the db
         # is NOT deleted.
-        logger.error(ex)
+        logger.error('Container not found: %s', str(ex))
         container.date_last_status_update = timezone.now()
         container.state = STATE_FAILED
-        container.container_id = ''
         container.save()
+        if timeline:
+            tl_event = timeline.add_event(
+                project=container.project,
+                app_name=APP_NAME,
+                user=None,
+                event_name='container_status_sync',
+                description='Sync container state {container}',
+                status_type=TL_STATUS_FAILED,
+                status_desc=ex,
+            )
+            tl_event.add_object(
+                obj=container,
+                label='container',
+                name=container.get_display_name(),
+            )
 
 
 @app.task(bind=True)
 def container_task(_self, job_id):
     """Task to change a container state"""
     job = ContainerBackgroundJob.objects.get(pk=job_id)
+    bg_job = job.bg_job
     timeline = plugin_api.get_backend_api('timeline_backend')
     container = job.container
-    user = job.bg_job.user
+    user = bg_job.user
     tl_event = None
-    sync_container_state(container)
+    sync_container_state(container, timeline)
 
     cm = ContainerMachine(State(container.state), job=job)
 
@@ -109,7 +167,7 @@ def container_task(_self, job_id):
             app_name=APP_NAME,
             user=user,
             event_name='container_task',
-            description='{action} container {container}',
+            description=f'{job.action} container {{container}}',
         )
         tl_event.add_object(
             obj=job.container,
@@ -121,112 +179,86 @@ def container_task(_self, job_id):
             label='action',
             name=job.action,
         )
+        tl_event.set_status(TL_STATUS_SUBMIT)
 
     acs = ActionSwitch(cm, job, tl_event)
 
     with job.marks():
         try:
             acs.do(job.action, job.container.state)
+            tl_event.set_status(TL_STATUS_OK)
 
         except docker.errors.NotFound as e:
-            logger.error(e)
+            logger.error(
+                'Action "%s" failed (container %s not found from %s): %s',
+                job.action,
+                job.container.container_id,
+                job.container.sodar_uuid,
+                e,
+            )
             job.add_log_entry(
-                f'Action failed: {job.action}', level=LOG_LEVEL_ERROR
+                f'Action failed: {job.action}: {e}', level=LOG_LEVEL_ERROR
             )
-            job.container.log_entries.create(
-                text=f'Action failed: {job.action}',
-                process=PROCESS_TASK,
-                user=user,
-                level=LOG_LEVEL_ERROR,
-            )
-            job.container.log_entries.create(
-                text=e,
-                process=PROCESS_DOCKER,
-                date_docker_log=timezone.now(),
-                user=user,
-                level=LOG_LEVEL_ERROR,
-            )
-
+            tl_event.set_status(TL_STATUS_FAILED, str(e))
             with transaction.atomic():
                 job.container.refresh_from_db()
-                job.container.container_id = ''
+                # job.container.container_id = ''
                 job.container.image_id = ''
                 job.container.state = STATE_FAILED
                 job.container.save()
 
         except docker.errors.DockerException as e:
-            logger.error(e)
-            # Catch Docker-specific exceptions
+            logger.error(
+                'Action "%s" failed (Docker exception from %s): %s',
+                job.action,
+                job.container.sodar_uuid,
+                e,
+            )
             job.add_log_entry(
-                f'Action failed: {job.action}', level=LOG_LEVEL_ERROR
+                f'Action failed: {job.action}: {e}', level=LOG_LEVEL_ERROR
             )
-            container.log_entries.create(
-                text=f'Action failed: {job.action}',
-                process=PROCESS_TASK,
-                user=user,
-                level=LOG_LEVEL_ERROR,
-            )
-            container.log_entries.create(
-                text=e,
-                process=PROCESS_DOCKER,
-                date_docker_log=timezone.now(),
-                user=user,
-                level=LOG_LEVEL_ERROR,
-            )
-
+            tl_event.set_status(TL_STATUS_FAILED, str(e))
             with transaction.atomic():
                 container.refresh_from_db()
                 container.state = STATE_FAILED
                 container.save(force_update=True)
 
         except statemachine.exceptions.StateMachineError as e:
-            logger.error(e)
+            logger.error(
+                'Action "%s" failed (StateMachineError from %s): %s',
+                job.action,
+                job.container.sodar_uuid,
+                e,
+            )
             job.add_log_entry(
-                f'Action failed: {job.action}', level=LOG_LEVEL_ERROR
+                f'Action failed: {job.action}: {e}', level=LOG_LEVEL_ERROR
             )
-            container.log_entries.create(
-                text=f'Action failed: {job.action} ({e})',
-                process=PROCESS_TASK,
-                user=user,
-                level=LOG_LEVEL_ERROR,
-            )
+            tl_event.set_status(TL_STATUS_FAILED, str(e))
 
         except ContainerActionLock.CoolDown as e:
-            logger.warning(e)
+            logger.warning(
+                'Action "%s" cancelled (CoolDown from %s): %s',
+                job.action,
+                job.container.sodar_uuid,
+                e,
+            )
             job.add_log_entry(
-                f'Action not performed: {job.action} (cool-down)',
+                f'Action cancelled due to cool down ({settings.KIOSC_DOCKER_ACTION_MIN_DELAY}s): {job.action}: {e}',
                 level=LOG_LEVEL_WARNING,
             )
-            container.log_entries.create(
-                text=f'Action not performed: {job.action}. Cool-down is active ({settings.KIOSC_DOCKER_ACTION_MIN_DELAY}s)',
-                process=PROCESS_TASK,
-                user=user,
-                level=LOG_LEVEL_WARNING,
-            )
+            tl_event.set_status(TL_STATUS_CANCEL)
 
         except Exception as e:
-            logger.error(e)
-            # Catch all exceptions that are not coming from Docker
+            logger.error(
+                'Action "%s" failed (unexpected bug from %s): %s',
+                job.action,
+                job.container.sodar_uuid,
+                e,
+            )
             job.add_log_entry(
-                f'Action failed: {job.action}', level=LOG_LEVEL_ERROR
+                f'Action failed: {job.action}: {e}', level=LOG_LEVEL_ERROR
             )
-
-            for line in traceback.format_exc().split('\n'):
-                container.log_entries.create(
-                    text=line,
-                    process=PROCESS_TASK,
-                    user=user,
-                    level=LOG_LEVEL_DEBUG,
-                )
-
-            container.log_entries.create(
-                text='Action failed: {}{}'.format(
-                    job.action, f' ({str(e)})' if str(e) else ''
-                ),
-                process=PROCESS_TASK,
-                user=user,
-                level=LOG_LEVEL_ERROR,
-            )
+            tl_event.set_status(TL_STATUS_FAILED, str(e))
 
             with transaction.atomic():
                 container.refresh_from_db()

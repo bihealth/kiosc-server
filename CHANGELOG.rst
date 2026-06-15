@@ -4,6 +4,18 @@ Kiosc Changelog
 Changelog for the **Kiosc** Django app package.
 Loosely follows the `Keep a Changelog <http://keepachangelog.com/en/1.0.0/>`_ guidelines.
 
+Current
+=======
+
+- Disabled CELERY_ALWAYS_EAGER in local settings (#119)
+  - After this, tasks will run asynchronously during development, like in the production configuration, allowing us to find more bugs before it's too late
+
+- Add LogWatcher websocket which monitors logs in real time (#119)
+- Container log entries are deleted when the container is restarted (but not when it's stopped and started again)
+- Container log entries are not saved to the db anymore, but they are still visible in the container detail page (they come from the docker daemon)
+- Added TIMEOUT container state, more specific than "exited"
+
+
 v0.5.3 (2026-06-18)
 ===================
 
@@ -46,6 +58,7 @@ General
 
 - Fix bug in kioscadmin which made kiosc crash (#220)
 
+
 v0.5.1 (2026-03-27)
 ===================
 
@@ -53,6 +66,7 @@ General
 -------
 
 - Fix bug in containerlist app template which prevented viewing containers
+
 
 v0.5.0 (2026-03-27)
 ===================

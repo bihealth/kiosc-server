@@ -41,7 +41,7 @@ Manually modify the settings, environment variables, and secret keys in the .env
     docker compose --profile deploy up -d
     docker compose exec -it kiosc-web ./manage.py createsuperuser
 
-Follow the interactive instructions to create the admin user, then point your browser to https://localhost:443.
+Follow the interactive instructions to create the admin user, then point your browser to https://localhost.
 
 Note that the Docker Compose file lives in a `separate repository <https://github.com/bihealth/kiosc-docker-compose>`__.
 For further instructions and alternative installation methods, read the `installation chapter <https://kiosc-server.readthedocs.io/en/latest/introduction_installation.html>`__ of the manual.

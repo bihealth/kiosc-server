@@ -114,6 +114,7 @@ class TestContainerTask(TestBase):
             command=self.container1.command or None,
             ports=[self.container1.container_port],
             host_config=None,
+            volumes=['/kiosc'],
         )
         create_host_config.assert_called_once_with(
             ulimits=[
@@ -125,6 +126,12 @@ class TestContainerTask(TestBase):
             ],
             port_bindings={
                 self.container1.container_port: self.container1.host_port
+            },
+            binds={
+                str(self.container1.volume_name): {
+                    'bind': '/kiosc',
+                    'mode': 'rw',
+                },
             },
         )
         create_networking_config.assert_not_called()
@@ -206,6 +213,7 @@ class TestContainerTask(TestBase):
             command=self.container1.command or None,
             ports=[self.container1.container_port],
             host_config=None,
+            volumes=['/kiosc'],
             networking_config={},
         )
         create_host_config.assert_called_once_with(
@@ -216,6 +224,12 @@ class TestContainerTask(TestBase):
                     'Hard': settings.KIOSC_DOCKER_MAX_ULIMIT_NOFILE_HARD,
                 }
             ],
+            binds={
+                str(self.container1.volume_name): {
+                    'bind': '/kiosc',
+                    'mode': 'rw',
+                },
+            },
         )
         create_networking_config.assert_called_once_with(
             {settings.KIOSC_DOCKER_NETWORK: {}}
@@ -309,6 +323,7 @@ class TestContainerTask(TestBase):
             command=self.container1.command or None,
             ports=[self.container1.container_port],
             host_config=None,
+            volumes=['/kiosc'],
         )
         create_host_config.assert_called_once_with(
             ulimits=[
@@ -320,6 +335,12 @@ class TestContainerTask(TestBase):
             ],
             port_bindings={
                 self.container1.container_port: self.container1.host_port
+            },
+            binds={
+                str(self.container1.volume_name): {
+                    'bind': '/kiosc',
+                    'mode': 'rw',
+                },
             },
         )
         create_networking_config.assert_not_called()
@@ -413,6 +434,7 @@ class TestContainerTask(TestBase):
             command=self.container1.command or None,
             ports=[self.container1.container_port],
             host_config=None,
+            volumes=['/kiosc'],
         )
         create_host_config.assert_called_once_with(
             ulimits=[
@@ -424,6 +446,12 @@ class TestContainerTask(TestBase):
             ],
             port_bindings={
                 self.container1.container_port: self.container1.host_port
+            },
+            binds={
+                str(self.container1.volume_name): {
+                    'bind': '/kiosc',
+                    'mode': 'rw',
+                },
             },
         )
         create_networking_config.assert_not_called()
@@ -572,6 +600,7 @@ class TestContainerTask(TestBase):
             command=self.container1.command or None,
             ports=[self.container1.container_port],
             host_config=None,
+            volumes=['/kiosc'],
         )
         create_host_config.assert_called_once_with(
             ulimits=[
@@ -583,6 +612,12 @@ class TestContainerTask(TestBase):
             ],
             port_bindings={
                 self.container1.container_port: self.container1.host_port
+            },
+            binds={
+                str(self.container1.volume_name): {
+                    'bind': '/kiosc',
+                    'mode': 'rw',
+                },
             },
         )
         create_networking_config.assert_not_called()
@@ -602,7 +637,7 @@ class TestContainerTask(TestBase):
         pause.assert_not_called()
         unpause.assert_not_called()
         remove_container.assert_called_once_with(
-            self.container1.container_id, force=True
+            self.container1.container_id, force=True, v=True
         )
 
     @patch('containers.tasks.sync_container_state')
@@ -840,7 +875,9 @@ class TestContainerTask(TestBase):
         stop.assert_called_once_with(container_id)
         pause.assert_not_called()
         unpause.assert_not_called()
-        remove_container.assert_called_once_with(container_id, force=True)
+        remove_container.assert_called_once_with(
+            container_id, force=True, v=True
+        )
 
     @patch('containers.tasks.sync_container_state')
     @patch('docker.api.client.APIClient.remove_container')
@@ -899,7 +936,9 @@ class TestContainerTask(TestBase):
         stop.assert_not_called()
         pause.assert_not_called()
         unpause.assert_not_called()
-        remove_container.assert_called_once_with(container_id, force=True)
+        remove_container.assert_called_once_with(
+            container_id, force=True, v=True
+        )
 
     @tag('docker-server')
     @override_settings(KIOSC_DOCKER_ACTION_MIN_DELAY=0)

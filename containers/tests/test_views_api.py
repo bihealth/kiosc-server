@@ -63,6 +63,7 @@ class TestContainerListAPIView(
             Project.objects.get(id=expected['project']).sodar_uuid
         )
         expected['sodar_uuid'] = str(expected['sodar_uuid'])
+        expected['volume_name'] = str(expected['volume_name'])
         content = response.json()
         self.assertEqual(content['count'], 1)
         self.assertEqual(content['next'], None)
@@ -92,6 +93,7 @@ class TestContainerListAPIView(
             Project.objects.get(id=container1['project']).sodar_uuid
         )
         container1['sodar_uuid'] = str(container1['sodar_uuid'])
+        container1['volume_name'] = str(container1['volume_name'])
         container2 = model_to_dict(self.container2, exclude=['id'])
         container2['date_created'] = self.get_drf_datetime(
             self.container2.date_created
@@ -103,6 +105,7 @@ class TestContainerListAPIView(
             Project.objects.get(id=container2['project']).sodar_uuid
         )
         container2['sodar_uuid'] = str(container2['sodar_uuid'])
+        container2['volume_name'] = str(container2['volume_name'])
         content = response.json()
         self.assertEqual(content['count'], 2)
         self.assertEqual(len(content['results']), 1)
@@ -304,8 +307,10 @@ class TestContainerDetailAPIView(
             Project.objects.get(id=expected['project']).sodar_uuid
         )
         expected['sodar_uuid'] = str(expected['sodar_uuid'])
+        expected['volume_name'] = str(expected['volume_name'])
 
         self.assertEqual(response.json(), expected)
+        expected['volume_name'] = str(expected['volume_name'])
 
     def test_get_non_existent(self):
         response = self.request_knox(

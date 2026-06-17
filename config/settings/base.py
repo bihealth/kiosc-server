@@ -144,8 +144,11 @@ EMAIL_SUBJECT_PREFIX = env('EMAIL_SUBJECT_PREFIX', default='')
 
 # MANAGER CONFIGURATION
 # ------------------------------------------------------------------------------
-# TODO: add your information here
-ADMINS = [("""YOUR NAME HERE""", 'YOUR.EMAIL@example.com')]
+# Provide ADMINS as: Name:email,Name:email
+ADMINS = [
+    x.split(':')
+    for x in env.list('ADMINS', default=['Admin User:admin@example.com'])
+]
 
 # See: https://docs.djangoproject.com/en/dev/ref/settings/#managers
 MANAGERS = ADMINS
@@ -574,7 +577,7 @@ LOGGING = set_logging(DEBUG)
 # General site settings
 # ------------------------------------------------------------------------------
 
-SITE_TITLE = 'KIOSC'
+SITE_TITLE = env.str('SITE_TITLE', 'KIOSC')
 SITE_SUBTITLE = env.str('SITE_SUBTITLE', 'Beta')
 SITE_INSTANCE_TITLE = env.str('SITE_INSTANCE_TITLE', 'KIOSC')
 

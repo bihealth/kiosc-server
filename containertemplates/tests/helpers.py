@@ -61,13 +61,19 @@ class TestBase(RoleAssignmentMixin, TestCase):
     def create_one_containertemplatesite(self):
         """Create one containertemplatesite."""
         self.containertemplatesite1 = ContainerTemplateSiteFactory()
-        self.assertEqual(ContainerTemplateSite.objects.count(), 1)
+        # NOTE: One ContainerTemplateSite object already exists because it's
+        # created with a data migration (0009_create_default_template) in
+        # containertemplates
+        self.assertEqual(ContainerTemplateSite.objects.count(), 2)
 
     def create_two_containertemplatesites(self):
         """Create two containertemplatesites."""
         self.create_one_containertemplatesite()
         self.containertemplatesite2 = ContainerTemplateSiteFactory()
-        self.assertEqual(ContainerTemplateSite.objects.count(), 2)
+        # NOTE: One ContainerTemplateSite object already exists because it's
+        # created with a data migration (0009_create_default_template) in
+        # containertemplates
+        self.assertEqual(ContainerTemplateSite.objects.count(), 3)
 
     def create_one_containertemplateproject(self):
         """Create one containertemplateproject."""

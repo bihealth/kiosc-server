@@ -5,6 +5,7 @@ from containertemplates.forms import (
     ContainerTemplateProjectForm,
     ContainerTemplateSelectorForm,
 )
+from containertemplates.models import ContainerTemplateSite
 from containertemplates.tests.helpers import TestBase
 
 
@@ -93,6 +94,9 @@ class TestContainerTemplateSelectorForm(TestBase):
     def setUp(self):
         super().setUp()
 
+        self.default_containertemplatesite = (
+            ContainerTemplateSite.objects.first()
+        )
         self.create_two_containertemplatesites()
         self.create_four_containertemplates_in_two_projects()
         self.assign_user_to_project('contributor', self.project2)
@@ -131,6 +135,10 @@ class TestContainerTemplateSelectorForm(TestBase):
                     f'[Site-wide] {self.containertemplatesite1.get_display_name()}',
                 ),
                 (
+                    f'site:{self.default_containertemplatesite.id}',
+                    f'[Site-wide] {self.default_containertemplatesite.get_display_name()}',
+                ),
+                (
                     f'project:{self.containertemplateproject2_project2.id}',
                     f'[Project-wide] {self.containertemplateproject2_project2.get_display_name()}',
                 ),
@@ -167,6 +175,10 @@ class TestContainerTemplateSelectorForm(TestBase):
                 (
                     f'site:{self.containertemplatesite1.id}',
                     f'[Site-wide] {self.containertemplatesite1.get_display_name()}',
+                ),
+                (
+                    f'site:{self.default_containertemplatesite.id}',
+                    f'[Site-wide] {self.default_containertemplatesite.get_display_name()}',
                 ),
                 (
                     f'project:{self.containertemplateproject2_project2.id}',

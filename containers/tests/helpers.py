@@ -57,7 +57,10 @@ class TestContainerCreationMixin:
     def create_containertemplates(self):
         """Create one containertemplatesite."""
         self.containertemplatesite1 = ContainerTemplateSiteFactory()
-        self.assertEqual(ContainerTemplateSite.objects.count(), 1)
+        # NOTE: One ContainerTemplateSite object already exists because it's
+        # created with a data migration (0009_create_default_template) in
+        # containertemplates
+        self.assertEqual(ContainerTemplateSite.objects.count(), 2)
 
         self.containertemplateproject1 = ContainerTemplateProjectFactory()
         self.assertEqual(ContainerTemplateProject.objects.count(), 1)

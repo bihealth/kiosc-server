@@ -80,7 +80,7 @@ When you are inside a project, you will see additional entries in the left-side 
 Set up local user accounts
 ^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Kiosc supports centralized authentication methods, including LDAP and SSO (check out the `configuration instructions <https://kiosc-server.readthedocs.io/en/latest/introduction_installation.html#configuration>`__)
+Kiosc supports centralized authentication methods, including LDAP and SSO (check out the `configuration instructions <https://kiosc-server.readthedocs.io/en/latest/introduction_installation.html#configuration>`__).
 However, if you are setting up a small and local installation for your colleagues, you may simply want to create a few local accounts.
 If you are comfortable with the command line, this can be done by running the following command::
 
@@ -88,15 +88,15 @@ If you are comfortable with the command line, this can be done by running the fo
 
 Where you should replace the fields within ``<angle brackets>`` with the relevant values.
 
-Creating user accounts can also be done from the admin web interface: navigate to `<https://localhost/admin/users>`__ and click "Add".
+Creating user accounts can also be done from the admin web interface: navigate to https://localhost/admin/users and click "Add".
 
 Using the web interface
 ^^^^^^^^^^^^^^^^^^^^^^^
 
 The best way to learn Kiosc is by exploring the web interface.
-Check out the `manual <https://kiosc-server.readthedocs.io/en/latest/>` for detailed iformation about all the components.
+Check out the `manual <https://kiosc-server.readthedocs.io/en/latest/>`__ for detailed iformation about all the components.
 If you get stuck, recall that Kiosc is a `Django <https://www.djangoproject.com>`__ site based on the `SODAR-Core <https://github.com/bihealth/sodar-core>`__ framework, so you can often find help on the dedicated support channels for these projects.
-For Kiosc-specific problems, please use the `issue tracker <https://github.com/bihealth/kiosc-server/issues`__ or contact the authors directly.
+For Kiosc-specific problems, please use the `issue tracker <https://github.com/bihealth/kiosc-server/issues>`__ or contact the authors directly.
 
 -----------
 At a Glance

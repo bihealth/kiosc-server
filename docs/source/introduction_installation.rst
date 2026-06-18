@@ -66,6 +66,52 @@ with your browser. You should be able to access with the superuser account you
 just created, or as any of the regular users, if you have set them up.
 
 
+.. _introduction_installation_usage:
+
+First steps
+-----------
+
+Create a "Hello World" project with a toy app
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+Running the following command in the terminal will create a top-level category, create a project within that category, and set up a demo of a `Shiny app <https://rocker-project.org/images/versioned/shiny.html>`__.
+You can use this app as a smoke test for the success of the installation.
+
+::
+
+    docker compose exec -it kiosc-web ./manage.py createtoyapp
+
+Manually create a top-level category
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+In Kiosc, every project must belong to a category.
+Only the superuser is allowed to create and add members to top-level categories, while regular users can create projects inside categories where they are owners.
+To create a category, click on the "Create Category" button in the left menu.
+Afterwards, you'll be able to modify the members of the category or create subprojects within it, again from the left-side menu.
+When you are inside a project, you will see additional entries in the left-side menu; clicking on the "Containers" button will bring you to a list view of the current containers in the project, from where you can also create new ones.
+
+Set up local user accounts
+^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+Kiosc supports centralized authentication methods, including LDAP and SSO (check out the :ref:`introduction_installation_configuration` instructions).
+However, if you are setting up a small and local installation for your colleagues, you may simply want to create a few local accounts.
+If you are comfortable with the command line, this can be done by running the following command::
+
+    docker compose exec -ti kiosc-web ./manage.py shell -c 'User.objects.create_user("<username>", "<email>", "<password>")'
+
+Where you should replace the fields within ``<angle brackets>`` with the relevant values.
+
+Creating user accounts can also be done from the admin web interface: navigate to https://localhost/admin/users and click "Add".
+
+Using the web interface
+^^^^^^^^^^^^^^^^^^^^^^^
+
+The best way to learn Kiosc is by exploring the web interface.
+Check out the `manual <https://kiosc-server.readthedocs.io/en/latest/>`__ for detailed iformation about all the components.
+If you get stuck, recall that Kiosc is a `Django <https://www.djangoproject.com>`__ site based on the `SODAR-Core <https://github.com/bihealth/sodar-core>`__ framework, so you can often find help on the dedicated support channels for these projects.
+For Kiosc-specific problems, please use the `issue tracker <https://github.com/bihealth/kiosc-server/issues>`__ or contact the authors directly.
+
+
 .. _introduction_installation_configuration:
 
 Configuration

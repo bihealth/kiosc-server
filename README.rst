@@ -84,7 +84,7 @@ Kiosc supports centralized authentication methods, including LDAP and SSO (check
 However, if you are setting up a small and local installation for your colleagues, you may simply want to create a few local accounts.
 If you are comfortable with the command line, this can be done by running the following command::
 
-    docker compose exec -ti kiosc-web ./manage.py shell -c 'User.objects.create_user("<username>", "<email>", "<password>")'
+    docker compose exec -it kiosc-web ./manage.py shell -c 'User.objects.create_user("<username>", "<email>", "<password>")'
 
 Where you should replace the fields within ``<angle brackets>`` with the relevant values.
 

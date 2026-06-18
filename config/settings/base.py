@@ -524,11 +524,11 @@ LOGGING_APPS = env.list(
     'LOGGING_APPS',
     default=[
         'projectroles',
-        'siteinfo',
-        'sodarcache',
-        'timeline',
         'containers',
         'containertemplates',
+        'kioscadmin',
+        'timeline',
+        'bgjobs',
     ],
 )
 

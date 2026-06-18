@@ -30,7 +30,7 @@ Fill in the repository, tag and container port.
 .. image:: figures/apps/containers/create2.png
   :alt: Create container
 
-Click the ``Create`` button to create the container object.
+After filling the form, click the ``Create`` button to create the container object.
 This does not create the actual Docker container yet.
 
 .. image:: figures/apps/containers/create3.png
@@ -39,12 +39,25 @@ This does not create the actual Docker container yet.
 Container templates
 ^^^^^^^^^^^^^^^^^^^
 
-To make use of the container templates, select a template from the
+It is often the case that the same type of container will be used multiple times
+across the site. To save some time and reduce the chances of mistakes, Kiosc
+provides container templates. To make use of them, select a template from the
 top-hand dropdown menu and click ``Get``. This will populate all form fields
-that are set in the template with you create form. Anything you already
-entered will be overwritten. The prefix ``[Site-wide]`` or ``[Project-wide]``
-indicates whether this template is either a site-wide or a project-wide
-template.
+that are set in the template with you create form. Anything you already entered
+will be overwritten. The prefix ``[Site-wide]`` or ``[Project-wide]`` indicates
+whether this template is either a site-wide or a project-wide template. By
+default, one template for an example Shiny app is available (it does not contain
+any meaningful data and is just meant as a toy example). Admins can then create
+additional site-wide templates.
+
+Registry user and Registry password
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+If the Docker image is hosted in a private container registry, you can specify the user and password credentials in the form.
+For example, if the image is in a `GitLab container registry <https://docs.gitlab.com/user/packages/container_registry/>`__, you will first need to generate an access token first, and then use it as the ``Registry password`` field.
+In general, images can be downloaded from private registry only after running the ``docker login`` `command <https://docs.docker.com/reference/cli/docker/login/>`__.
+The fields ``Registry user`` and ``Registry password`` mirror the credentials that you have to ender with ``docker login``.
+Note that after creating the container the credentials will not be visible anymore, but they will be replaced everywhere by a ``<masked>`` token.
 
 Environment
 ^^^^^^^^^^^

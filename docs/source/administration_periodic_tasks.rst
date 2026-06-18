@@ -45,6 +45,15 @@ proxy for a defined period of time. This can be set by the user
 for each container individually, but there is maximum of 7 days.
 If the user omits the setting, it defaults to the 7 days maximum.
 
+Remove zombie containers
+------------------------
+
+*Runs every hour on the half hour (i.e., at 00:30, 01:30, 02:30, and so on).*
+
+Occasionally, it happens that Kiosc loses track of a Docker container. The
+container still exists, but it cannot be reached by Kiosc. We refer to such
+containers as "zombies", and this tasks takes care of cleaning them up.
+
 Synchronize with upstream SODAR instance (if configured)
 --------------------------------------------------------
 

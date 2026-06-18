@@ -6,6 +6,8 @@ from django.core.management import call_command
 from containers.models import STATE_RUNNING, STATE_EXITED, Container
 from containers.tests.helpers import TestBase, DockerMock
 
+from projectroles.models import Project
+
 
 class TestCommandMixin:
     def run_command(self, *args):
@@ -99,3 +101,32 @@ class TestStopUnused(TestCommandMixin, TestBase):
         out = self.run_command()
         stop_inactive_containers.assert_called()
         self.assertIn('Command successfully finished', out)
+
+
+class TestCreateToyApp(TestCommandMixin, TestBase):
+    """Tests for management command ``createtoyapp``."""
+
+    command = 'createtoyapp'
+
+    def test_default(self):
+        """Test createtoyapp command with default options"""
+        self.assertEqual(Project.objects.count(), 1)
+        self.assertEqual(Container.objects.count(), 0)
+        self.run_command()
+        self.assertEqual(Project.objects.count(), 3)
+        self.assertEqual(Container.objects.count(), 1)
+        container = Container.objects.first()
+        self.assertEqual(container.repository, 'rocker/shiny')
+
+    def test_with_options(self):
+        """Test createtoyapp command with custom options"""
+        self.assertEqual(Project.objects.count(), 1)
+        self.assertEqual(Container.objects.count(), 0)
+        self.run_command(
+            ['--category-name', 'cat', '--project-name', 'dog', '--private']
+        )
+        self.assertEqual(Project.objects.count(), 3)
+        self.assertEqual(Container.objects.count(), 1)
+        container = Container.objects.first()
+        self.assertEqual(container.project.full_title, 'cat / dog')
+        self.assertIsNone(container.project.public_access)

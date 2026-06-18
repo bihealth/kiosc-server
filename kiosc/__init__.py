@@ -1,4 +1,6 @@
-__version__ = '0.1.0'
+"""
+KIOSC site package
+"""
 
 from . import _version
 

@@ -374,6 +374,32 @@ class ContainerMachine(StateMachine):
                 break
 
         if need_to_pull:
+            need_to_login = self.container.registry_user is not None
+            registry = self.container.repository.split('/')[0]
+            if need_to_login:
+                try:
+                    logger.info(
+                        'Logging in to registry %s for %s/%s on behalf of %s',
+                        registry,
+                        self.container.project.title,
+                        self.container.title,
+                        self.user,
+                    )
+                    self.cli.login(
+                        self.container.registry_user,
+                        self.container.registry_password,
+                        registry=registry,
+                    )
+                except Exception as ex:
+                    logger.error('Failed to login to registry: %s', ex)
+                    self.container.log_entries.create(
+                        text=str(ex),
+                        process=PROCESS_DOCKER,
+                        date_docker_log=timezone.now(),
+                        user=self.user,
+                    )
+                    self.job.add_log_entry(str(ex))
+                    return
             for line in self.cli.pull(
                 repository=self.container.repository,
                 tag=self.container.tag,
@@ -450,6 +476,18 @@ class ContainerMachine(StateMachine):
                 'DESCRIPTION': self.container.description or '',
             }
         )
+
+        # Volume
+        if volume_name := str(self.container.volume_name):
+            kiosc_volume_mountpoint = '/kiosc'
+            self.cli.create_volume(volume_name)
+            options_host_config['binds'] = {
+                volume_name: {
+                    'bind': kiosc_volume_mountpoint,
+                    'mode': 'rw',
+                },
+            }
+            options['volumes'] = [kiosc_volume_mountpoint]
 
         # Create container
         container_info = self.cli.create_container(
@@ -562,8 +600,12 @@ class ContainerMachine(StateMachine):
         self.container.save()
 
         # Removing container and erasing container_id
+        # NOTE: this will also remove the volumes associated with the container
+        # (thanks to the v=True flag in remove_container())
         try:
-            self.cli.remove_container(self.container.container_id, force=True)
+            self.cli.remove_container(
+                self.container.container_id, force=True, v=True
+            )
 
         except docker.errors.NullResource as ex:
             logger.error('Failed to delete container: %s', ex)

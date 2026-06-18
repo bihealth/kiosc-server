@@ -111,7 +111,7 @@ class ProjectAppPlugin(
     details_template = 'containers/_details_card.html'
 
     #: App card title for the project details page
-    details_title = 'Containers overview'
+    details_title = 'Containers Overview'
 
     #: Position in plugin ordering
     plugin_ordering = 20

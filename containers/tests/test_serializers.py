@@ -26,6 +26,9 @@ class TestContainerSerializer(TestCase):
             'containertemplatesite': None,
             'containertemplateproject': None,
             'description': None,
+            'registry_user': None,
+            'registry_password': None,
+            'volume_name': None,
         }
         serializer = ContainerSerializer(data=data)
         self.assertTrue(serializer.is_valid())
@@ -101,6 +104,9 @@ class TestContainerSerializer(TestCase):
             'containertemplatesite': None,
             'containertemplateproject': None,
             'description': None,
+            'registry_user': None,
+            'registry_password': None,
+            'volume_name': None,
         }
         serializer = ContainerSerializer(data=data)
         self.assertTrue(serializer.is_valid())

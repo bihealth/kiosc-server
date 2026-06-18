@@ -7,6 +7,7 @@ from django.contrib.messages import get_messages
 from django.forms import model_to_dict
 from django.urls import reverse
 
+from containers.models import MASKED_KEYWORD
 from containertemplates.forms import ContainerTemplateSelectorForm
 from containertemplates.models import (
     ContainerTemplateSite,
@@ -18,12 +19,12 @@ from containertemplates.tests.helpers import TestBase
 class TestContainerTemplateSiteListView(TestBase):
     """Tests for ``ContainerTemplateSiteListView``."""
 
-    def test_get_success_list_empty(self):
+    def test_get_success_list_initial(self):
         with self.login(self.superuser):
             response = self.client.get(reverse('containertemplates:site-list'))
 
             self.assertEqual(response.status_code, 200)
-            self.assertEqual(len(response.context['object_list']), 0)
+            self.assertEqual(len(response.context['object_list']), 1)
 
     def test_get_success_list_one_item(self):
         self.create_one_containertemplatesite()
@@ -35,8 +36,10 @@ class TestContainerTemplateSiteListView(TestBase):
 
             items = list(response.context['object_list'])
 
-            self.assertEqual(len(items), 1)
-            self.assertEqual(items[0].id, self.containertemplatesite1.id)
+            self.assertEqual(len(items), 2)
+            self.assertIn(
+                self.containertemplatesite1.id, [item.id for item in items]
+            )
 
     def test_get_success_list_two_items(self):
         self.create_two_containertemplatesites()
@@ -48,9 +51,13 @@ class TestContainerTemplateSiteListView(TestBase):
 
             items = list(response.context['object_list'])
 
-            self.assertEqual(len(items), 2)
-            self.assertEqual(items[0].id, self.containertemplatesite2.id)
-            self.assertEqual(items[1].id, self.containertemplatesite1.id)
+            self.assertEqual(len(items), 3)
+            self.assertIn(
+                self.containertemplatesite1.id, [item.id for item in items]
+            )
+            self.assertIn(
+                self.containertemplatesite2.id, [item.id for item in items]
+            )
 
 
 class TestContainerTemplateSiteCreateView(TestBase):
@@ -74,7 +81,10 @@ class TestContainerTemplateSiteCreateView(TestBase):
                 reverse('containertemplates:site-create'), post_data
             )
 
-            self.assertEqual(ContainerTemplateSite.objects.count(), 1)
+            # NOTE: One ContainerTemplateSite object already exists because it's
+            # created with a data migration (0009_create_default_template) in
+            # containertemplates
+            self.assertEqual(ContainerTemplateSite.objects.count(), 2)
 
             containertemplate = ContainerTemplateSite.objects.first()
 
@@ -100,6 +110,8 @@ class TestContainerTemplateSiteCreateView(TestBase):
             'environment': '{"test": 1}',
             'repository': 'repository',
             'tag': 'tag',
+            'registry_user': 'maxmustermann',
+            'registry_password': 'SecretPass123$%^',
             'container_port': 80,
             'timeout': 60,
             'container_path': 'some/path',
@@ -113,7 +125,7 @@ class TestContainerTemplateSiteCreateView(TestBase):
                 reverse('containertemplates:site-create'), post_data
             )
 
-            self.assertEqual(ContainerTemplateSite.objects.count(), 1)
+            self.assertEqual(ContainerTemplateSite.objects.count(), 2)
 
             containertemplate = ContainerTemplateSite.objects.first()
 
@@ -154,7 +166,7 @@ class TestContainerTemplateSiteDeleteView(TestBase):
             )
 
             self.assertEqual(response.status_code, 200)
-            self.assertEqual(ContainerTemplateSite.objects.count(), 1)
+            self.assertEqual(ContainerTemplateSite.objects.count(), 2)
 
     def test_get_non_existent(self):
         with self.login(self.superuser):
@@ -166,7 +178,7 @@ class TestContainerTemplateSiteDeleteView(TestBase):
             )
 
             self.assertEqual(response.status_code, 404)
-            self.assertEqual(ContainerTemplateSite.objects.count(), 1)
+            self.assertEqual(ContainerTemplateSite.objects.count(), 2)
 
     def test_delete_success_deleted(self):
         with self.login(self.superuser):
@@ -183,7 +195,7 @@ class TestContainerTemplateSiteDeleteView(TestBase):
                 response, reverse('containertemplates:site-list')
             )
 
-            self.assertEqual(ContainerTemplateSite.objects.count(), 0)
+            self.assertEqual(ContainerTemplateSite.objects.count(), 1)
 
     def test_delete_non_existent(self):
         with self.login(self.superuser):
@@ -195,7 +207,7 @@ class TestContainerTemplateSiteDeleteView(TestBase):
             )
 
             self.assertEqual(response.status_code, 404)
-            self.assertEqual(ContainerTemplateSite.objects.count(), 1)
+            self.assertEqual(ContainerTemplateSite.objects.count(), 2)
 
 
 class TestContainerTemplateSiteUpdateView(TestBase):
@@ -273,6 +285,8 @@ class TestContainerTemplateSiteUpdateView(TestBase):
             'environment': '{"updated": 1234}',
             'repository': 'another_repository',
             'tag': 'another_tag',
+            'registry_user': 'maxi',
+            'registry_password': 'musti',
             'container_port': self.containertemplatesite1.container_port + 100,
             'timeout': self.containertemplatesite1.timeout + 60,
             'container_path': 'updated/path',
@@ -336,6 +350,30 @@ class TestContainerTemplateSiteUpdateView(TestBase):
 
             self.assertEqual(response.status_code, 404)
 
+    def test_get_success_registry_masked(self):
+        """Test that the registry credentials are masked"""
+        self.containertemplatesite1.registry_user = 'maxmustermann'
+        self.containertemplatesite1.registry_password = 'secretpass123'
+        self.containertemplatesite1.save()
+
+        with self.login(self.superuser):
+            response = self.client.get(
+                reverse(
+                    'containertemplates:site-update',
+                    kwargs={
+                        'containertemplatesite': self.containertemplatesite1.sodar_uuid
+                    },
+                )
+            )
+            self.assertEqual(
+                response.context['form']['registry_user'].value(),
+                MASKED_KEYWORD,
+            )
+            self.assertEqual(
+                response.context['form']['registry_password'].value(),
+                MASKED_KEYWORD,
+            )
+
 
 class TestContainerTemplateSiteDetailView(TestBase):
     """Tests for ``ContainerTemplateSiteDetailView``."""
@@ -395,7 +433,7 @@ class TestContainerTemplateSiteDuplicateView(TestBase):
             self.assertRedirects(
                 response, reverse('containertemplates:site-list')
             )
-            self.assertEqual(ContainerTemplateSite.objects.count(), 2)
+            self.assertEqual(ContainerTemplateSite.objects.count(), 3)
             dup_obj = ContainerTemplateSite.objects.get(
                 title__contains='(Duplicate)'
             )
@@ -432,7 +470,7 @@ class TestContainerTemplateSiteDuplicateView(TestBase):
                 )
             )
 
-            self.assertEqual(ContainerTemplateSite.objects.count(), 3)
+            self.assertEqual(ContainerTemplateSite.objects.count(), 4)
 
             dup_obj = ContainerTemplateSite.objects.get(
                 title__contains='(Duplicate 2)'
@@ -573,6 +611,8 @@ class TestContainerTemplateProjectCreateView(TestBase):
             'environment': '{"test": 1}',
             'repository': 'repository',
             'tag': 'tag',
+            'registry_user': 'maxmustermann',
+            'registry_password': 'SecretPass123$%^',
             'container_port': 80,
             'timeout': 60,
             'container_path': 'some/path',
@@ -756,6 +796,8 @@ class TestContainerTemplateProjectUpdateView(TestBase):
             'environment': '{"updated": 1234}',
             'repository': 'another_repository',
             'tag': 'another_tag',
+            'registry_user': 'maxmustermann',
+            'registry_password': 'SecretPass123$%^',
             'container_port': self.containertemplateproject1.container_port
             + 100,
             'timeout': self.containertemplateproject1.timeout + 60,
@@ -820,6 +862,30 @@ class TestContainerTemplateProjectUpdateView(TestBase):
             )
 
             self.assertEqual(response.status_code, 404)
+
+    def test_get_success_registry_masked(self):
+        """Test that the registry credentials are masked"""
+        self.containertemplateproject1.registry_user = 'maxmustermann'
+        self.containertemplateproject1.registry_password = 'secretpass123'
+        self.containertemplateproject1.save()
+
+        with self.login(self.superuser):
+            response = self.client.get(
+                reverse(
+                    'containertemplates:project-update',
+                    kwargs={
+                        'containertemplateproject': self.containertemplateproject1.sodar_uuid
+                    },
+                )
+            )
+            self.assertEqual(
+                response.context['form']['registry_user'].value(),
+                MASKED_KEYWORD,
+            )
+            self.assertEqual(
+                response.context['form']['registry_password'].value(),
+                MASKED_KEYWORD,
+            )
 
 
 class TestContainerTemplateProjectDetailView(TestBase):

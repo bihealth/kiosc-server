@@ -55,7 +55,7 @@ First, install the system dependencies.
     $ ./utility/install_os_dependencies.sh
     $ ./utility/install_python.sh
 
-The scripts will install the latest python version officially supported by
+The scripts will install the latest Python version officially supported by
 Kiosc. In the rest of the document, we will use ``python3.x`` to denote the
 Python executable, but please replace ``x`` with the correct version (for
 example, use ``python3.13``).

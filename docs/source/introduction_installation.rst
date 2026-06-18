@@ -298,6 +298,8 @@ package.
 ``KIOSC_AUTH_LDAP2_USER_FILTER=``
     LDAP filter applied to all user search requests.
 
+``KIOSC_LDAP_ALT_DOMAINS=``
+    List of alternative LDAP domains.
 
 .. rubric:: Kiosc OIDC auth
 
@@ -332,13 +334,13 @@ needed. You can also configure the behaviour through the following variables.
     Endpoint URL for the OIDC provider. The configuration file
     ``.well-known/openid-configuration`` is expected to be found under this URL.
 
-``SOCIAL_AUTH_OIDC_KEY=``
+``KIOSC_SOCIAL_AUTH_OIDC_KEY=``
     Your client ID in the OIDC provider.
 
-``SOCIAL_AUTH_OIDC_SECRET=``
+``KIOSC_SOCIAL_AUTH_OIDC_SECRET=``
     Secret for the OIDC provider.
 
-``SOCIAL_AUTH_OIDC_USERNAME_KEY=``
+``KIOSC_SOCIAL_AUTH_OIDC_USERNAME_KEY=username``
     If the username key of the browser is expected to be something other than
     the default ``username``, it can be configured here. The values in this must
     be unique and should preferably be human readable. If the OIDC provider does

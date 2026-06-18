@@ -4,6 +4,38 @@ Kiosc Changelog
 Changelog for the **Kiosc** Django app package.
 Loosely follows the `Keep a Changelog <http://keepachangelog.com/en/1.0.0/>`_ guidelines.
 
+v0.5.3 (2026-06-18)
+===================
+
+General
+-------
+
+- Add Kiosc models to Django admin (#243)
+- Add default container template for a Shiny demo app (#242)
+- Add "createtoyapp" management command to create a demo project (#242)
+
+Containers
+----------
+
+- Add a persistent Docker volume for every container at ``/kiosc`` (#227)
+- Add ability to use password-protected container registries (#218)
+
+Layout and UI
+-------------
+
+- Fix bug in title case for plugin details (#226)
+
+Docs
+----
+
+- Update docs, specifically for installation and configuration (#245)
+- Add ``.readthedocs.yml`` and restart automatic updates on readthedocs.com (#222)
+
+CI/CD
+-----
+
+- Update deprecated GitHub actions (#240)
+
 v0.5.2 (2026-04-24)
 ===================
 

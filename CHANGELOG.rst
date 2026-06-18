@@ -13,6 +13,8 @@ General
 - Add Kiosc models to Django admin (#243)
 - Add default container template for a Shiny demo app (#242)
 - Add "createtoyapp" management command to create a demo project (#242)
+- Fix behaviour of SITE_APP environment variable (#244)
+- Fix behaviour of ADMINS environment variable (#244)
 
 Containers
 ----------

@@ -1,3 +1,4 @@
+[build-system]
 requires = ["setuptools>=80.9.0", "versioneer[toml]==0.29"]
 build-backend = "setuptools.build_meta"
 
@@ -37,3 +38,6 @@ select = ["E", "F", "W"]
 inline-quotes = "single"
 [tool.ruff.lint.mccabe]
 max-complexity = 18
+
+[tool.pytest]
+DJANGO_SETTINGS_MODULE = "config.settings.test"

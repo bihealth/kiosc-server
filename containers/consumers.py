@@ -16,6 +16,7 @@ import urllib3.contrib
 import socket
 
 from django.conf import settings
+from django.db import connection
 from .models import Container
 
 from containers.models import (
@@ -313,6 +314,10 @@ class ContainerWatcherConsumer(WebsocketConsumer):
                 }
                 self.send(json.dumps(msg))
                 break
+
+        # Close Django connections to the db from this thread
+        # https://stackoverflow.com/questions/44802617/database-is-being-accessed-by-other-users-error-when-using-threadpoolexecutor
+        connection.close()
 
     def _start_watching(self, tail: int):
         """Start a thread to monitor the container state"""

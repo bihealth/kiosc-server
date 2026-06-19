@@ -7,6 +7,7 @@ import json
 import logging
 import struct
 from channels.generic.websocket import WebsocketConsumer
+from datetime import datetime
 import websocket
 import threading
 from typing import Generator, Optional
@@ -384,7 +385,7 @@ class ContainerWatcherConsumer(WebsocketConsumer):
         for log_batch in batched(self.container.log_entries.all(), 1024):
             msg = {
                 'type': 'static_logs',
-                'text': '\n'.join(str(log_entry) for log_entry in log_batch),
+                'text': ''.join(str(log_entry) for log_entry in log_batch),
             }
             self.send(json.dumps(msg))
         self._stop_watching()
@@ -396,7 +397,13 @@ class ContainerWatcherConsumer(WebsocketConsumer):
         This function is called by the Django channels layer.
         """
         # FIXME: make sure that we are done sending all static existing log entries (we could do this either in the client or here)
-        msg = {'type': 'channel_logs', 'text': event['text']}
+        msg = {
+            'type': 'channel_logs',
+            'text': '{} [Kiosc Task] {}'.format(
+                datetime.utcnow().strftime('%Y-%m-%dT%H:%M:%S.%f000Z'),
+                event['text'],
+            ),
+        }
         self.send(json.dumps(msg))
 
     def container_pull_message(self, event):

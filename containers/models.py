@@ -746,11 +746,11 @@ class ContainerLogEntry(models.Model):
         return self.get_date_docker_log() or self.get_date_created()
 
     def __str__(self):
-        return '[{} {} {}] ({}) {}'.format(
-            self.get_date_order_by(),
+        return '{} [Kiosc {} {} ({})] {}'.format(
+            self.date_created.strftime('%Y-%m-%dT%H:%M:%S.%f000Z'),
+            self.process.capitalize(),
             self.level.upper(),
             self.user.username if self.user else 'anonymous',
-            self.process.capitalize(),
             self.text,
         )
 

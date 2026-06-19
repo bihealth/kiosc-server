@@ -239,14 +239,6 @@
         </dd>
       </dl>
       {% endif %}
-      <dl class="row">
-        <dt class="col-sm-3">State</dt>
-        <dd class="col-sm-9">
-          <strong class="{{ container.state|colorize_state }}" id="id_state">{{ container.state }}</strong>
-          {% state_bell container.state last_job.action as state_bell_text %}
-          <i id="id_state_bell" class="iconify" {% if not state_bell_text %}style="display: none;"{% endif %} data-icon="mdi:bell" data-toggle="tooltip" title="{{ state_bell_text }}"></i>
-        </dd>
-      </dl>
       {% if last_job.action %}
       <dl class="row">
         <dt class="col-sm-3">Last action</dt>
@@ -276,7 +268,6 @@
     var logWatcherSocket = createWebSocket();
     const logsElement = document.querySelector("#id_logs");
     const stateElement = document.querySelector("#id_container_state");
-    const stateDetailElement = document.querySelector("#id_state");
     const logLinesInput = document.querySelector("#id_log_lines");
     const logLinesCookie = getCookie("log_lines");
     if (logLinesCookie !== null) {
@@ -295,8 +286,6 @@
       socket.addEventListener("message", async (event) => {
         data = JSON.parse(event.data);
         if (data.type === "container_state") {
-          stateDetailElement.innerText = data.state;
-          // TODO: dynamically update the controls buttons and colorize the state in the details.
           if (data.state == "running") {
             // Do a pre-flight check of the app inside the container
             // Our server returns status 299 when the app is not running, but it redirects the client to the proxy lobby

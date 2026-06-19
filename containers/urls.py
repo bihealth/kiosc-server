@@ -114,7 +114,7 @@ websocket_urlpatterns = [
     ),
     re_path(
         r'^containers/watcher/logs/(?P<container>[0-9a-f-]+)',
-        consumers.LogWatcherConsumer.as_asgi(),
+        consumers.ContainerWatcherConsumer.as_asgi(),
         name='log-watcher',
     ),
 ]

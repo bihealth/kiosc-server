@@ -294,39 +294,10 @@
       });
       socket.addEventListener("message", async (event) => {
         data = JSON.parse(event.data);
-        if (data.type === "container_rt_logs" || data.type === "container_static_logs" || data.type === "container_channel_logs") {
-          if (logsElement.innerText == " Loading...") {
-            logsElement.innerText = "";
-          }
-          let scrollHeightBefore = logsElement.scrollHeight;
-          logsElement.append(data.text);
-          if (data.type === "container_static_logs" || data.type == "container_channel_logs") {
-            logsElement.append("\n");
-          }
-          const boundingHeight = logsElement.getBoundingClientRect()["height"];
-          if (scrollHeightBefore <= boundingHeight + logsElement.scrollTop + 20) {
-            logsElement.scrollTop = logsElement.scrollTopMax;
-          }
-        } else if (data.type === "container_pull_logs") {
-          if (logsElement.innerText == " Loading...") {
-            logsElement.innerText = "";
-          }
-          if (data.id) {
-            const re = new RegExp(`^${data.id}.*`, 'm');
-            if (logsElement.innerText.search(re) != -1) {
-              // FIXME: we can use the output of search instead of replace.
-              logsElement.innerText = logsElement.innerText.replace(re, data.status);
-            } else {
-              logsElement.append(data.status + "\n");
-            }
-          } else {
-            console.log(data)
-            // logsElement.append(data.status + "\n");
-          }
-        } else if (data.type === "container_state") {
+        if (data.type === "container_state") {
           stateDetailElement.innerText = data.state;
           // TODO: dynamically update the controls buttons and colorize the state in the details.
-          if (data.state == 'running') {
+          if (data.state == "running") {
             // Do a pre-flight check of the app inside the container
             // Our server returns status 299 when the app is not running, but it redirects the client to the proxy lobby
             try {
@@ -352,8 +323,36 @@
           } else {
             stateElement.innerText = data.text;
           }
-        } else {
-          console.error("Unsupported websocket event data type.", data);
+        } else {  // static_logs channel_logs pull_logs daemon_logs
+          if (logsElement.innerText == " Loading...") {
+            logsElement.innerText = "";
+          }
+          let scrollHeightBefore = logsElement.scrollHeight;
+          if (data.type === "static_logs" || data.type === "channel_logs" || data.type === "daemon_logs") {
+            logsElement.append(data.text);
+          } else if (data.type === "pull_logs") {
+            if (data.id) {
+              const re = new RegExp(`^${data.id}.*`, 'm');
+              if (logsElement.innerText.search(re) != -1) {
+                // FIXME: we can use the output of search instead of replace.
+                logsElement.innerText = logsElement.innerText.replace(re, data.status);
+              } else {
+                logsElement.append(data.status + "\n");
+              }
+            } else {
+              console.log(data)
+              // logsElement.append(data.status + "\n");
+            }
+          } else if (data.type === "watcher_error") {
+            logsElement.append(data.text);
+          } else {
+            logsElement.append("Unsupported event data type from ContainerWatcher, please report this bug.");
+            console.error("Unsupported websocket event data type.", data);
+          }
+          const boundingHeight = logsElement.getBoundingClientRect()["height"];
+          if (scrollHeightBefore <= boundingHeight + logsElement.scrollTop + 20) {
+            logsElement.scrollTop = logsElement.scrollTopMax;
+          }
         }
       });
       socket.addEventListener("error", (event) => {
@@ -362,6 +361,8 @@
       socket.addEventListener("close", (event) => {
         if (event.code == 4403) {
           logsElement.innerText = "You are not authorized to see the container logs.";
+        } if (event.code == 4422) {
+          console.error("The server received invalid data.");
         } else if (event.code != 1000 && event.code != 1001) {
           // 1000 and 1001 indicate regular closing events.
           logsElement.innerText = "Failed to fetch logs, please refresh the page.";

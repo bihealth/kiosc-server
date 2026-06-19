@@ -75,7 +75,14 @@ class TestContainerCreationMixin:
         """Create a fake UUID."""
         self.fake_uuid = uuid.uuid4()
 
-    def create_container_event(self, container, user=None, event_name='test_event', status_type=TL_STATUS_OK, status_description='status description'):
+    def create_container_event(
+        self,
+        container,
+        user=None,
+        event_name='test_event',
+        status_type=TL_STATUS_OK,
+        status_description='status description',
+    ):
         """Create a container event"""
         tl_event = timeline.add_event(
             project=container.project,

@@ -3,10 +3,13 @@ Tests for the websocket providing real-time logs in the container detail view.
 """
 
 from asgiref.sync import sync_to_async
+import json
+from threading import Thread
+import time
 
 from channels.layers import get_channel_layer
 from django.conf import settings
-from django.db import transaction
+from django.db import connection
 from django.urls import re_path
 from django.test import TransactionTestCase
 from channels.routing import URLRouter
@@ -27,7 +30,11 @@ from projectroles.tests.base import (
 )
 
 from containers.models import (
+    STATE_INITIAL,
+    STATE_EXITED,
+    STATE_RUNNING,
     ACTION_START,
+    ACTION_STOP,
     ACTION_DELETE,
 )
 from containers.statemachines import connect_docker
@@ -39,7 +46,7 @@ from containers.tests.factories import (
 )
 from containers.tests.test_lifecycle import build_testdata_container
 from containers.tests.helpers import TestBase, TestContainerCreationMixin
-from containers.consumers import LogWatcherConsumer
+from containers.consumers import ContainerWatcherConsumer
 
 
 PROJECT_ROLE_OWNER = SODAR_CONSTANTS['PROJECT_ROLE_OWNER']
@@ -61,7 +68,9 @@ class AuthMiddlewareTesting:
         return await self.app(scope, receive, send)
 
 
-class TestLogWatcherConsumer(TransactionTestCase, TestContainerCreationMixin, LiveUserMixin):
+class TestContainerWatcherConsumer(
+    TransactionTestCase, TestContainerCreationMixin, LiveUserMixin
+):
     def setUp(self):
         super().setUp()
 
@@ -84,69 +93,210 @@ class TestLogWatcherConsumer(TransactionTestCase, TestContainerCreationMixin, Li
         self.cli = connect_docker()
         build_testdata_container(self.cli, 'sample-app-logging')
 
-        self.container = ContainerFactory(
+        self.container1 = ContainerFactory(
             project=self.project,
             repository='sample-app-logging',
             tag='testing',
             host_port=0,
             container_id=None,
         )
-        # Start the container
-        bg_job = ContainerBackgroundJobFactory(
-            user=self.superuser,
-            action=ACTION_START,
-            container=self.container,
+        self.container2 = ContainerFactory(
+            project=self.project,
+            repository='sample-app-instacrash',
+            tag='testing',
+            host_port=0,
+            container_id=None,
         )
-        container_task(job_id=bg_job.pk)
 
-    def tearDown(self):
-        super().tearDown()
-        bg_job = ContainerBackgroundJobFactory(
-            user=self.superuser,
-            action=ACTION_DELETE,
-            container=self.container,
-        )
-        container_task(job_id=bg_job.pk)
-
-    async def test_websocket_consumer(self):
-        # Connect the websocket
-        app = AuthMiddlewareTesting(
+        self.app = AuthMiddlewareTesting(
             URLRouter(
                 [
                     re_path(
                         r'^testws/(?P<container>[0-9a-f-]+)',
-                        LogWatcherConsumer.as_asgi(),
+                        ContainerWatcherConsumer.as_asgi(),
                     ),
                 ]
             ),
             self.superuser,
         )
-        print('====================')
-        print(self.container.sodar_uuid)
+
+    def tearDown(self):
+        # Give some time for the consumer to shut down
+        time.sleep(3)
+        super().tearDown()
+        bg_job = ContainerBackgroundJobFactory(
+            user=self.superuser,
+            action=ACTION_DELETE,
+            container=self.container1,
+        )
+        container_task(job_id=bg_job.pk)
+
+    @classmethod
+    def _run_action_job(cls, user, container, action):
+        bg_job = ContainerBackgroundJobFactory(
+            user=user,
+            action=action,
+            container=container,
+        )
+        container_task(job_id=bg_job.pk)
+        # Close Django connections to the db from this thread
+        connection.close()
+
+    async def test_websocket_consumer(self):
+        """Test the websocket consumer for a previously running container"""
+        # Start the container
+        t = Thread(
+            target=self._run_action_job,
+            args=(self.superuser, self.container1, ACTION_START),
+        )
+        t.start()
+        t.join()
+
+        # 1. We send a websocket connection request.
         ws = WebsocketCommunicator(
-            app, 'testws/' + str(self.container.sodar_uuid)
+            self.app, 'testws/' + str(self.container1.sodar_uuid)
         )
         connected, subprotocol = await ws.connect()
         self.assertTrue(connected)
-        # 1. The server sends container logs from the db
-        response = await ws.receive_from(timeout=10)
-        print(response)
 
-        # 2. The server sends status polls every 2 seconds
-        # 3. The server sends messages from the channel layer
-        # 4. The client asks for a number of log lines, and the server starts sending logs from the docker daemon every second
-
+        # 2a. We send the configuration: currently just the number of log lines.
         await ws.send_to(text_data='20')
-        # This container logs the numbers from 1 to 100.
-        # Here we check the first 20 lines of logs.
-        for expected in range(1, 21):
-            response = await ws.receive_from(timeout=10)
-            timestamp, number = response.split()
-            self.assertEqual(number, str(expected))
+
+        # We receive any existing ContainerLogEntries from the db.
+        response = json.loads(await ws.receive_from(timeout=10))
+        self.assertEqual(response['type'], 'static_logs')
+        self.assertIn('Pulling image', response['text'])
+        self.assertIn('Pulling image succeeded', response['text'])
+        self.assertIn('Starting', response['text'])
+        self.assertIn('Starting succeeded', response['text'])
+
+        # We receive periodic updates from the Docker daemon.
+        response = json.loads(await ws.receive_from(timeout=10))
+        self.assertEqual(response['type'], 'container_state')
+        self.assertEqual(response['state'], STATE_RUNNING)
+
+        # This container logs an increasing sequence of numbers
+        for i in range(1, 11):
+            response = json.loads(await ws.receive_from(timeout=10))
+            self.assertEqual(response['type'], 'daemon_logs')
+            self.assertIn(f' {i}\n', response['text'])
+
+        await ws.disconnect()
+
+    async def test_websocket_consumer_before_start(self):
+        """Test the websocket consumer started before the container"""
+        # 1. We send a websocket connection request.
+        ws = WebsocketCommunicator(
+            self.app, 'testws/' + str(self.container1.sodar_uuid)
+        )
+        connected, subprotocol = await ws.connect()
+        self.assertTrue(connected)
+
+        # 2a. We send the configuration: currently just the number of log lines.
+        await ws.send_to(text_data='20')
+
+        # Since the container is not running, we expect only the container state
+        # from the daemon, no logs.
+        for i in range(3):
+            response = json.loads(await ws.receive_from(timeout=10))
+            self.assertEqual(response['type'], 'container_state')
+            self.assertEqual(response['state'], STATE_INITIAL)
+
+        # Start the container
+        t = Thread(
+            target=self._run_action_job,
+            args=(self.superuser, self.container1, ACTION_START),
+        )
+        t.start()
+        t.join()
+
+        # Now we expect pulling and task messages from the channel layer, not
+        # from the db
+        for i in range(6):
+            response = json.loads(await ws.receive_from(timeout=10))
+            self.assertEqual(response['type'], 'channel_logs')
+
+        # Now we try to trick the server by re-sending the text data
+        await ws.send_to(text_data='20')
+        # And we expect the response to come from the DB
+        response = json.loads(await ws.receive_from(timeout=10))
+        self.assertEqual(response['type'], 'static_logs')
+        self.assertIn('Pulling image', response['text'])
+        self.assertIn('Pulling image succeeded', response['text'])
+        self.assertIn('Starting', response['text'])
+        self.assertIn('Starting succeeded', response['text'])
+
+        # then we should receive either a container_state or a daemon_logs
+        response = json.loads(await ws.receive_from(timeout=10))
+        self.assertIn(response['type'], ('container_state', 'daemon_logs'))
+
+        await ws.disconnect()
+
+    async def test_websocket_consumer_with_action(self):
+        """Test the websocket consumer during a container action"""
+        # Start the container
+        t = Thread(
+            target=self._run_action_job,
+            args=(self.superuser, self.container1, ACTION_START),
+        )
+        t.start()
+        t.join()
+
+        # 1. We send a websocket connection request.
+        ws = WebsocketCommunicator(
+            self.app, 'testws/' + str(self.container1.sodar_uuid)
+        )
+        connected, subprotocol = await ws.connect()
+        self.assertTrue(connected)
+
+        # 2a. We send the configuration: currently just the number of log lines.
+        await ws.send_to(text_data='20')
+
+        # We receive any existing ContainerLogEntries from the db.
+        response = json.loads(await ws.receive_from(timeout=10))
+        self.assertEqual(response['type'], 'static_logs')
+        self.assertIn('Pulling image', response['text'])
+        self.assertIn('Pulling image succeeded', response['text'])
+        self.assertIn('Starting', response['text'])
+        self.assertIn('Starting succeeded', response['text'])
+
+        # We receive periodic updates from the Docker daemon.
+        response = json.loads(await ws.receive_from(timeout=10))
+        self.assertEqual(response['type'], 'container_state')
+        self.assertEqual(response['state'], STATE_RUNNING)
+
+        # This container logs an increasing sequence of numbers
+        for i in range(1, 11):
+            response = json.loads(await ws.receive_from(timeout=10))
+            self.assertEqual(response['type'], 'daemon_logs')
+            self.assertIn(f' {i}\n', response['text'])
+
+        # Stop the container
+        t = Thread(
+            target=self._run_action_job,
+            args=(self.superuser, self.container1, ACTION_STOP),
+        )
+        t.start()
+        t.join()
+
+        # We get some residual daemon logs because it takes a while to stop the container
+        for i in range(60):
+            response = json.loads(await ws.receive_from(timeout=10))
+            if response['type'] != 'daemon_logs':
+                break
+        else:
+            assert False, "ContainerWatcher didn't detect a change of state"
+
+        # Now we should get just status updates
+        for i in range(3):
+            response = json.loads(await ws.receive_from(timeout=10))
+            self.assertEqual(response['type'], 'container_state')
+            self.assertEqual(response['state'], STATE_EXITED)
+
         await ws.disconnect()
 
 
-class TestLogWatcherConsumerLive(
+class TestContainerWatcherConsumerLive(
     SeleniumSetupMixin, LiveUserMixin, UITestMixin, ChannelsLiveServerTestCase
 ):
     def setUp(self):
@@ -205,54 +355,3 @@ class TestLogWatcherConsumerLive(
         for expected, line in enumerate(final_text.splitlines(), 1):
             timestamp, number = line.split()
             self.assertEqual(number, str(expected))
-
-
-class TestLogWatcherConsumerCrashing(TestBase):
-    def setUp(self):
-        super().setUp()
-        self.cli = connect_docker()
-        # Build the sample container image
-        build_testdata_container(self.cli, 'sample-app-instacrash')
-
-        self.container = ContainerFactory(
-            project=self.project,
-            repository='sample-app-instacrash',
-            tag='testing',
-            host_port=0,
-            container_id=None,
-        )
-        # Start the container
-        bg_job = ContainerBackgroundJobFactory(
-            user=self.superuser,
-            action=ACTION_START,
-            container=self.container,
-        )
-        container_task(job_id=bg_job.pk)
-
-    def tearDown(self):
-        super().tearDown()
-        bg_job = ContainerBackgroundJobFactory(
-            user=self.superuser,
-            action=ACTION_DELETE,
-            container=self.container,
-        )
-        container_task(job_id=bg_job.pk)
-
-    async def test_websocket_consumer(self):
-        # Connect the websocket
-        app = AuthMiddlewareTesting(
-            URLRouter(
-                [
-                    re_path(
-                        r'^testws/(?P<container>[0-9a-f-]+)',
-                        LogWatcherConsumer.as_asgi(),
-                    ),
-                ]
-            ),
-            self.superuser,
-        )
-        ws = WebsocketCommunicator(
-            app, 'testws/' + str(self.container.sodar_uuid)
-        )
-        connected, subprotocol = await ws.connect()
-        self.assertFalse(connected)

@@ -121,64 +121,170 @@ class TestContainerTags(TestBase):
 
     def test_get_container_last_errors_empty(self):
         """Test get_container_last_errors() with no errors"""
-        self.create_container_event(self.container1, status_type=TL_STATUS_OK, user=None)
+        self.create_container_event(
+            self.container1, status_type=TL_STATUS_OK, user=None
+        )
         res = get_container_last_errors(self.container1)
         self.assertEqual(len(res), 0)
 
     def test_get_container_last_errors_superuser(self):
         """Test get_container_last_errors() as superuser"""
-        self.create_container_event(self.container1, status_type=TL_STATUS_FAILED, user=self.user, event_name='user_event', status_description='desc1')
-        self.create_container_event(self.container1, status_type=TL_STATUS_FAILED, user=None, event_name='anonymous_event', status_description='desc2')
+        self.create_container_event(
+            self.container1,
+            status_type=TL_STATUS_FAILED,
+            user=self.user,
+            event_name='user_event',
+            status_description='desc1',
+        )
+        self.create_container_event(
+            self.container1,
+            status_type=TL_STATUS_FAILED,
+            user=None,
+            event_name='anonymous_event',
+            status_description='desc2',
+        )
         # The superuser should be able to see both events
         all_events = get_container_events(self.container1).all()
         self.assertEqual(len(all_events), 2)
-        res = get_container_last_errors(self.container1, user=self.superuser, limit = 10)
+        res = get_container_last_errors(
+            self.container1, user=self.superuser, limit=10
+        )
         # The events should be in reverse chronological order
         self.assertEqual(res, ['desc2', 'desc1'])
 
     def test_get_container_last_errors_user(self):
         """Test get_container_last_errors() as regular user"""
-        self.create_container_event(self.container1, status_type=TL_STATUS_FAILED, user=self.superuser, event_name='superuser_event', status_description='desc1')
-        self.create_container_event(self.container1, status_type=TL_STATUS_FAILED, user=self.user, event_name='user_event', status_description='desc2')
-        self.create_container_event(self.container1, status_type=TL_STATUS_FAILED, user=None, event_name='anonymous_event', status_description='desc3')
+        self.create_container_event(
+            self.container1,
+            status_type=TL_STATUS_FAILED,
+            user=self.superuser,
+            event_name='superuser_event',
+            status_description='desc1',
+        )
+        self.create_container_event(
+            self.container1,
+            status_type=TL_STATUS_FAILED,
+            user=self.user,
+            event_name='user_event',
+            status_description='desc2',
+        )
+        self.create_container_event(
+            self.container1,
+            status_type=TL_STATUS_FAILED,
+            user=None,
+            event_name='anonymous_event',
+            status_description='desc3',
+        )
         # The regular user should be able to see two events
         all_events = get_container_events(self.container1).all()
         self.assertEqual(len(all_events), 3)
-        res = get_container_last_errors(self.container1, user=self.user, limit = 10)
+        res = get_container_last_errors(
+            self.container1, user=self.user, limit=10
+        )
         # The events should be in reverse chronological order
         self.assertEqual(res, ['desc3', 'desc2'])
 
     def test_get_container_last_errors_anon(self):
         """Test get_container_last_errors() as anonymous"""
-        self.create_container_event(self.container1, status_type=TL_STATUS_FAILED, user=self.superuser, event_name='superuser_event', status_description='desc1')
-        self.create_container_event(self.container1, status_type=TL_STATUS_FAILED, user=self.user, event_name='user_event', status_description='desc2')
-        self.create_container_event(self.container1, status_type=TL_STATUS_FAILED, user=None, event_name='anonymous_event', status_description='desc3')
+        self.create_container_event(
+            self.container1,
+            status_type=TL_STATUS_FAILED,
+            user=self.superuser,
+            event_name='superuser_event',
+            status_description='desc1',
+        )
+        self.create_container_event(
+            self.container1,
+            status_type=TL_STATUS_FAILED,
+            user=self.user,
+            event_name='user_event',
+            status_description='desc2',
+        )
+        self.create_container_event(
+            self.container1,
+            status_type=TL_STATUS_FAILED,
+            user=None,
+            event_name='anonymous_event',
+            status_description='desc3',
+        )
         # The regular user should be able to see one event
         all_events = get_container_events(self.container1).all()
         self.assertEqual(len(all_events), 3)
-        res = get_container_last_errors(self.container1, user=None, limit = 10)
+        res = get_container_last_errors(self.container1, user=None, limit=10)
         self.assertEqual(res, ['desc3'])
 
     def test_get_container_last_errors_break(self):
         """Test get_container_last_errors() breaking at the first success"""
-        self.create_container_event(self.container1, status_type=TL_STATUS_FAILED, user=self.superuser, event_name='superuser_event', status_description='desc1')
-        self.create_container_event(self.container1, status_type=TL_STATUS_OK, user=self.superuser, event_name='superuser_event', status_description='desc2')
-        self.create_container_event(self.container1, status_type=TL_STATUS_FAILED, user=self.user, event_name='user_event', status_description='desc3')
-        self.create_container_event(self.container1, status_type=TL_STATUS_FAILED, user=None, event_name='anonymous_event', status_description='desc4')
+        self.create_container_event(
+            self.container1,
+            status_type=TL_STATUS_FAILED,
+            user=self.superuser,
+            event_name='superuser_event',
+            status_description='desc1',
+        )
+        self.create_container_event(
+            self.container1,
+            status_type=TL_STATUS_OK,
+            user=self.superuser,
+            event_name='superuser_event',
+            status_description='desc2',
+        )
+        self.create_container_event(
+            self.container1,
+            status_type=TL_STATUS_FAILED,
+            user=self.user,
+            event_name='user_event',
+            status_description='desc3',
+        )
+        self.create_container_event(
+            self.container1,
+            status_type=TL_STATUS_FAILED,
+            user=None,
+            event_name='anonymous_event',
+            status_description='desc4',
+        )
         # The regular user should be able to see one event
         all_events = get_container_events(self.container1).all()
         self.assertEqual(len(all_events), 4)
-        res = get_container_last_errors(self.container1, user=self.superuser, limit = 10)
+        res = get_container_last_errors(
+            self.container1, user=self.superuser, limit=10
+        )
         self.assertEqual(res, ['desc4', 'desc3'])
 
     def test_get_container_last_errors_limit(self):
         """Test get_container_last_errors() limit argument"""
-        self.create_container_event(self.container1, status_type=TL_STATUS_FAILED, user=self.superuser, event_name='superuser_event', status_description='desc1')
-        self.create_container_event(self.container1, status_type=TL_STATUS_OK, user=self.superuser, event_name='superuser_event', status_description='desc2')
-        self.create_container_event(self.container1, status_type=TL_STATUS_FAILED, user=self.user, event_name='user_event', status_description='desc3')
-        self.create_container_event(self.container1, status_type=TL_STATUS_FAILED, user=None, event_name='anonymous_event', status_description='desc4')
+        self.create_container_event(
+            self.container1,
+            status_type=TL_STATUS_FAILED,
+            user=self.superuser,
+            event_name='superuser_event',
+            status_description='desc1',
+        )
+        self.create_container_event(
+            self.container1,
+            status_type=TL_STATUS_OK,
+            user=self.superuser,
+            event_name='superuser_event',
+            status_description='desc2',
+        )
+        self.create_container_event(
+            self.container1,
+            status_type=TL_STATUS_FAILED,
+            user=self.user,
+            event_name='user_event',
+            status_description='desc3',
+        )
+        self.create_container_event(
+            self.container1,
+            status_type=TL_STATUS_FAILED,
+            user=None,
+            event_name='anonymous_event',
+            status_description='desc4',
+        )
         # The regular user should be able to see one event
         all_events = get_container_events(self.container1).all()
         self.assertEqual(len(all_events), 4)
-        res = get_container_last_errors(self.container1, user=self.superuser, limit = 1)
+        res = get_container_last_errors(
+            self.container1, user=self.superuser, limit=1
+        )
         self.assertEqual(res, ['desc4'])

@@ -229,7 +229,7 @@ class ContainerCreateView(
                 app_name=APP_NAME,
                 user=self.request.user,
                 event_name='create_container',
-                description=f'Create container "{self.object.get_display_name()}"',
+                description='Create container {container}',
                 status_type=timeline.TL_STATUS_OK,
             )
             tl_event.add_object(

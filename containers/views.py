@@ -63,7 +63,6 @@ from containers.models import (
     ACTION_RESTART,
     ACTION_DELETE,
     PROCESS_OBJECT,
-    STATE_PAUSED,
     STATE_PULLING,
     STATE_RUNNING,
     STATE_DELETED,
@@ -84,7 +83,7 @@ APP_NAME = 'containers'
 CELERY_SUBMIT_COUNTDOWN = 0.5
 LOBBY_WAITING_PHRASES = [
     'The container is loading...',
-    'Updating Windows, please don\'t turn off your computer...',
+    "Updating Windows, please don't turn off your computer...",
     'Just one more second...',
     'This could take a while, go get a coffee...',
     'You can close this page and come back later...',
@@ -241,7 +240,7 @@ class ContainerCreateView(
 
         # Add container log entry
         self.object.log_entries.create(
-            text='Created',
+            text='Created.\n',
             process=PROCESS_OBJECT,
             user=self.request.user,
         )
@@ -358,7 +357,9 @@ class ContainerUpdateView(
         )
 
         # Schedule task synchronously
-        logger.info(f'The container object was updated, so we schedule a job to delete the Docker container. The container id is {container.container_id}')
+        logger.info(
+            f'The container object was updated, so we schedule a job to delete the Docker container. The container id is {container.container_id}'
+        )
         container_task(job_id=job.id)
         container.refresh_from_db()
         logger.info('Container deleted after update')
@@ -765,7 +766,10 @@ class ReverseProxyView(
 
         if container.state not in (STATE_RUNNING, STATE_PULLING):
             if tl_event:
-                tl_event.set_status(TL_STATUS_FAILED, 'Tried to access the app while the container was not running')
+                tl_event.set_status(
+                    TL_STATUS_FAILED,
+                    'Tried to access the app while the container was not running',
+                )
             messages.error(
                 request, f"Container '{container.title}' not running."
             )
@@ -777,7 +781,10 @@ class ReverseProxyView(
 
             else:
                 if tl_event:
-                    tl_event.set_status(TL_STATUS_FAILED, 'The host port is not set, please update the container.')
+                    tl_event.set_status(
+                        TL_STATUS_FAILED,
+                        'The host port is not set, please update the container.',
+                    )
                 messages.error(request, 'Host port not set.')
                 return _redirect
 
@@ -797,7 +804,10 @@ class ReverseProxyView(
 
         except MaxRetryError:
             if tl_event:
-                tl_event.set_status(TL_STATUS_FAILED, 'The app is not ready to take connections, please wait a moment.')
+                tl_event.set_status(
+                    TL_STATUS_FAILED,
+                    'The app is not ready to take connections, please wait a moment.',
+                )
             # The upstream app in the container is not ready yet
             # XXX: Maybe we should use a custom header instead of custom return code
             return render(
@@ -809,7 +819,9 @@ class ReverseProxyView(
         except NewConnectionError as e:
             logger.error(f'Connection error in proxy: {e}')
             if tl_event:
-                tl_event.set_status(TL_STATUS_FAILED, f'Error connecting to the app: {e}')
+                tl_event.set_status(
+                    TL_STATUS_FAILED, f'Error connecting to the app: {e}'
+                )
             messages.error(
                 request,
                 f"Web-interface of container '{container.title}' not reachable.",

@@ -98,7 +98,7 @@ class ActionSwitch:
                 self.cm.start_created()
 
             elif state == STATE_EXITED or state == STATE_TERMINATED:
-                self.cm.delete()
+                self.cm.delete_exited()
                 self.cm.delete_success()
                 self.cm.pull_deleted()
                 self.cm.start_pulled()
@@ -117,7 +117,7 @@ class ActionSwitch:
                 )
         except Exception as ex:
             self.job.container.log_entries.create(
-                text=f'Failed to start container: {ex}',
+                text=f'Failed to start container: {ex}\n',
                 process=PROCESS_TASK,
                 user=self.job.bg_job.user,
             )
@@ -125,7 +125,7 @@ class ActionSwitch:
                 str(self.job.container.sodar_uuid),
                 {
                     'type': 'container_task.message',
-                    'text': f'Failed to start container: {ex}',
+                    'text': f'Failed to start container: {ex}\n',
                 },
             )
             raise ex
@@ -186,20 +186,20 @@ class ActionSwitch:
 
         elif state == STATE_RUNNING:
             self.cm.stop_running()
-            self.cm.delete()
+            self.cm.delete_exited()
             self.cm.delete_success()
             self.cm.pull_deleted()
             self.cm.start_pulled()
 
         elif state == STATE_PAUSED:
             self.cm.stop_paused()
-            self.cm.delete()
+            self.cm.delete_exited()
             self.cm.delete_success()
             self.cm.pull_deleted()
             self.cm.start_pulled()
 
         elif state in (STATE_EXITED, STATE_TERMINATED):
-            self.cm.delete()
+            self.cm.delete_exited()
             self.cm.delete_success()
             self.cm.pull_deleted()
             self.cm.start_pulled()
@@ -222,16 +222,16 @@ class ActionSwitch:
 
         elif state == STATE_RUNNING:
             self.cm.stop_running()
-            self.cm.delete()
+            self.cm.delete_exited()
             self.cm.delete_success()
 
         elif state == STATE_PAUSED:
             self.cm.stop_paused()
-            self.cm.delete()
+            self.cm.delete_exited()
             self.cm.delete_success()
 
         elif state == STATE_EXITED or state == STATE_TERMINATED:
-            self.cm.delete()
+            self.cm.delete_exited()
             self.cm.delete_success()
 
         elif state == STATE_FAILED:
@@ -446,7 +446,7 @@ class ContainerMachine(StateMachine):
             f'Pulling image {self.container.get_repos_full()} ...'
         )
         self.container.log_entries.create(
-            text=f'Pulling image {self.container.get_repos_full()} ...',
+            text=f'Pulling image {self.container.get_repos_full()} ...\n',
             process=PROCESS_TASK,
             user=self.user,
         )
@@ -454,7 +454,7 @@ class ContainerMachine(StateMachine):
             str(self.container.sodar_uuid),
             {
                 'type': 'container_task.message',
-                'text': f'Pulling image {self.container.get_repos_full()} ...',
+                'text': f'Pulling image {self.container.get_repos_full()} ...\n',
             },
         )
         self.container.state = STATE_PULLING
@@ -480,7 +480,7 @@ class ContainerMachine(StateMachine):
                         self.user,
                     )
                     self.container.log_entries.create(
-                        text=f'Logging in to registry {registry} with user credentials...',
+                        text=f'Logging in to registry {registry} with user credentials...\n',
                         process=PROCESS_TASK,
                         user=self.user,
                     )
@@ -488,7 +488,7 @@ class ContainerMachine(StateMachine):
                         str(self.container.sodar_uuid),
                         {
                             'type': 'container_task.message',
-                            'text': f'Logging in to registry {registry} with user credentials...',
+                            'text': f'Logging in to registry {registry} with user credentials...\n',
                         },
                     )
                     self.cli.login(
@@ -497,7 +497,7 @@ class ContainerMachine(StateMachine):
                         registry=registry,
                     )
                     self.container.log_entries.create(
-                        text='Logged in successfully.',
+                        text='Logged in successfully.\n',
                         process=PROCESS_TASK,
                         user=self.user,
                     )
@@ -505,13 +505,13 @@ class ContainerMachine(StateMachine):
                         str(self.container.sodar_uuid),
                         {
                             'type': 'container_task.message',
-                            'text': 'Logged in successfully.',
+                            'text': 'Logged in successfully.\n',
                         },
                     )
                 except Exception as ex:
                     logger.error('Failed to login to registry: %s', ex)
                     self.container.log_entries.create(
-                        text=f'Login failed: {ex}',
+                        text=f'Login failed: {ex}\n',
                         process=PROCESS_DOCKER,
                         date_docker_log=timezone.now(),
                         user=self.user,
@@ -520,7 +520,7 @@ class ContainerMachine(StateMachine):
                         str(self.container.sodar_uuid),
                         {
                             'type': 'container_task.message',
-                            'text': f'Login failed: {ex}',
+                            'text': f'Login failed: {ex}\n',
                         },
                     )
                     self.job.add_log_entry(str(ex))
@@ -532,24 +532,34 @@ class ContainerMachine(StateMachine):
                 decode=True,
             ):
                 pull_log = {'text': line.get('status')}
-                if (line_id := line.get('id')) and (line_progress := line.get('progressDetail')):
+                if (line_id := line.get('id')) and (
+                    line_progress := line.get('progressDetail')
+                ):
                     pull_log['id'] = line_id
                     pull_log['status'] = f'{line_id}: {line.get("status")}'
-                    if line_progress.get('current') and line_progress.get('total'):
-                        pull_log['status'] += f' [{line_progress.get("current")}/{line_progress.get("total")}]'
-                    elif line_progress.get('current') and line_progress.get('units'):
-                        pull_log['status'] += f' [{line_progress.get("current")}{line_progress.get("units")}]'
+                    if line_progress.get('current') and line_progress.get(
+                        'total'
+                    ):
+                        pull_log['status'] += (
+                            f' [{line_progress.get("current")}/{line_progress.get("total")}]'
+                        )
+                    elif line_progress.get('current') and line_progress.get(
+                        'units'
+                    ):
+                        pull_log['status'] += (
+                            f' [{line_progress.get("current")}{line_progress.get("units")}]'
+                        )
                     else:
                         # We create log entries only for status lines that don't change
                         self.container.log_entries.create(
-                            text=pull_log['status'],
+                            text=pull_log['status'] + '\n',
                             process=PROCESS_TASK,
                             user=self.user,
                         )
                 else:
                     pull_log = {'status': line.get('status')}
                     self.container.log_entries.create(
-                        text=line.get('status'),
+                        text=line.get('status') + '\n',
                         process=PROCESS_TASK,
                         user=self.user,
                     )
@@ -568,7 +578,7 @@ class ContainerMachine(StateMachine):
         self.container.save()
         self.job.add_log_entry('Pulling image succeeded')
         self.container.log_entries.create(
-            text='Pulling image succeeded',
+            text='Pulling image succeeded.\n',
             process=PROCESS_TASK,
             user=self.user,
         )
@@ -576,7 +586,7 @@ class ContainerMachine(StateMachine):
             str(self.container.sodar_uuid),
             {
                 'type': 'container_task.message',
-                'text': 'Pulling image succeeded',
+                'text': 'Pulling image succeeded.\n',
             },
         )
 
@@ -636,7 +646,7 @@ class ContainerMachine(StateMachine):
 
         self.job.add_log_entry('Initializing the container...')
         self.container.log_entries.create(
-            text='Initializing the container...',
+            text='Initializing the container...\n',
             process=PROCESS_TASK,
             user=self.user,
         )
@@ -644,7 +654,7 @@ class ContainerMachine(StateMachine):
             str(self.container.sodar_uuid),
             {
                 'type': 'container_task.message',
-                'text': 'Initializing the container...',
+                'text': 'Initializing the container...\n',
             },
         )
 
@@ -676,7 +686,7 @@ class ContainerMachine(StateMachine):
 
         self.job.add_log_entry('Container initialized successfully.')
         self.container.log_entries.create(
-            text='Container initialized successfully.',
+            text='Container initialized successfully.\n',
             process=PROCESS_TASK,
             user=self.user,
         )
@@ -684,7 +694,7 @@ class ContainerMachine(StateMachine):
             str(self.container.sodar_uuid),
             {
                 'type': 'container_task.message',
-                'text': 'Container initialized successfully.',
+                'text': 'Container initialized successfully.\n',
             },
         )
 
@@ -699,16 +709,30 @@ class ContainerMachine(StateMachine):
     def on_start_pulled(self):
         # Starting container
         self.container.log_entries.create(
-            text='Starting ...', process=PROCESS_TASK, user=self.user
+            text='Starting ...\n', process=PROCESS_TASK, user=self.user
+        )
+        async_to_sync(channel_layer.group_send)(
+            str(self.container.sodar_uuid),
+            {
+                'type': 'container_task.message',
+                'text': 'Starting ...\n',
+            },
         )
         self.job.add_log_entry('Starting container')
         self.cli.start(self.container.container_id)
         self._update_status()
         self.job.add_log_entry('Starting container succeeded')
         self.container.log_entries.create(
-            text='Starting succeeded',
+            text='Starting succeeded.\n',
             process=PROCESS_TASK,
             user=self.user,
+        )
+        async_to_sync(channel_layer.group_send)(
+            str(self.container.sodar_uuid),
+            {
+                'type': 'container_task.message',
+                'text': 'Starting succeeded.\n',
+            },
         )
 
     def on_start_created(self):
@@ -763,9 +787,16 @@ class ContainerMachine(StateMachine):
         self.container.save()
         self.container.log_entries.all().delete()
         self.container.log_entries.create(
-            text='Previous container was deleted.',
+            text='Previous container was deleted.\n',
             process=PROCESS_TASK,
             user=self.user,
+        )
+        async_to_sync(channel_layer.group_send)(
+            str(self.container.sodar_uuid),
+            {
+                'type': 'container_task.message',
+                'text': 'Previous container was deleted.\n',
+            },
         )
 
         if not self.container.container_id:
@@ -782,32 +813,39 @@ class ContainerMachine(StateMachine):
             )
         except docker.errors.NotFound:
             # The container doesn't exist, so there is nothing to delete
-            logger.warning('Trying to delete container which doesn\'t exist')
+            logger.warning("Trying to delete container which doesn't exist")
             pass
 
     def on_delete_terminated(self):
         self.on_delete_exited()
 
     def on_delete_failed(self):
-        self.on_delete()
+        self.on_delete_exited()
 
     def on_delete_created(self):
-        self.on_delete()
+        self.on_delete_exited()
 
     def on_delete_dead(self):
-        self.on_delete()
+        self.on_delete_exited()
 
     def on_delete_pulling(self):
-        self.on_delete()
+        self.on_delete_exited()
 
     def on_delete_success(self):
         self.container.state = STATE_DELETED
         self.container.container_id = None
         self.container.save()
 
+        self.job.add_log_entry('Deleting container succeeded')
         self.container.log_entries.create(
-            text='Deleting succeeded',
+            text='Deleting succeeded.\n',
             process=PROCESS_TASK,
             user=self.user,
         )
-        self.job.add_log_entry('Deleting container succeeded')
+        async_to_sync(channel_layer.group_send)(
+            str(self.container.sodar_uuid),
+            {
+                'type': 'container_task.message',
+                'text': 'Deleting succeeded.\n',
+            },
+        )

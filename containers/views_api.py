@@ -98,7 +98,7 @@ class ContainerCreateAPIView(
                 sodar_uuid=response.data.get('sodar_uuid')
             )
             container.log_entries.create(
-                text='Created [API]',
+                text='Created [API].\n',
                 process=PROCESS_OBJECT,
                 user=self.request.user,
             )

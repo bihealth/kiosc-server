@@ -335,6 +335,9 @@ class ContainerMachine(StateMachine):
     #: Transition when starting an exited container (action: start).
     start_exited = exited.to(running)
 
+    #: Transition when starting a terminated container (action: start).
+    start_terminated = terminated.to(running)
+
     #: Transition when pausing a running container (action: pause).
     pause = running.to(paused)
 
@@ -353,11 +356,11 @@ class ContainerMachine(StateMachine):
     #: Transition when timing out a paused container (action: terminate).
     terminate_paused = paused.to(terminated)
 
-    #: Transition when deleting a stopped container (action: delete).
-    delete = exited.to(deleting)
+    #: Transition when deleting an exited container (action: delete).
+    delete_exited = exited.to(deleting)
 
-    #: Transition when successfully finishing deleting a container (no action).
-    delete_success = deleting.to(deleted)
+    #: Transition when deleting a terminated container (action: delete).
+    delete_terminated = terminated.to(deleting)
 
     #: Transition when deleting a failed container (action: delete).
     delete_failed = failed.to(deleting)
@@ -370,6 +373,9 @@ class ContainerMachine(StateMachine):
 
     #: Transition when deleting a pulled container (action: delete).
     delete_pulling = pulling.to(deleting)
+
+    #: Transition when successfully finishing deleting a container (no action).
+    delete_success = deleting.to(deleted)
 
     #: Transition when a newly created container failed to start (no action).
     failed_start = pulling.to(created)
@@ -390,6 +396,9 @@ class ContainerMachine(StateMachine):
 
     #: Transition ``exited`` to ``failed``
     failed_exited = exited.to(failed)
+
+    #: Transition ``terminated`` to ``failed``
+    failed_terminated = terminated.to(failed)
 
     #: Transition ``deleting`` to ``failed``
     failed_deleting = deleting.to(failed)
@@ -625,18 +634,6 @@ class ContainerMachine(StateMachine):
             }
             options['volumes'] = [kiosc_volume_mountpoint]
 
-        # Volume
-        if volume_name := str(self.container.volume_name):
-            kiosc_volume_mountpoint = '/kiosc'
-            self.cli.create_volume(volume_name)
-            options_host_config['binds'] = {
-                volume_name: {
-                    'bind': kiosc_volume_mountpoint,
-                    'mode': 'rw',
-                },
-            }
-            options['volumes'] = [kiosc_volume_mountpoint]
-
         self.job.add_log_entry('Initializing the container...')
         self.container.log_entries.create(
             text='Initializing the container...',
@@ -720,6 +717,9 @@ class ContainerMachine(StateMachine):
     def on_start_exited(self):
         self.on_start_pulled()
 
+    def on_start_terminated(self):
+        self.on_start_pulled()
+
     def on_pause(self):
         self.job.add_log_entry('Pausing container')
         self.cli.pause(self.container.container_id)
@@ -757,7 +757,7 @@ class ContainerMachine(StateMachine):
     def on_terminate_paused(self):
         self.on_terminate_running()
 
-    def on_delete(self):
+    def on_delete_exited(self):
         self.job.add_log_entry('Deleting container')
         self.container.state = STATE_DELETING
         self.container.save()
@@ -780,10 +780,13 @@ class ContainerMachine(StateMachine):
             self.cli.remove_container(
                 self.container.container_id, force=True, v=True
             )
-        except docker.errors.NotFound as e:
+        except docker.errors.NotFound:
             # The container doesn't exist, so there is nothing to delete
             logger.warning('Trying to delete container which doesn\'t exist')
             pass
+
+    def on_delete_terminated(self):
+        self.on_delete_exited()
 
     def on_delete_failed(self):
         self.on_delete()

@@ -98,13 +98,15 @@ class ActionSwitch:
                 self.cm.start_created()
 
             elif state == STATE_EXITED or state == STATE_TERMINATED:
-                self.cm.delete_exited()
-                self.cm.delete_success()
-                self.cm.pull_deleted()
-                self.cm.start_pulled()
+                # self.cm.delete_exited()
+                # self.cm.delete_success()
+                # self.cm.pull_deleted()
+                self.cm.start_exited()
 
             elif state == STATE_FAILED:
-                self.cm.pull_failed()
+                self.cm.delete_failed()
+                self.cm.delete_success()
+                self.cm.pull_deleted()
                 self.cm.start_pulled()
 
             elif state == STATE_RUNNING:

@@ -122,10 +122,10 @@
             <em><strong id="message">{{ waiting_phrases|random }}</strong></em>
           </li>
           <li>
-            <em><strong>Check the <a href="{% url 'containers:detail' container=object.sodar_uuid %}#card-logs">logs</a> for more info</strong></em>
+            <em><strong>Check the <a href="{% url 'containers:detail' container=object.sodar_uuid %}#card-logs">logs</a> for more info.</strong></em>
           </li>
           <li>
-            <em><strong>If this takes longer than one hour, contact the container author or the project owner</strong></em>
+            <em><strong>If this takes longer than one hour, contact the container author or the project owner.</strong></em>
           </li>
         </ul>
     </div>
@@ -140,7 +140,7 @@
                 type: 'GET',
                 dataType: 'json',
                 success: function(data) {
-                    if (data["state"] === "running") {
+                    if (data["state"] === "running" || data["state"] === "pulling") {
                         window.location.replace("{% url 'containers:proxy' container=object.sodar_uuid path=object.path %}");
                     } else {
                         $("#body").addClass("bg-danger")

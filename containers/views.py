@@ -363,7 +363,6 @@ class ContainerUpdateView(
         container_task(job_id=job.id)
         container.refresh_from_db()
         logger.info('Container deleted after update')
-        print(container.state)
 
         messages.success(
             self.request,

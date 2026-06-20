@@ -32,6 +32,7 @@ from containers.models import (
     STATE_INITIAL,
     STATE_PULLING,
     STATE_FAILED,
+    STATE_DELETED,
     STATE_TERMINATED,
     LOG_LEVEL_WARNING,
     ContainerActionLock,
@@ -94,7 +95,7 @@ def sync_container_state(container, timeline=None):
                     name=container.get_display_name(),
                 )
     except docker.errors.NullResource as ex:
-        if container.state not in (STATE_INITIAL, STATE_PULLING, STATE_FAILED):
+        if container.state not in (STATE_INITIAL, STATE_PULLING, STATE_FAILED, STATE_DELETED):
             logger.error(
                 'Failed to sync state: %s: %s (state is %s)',
                 container.sodar_uuid,

@@ -334,6 +334,8 @@
             }
           } else if (data.type === "watcher_error") {
             logsElement.append(data.text);
+            stateElement.innerText = "Something went wrong, please refresh the page and check the logs.";
+            console.error(data);
           } else {
             logsElement.append("Unsupported event data type from ContainerWatcher, please report this bug.");
             console.error("Unsupported websocket event data type.", data);

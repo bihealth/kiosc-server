@@ -22,6 +22,7 @@ from .models import Container
 from containers.models import (
     STATE_INITIAL,
     STATE_PULLING,
+    STATE_DELETED,
     STATE_TERMINATED,
     STATE_CREATED,
     STATE_FAILED,
@@ -199,10 +200,18 @@ class ContainerWatcherConsumer(WebsocketConsumer):
                 'text': 'The container failed to start, please check the logs, update the config if necessary, and start it again.',
             }
             self.send(json.dumps(msg))
-        elif not self.container.container_id:
+        elif container_state == STATE_DELETED:
             msg = {
                 'type': 'container_state',
-                'state': 'NOT_EXISTING',
+                'state': STATE_DELETED,
+                'text': 'The container was just updated or deleted, please start it again.',
+            }
+            self.send(json.dumps(msg))
+        elif not self.container.container_id:
+            logger.error('Cannot poll state for %s in state %s: %s', self.container.sodar_uuid, self.container.state, 'Container id is None')
+            msg = {
+                'type': 'container_state',
+                'state': f'{self.container.state} (NOT_EXISTING)',
                 'text': 'Something went wrong, please reset the container.',
             }
             self.send(json.dumps(msg))
@@ -292,12 +301,13 @@ class ContainerWatcherConsumer(WebsocketConsumer):
                     STATE_INITIAL,
                     STATE_PULLING,
                     STATE_FAILED,
+                    STATE_DELETED,
                 ):
                     # This is likely a bug, we quit
-                    logger.error('Cannot fetch logs: %s', ex)
+                    logger.error('Cannot fetch logs for %s in state %s: %s', self.container.sodar_uuid, self.container.state, ex)
                     msg = {
                         'type': 'watcher_error',
-                        'text': f'Cannot fetch logs: {ex}\n',
+                        'text': f'Cannot fetch logs (state is {self.container.state}): {ex}\n',
                     }
                     self.send(json.dumps(msg))
                     break
@@ -307,10 +317,10 @@ class ContainerWatcherConsumer(WebsocketConsumer):
                 continue
             except docker.errors.APIError as ex:
                 # This is likely a bug, we quit
-                logger.error('Cannot fetch logs: %s', ex)
+                logger.error('Cannot fetch logs for %s in state %s: %s', self.container.sodar_uuid, self.container.state, ex)
                 msg = {
                     'type': 'watcher_error',
-                    'text': f'Cannot fetch logs: {ex}\n',
+                    'text': f'Cannot fetch logs (state is {self.container.state}): {ex}\n',
                 }
                 self.send(json.dumps(msg))
                 break

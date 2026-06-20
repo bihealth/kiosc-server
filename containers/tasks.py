@@ -180,11 +180,6 @@ def container_task(_self, job_id):
             label='container',
             name=job.container.get_display_name(),
         )
-        tl_event.add_object(
-            obj=job,
-            label='action',
-            name=job.action,
-        )
         tl_event.set_status(TL_STATUS_SUBMIT)
 
     acs = ActionSwitch(cm, job, tl_event)
@@ -209,7 +204,7 @@ def container_task(_self, job_id):
             with transaction.atomic():
                 job.container.refresh_from_db()
                 # job.container.container_id = ''
-                job.container.image_id = ''
+                # job.container.image_id = ''
                 job.container.state = STATE_FAILED
                 job.container.save()
 

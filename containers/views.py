@@ -761,7 +761,7 @@ class ReverseProxyView(
         else:
             tl_event = None
 
-        _redirect = redirect(request.headers['Referer'])
+        _redirect = redirect(request.headers['Referer'], status=399)
 
         if container.state not in (STATE_RUNNING, STATE_PULLING):
             if tl_event:

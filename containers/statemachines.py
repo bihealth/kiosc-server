@@ -118,6 +118,7 @@ class ActionSwitch:
                     f'Action start not allowed in state {state}'
                 )
         except Exception as ex:
+            self.job.add_log_entry(f'Failed to start container: {ex}')
             self.job.container.log_entries.create(
                 text=f'Failed to start container: {ex}\n',
                 process=PROCESS_TASK,

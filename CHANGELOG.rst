@@ -10,11 +10,14 @@ Current
 - Disabled CELERY_ALWAYS_EAGER in local settings (#119)
   - After this, tasks will run asynchronously during development, like in the production configuration, allowing us to find more bugs before it's too late
   - NOTE: this implies that the celery process must be active during development, otherwise background tasks will not execute (you can simply run `make celery`)
+  - TODO: maybe we should introduce an env variable.
 
 - Add ContainerWatcher websocket which monitors container state and logs in real time (#119)
 - Container log entries are deleted when the container is restarted (but not when it's stopped and started again)
 - Container log entries are not saved to the db anymore, but they are still visible in the container detail page (they come from the docker daemon)
   - For now they are not searchable, this will be fixed in the next version
+
+- When a container is updated, it is not automatically restarted if it was running (#119), users have to manually restart it if necessary.
 
 - Added TERMINATED container state, more specific than "exited" (#119)
 
@@ -23,6 +26,8 @@ Current
 - Accessing a container which is not ready to take connections will redirect to a waiting page instead of throwing an error (#119)
 
 - We do not attempt to sync container state with latest user action: if the action fails, so be it (#119)
+
+- Added a "blank" containertemplate entry (#119)
 
 v0.5.3 (2026-06-18)
 ===================

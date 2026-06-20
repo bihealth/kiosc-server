@@ -442,13 +442,20 @@ class ContainerMachine(StateMachine):
         )
         self.container.save()
 
-    def on_pull(self):
-        # Pulling image
-        self.job.add_log_entry(
-            f'Pulling image {self.container.get_repos_full()} ...'
-        )
+    def _log_task(self, text):
+        """Add logs for the current task.
+
+        In general, logs must be added in three places:
+
+        - The background job;
+        - The channel layer, so that they are forwarded in real time
+          to the ContainerWatcherConsumer;
+        - The database, so that they are stored with persistence.
+        """
+        self.job.add_log_entry(text)
+        textnl = text + '\n'
         self.container.log_entries.create(
-            text=f'Pulling image {self.container.get_repos_full()} ...\n',
+            text=textnl,
             process=PROCESS_TASK,
             user=self.user,
         )
@@ -456,8 +463,14 @@ class ContainerMachine(StateMachine):
             str(self.container.sodar_uuid),
             {
                 'type': 'container_task.message',
-                'text': f'Pulling image {self.container.get_repos_full()} ...\n',
+                'text': textnl,
             },
+        )
+
+    def on_pull(self):
+        # Pulling image
+        self._log_task(
+            f'Pulling image {self.container.get_repos_full()} ...'
         )
         self.container.state = STATE_PULLING
         self.container.container_id = None
@@ -481,51 +494,16 @@ class ContainerMachine(StateMachine):
                         self.container.title,
                         self.user,
                     )
-                    self.container.log_entries.create(
-                        text=f'Logging in to registry {registry} with user credentials...\n',
-                        process=PROCESS_TASK,
-                        user=self.user,
-                    )
-                    async_to_sync(channel_layer.group_send)(
-                        str(self.container.sodar_uuid),
-                        {
-                            'type': 'container_task.message',
-                            'text': f'Logging in to registry {registry} with user credentials...\n',
-                        },
-                    )
+                    self._log_task(f'Logging in to registry {registry} with user credentials...')
                     self.cli.login(
                         self.container.registry_user,
                         self.container.registry_password,
                         registry=registry,
                     )
-                    self.container.log_entries.create(
-                        text='Logged in successfully.\n',
-                        process=PROCESS_TASK,
-                        user=self.user,
-                    )
-                    async_to_sync(channel_layer.group_send)(
-                        str(self.container.sodar_uuid),
-                        {
-                            'type': 'container_task.message',
-                            'text': 'Logged in successfully.\n',
-                        },
-                    )
+                    self._log_task('Logged in successfully.')
                 except Exception as ex:
                     logger.error('Failed to login to registry: %s', ex)
-                    self.container.log_entries.create(
-                        text=f'Login failed: {ex}\n',
-                        process=PROCESS_DOCKER,
-                        date_docker_log=timezone.now(),
-                        user=self.user,
-                    )
-                    async_to_sync(channel_layer.group_send)(
-                        str(self.container.sodar_uuid),
-                        {
-                            'type': 'container_task.message',
-                            'text': f'Login failed: {ex}\n',
-                        },
-                    )
-                    self.job.add_log_entry(str(ex))
+                    self._log_task(f'Login failed: {ex}')
                     raise ex
             for line in self.cli.pull(
                 repository=self.container.repository,
@@ -552,19 +530,23 @@ class ContainerMachine(StateMachine):
                             f' [{line_progress.get("current")}{line_progress.get("units")}]'
                         )
                     else:
-                        # We create log entries only for status lines that don't change
+                        # We create persistent log entries only for status lines
+                        # that don't change
                         self.container.log_entries.create(
                             text=pull_log['status'] + '\n',
                             process=PROCESS_TASK,
                             user=self.user,
                         )
+                        self.job.add_log_entry(pull_log['status'])
                 else:
-                    pull_log = {'status': line.get('status')}
+                    pull_log_status = line.get('status')
+                    pull_log = {'status': pull_log_status}
                     self.container.log_entries.create(
-                        text=line.get('status') + '\n',
+                        text=pull_log_status + '\n',
                         process=PROCESS_TASK,
                         user=self.user,
                     )
+                    self.job.add_log_entry(pull_log_status)
 
                 async_to_sync(channel_layer.group_send)(
                     str(self.container.sodar_uuid),
@@ -573,24 +555,11 @@ class ContainerMachine(StateMachine):
                         **pull_log,
                     },
                 )
-                self.job.add_log_entry(pull_log['status'])
 
         image_details = self.cli.inspect_image(self.container.get_repos_full())
         self.container.image_id = image_details.get('Id')
         self.container.save()
-        self.job.add_log_entry('Pulling image succeeded')
-        self.container.log_entries.create(
-            text='Pulling image succeeded.\n',
-            process=PROCESS_TASK,
-            user=self.user,
-        )
-        async_to_sync(channel_layer.group_send)(
-            str(self.container.sodar_uuid),
-            {
-                'type': 'container_task.message',
-                'text': 'Pulling image succeeded.\n',
-            },
-        )
+        self._log_task('Pulling image succeeded')
 
         options = {}
         options_host_config = {}
@@ -646,19 +615,7 @@ class ContainerMachine(StateMachine):
             }
             options['volumes'] = [kiosc_volume_mountpoint]
 
-        self.job.add_log_entry('Initializing the container...')
-        self.container.log_entries.create(
-            text='Initializing the container...\n',
-            process=PROCESS_TASK,
-            user=self.user,
-        )
-        async_to_sync(channel_layer.group_send)(
-            str(self.container.sodar_uuid),
-            {
-                'type': 'container_task.message',
-                'text': 'Initializing the container...\n',
-            },
-        )
+        self._log_task('Initializing the container...')
 
         # Create container
         container_info = self.cli.create_container(
@@ -686,20 +643,7 @@ class ContainerMachine(StateMachine):
         self.container.container_id = container_info.get('Id')
         self.container.save()
 
-        self.job.add_log_entry('Container initialized successfully.')
-        self.container.log_entries.create(
-            text='Container initialized successfully.\n',
-            process=PROCESS_TASK,
-            user=self.user,
-        )
-        async_to_sync(channel_layer.group_send)(
-            str(self.container.sodar_uuid),
-            {
-                'type': 'container_task.message',
-                'text': 'Container initialized successfully.\n',
-            },
-        )
-
+        self._log_task('Container initialized successfully.')
         self._update_status(container_info)
 
     def on_pull_deleted(self):
@@ -710,32 +654,10 @@ class ContainerMachine(StateMachine):
 
     def on_start_pulled(self):
         # Starting container
-        self.container.log_entries.create(
-            text='Starting ...\n', process=PROCESS_TASK, user=self.user
-        )
-        async_to_sync(channel_layer.group_send)(
-            str(self.container.sodar_uuid),
-            {
-                'type': 'container_task.message',
-                'text': 'Starting ...\n',
-            },
-        )
-        self.job.add_log_entry('Starting container')
+        self._log_task('Starting...')
         self.cli.start(self.container.container_id)
         self._update_status()
-        self.job.add_log_entry('Starting container succeeded')
-        self.container.log_entries.create(
-            text='Starting succeeded.\n',
-            process=PROCESS_TASK,
-            user=self.user,
-        )
-        async_to_sync(channel_layer.group_send)(
-            str(self.container.sodar_uuid),
-            {
-                'type': 'container_task.message',
-                'text': 'Starting succeeded.\n',
-            },
-        )
+        self._log_task('Container started successfully')
 
     def on_start_created(self):
         self.on_start_pulled()
@@ -747,38 +669,38 @@ class ContainerMachine(StateMachine):
         self.on_start_pulled()
 
     def on_pause(self):
-        self.job.add_log_entry('Pausing container')
+        self._log_task('Pausing container')
         self.cli.pause(self.container.container_id)
         self._update_status()
-        self.job.add_log_entry('Pausing container succeeded')
+        self._log_task('Pausing container succeeded')
 
     def on_unpause(self):
-        self.job.add_log_entry('Unpausing container')
+        self._log_task('Unpausing container')
         self.cli.unpause(self.container.container_id)
         self._update_status()
-        self.job.add_log_entry('Unpausing container succeeded')
+        self._log_task('Unpausing container succeeded')
 
     def on_stop_running(self):
-        self.job.add_log_entry('Stopping container')
+        self._log_task('Stopping container')
 
         # Stopping container and updating status
         self.cli.stop(self.container.container_id)
         self._update_status()
 
-        self.job.add_log_entry('Stopping container succeeded')
+        self._log_task('Stopping container succeeded')
 
     def on_stop_paused(self):
         self.on_stop_running()
 
     def on_terminate_running(self):
-        self.job.add_log_entry('Timing out container')
+        self._log_task('Terminating container due to inactivity...')
 
         # Timing out container and updating status
         self.cli.stop(self.container.container_id)
         self.container.state = STATE_TERMINATED
         self.container.save()
 
-        self.job.add_log_entry('Timing out container succeeded')
+        self._log_task('Container terminated due to inactivity.')
 
     def on_terminate_paused(self):
         self.on_terminate_running()
@@ -788,18 +710,6 @@ class ContainerMachine(StateMachine):
         self.container.state = STATE_DELETING
         self.container.save()
         self.container.log_entries.all().delete()
-        self.container.log_entries.create(
-            text='Previous container was deleted.\n',
-            process=PROCESS_TASK,
-            user=self.user,
-        )
-        async_to_sync(channel_layer.group_send)(
-            str(self.container.sodar_uuid),
-            {
-                'type': 'container_task.message',
-                'text': 'Previous container was deleted.\n',
-            },
-        )
 
         if not self.container.container_id:
             # Nothing to do, the container probably doesn't even exist
@@ -837,17 +747,4 @@ class ContainerMachine(StateMachine):
         self.container.state = STATE_DELETED
         self.container.container_id = None
         self.container.save()
-
-        self.job.add_log_entry('Deleting container succeeded')
-        self.container.log_entries.create(
-            text='Deleting succeeded.\n',
-            process=PROCESS_TASK,
-            user=self.user,
-        )
-        async_to_sync(channel_layer.group_send)(
-            str(self.container.sodar_uuid),
-            {
-                'type': 'container_task.message',
-                'text': 'Deleting succeeded.\n',
-            },
-        )
+        self._log_task('Previous container was deleted.')

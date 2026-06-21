@@ -373,14 +373,11 @@ class TestContainerWatcherConsumerLive(
 
     def tearDown(self):
         # Shut down Selenium
-        self.selenium.execute_script(
-            'if (window.KioscContainerWatcherSocket) { window.KioscContainerWatcherSocket.close(); }'
-        )
         self.selenium.quit()
         super().tearDown()
 
-    def test_live_stuff(self):
-        """Test logs watcher in live site with selenium."""
+    def test_live_container_watcher(self):
+        """Test container watcher in a live site with selenium."""
         self.login_and_redirect(
             self.superuser, f'/containers/detail/{self.container1.sodar_uuid}'
         )

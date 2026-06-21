@@ -6,6 +6,7 @@ import uuid
 
 from django.conf import settings
 from django.utils import dateformat
+from django.test import LiveServerTestCase
 from test_plus.test import TestCase
 
 from containers.models import (
@@ -35,7 +36,12 @@ from projectroles.models import (
     SODAR_CONSTANTS,
     ROLE_RANKING,
 )
-from projectroles.tests.base import APIViewTestBase
+from projectroles.tests.base import (
+    APIViewTestBase,
+    LiveUserMixin,
+    SeleniumSetupMixin,
+    UITestMixin,
+)
 from projectroles.plugins import PluginAPI
 from timeline.models import TL_STATUS_OK
 
@@ -143,6 +149,51 @@ class TestBase(TestContainerCreationMixin, TestCase):
         self.role_owner_as = RoleAssignment.objects.create(
             project=self.project, user=self.user, role=self.role_owner
         )
+
+
+class UITestBase(
+    SeleniumSetupMixin,
+    UITestMixin,
+    LiveUserMixin,
+    TestContainerCreationMixin,
+    LiveServerTestCase,
+):
+    """Test base class for UI tests providing one project and a superuser."""
+
+    def setUp(self):
+        super().setUp()
+
+        # Show full diff
+        self.maxDiff = None
+
+        # Setup project
+        self.project = ProjectFactory()
+
+        # Setup superuser
+        self.superuser = self.make_user(settings.PROJECTROLES_DEFAULT_ADMIN)
+        self.superuser.is_staff = True
+        self.superuser.is_superuser = True
+        self.superuser.save()
+
+        # Setup regular owner user
+        self.user = self.make_user('alice')
+        self.user.save()
+
+        # Setup regular user with no roles
+        self.user_no_roles = self.make_user('bob')
+        self.user_no_roles.save()
+
+        self.role_owner = Role.objects.get_or_create(
+            name=PROJECT_ROLE_OWNER, rank=ROLE_RANKING[PROJECT_ROLE_OWNER]
+        )[0]
+        self.role_owner_as = RoleAssignment.objects.create(
+            project=self.project, user=self.user, role=self.role_owner
+        )
+
+        self.set_up_selenium()
+
+    def tearDown(self):
+        self.selenium.quit()
 
 
 class ContainersAPIViewTestBase(APIViewTestBase):

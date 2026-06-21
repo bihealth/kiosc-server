@@ -1076,6 +1076,7 @@ class TestReverseProxyView(TestBase):
                     )
                 except docker.errors.NotFound:
                     pass
+        super().tearDown()
 
     @override_settings(KIOSC_NETWORK_MODE='host')
     def test_get_success_running(self):

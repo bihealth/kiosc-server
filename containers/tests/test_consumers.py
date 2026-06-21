@@ -205,12 +205,16 @@ class TestContainerWatcherConsumer(
         # 2a. We send the configuration: currently just the number of log lines.
         await ws.send_to(text_data='20')
 
-        # Since the container is not running, we expect only the container state
-        # from the daemon, no logs.
+        # Since the container is not running, we expect only the container
+        # state from the daemon, no logs. Actually we also receive an empty
+        # docker_daemon message, to clear the initial "Loading" text.
         for i in range(3):
             response = json.loads(await ws.receive_from(timeout=10))
             self.assertEqual(response['type'], 'container_state')
             self.assertEqual(response['state'], STATE_INITIAL)
+            response = json.loads(await ws.receive_from(timeout=10))
+            self.assertEqual(response['type'], 'daemon_logs')
+            self.assertEqual(response['text'], '')
 
         # Start the container
         t = Thread(
@@ -297,11 +301,14 @@ class TestContainerWatcherConsumer(
         else:
             assert False, "ContainerWatcher didn't detect a change of state"
 
-        # Now we should get just status updates
+        # Now we should get just status updates (and empty daemon logs)
         for i in range(3):
             response = json.loads(await ws.receive_from(timeout=10))
             self.assertEqual(response['type'], 'container_state')
             self.assertEqual(response['state'], STATE_EXITED)
+            response = json.loads(await ws.receive_from(timeout=10))
+            self.assertEqual(response['type'], 'daemon_logs')
+            self.assertEqual(response['text'], '')
 
         await ws.disconnect()
 
@@ -467,4 +474,4 @@ class TestContainerWatcherConsumerLive(
 
         WebDriverWait(logs_elem, 10).until(lambda el: el.text != stopped_logs)
         restarted_logs = logs_elem.text
-        self.assertIn('Container started successfully', restarted_logs[-1])
+        self.assertIn('Container started successfully', restarted_logs)

@@ -78,7 +78,7 @@ class TestContainerCrash(TestBase):
         # Test from the database
         self.container.refresh_from_db()
         logs = [log.text for log in ContainerLogEntry.objects.all()]
-        self.assertIn('Pausing succeeded\n', logs)
+        self.assertIn('Pausing container succeeded\n', logs)
         self.assertEqual(self.container.state, STATE_PAUSED)
         # Test from the daemon
         for container in self.cli.containers():
@@ -99,7 +99,7 @@ class TestContainerCrash(TestBase):
         # Test from the database
         self.container.refresh_from_db()
         logs = [log.text for log in ContainerLogEntry.objects.all()]
-        self.assertIn('Unpausing succeeded\n', logs)
+        self.assertIn('Unpausing container succeeded\n', logs)
         self.assertEqual(self.container.state, STATE_RUNNING)
         # Test from the daemon
         for container in self.cli.containers():
@@ -111,7 +111,7 @@ class TestContainerCrash(TestBase):
 
     def _test_container_stop(self):
         self.assertEqual(self.container.state, STATE_RUNNING)
-        image_id = self.container.image_id
+        container_id = self.container.container_id
         bg_job = ContainerBackgroundJobFactory(
             user=self.superuser,
             action=ACTION_STOP,
@@ -121,11 +121,11 @@ class TestContainerCrash(TestBase):
         # Test from the database
         self.container.refresh_from_db()
         logs = [log.text for log in ContainerLogEntry.objects.all()]
-        self.assertIn('Stopping succeeded\n', logs)
+        self.assertIn('Stopping container succeeded\n', logs)
         self.assertEqual(self.container.state, STATE_EXITED)
         # Test from the daemon (container should not be found)
         for container in self.cli.containers():
-            if container['ImageID'] == image_id:
+            if container['Id'] == container_id:
                 raise RuntimeError('Container did not stop successfully')
 
     def _test_container_restart(self):

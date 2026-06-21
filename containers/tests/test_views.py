@@ -599,10 +599,7 @@ class TestContainerUpdateView(TestBase):
 
             self.assertRedirects(
                 response,
-                reverse(
-                    'containers:restart',
-                    kwargs={'container': self.container1.sodar_uuid},
-                ),
+                reverse('home')
                 status_code=302,
                 target_status_code=302,
             )
@@ -647,10 +644,7 @@ class TestContainerUpdateView(TestBase):
 
             self.assertRedirects(
                 response,
-                reverse(
-                    'containers:restart',
-                    kwargs={'container': self.container1.sodar_uuid},
-                ),
+                reverse('home')
                 status_code=302,
                 target_status_code=302,
             )
@@ -695,10 +689,7 @@ class TestContainerUpdateView(TestBase):
 
             self.assertRedirects(
                 response,
-                reverse(
-                    'containers:restart',
-                    kwargs={'container': self.container1.sodar_uuid},
-                ),
+                reverse('home')
                 status_code=302,
                 target_status_code=302,
             )
@@ -741,10 +732,7 @@ class TestContainerUpdateView(TestBase):
 
             self.assertRedirects(
                 response,
-                reverse(
-                    'containers:restart',
-                    kwargs={'container': self.container1.sodar_uuid},
-                ),
+                reverse('home')
                 status_code=302,
                 target_status_code=302,
             )
@@ -837,10 +825,7 @@ class TestContainerStartView(TestBase):
 
             self.assertRedirects(
                 response,
-                reverse(
-                    'containers:detail',
-                    kwargs={'container': self.container1.sodar_uuid},
-                ),
+                reverse('home')
             )
             self.assertEqual(job.action, ACTION_START)
             self.assertEqual(job.container, self.container1)
@@ -884,10 +869,7 @@ class TestContainerStopView(TestBase):
 
             self.assertRedirects(
                 response,
-                reverse(
-                    'containers:detail',
-                    kwargs={'container': self.container1.sodar_uuid},
-                ),
+                reverse('home')
             )
             self.assertEqual(job.action, ACTION_STOP)
             self.assertEqual(job.container, self.container1)
@@ -931,10 +913,7 @@ class TestContainerRestartView(TestBase):
 
             self.assertRedirects(
                 response,
-                reverse(
-                    'containers:detail',
-                    kwargs={'container': self.container1.sodar_uuid},
-                ),
+                reverse('home')
             )
             self.assertEqual(job.action, ACTION_RESTART)
             self.assertEqual(job.container, self.container1)
@@ -978,10 +957,7 @@ class TestContainerPauseView(TestBase):
 
             self.assertRedirects(
                 response,
-                reverse(
-                    'containers:detail',
-                    kwargs={'container': self.container1.sodar_uuid},
-                ),
+                reverse('home')
             )
             self.assertEqual(job.action, ACTION_PAUSE)
             self.assertEqual(job.container, self.container1)
@@ -1025,10 +1001,7 @@ class TestContainerUnpauseView(TestBase):
 
             self.assertRedirects(
                 response,
-                reverse(
-                    'containers:detail',
-                    kwargs={'container': self.container1.sodar_uuid},
-                ),
+                reverse('home')
             )
             self.assertEqual(job.action, ACTION_UNPAUSE)
             self.assertEqual(job.container, self.container1)
@@ -1102,7 +1075,7 @@ class TestReverseProxyView(TestBase):
                 ),
             )
             self.assertEqual(response.status_code, 200)
-            self.assertEqual(response.text, '<h1>Hello World</h1>')
+            self.assertEqual(response.text, '<h1>Hello World</h1>\n')
 
     @override_settings(KIOSC_NETWORK_MODE='host')
     def test_get_host_port_missing(self):
@@ -1158,7 +1131,7 @@ class TestReverseProxyView(TestBase):
             )
             self.assertEqual(response.status_code, 404)
             self.assertIn('nginx', response.headers['server'])
-            self.assertIn('404 Not Fonud', response.text)
+            self.assertIn('404 Not Found', response.text)
 
     def test_get_not_running(self):
         """Test GET with container not running or pulling"""

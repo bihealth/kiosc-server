@@ -147,10 +147,7 @@ class TestContainerPermissions(ProjectPermissionTestBase):
             url,
             good_users,
             302,
-            redirect_user=reverse(
-                'containers:detail',
-                kwargs={'container': self.container.sodar_uuid},
-            ),
+            redirect_user=reverse('home')
         )
         self.assert_response(url, bad_users, 302)
         mock.assert_called()
@@ -178,10 +175,7 @@ class TestContainerPermissions(ProjectPermissionTestBase):
             url,
             good_users,
             302,
-            redirect_user=reverse(
-                'containers:detail',
-                kwargs={'container': self.container.sodar_uuid},
-            ),
+            redirect_user=reverse('home')
         )
         self.assert_response(url, bad_users, 302)
         mock.assert_called()
@@ -209,10 +203,7 @@ class TestContainerPermissions(ProjectPermissionTestBase):
             url,
             good_users,
             302,
-            redirect_user=reverse(
-                'containers:detail',
-                kwargs={'container': self.container.sodar_uuid},
-            ),
+            redirect_user=reverse('home')
         )
         self.assert_response(url, bad_users, 302)
         mock.assert_called()
@@ -240,10 +231,7 @@ class TestContainerPermissions(ProjectPermissionTestBase):
             url,
             good_users,
             302,
-            redirect_user=reverse(
-                'containers:detail',
-                kwargs={'container': self.container.sodar_uuid},
-            ),
+            redirect_user=reverse('home')
         )
         self.assert_response(url, bad_users, 302)
         mock.assert_called()
@@ -271,10 +259,7 @@ class TestContainerPermissions(ProjectPermissionTestBase):
             url,
             good_users,
             302,
-            redirect_user=reverse(
-                'containers:detail',
-                kwargs={'container': self.container.sodar_uuid},
-            ),
+            redirect_user=reverse('home')
         )
         self.assert_response(url, bad_users, 302)
         mock.assert_called()
@@ -311,48 +296,6 @@ class TestContainerPermissions(ProjectPermissionTestBase):
         ]
         bad_users = [self.user_no_roles, self.anonymous, self.user_finder_cat]
         self.assert_response(url, good_users, 200)
-        self.assert_response(url, bad_users, 302)
-
-    def test_proxy_lobby(self):
-        """Test permissions for the ``proxy-lobby`` view."""
-
-        self.container.state = STATE_RUNNING
-        self.container.save()
-
-        def request_callback(request):
-            return 200, {}, 'abc'.encode('utf-8')
-
-        responses.add_callback(
-            'GET',
-            f'/{self.container.container_path}',
-            callback=request_callback,
-        )
-        url = reverse(
-            'containers:proxy-lobby',
-            kwargs={
-                'container': self.container.sodar_uuid,
-            },
-        )
-        good_users = [
-            self.superuser,
-            self.user_owner,
-            self.user_delegate,
-            self.user_contributor,
-            self.user_guest,
-        ]
-        bad_users = [self.user_no_roles, self.anonymous, self.user_finder_cat]
-        self.assert_response(
-            url,
-            good_users,
-            302,
-            redirect_user=reverse(
-                'containers:proxy',
-                kwargs={
-                    'container': self.container.sodar_uuid,
-                    'path': self.container.container_path,
-                },
-            ),
-        )
         self.assert_response(url, bad_users, 302)
 
 
@@ -446,10 +389,7 @@ class TestContainerPermissionReadOnly(ProjectPermissionTestBase):
             url,
             self.good_users,
             302,
-            redirect_user=reverse(
-                'containers:detail',
-                kwargs={'container': self.container.sodar_uuid},
-            ),
+            redirect_user=reverse('home')
         )
         self.assert_response(url, self.bad_users, 302)
         mock.assert_called()
@@ -465,10 +405,7 @@ class TestContainerPermissionReadOnly(ProjectPermissionTestBase):
             url,
             self.good_users,
             302,
-            redirect_user=reverse(
-                'containers:detail',
-                kwargs={'container': self.container.sodar_uuid},
-            ),
+            redirect_user=reverse('home')
         )
         self.assert_response(url, self.bad_users, 302)
         mock.assert_called()
@@ -484,10 +421,7 @@ class TestContainerPermissionReadOnly(ProjectPermissionTestBase):
             url,
             self.good_users,
             302,
-            redirect_user=reverse(
-                'containers:detail',
-                kwargs={'container': self.container.sodar_uuid},
-            ),
+            redirect_user=reverse('home')
         )
         self.assert_response(url, self.bad_users, 302)
         mock.assert_called()
@@ -503,10 +437,7 @@ class TestContainerPermissionReadOnly(ProjectPermissionTestBase):
             url,
             self.good_users,
             302,
-            redirect_user=reverse(
-                'containers:detail',
-                kwargs={'container': self.container.sodar_uuid},
-            ),
+            redirect_user=reverse('home')
         )
         self.assert_response(url, self.bad_users, 302)
         mock.assert_called()
@@ -522,10 +453,7 @@ class TestContainerPermissionReadOnly(ProjectPermissionTestBase):
             url,
             self.good_users,
             302,
-            redirect_user=reverse(
-                'containers:detail',
-                kwargs={'container': self.container.sodar_uuid},
-            ),
+            redirect_user=reverse('home')
         )
         self.assert_response(url, self.bad_users, 302)
         mock.assert_called()
@@ -562,48 +490,6 @@ class TestContainerPermissionReadOnly(ProjectPermissionTestBase):
         ]
         bad_users = [self.user_no_roles, self.anonymous, self.user_finder_cat]
         self.assert_response(url, good_users, 200)
-        self.assert_response(url, bad_users, 302)
-
-    def test_proxy_lobby(self):
-        """Test permissions for the ``proxy-lobby`` view in read-only mode."""
-
-        self.container.state = STATE_RUNNING
-        self.container.save()
-
-        def request_callback(request):
-            return 200, {}, 'abc'.encode('utf-8')
-
-        responses.add_callback(
-            'GET',
-            f'/{self.container.container_path}',
-            callback=request_callback,
-        )
-        url = reverse(
-            'containers:proxy-lobby',
-            kwargs={
-                'container': self.container.sodar_uuid,
-            },
-        )
-        good_users = [
-            self.superuser,
-            self.user_owner,
-            self.user_delegate,
-            self.user_contributor,
-            self.user_guest,
-        ]
-        bad_users = [self.user_no_roles, self.anonymous, self.user_finder_cat]
-        self.assert_response(
-            url,
-            good_users,
-            302,
-            redirect_user=reverse(
-                'containers:proxy',
-                kwargs={
-                    'container': self.container.sodar_uuid,
-                    'path': self.container.container_path,
-                },
-            ),
-        )
         self.assert_response(url, bad_users, 302)
 
 

@@ -29,7 +29,6 @@ from containers.models import (
     MASKED_KEYWORD,
     PROCESS_DOCKER,
     ContainerLogEntry,
-    STATE_EXITED,
 )
 from containers.statemachines import connect_docker
 from containers.tasks import container_task

@@ -1,7 +1,6 @@
 """UI tests for containers views."""
 
 import docker
-import time
 
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support import expected_conditions as ec
@@ -11,26 +10,17 @@ from django.urls import reverse
 
 from containers.models import (
     Container,
-    ContainerBackgroundJob,
     ACTION_START,
-    ACTION_STOP,
     ACTION_RESTART,
-    ACTION_PAUSE,
-    ACTION_UNPAUSE,
-    STATE_INITIAL,
     STATE_RUNNING,
-    STATE_PULLING,
-    STATE_PAUSED,
-    STATE_DELETED,
-    MASKED_KEYWORD,
-    PROCESS_DOCKER,
-    ContainerLogEntry,
-    STATE_EXITED,
 )
 from containers.statemachines import connect_docker
 from containers.tasks import container_task
 from containers.tests.helpers import build_testdata_container, UITestBase
-from containers.tests.factories import ContainerFactory, ContainerBackgroundJobFactory
+from containers.tests.factories import (
+    ContainerFactory,
+    ContainerBackgroundJobFactory,
+)
 
 
 class TestReverseProxyView(
@@ -88,21 +78,21 @@ class TestReverseProxyView(
         # https://www.selenium.dev/documentation/webdriver/interactions/windows/
         original_window_handle = self.selenium.current_window_handle
         btn.click()
-        WebDriverWait(self.selenium, self.wait_time).until(ec.number_of_windows_to_be(2))
-        new_window_handle = (set(self.selenium.window_handles) - {original_window_handle}).pop()
-        self.selenium.switch_to.window(new_window_handle)
-        lobby_elem = self.selenium.find_element(
-            By.ID, 'kiosc-lobby-text'
+        WebDriverWait(self.selenium, self.wait_time).until(
+            ec.number_of_windows_to_be(2)
         )
+        new_window_handle = (
+            set(self.selenium.window_handles) - {original_window_handle}
+        ).pop()
+        self.selenium.switch_to.window(new_window_handle)
+        lobby_elem = self.selenium.find_element(By.ID, 'kiosc-lobby-text')
         self.assertIn('Check the logs for more info', lobby_elem.text)
 
         # Wait until the lobby phrase changes
         WebDriverWait(self.selenium, self.wait_time).until(
             ec.staleness_of(lobby_elem)
         )
-        lobby_elem = self.selenium.find_element(
-            By.ID, 'kiosc-lobby-text'
-        )
+        lobby_elem = self.selenium.find_element(By.ID, 'kiosc-lobby-text')
         self.assertIn('Check the logs for more info', lobby_elem.text)
 
         # Now we restart start the container and make it accept connections,

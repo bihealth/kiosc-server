@@ -212,7 +212,7 @@ class ContainerWatcherConsumer(WebsocketConsumer):
                     'text': 'Something went wrong, please reset the container.',
                 }
 
-    def _send_logs(self, res: requests.model.Response):
+    def _send_logs(self, res: requests.models.Response):
         """
         Stream logs from the Docker daemon socket.
 

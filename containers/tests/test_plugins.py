@@ -83,5 +83,7 @@ class TestPlugin(TestBase):
     def test_project_list_value(self):
         self.container.state = STATE_RUNNING
         self.container.save()
-        list_value = self.plugin.get_project_list_value('containers', self.project, self.user)
+        list_value = self.plugin.get_project_list_value(
+            'containers', self.project, self.user
+        )
         self.assertEqual(list_value, '1 running')

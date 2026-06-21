@@ -77,7 +77,6 @@ def sync_container_state(container, timeline=None):
             logger.warning(
                 '%s: Container state our of sync', container.sodar_uuid
             )
-            container.date_last_status_update = timezone.now()
             container.state = actual_state
             container.save()
             if timeline:

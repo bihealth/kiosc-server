@@ -57,6 +57,7 @@ class ContainerFactory(factory.django.DjangoModelFactory):
     containertemplateproject = None
     max_retries = 5
     inactivity_threshold = 7
+    date_last_access = None
 
 
 class ContainerBackgroundJobFactory(factory.django.DjangoModelFactory):

@@ -113,9 +113,9 @@ class ContainerCreateAPIView(
                     status_type=timeline.TL_STATUS_OK,
                 )
                 tl_event.add_object(
-                    obj=self.object,
+                    obj=container,
                     label='container',
-                    name=self.object.get_display_name(),
+                    name=container.get_display_name(),
                 )
 
             return response

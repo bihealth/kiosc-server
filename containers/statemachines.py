@@ -9,7 +9,6 @@ import logging
 
 from django.conf import settings
 from django.urls import reverse
-from django.utils import timezone
 from docker.types import Ulimit
 from statemachine import StateMachine, State
 from statemachine.exceptions import StateMachineError
@@ -27,7 +26,6 @@ from containers.models import (
     STATE_FAILED,
     STATE_TERMINATED,
     PROCESS_TASK,
-    PROCESS_DOCKER,
     ACTION_START,
     ACTION_STOP,
     ACTION_TERMINATE,
@@ -470,9 +468,7 @@ class ContainerMachine(StateMachine):
 
     def on_pull(self):
         # Pulling image
-        self._log_task(
-            f'Pulling image {self.container.get_repos_full()} ...'
-        )
+        self._log_task(f'Pulling image {self.container.get_repos_full()} ...')
         self.container.state = STATE_PULLING
         self.container.container_id = None
         self.container.save()
@@ -495,7 +491,9 @@ class ContainerMachine(StateMachine):
                         self.container.title,
                         self.user,
                     )
-                    self._log_task(f'Logging in to registry {registry} with user credentials...')
+                    self._log_task(
+                        f'Logging in to registry {registry} with user credentials...'
+                    )
                     self.cli.login(
                         self.container.registry_user,
                         self.container.registry_password,

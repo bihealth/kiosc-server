@@ -472,7 +472,7 @@ class ContainerStartView(
             kwargs={'job_id': job.id}, countdown=CELERY_SUBMIT_COUNTDOWN
         )
 
-        return redirect(request.headers['Referer'])
+        return redirect(request.headers.get('Referer', reverse('home')))
 
 
 class ContainerStopView(
@@ -512,7 +512,7 @@ class ContainerStopView(
             kwargs={'job_id': job.id}, countdown=CELERY_SUBMIT_COUNTDOWN
         )
 
-        return redirect(request.headers['Referer'])
+        return redirect(request.headers.get('Referer', reverse('home')))
 
 
 class ContainerPauseView(
@@ -552,7 +552,7 @@ class ContainerPauseView(
             kwargs={'job_id': job.id}, countdown=CELERY_SUBMIT_COUNTDOWN
         )
 
-        return redirect(request.headers['Referer'])
+        return redirect(request.headers.get('Referer', reverse('home')))
 
 
 class ContainerUnpauseView(
@@ -592,7 +592,7 @@ class ContainerUnpauseView(
             kwargs={'job_id': job.id}, countdown=CELERY_SUBMIT_COUNTDOWN
         )
 
-        return redirect(request.headers['Referer'])
+        return redirect(request.headers.get('Referer', reverse('home')))
 
 
 class ContainerRestartView(
@@ -632,7 +632,7 @@ class ContainerRestartView(
             kwargs={'job_id': job.id}, countdown=CELERY_SUBMIT_COUNTDOWN
         )
 
-        return redirect(request.headers['Referer'])
+        return redirect(request.headers.get('Referer', reverse('home')))
 
 
 class KioscProxyView(ProxyView):
@@ -761,7 +761,7 @@ class ReverseProxyView(
         else:
             tl_event = None
 
-        _redirect = redirect(request.headers['Referer'], status=399)
+        _redirect = redirect(request.headers.get('Referer', reverse('home')))
 
         if container.state not in (STATE_RUNNING, STATE_PULLING):
             if tl_event:
@@ -770,7 +770,7 @@ class ReverseProxyView(
                     'Tried to access the app while the container was not running',
                 )
             messages.error(
-                request, f"Container '{container.title}' not running."
+                request, f'Container "{container.title}" not running.'
             )
             return _redirect
 

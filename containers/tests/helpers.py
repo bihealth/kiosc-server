@@ -1,9 +1,10 @@
 """Helpers for the container tests."""
 
-import uuid
 import dateutil.parser
-from django.conf import settings
+from pathlib import Path
+import uuid
 
+from django.conf import settings
 from django.utils import dateformat
 from test_plus.test import TestCase
 
@@ -44,6 +45,16 @@ APP_NAME = 'containers'
 
 plugin_api = PluginAPI()
 timeline = plugin_api.get_backend_api('timeline_backend')
+
+
+def build_testdata_container(cli, dockerfile_name):
+    dockerfile_path = (
+        Path(__file__).parent / 'testdata' / (dockerfile_name + '.Dockerfile')
+    )
+    with open(dockerfile_path, 'rb') as f:
+        stream = cli.build(fileobj=f, tag=dockerfile_name + ':testing')
+    # Block until building is done
+    _ = list(stream)
 
 
 class TestContainerCreationMixin:
@@ -118,8 +129,13 @@ class TestBase(TestContainerCreationMixin, TestCase):
         self.superuser.is_superuser = True
         self.superuser.save()
 
+        # Setup regular owner user
         self.user = self.make_user('alice')
         self.user.save()
+
+        # Setup regular user with no roles
+        self.user_no_roles = self.make_user('bob')
+        self.user_no_roles.save()
 
         self.role_owner = Role.objects.get_or_create(
             name=PROJECT_ROLE_OWNER, rank=ROLE_RANKING[PROJECT_ROLE_OWNER]

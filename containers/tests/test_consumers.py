@@ -2,7 +2,6 @@
 Tests for the websocket providing real-time logs in the container detail view.
 """
 
-from asgiref.sync import sync_to_async
 import json
 from threading import Thread
 import time
@@ -363,7 +362,10 @@ class TestContainerWatcherConsumer(
 
 
 class TestContainerWatcherConsumerLive(
-    SeleniumSetupMixin, UITestMixin, TestWebsocketConsumerMixin, ChannelsLiveServerTestCase
+    SeleniumSetupMixin,
+    UITestMixin,
+    TestWebsocketConsumerMixin,
+    ChannelsLiveServerTestCase,
 ):
     def setUp(self):
         super().setUp()
@@ -371,7 +373,9 @@ class TestContainerWatcherConsumerLive(
 
     def tearDown(self):
         # Shut down Selenium
-        self.selenium.execute_script("if (window.KioscContainerWatcherSocket) { window.KioscContainerWatcherSocket.close(); }")
+        self.selenium.execute_script(
+            'if (window.KioscContainerWatcherSocket) { window.KioscContainerWatcherSocket.close(); }'
+        )
         self.selenium.quit()
         super().tearDown()
 
@@ -389,7 +393,10 @@ class TestContainerWatcherConsumerLive(
 
         WebDriverWait(state_elem, 10).until(lambda el: el.text != initial_state)
         not_running_state = state_elem.text
-        self.assertEqual(not_running_state, 'The container is not running yet, please start it.')
+        self.assertEqual(
+            not_running_state,
+            'The container is not running yet, please start it.',
+        )
 
         # We start the container
         t = Thread(
@@ -399,9 +406,14 @@ class TestContainerWatcherConsumerLive(
         t.start()
         t.join()
 
-        WebDriverWait(state_elem, 10).until(lambda el: el.text != not_running_state)
+        WebDriverWait(state_elem, 10).until(
+            lambda el: el.text != not_running_state
+        )
         not_accepting_state = state_elem.text
-        self.assertEqual(not_accepting_state, 'The app is not accepting connections; please be patient...')
+        self.assertEqual(
+            not_accepting_state,
+            'The app is not accepting connections; please be patient...',
+        )
 
         WebDriverWait(logs_elem, 10).until(lambda el: el.text != initial_logs)
         channel_logs = logs_elem.text
@@ -435,7 +447,9 @@ class TestContainerWatcherConsumerLive(
         self.assertIn('Stopping container succeeded', stopped_logs)
 
         # Finally we check the status update
-        WebDriverWait(state_elem, 10).until(lambda el: el.text != not_accepting_state)
+        WebDriverWait(state_elem, 10).until(
+            lambda el: el.text != not_accepting_state
+        )
         exited_state = state_elem.text
         self.assertEqual(exited_state, 'The container is exited.')
 
@@ -449,7 +463,10 @@ class TestContainerWatcherConsumerLive(
 
         WebDriverWait(state_elem, 10).until(lambda el: el.text != exited_state)
         not_accepting_state = state_elem.text
-        self.assertEqual(not_accepting_state, 'The app is not accepting connections; please be patient...')
+        self.assertEqual(
+            not_accepting_state,
+            'The app is not accepting connections; please be patient...',
+        )
 
         WebDriverWait(logs_elem, 10).until(lambda el: el.text != stopped_logs)
         restarted_logs = logs_elem.text

@@ -1,6 +1,8 @@
 """Tests for the container views."""
 
+import docker
 import json
+import time
 from unittest.mock import patch
 
 from django.contrib.messages import get_messages
@@ -19,7 +21,9 @@ from containers.models import (
     ACTION_RESTART,
     ACTION_PAUSE,
     ACTION_UNPAUSE,
+    STATE_INITIAL,
     STATE_RUNNING,
+    STATE_PULLING,
     STATE_PAUSED,
     STATE_DELETED,
     MASKED_KEYWORD,
@@ -27,12 +31,15 @@ from containers.models import (
     ContainerLogEntry,
     STATE_EXITED,
 )
+from containers.statemachines import connect_docker
+from containers.tasks import container_task
 from containers.templatetags.container_tags import colorize_state
 from containers.tests.factories import (
+    ContainerFactory,
     ContainerBackgroundJobFactory,
     ContainerLogEntryFactory,
 )
-from containers.tests.helpers import TestBase
+from containers.tests.helpers import TestBase, build_testdata_container
 from containers.views import CELERY_SUBMIT_COUNTDOWN
 from containertemplates.forms import ContainerTemplateSelectorForm
 from filesfolders.tests.test_models import FileMixin
@@ -1047,182 +1054,221 @@ class TestReverseProxyView(TestBase):
 
     def setUp(self):
         super().setUp()
-        self.create_one_container()
         self.create_fake_uuid()
+        self.cli = connect_docker()
+        # Build the sample container image
+        build_testdata_container(self.cli, 'sample-app-server')
+
+        self.container = ContainerFactory(
+            project=self.project,
+            repository='sample-app-server',
+            tag='testing',
+            container_port=80,
+            host_port=14809,
+        )
+
+    def tearDown(self):
+        for container in Container.objects.all():
+            if container.container_id and not len(container.container_id) < 3:
+                try:
+                    self.cli.remove_container(
+                        container.container_id, force=True, v=True
+                    )
+                except docker.errors.NotFound:
+                    pass
 
     @override_settings(KIOSC_NETWORK_MODE='host')
-    @responses.activate
-    def test_get_success_mode_host(self):
-        self.container1.state = STATE_RUNNING
-        self.container1.save()
+    def test_get_success_running(self):
+        """Test ReverseProxy GET"""
+        bg_job = ContainerBackgroundJobFactory(
+            user=self.superuser,
+            action=ACTION_START,
+            container=self.container,
+        )
+        container_task(job_id=bg_job.pk)
+        # Wait for the server to start up
+        time.sleep(2)
+        self.container.refresh_from_db()
+        self.assertEqual(self.container.state, STATE_RUNNING)
 
         with self.login(self.superuser):
-
-            def request_callback(request):
-                return 200, {}, 'abc'.encode('utf-8')
-
-            container_url = f'/{self.container1.container_path}'
-            responses.add_callback(
-                'GET', container_url, callback=request_callback
-            )
             response = self.client.get(
                 reverse(
                     'containers:proxy',
                     kwargs={
-                        'container': self.container1.sodar_uuid,
-                        'path': self.container1.container_path,
+                        'container': str(self.container.sodar_uuid),
+                        'path': self.container.container_path,
                     },
-                )
-            )
-
-            self.assertEqual(response.status_code, 200)
-            self.assertEqual(len(responses.calls), 1)
-            self.assertEqual(
-                responses.calls[0].request.host,
-                'localhost',
-            )
-            self.assertEqual(responses.calls[0].request.url, container_url)
-
-    @override_settings(KIOSC_NETWORK_MODE='host')
-    @responses.activate
-    def test_get_success_mode_host_host_port_missing(self):
-        self.container1.host_port = None
-        self.container1.state = STATE_RUNNING
-        self.container1.save()
-
-        with self.login(self.superuser):
-
-            def request_callback(request):
-                return 200, {}, 'abc'.encode('utf-8')
-
-            container_url = f'/{self.container1.container_path}'
-            responses.add_callback(
-                'GET', container_url, callback=request_callback
-            )
-            response = self.client.get(
-                reverse(
-                    'containers:proxy',
-                    kwargs={
-                        'container': self.container1.sodar_uuid,
-                        'path': self.container1.container_path,
-                    },
-                )
-            )
-
-            self.assertRedirects(
-                response,
-                reverse(
-                    'containers:list',
-                    kwargs={'project': self.container1.project.sodar_uuid},
                 ),
             )
-            self.assertEqual(
-                str(list(get_messages(response.wsgi_request))[0]),
-                'Host port not set.',
-            )
-            self.assertEqual(len(responses.calls), 0)
-
-    @override_settings(KIOSC_NETWORK_MODE='docker-shared')
-    @responses.activate
-    def test_get_success_mode_docker_shared(self):
-        self.container1.state = STATE_RUNNING
-        self.container1.save()
-
-        with self.login(self.superuser):
-
-            def request_callback(request):
-                return 200, {}, 'abc'.encode('utf-8')
-
-            container_url = f'/{self.container1.container_path}'
-            responses.add_callback(
-                'GET', container_url, callback=request_callback
-            )
-            response = self.client.get(
-                reverse(
-                    'containers:proxy',
-                    kwargs={
-                        'container': self.container1.sodar_uuid,
-                        'path': self.container1.container_path,
-                    },
-                )
-            )
-
             self.assertEqual(response.status_code, 200)
-            self.assertEqual(len(responses.calls), 1)
-            self.assertEqual(
-                responses.calls[0].request.host,
-                self.container1.container_id[:12],
-            )
-            self.assertEqual(responses.calls[0].request.url, container_url)
+            self.assertEqual(response.text, '<h1>Hello World</h1>')
 
     @override_settings(KIOSC_NETWORK_MODE='host')
-    @responses.activate
-    def test_get_success_with_path_mode_host(self):
-        self.container1.state = STATE_RUNNING
-        self.container1.container_path = 'this/is/some/path'
-        self.container1.save()
+    def test_get_host_port_missing(self):
+        """Test GET with missing host_port"""
+        self.container.host_port = None
+        self.container.save()
+        bg_job = ContainerBackgroundJobFactory(
+            user=self.superuser,
+            action=ACTION_START,
+            container=self.container,
+        )
+        container_task(job_id=bg_job.pk)
+        # Wait for the server to start up
+        time.sleep(2)
+        self.container.refresh_from_db()
+        self.assertEqual(self.container.state, STATE_RUNNING)
 
         with self.login(self.superuser):
-
-            def request_callback(request):
-                return 200, {}, 'abc'.encode('utf-8')
-
-            container_url = f'/{self.container1.container_path}'
-            responses.add_callback(
-                'GET', container_url, callback=request_callback
-            )
             response = self.client.get(
                 reverse(
                     'containers:proxy',
                     kwargs={
-                        'container': self.container1.sodar_uuid,
-                        'path': self.container1.container_path,
+                        'container': str(self.container.sodar_uuid),
+                        'path': self.container.container_path,
                     },
-                )
+                ),
+            )
+            self.assertRedirects(response, reverse('home'))
+
+    @override_settings(KIOSC_NETWORK_MODE='host')
+    def test_get_with_path(self):
+        """Test GET with path"""
+        bg_job = ContainerBackgroundJobFactory(
+            user=self.superuser,
+            action=ACTION_START,
+            container=self.container,
+        )
+        container_task(job_id=bg_job.pk)
+        # Wait for the server to start up
+        time.sleep(2)
+        self.container.refresh_from_db()
+        self.assertEqual(self.container.state, STATE_RUNNING)
+
+        with self.login(self.superuser):
+            response = self.client.get(
+                reverse(
+                    'containers:proxy',
+                    kwargs={
+                        'container': str(self.container.sodar_uuid),
+                        'path': 'not/existing/path.html',
+                    },
+                ),
+            )
+            self.assertEqual(response.status_code, 404)
+            self.assertIn('nginx', response.headers['server'])
+            self.assertIn('404 Not Fonud', response.text)
+
+    def test_get_not_running(self):
+        """Test GET with container not running or pulling"""
+        self.assertEqual(self.container.state, STATE_INITIAL)
+        with self.login(self.superuser):
+            response = self.client.get(
+                reverse(
+                    'containers:proxy',
+                    kwargs={
+                        'container': str(self.container.sodar_uuid),
+                        'path': 'not/existing/path.html',
+                    },
+                ),
+            )
+            self.assertRedirects(response, reverse('home'))
+            messages = list(get_messages(response.wsgi_request))
+            self.assertEqual(len(messages), 1)
+            self.assertEqual(
+                str(messages[0]),
+                f'Container "{self.container.title}" not running.',
             )
 
-            self.assertEqual(response.status_code, 200)
-            self.assertEqual(len(responses.calls), 1)
-            self.assertEqual(
-                responses.calls[0].request.host,
-                'localhost',
+    def test_get_not_ready(self):
+        """Test GET with container not ready"""
+        # We set the wrong container_port so that it will NEVER be ready
+        self.container.container_port = 81
+        self.container.save()
+        bg_job = ContainerBackgroundJobFactory(
+            user=self.superuser,
+            action=ACTION_START,
+            container=self.container,
+        )
+        container_task(job_id=bg_job.pk)
+        self.container.refresh_from_db()
+        self.assertEqual(self.container.state, STATE_RUNNING)
+        with self.login(self.superuser):
+            response = self.client.get(
+                reverse(
+                    'containers:proxy',
+                    kwargs={
+                        'container': str(self.container.sodar_uuid),
+                        'path': 'not/existing/path.html',
+                    },
+                ),
             )
-            self.assertEqual(responses.calls[0].request.url, container_url)
+            self.assertEqual(response.status_code, 299)
+            self.assertEqual(response.context['object'], self.container)
+            self.assertTrue(len(response.context['waiting_phrases']) > 0)
+
+    def test_get_pulling(self):
+        """Test GET with container in pulling state"""
+        self.container.state = STATE_PULLING
+        self.container.save()
+        with self.login(self.superuser):
+            response = self.client.get(
+                reverse(
+                    'containers:proxy',
+                    kwargs={
+                        'container': str(self.container.sodar_uuid),
+                        'path': 'not/existing/path.html',
+                    },
+                ),
+            )
+            self.assertEqual(response.status_code, 299)
+            self.assertEqual(response.context['object'], self.container)
+            self.assertTrue(len(response.context['waiting_phrases']) > 0)
 
     @override_settings(KIOSC_NETWORK_MODE='docker-shared')
-    @responses.activate
-    def test_get_success_with_path_mode_docker_shared(self):
+    def test_get_success_running_mode_shared(self):
+        """Test ReverseProxy GET in "docker-shared" mode"""
+        bg_job = ContainerBackgroundJobFactory(
+            user=self.superuser,
+            action=ACTION_START,
+            container=self.container,
+        )
+        container_task(job_id=bg_job.pk)
+        # Wait for the server to start up
+        time.sleep(2)
+        self.container.refresh_from_db()
+        self.assertEqual(self.container.state, STATE_RUNNING)
+
         with self.login(self.superuser):
-            self.container1.container_path = 'this/is/some/path'
-            self.container1.state = STATE_RUNNING
-            self.container1.save()
-
-            def request_callback(request):
-                return 200, {}, 'abc'.encode('utf-8')
-
-            container_url = f'/{self.container1.container_path}'
-            responses.add_callback(
-                'GET', container_url, callback=request_callback
-            )
             response = self.client.get(
                 reverse(
                     'containers:proxy',
                     kwargs={
-                        'container': self.container1.sodar_uuid,
-                        'path': self.container1.container_path,
+                        'container': str(self.container.sodar_uuid),
+                        'path': self.container.container_path,
                     },
-                )
+                ),
             )
-
             self.assertEqual(response.status_code, 200)
-            self.assertEqual(len(responses.calls), 1)
-            self.assertEqual(
-                responses.calls[0].request.host,
-                self.container1.container_id[:12],
+            self.assertEqual(response.text, '<h1>Hello World</h1>')
+
+    def test_get_no_permission(self):
+        """Test GET when user has no permission"""
+        with self.login(self.user_no_roles):
+            response = self.client.get(
+                reverse(
+                    'containers:proxy',
+                    kwargs={
+                        'container': str(self.container.sodar_uuid),
+                        'path': self.container.container_path,
+                    },
+                ),
             )
-            self.assertEqual(responses.calls[0].request.url, container_url)
+            self.assertRedirects(response, reverse('home'))
 
     def test_get_non_existent(self):
+        """Test GET with non-existent container"""
         with self.login(self.superuser):
             response = self.client.get(
                 reverse(
@@ -1230,141 +1276,6 @@ class TestReverseProxyView(TestBase):
                     kwargs={'container': self.fake_uuid, 'path': ''},
                 )
             )
-
-            self.assertEqual(response.status_code, 404)
-
-
-class TestContainerProxyLobbyView(TestBase):
-    """Tests for ``ContainerProxyLobbyView``."""
-
-    def setUp(self):
-        super().setUp()
-        self.create_one_container()
-        self.create_fake_uuid()
-
-    @override_settings(KIOSC_NETWORK_MODE='host')
-    @responses.activate
-    def test_get_success_running(self):
-        self.container1.state = STATE_RUNNING
-        self.container1.save()
-
-        with self.login(self.superuser):
-            response = self.client.get(
-                reverse(
-                    'containers:proxy-lobby',
-                    kwargs={
-                        'container': self.container1.sodar_uuid,
-                    },
-                ),
-            )
-
-            def request_callback(request):
-                return 200, {}, 'abc'.encode('utf-8')
-
-            container_url = f'/{self.container1.container_path}'
-            responses.add_callback(
-                'GET', container_url, callback=request_callback
-            )
-
-            self.assertRedirects(
-                response,
-                reverse(
-                    'containers:proxy',
-                    kwargs={
-                        'container': self.container1.sodar_uuid,
-                        'path': self.container1.container_path,
-                    },
-                ),
-            )
-
-            self.assertEqual(ContainerBackgroundJob.objects.count(), 0)
-
-    @override_settings(KIOSC_NETWORK_MODE='host')
-    @patch('containers.tasks.container_task.run')
-    @responses.activate
-    def test_get_success_paused(self, mock):
-        with self.login(self.superuser):
-            self.container1.state = STATE_PAUSED
-            self.container1.save()
-
-            def request_callback(request):
-                return 200, {}, 'abc'.encode('utf-8')
-
-            container_url = f'/{self.container1.container_path}'
-            responses.add_callback(
-                'GET', container_url, callback=request_callback
-            )
-
-            def _mock_start(job_id):
-                job = ContainerBackgroundJob.objects.get(id=job_id)
-                job.container.state = STATE_RUNNING
-                job.container.save()
-
-            mock.side_effect = _mock_start
-
-            response = self.client.get(
-                reverse(
-                    'containers:proxy-lobby',
-                    kwargs={
-                        'container': self.container1.sodar_uuid,
-                    },
-                ),
-                follow=True,
-            )
-
-            self.assertEqual(response.status_code, 200)
-            self.assertEqual(ContainerBackgroundJob.objects.count(), 1)
-            bg_job = ContainerBackgroundJob.objects.first()
-            self.assertEqual(bg_job.action, ACTION_UNPAUSE)
-            mock.assert_called_once_with(job_id=bg_job.id)
-
-    @override_settings(KIOSC_NETWORK_MODE='host')
-    @patch('containers.tasks.container_task.run')
-    @responses.activate
-    def test_get_success_stopped(self, mock):
-        with self.login(self.superuser):
-            self.container1.state = STATE_EXITED
-            self.container1.save()
-
-            def request_callback(request):
-                return 200, {}, 'abc'.encode('utf-8')
-
-            container_url = f'/{self.container1.container_path}'
-            responses.add_callback(
-                'GET', container_url, callback=request_callback
-            )
-
-            def _mock_start(job_id):
-                job = ContainerBackgroundJob.objects.get(id=job_id)
-                job.container.state = STATE_RUNNING
-                job.container.save()
-
-            mock.side_effect = _mock_start
-
-            response = self.client.get(
-                reverse(
-                    'containers:proxy-lobby',
-                    kwargs={
-                        'container': self.container1.sodar_uuid,
-                    },
-                )
-            )
-
-            self.assertEqual(response.status_code, 200)
-            self.assertEqual(ContainerBackgroundJob.objects.count(), 1)
-            bg_job = ContainerBackgroundJob.objects.first()
-            self.assertEqual(bg_job.action, ACTION_START)
-            mock.assert_called_once_with(job_id=bg_job.id)
-
-    def test_get_non_existent(self):
-        with self.login(self.superuser):
-            response = self.client.get(
-                reverse(
-                    'containers:proxy-lobby',
-                    kwargs={'container': self.fake_uuid},
-                )
-            )
-
             self.assertEqual(response.status_code, 404)
 
 

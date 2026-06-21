@@ -1,6 +1,5 @@
 """Test state machines."""
 
-from pathlib import Path
 import time
 import docker.errors
 
@@ -27,17 +26,7 @@ from containers.tests.factories import (
     ContainerFactory,
     ContainerBackgroundJobFactory,
 )
-from containers.tests.helpers import TestBase
-
-
-def build_testdata_container(cli, dockerfile_name):
-    dockerfile_path = (
-        Path(__file__).parent / 'testdata' / (dockerfile_name + '.Dockerfile')
-    )
-    with open(dockerfile_path, 'rb') as f:
-        stream = cli.build(fileobj=f, tag=dockerfile_name + ':testing')
-    # Block until building is done
-    _ = list(stream)
+from containers.tests.helpers import TestBase, build_testdata_container
 
 
 @override_settings(KIOSC_DOCKER_ACTION_MIN_DELAY=0)

@@ -304,14 +304,11 @@
               }
               if (response.status == 299) {
                 throw new Error("The app is not reachable");
-              } else if (response.status == 399) {
-                /* It is still possible that the proxy view responds with
-                  succes status, but it is actually a redirect to the referer.
-                  This happens when the view returns _redirect, e.g. when the
-                  host port is not set. Our server returns a 399 state in this
-                  case. */
-                throw new Error("Error connecting to the app");
               }
+              /* TODO: It is still possible that the proxy view responds with
+                 succes status, but it is actually a redirect to the referer.
+                 This happens when the view returns _redirect, e.g. when the
+                 host port is not set. */
               stateElement.innerText = "The app is running.";
             } catch (error) {
               stateElement.innerText = "The app is not accepting connections; please be patient...";

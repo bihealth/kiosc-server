@@ -5,8 +5,11 @@ from unittest.mock import patch
 from django.test import override_settings
 from django.urls import reverse
 
-from containers.models import Container, ContainerBackgroundJob
+from projectroles.plugins import ProjectAppPluginPoint
+
+from containers.models import Container, ContainerBackgroundJob, STATE_RUNNING
 from containers.tests.helpers import TestBase
+from containers.tests.factories import ContainerFactory
 
 
 class TestProjectrolesModifyAPI(TestBase):
@@ -67,3 +70,18 @@ class TestProjectrolesModifyAPI(TestBase):
             0,
         )
         mock.assert_not_called()
+
+
+class TestPlugin(TestBase):
+    def setUp(self):
+        super().setUp()
+        self.plugin = ProjectAppPluginPoint.get_plugin('containers')
+        self.container = ContainerFactory(
+            project=self.project,
+        )
+
+    def test_project_list_value(self):
+        self.container.state = STATE_RUNNING
+        self.container.save()
+        list_value = self.plugin.get_project_list_value('containers', self.project, self.user)
+        self.assertEqual(list_value, '1 running')

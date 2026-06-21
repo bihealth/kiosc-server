@@ -10,23 +10,16 @@ from django.utils import timezone
 from django.test import override_settings
 
 from containers.models import (
-    ACTION_STOP,
     STATE_EXITED,
     STATE_RUNNING,
     ContainerLogEntry,
     STATE_INITIAL,
-    PROCESS_DOCKER,
-    ACTION_RESTART,
-    ACTION_PAUSE,
-    STATE_PAUSED,
-    ACTION_UNPAUSE,
     ACTION_START,
     PROCESS_PROXY,
     ContainerBackgroundJob,
 )
 from kioscadmin.tasks import (
     connect_docker,
-    DEFAULT_GRACE_PERIOD_CONTAINER_STATUS,
     stop_inactive_containers,
     prune_zombie_containers,
 )
@@ -36,15 +29,10 @@ from containers.tests.test_lifecycle import build_testdata_container
 from containers.tests.factories import (
     ContainerFactory,
     ContainerBackgroundJobFactory,
-    ContainerLogEntryFactory,
 )
 from containers.tests.helpers import (
     TestBase,
     DockerMock,
-    log_entry1,
-    log_entry2,
-    log_entry3,
-    log_entry1_no_date,
 )
 
 
@@ -350,9 +338,7 @@ class TestStopInactiveContainers(TestBase):
         create_container.assert_not_called()
         create_host_config.assert_not_called()
         inspect_image.assert_not_called()
-        inspect_container.assert_has_calls(
-            [call(self.container1.container_id)]
-        )
+        inspect_container.assert_has_calls([call(self.container1.container_id)])
         pull.assert_not_called()
         start.assert_not_called()
         stop.assert_called_once_with(self.container1.container_id)

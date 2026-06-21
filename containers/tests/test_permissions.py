@@ -144,10 +144,7 @@ class TestContainerPermissions(ProjectPermissionTestBase):
             self.user_finder_cat,
         ]
         self.assert_response(
-            url,
-            good_users,
-            302,
-            redirect_user=reverse('home')
+            url, good_users, 302, redirect_user=reverse('home')
         )
         self.assert_response(url, bad_users, 302)
         mock.assert_called()
@@ -172,10 +169,7 @@ class TestContainerPermissions(ProjectPermissionTestBase):
             self.user_finder_cat,
         ]
         self.assert_response(
-            url,
-            good_users,
-            302,
-            redirect_user=reverse('home')
+            url, good_users, 302, redirect_user=reverse('home')
         )
         self.assert_response(url, bad_users, 302)
         mock.assert_called()
@@ -200,10 +194,7 @@ class TestContainerPermissions(ProjectPermissionTestBase):
             self.user_finder_cat,
         ]
         self.assert_response(
-            url,
-            good_users,
-            302,
-            redirect_user=reverse('home')
+            url, good_users, 302, redirect_user=reverse('home')
         )
         self.assert_response(url, bad_users, 302)
         mock.assert_called()
@@ -228,10 +219,7 @@ class TestContainerPermissions(ProjectPermissionTestBase):
             self.user_finder_cat,
         ]
         self.assert_response(
-            url,
-            good_users,
-            302,
-            redirect_user=reverse('home')
+            url, good_users, 302, redirect_user=reverse('home')
         )
         self.assert_response(url, bad_users, 302)
         mock.assert_called()
@@ -256,10 +244,7 @@ class TestContainerPermissions(ProjectPermissionTestBase):
             self.user_finder_cat,
         ]
         self.assert_response(
-            url,
-            good_users,
-            302,
-            redirect_user=reverse('home')
+            url, good_users, 302, redirect_user=reverse('home')
         )
         self.assert_response(url, bad_users, 302)
         mock.assert_called()
@@ -386,10 +371,7 @@ class TestContainerPermissionReadOnly(ProjectPermissionTestBase):
             kwargs={'container': self.container.sodar_uuid},
         )
         self.assert_response(
-            url,
-            self.good_users,
-            302,
-            redirect_user=reverse('home')
+            url, self.good_users, 302, redirect_user=reverse('home')
         )
         self.assert_response(url, self.bad_users, 302)
         mock.assert_called()
@@ -402,10 +384,7 @@ class TestContainerPermissionReadOnly(ProjectPermissionTestBase):
             kwargs={'container': self.container.sodar_uuid},
         )
         self.assert_response(
-            url,
-            self.good_users,
-            302,
-            redirect_user=reverse('home')
+            url, self.good_users, 302, redirect_user=reverse('home')
         )
         self.assert_response(url, self.bad_users, 302)
         mock.assert_called()
@@ -418,10 +397,7 @@ class TestContainerPermissionReadOnly(ProjectPermissionTestBase):
             kwargs={'container': self.container.sodar_uuid},
         )
         self.assert_response(
-            url,
-            self.good_users,
-            302,
-            redirect_user=reverse('home')
+            url, self.good_users, 302, redirect_user=reverse('home')
         )
         self.assert_response(url, self.bad_users, 302)
         mock.assert_called()
@@ -434,10 +410,7 @@ class TestContainerPermissionReadOnly(ProjectPermissionTestBase):
             kwargs={'container': self.container.sodar_uuid},
         )
         self.assert_response(
-            url,
-            self.good_users,
-            302,
-            redirect_user=reverse('home')
+            url, self.good_users, 302, redirect_user=reverse('home')
         )
         self.assert_response(url, self.bad_users, 302)
         mock.assert_called()
@@ -450,10 +423,7 @@ class TestContainerPermissionReadOnly(ProjectPermissionTestBase):
             kwargs={'container': self.container.sodar_uuid},
         )
         self.assert_response(
-            url,
-            self.good_users,
-            302,
-            redirect_user=reverse('home')
+            url, self.good_users, 302, redirect_user=reverse('home')
         )
         self.assert_response(url, self.bad_users, 302)
         mock.assert_called()

@@ -425,7 +425,8 @@ class TestContainerTask(TestBase):
         self.container1.refresh_from_db()
 
         self.assertEqual(
-            self.container1.log_entries.last().text, 'Stopping container succeeded\n'
+            self.container1.log_entries.last().text,
+            'Stopping container succeeded\n',
         )
 
         create_container.assert_called_once_with(

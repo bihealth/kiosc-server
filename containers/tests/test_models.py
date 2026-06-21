@@ -400,23 +400,27 @@ class TestContainerLogEntry(TestBase):
         self.assertEqual(
             str(self.log_entry),
             '{} [Kiosc {} {} ({})] {}'.format(
-                self.log_entry.date_created.strftime('%Y-%m-%dT%H:%M:%S.%f000Z'),
+                self.log_entry.date_created.strftime(
+                    '%Y-%m-%dT%H:%M:%S.%f000Z'
+                ),
                 self.log_entry.process.capitalize(),
                 self.log_entry.level.upper(),
                 self.log_entry.user.username if self.user else 'anonymous',
                 self.log_entry.text,
-            )
+            ),
         )
 
     def test___str___no_user(self):
         self.assertEqual(
             str(self.log_entry_no_user),
             '{} [Kiosc {} {} (anonymous)] {}'.format(
-                self.log_entry_no_user.date_created.strftime('%Y-%m-%dT%H:%M:%S.%f000Z'),
+                self.log_entry_no_user.date_created.strftime(
+                    '%Y-%m-%dT%H:%M:%S.%f000Z'
+                ),
                 self.log_entry_no_user.process.capitalize(),
                 self.log_entry_no_user.level.upper(),
                 self.log_entry_no_user.text,
-            )
+            ),
         )
 
     def test_containerlogentrymanager_merge_order(self):

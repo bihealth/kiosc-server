@@ -599,7 +599,7 @@ class TestContainerUpdateView(TestBase):
 
             self.assertRedirects(
                 response,
-                reverse('home')
+                reverse('home'),
                 status_code=302,
                 target_status_code=302,
             )
@@ -644,7 +644,7 @@ class TestContainerUpdateView(TestBase):
 
             self.assertRedirects(
                 response,
-                reverse('home')
+                reverse('home'),
                 status_code=302,
                 target_status_code=302,
             )
@@ -689,7 +689,7 @@ class TestContainerUpdateView(TestBase):
 
             self.assertRedirects(
                 response,
-                reverse('home')
+                reverse('home'),
                 status_code=302,
                 target_status_code=302,
             )
@@ -732,7 +732,7 @@ class TestContainerUpdateView(TestBase):
 
             self.assertRedirects(
                 response,
-                reverse('home')
+                reverse('home'),
                 status_code=302,
                 target_status_code=302,
             )
@@ -825,7 +825,7 @@ class TestContainerStartView(TestBase):
 
             self.assertRedirects(
                 response,
-                reverse('home')
+                reverse('home'),
             )
             self.assertEqual(job.action, ACTION_START)
             self.assertEqual(job.container, self.container1)
@@ -869,7 +869,7 @@ class TestContainerStopView(TestBase):
 
             self.assertRedirects(
                 response,
-                reverse('home')
+                reverse('home'),
             )
             self.assertEqual(job.action, ACTION_STOP)
             self.assertEqual(job.container, self.container1)
@@ -913,7 +913,7 @@ class TestContainerRestartView(TestBase):
 
             self.assertRedirects(
                 response,
-                reverse('home')
+                reverse('home'),
             )
             self.assertEqual(job.action, ACTION_RESTART)
             self.assertEqual(job.container, self.container1)
@@ -957,7 +957,7 @@ class TestContainerPauseView(TestBase):
 
             self.assertRedirects(
                 response,
-                reverse('home')
+                reverse('home'),
             )
             self.assertEqual(job.action, ACTION_PAUSE)
             self.assertEqual(job.container, self.container1)
@@ -1001,7 +1001,7 @@ class TestContainerUnpauseView(TestBase):
 
             self.assertRedirects(
                 response,
-                reverse('home')
+                reverse('home'),
             )
             self.assertEqual(job.action, ACTION_UNPAUSE)
             self.assertEqual(job.container, self.container1)

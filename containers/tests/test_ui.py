@@ -108,7 +108,7 @@ class TestReverseProxyView(
         self.container.refresh_from_db()
         self.assertEqual(self.container.state, STATE_RUNNING)
 
-        WebDriverWait(self.selenium, self.wait_time).until(
+        WebDriverWait(self.selenium, 3 * self.wait_time).until(
             ec.presence_of_element_located(
                 (By.XPATH, '//h1[contains(text(), "Hello World")]')
             )

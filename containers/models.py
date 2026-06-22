@@ -480,6 +480,9 @@ class Container(models.Model):
     def get_date_modified(self):
         return localtime(self.date_modified).strftime('%Y-%m-%d %H:%M')
 
+    def get_date_last_access(self):
+        return localtime(self.date_last_access).strftime('%Y-%m-%d %H:%M')
+
     def get_display_name(self):
         return self.title
 

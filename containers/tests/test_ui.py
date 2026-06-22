@@ -1,6 +1,7 @@
 """UI tests for containers views."""
 
 import docker
+import time
 
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support import expected_conditions as ec
@@ -107,6 +108,9 @@ class TestReverseProxyView(
         container_task(job_id=bg_job.pk)
         self.container.refresh_from_db()
         self.assertEqual(self.container.state, STATE_RUNNING)
+
+        # Wait for container to start
+        time.sleep(20)
 
         WebDriverWait(self.selenium, 3 * self.wait_time).until(
             ec.presence_of_element_located(

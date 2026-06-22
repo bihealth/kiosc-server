@@ -298,11 +298,16 @@ ADMIN_URL = 'admin/'
 
 # Celery configuration (for background jobs)
 # ------------------------------------------------------------------------------
+
+REDIS_LOCATION = '{host}/0'.format(
+    host=env.str('REDIS_URL', default='redis://127.0.0.1:6379')
+)
+
 if USE_TZ:
     # http://docs.celeryproject.org/en/latest/userguide/configuration.html#std:setting-timezone
     CELERY_TIMEZONE = TIME_ZONE
 # http://docs.celeryproject.org/en/latest/userguide/configuration.html#std:setting-broker_url
-CELERY_BROKER_URL = env.str('CELERY_BROKER_URL', 'redis://localhost:6379/0')
+CELERY_BROKER_URL = env.str('CELERY_BROKER_URL', REDIS_LOCATION)
 # http://docs.celeryproject.org/en/latest/userguide/configuration.html#std:setting-result_backend
 CELERY_RESULT_BACKEND = CELERY_BROKER_URL
 # http://docs.celeryproject.org/en/latest/userguide/configuration.html#std:setting-accept_content
@@ -326,9 +331,9 @@ CELERY_TASK_EAGER_PROPAGATES = False
 
 CHANNEL_LAYERS = {
     'default': {
-        'BACKEND': 'channels_redis.core.RedisChannelLayer',
+        'BACKEND': 'channels_redis.pubsub.RedisPubSubChannelLayer',
         'CONFIG': {
-            'hosts': [(env('REDIS_URL', default='127.0.0.1'), 6379)],
+            'hosts': [REDIS_LOCATION],
             'capacity': 10_000,  # Default 100
             'expiry': 10,  # Default 60
         },

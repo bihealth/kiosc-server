@@ -9,16 +9,7 @@ Access (via Proxy)
 ------------------
 
 The web application running inside of the container can be accessed
-when clicking the button with the eye icon. A grey and crossed-out
-eye indicates that the container is currently not running. A click
-on the button will start the container and access the web application
-afterwards.
-
-.. image:: figures/apps/containers/proxy_not_running.png
-  :alt: Proxy button when container is not running
-
-A blue button with an eye icon indicates that the container is running.
-The access will happen immediately when clicking the button.
+by clicking the blue button with the eye icon.
 
 .. image:: figures/apps/containers/proxy_running.png
   :alt: Proxy button when container is running
@@ -42,15 +33,9 @@ The ``Controls`` button on the container list:
 .. image:: figures/apps/containers/controls_button_list.png
   :alt: Controls button on the container list page
 
-When a container is stopped, the selection includes the actions
-``Start``, ``Update`` and ``Delete``, given the permissions.
-
-.. image:: figures/apps/containers/controls_menu_stopped.png
-  :alt: Control menu when container is not running
-
-When a container is running, the selection includes the actions
-``Stop``, ``Pause``, ``Restart``, ``Update`` and ``Delete``,
-given the permissions.
+The dropdown menu for the Controls includes all the actions that
+you can perform on the container. If you are not allowed to perform an action,
+the corresponding button will not be shown.
 
 .. image:: figures/apps/containers/controls_menu_running.png
   :alt: Control menu when container is not running
@@ -59,23 +44,18 @@ given the permissions.
 Start
 ^^^^^
 
-Create a container from a Docker image and start it.  If the image isn't
-cached yet, it is pulled from the specified repository.  An existing
-container is always wiped before performing the starting action.
-
-Internally, the following cadence is performed::
-
-    docker rm
-    docker pull
-    docker create
-    docker run
+Create a container from a Docker image and start it. If the image isn't cached
+yet, it is pulled from the specified repository. If you have used Docker from
+the command line before, this control is roughly equivalent to a ``docker run``
+command.
 
 The state should be **running** when performed successfully.
+If the container fails to start, the state will be either **created** or **failed**.
 
 Stop
 ^^^^
 
-Stop a running Docker container. Only available when Docker container state is reported as running.
+Stop a running Docker container. If the container is not running, this action has no effect.
 
 Internally, a ``docker stop`` is performed.
 
@@ -84,7 +64,7 @@ The state should be **exited** when performed successfully.
 Pause
 ^^^^^
 
-Pause a running Docker container. Only available when Docker container state is reported as running.
+Pause a running Docker container.
 
 Internally, a ``docker pause`` is performed.
 
@@ -93,16 +73,16 @@ The state should be **paused** when performed successfully.
 Unpause
 ^^^^^^^
 
-Unpause a paused Docker container. Only available when Docker container state is reported as paused.
+Unpause a paused Docker container.
 
 A ``docker unpause`` is performed.
 
 The state should be **running** when performed successfully.
 
-Restart
-^^^^^^^
+Reset
+^^^^^
 
-Restart a running container. Only available when Docker container state is reported as running.
+Deletes and recreates the container.
 
 Internally, the following cadence is performed::
 
@@ -111,8 +91,6 @@ Internally, the following cadence is performed::
     docker pull
     docker create
     docker start
-
-(It's NOT a ``docker restart`` as the name would suggest.)
 
 The state should be **running** when performed successfully.
 
@@ -125,8 +103,7 @@ displayed as ``<masked>`` if listed in the ``environment_secret_keys``.
 When left as ``<masked>``, the value itself will not change. To set a
 new value, simply change the value.
 
-If the Docker container state is reported as running, a restart as
-described above will be performed to account for the changes.
+Updating a container will also stop it.
 
 Delete
 ^^^^^^

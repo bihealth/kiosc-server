@@ -12,10 +12,9 @@ A detailed description of all the fields can be found below.
 Initial container
 ^^^^^^^^^^^^^^^^^
 
-When you created a container, the detail page will provide
+When you create a container, the detail page will provide
 you with information about the container object. Please note
 that the container is still in initial state and not running yet.
-Thus, the button to access the proxy (eye icon) is not active.
 
 .. image:: figures/apps/containers/details_created1.png
   :alt: Details of an initial container

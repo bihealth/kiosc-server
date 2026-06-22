@@ -24,4 +24,27 @@ class Migration(migrations.Migration):
             ),
             preserve_default=False,
         ),
+        migrations.AlterField(
+            model_name='container',
+            name='state',
+            field=models.CharField(
+                choices=[
+                    ('created', 'created'),
+                    ('restarting', 'restarting'),
+                    ('running', 'running'),
+                    ('paused', 'paused'),
+                    ('exited', 'exited'),
+                    ('dead', 'dead'),
+                    ('deleting', 'deleting'),
+                    ('deleted', 'deleted'),
+                    ('pulling', 'pulling'),
+                    ('initial', 'initial'),
+                    ('failed', 'failed'),
+                    ('terminated', 'terminated'),
+                ],
+                default='initial',
+                help_text='The state of the container.',
+                max_length=32,
+            ),
+        ),
     ]

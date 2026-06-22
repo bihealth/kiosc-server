@@ -217,13 +217,6 @@ in the ``.env`` file, with their default value.
     Database used by Celery for keeping track of background tasks. Do not change
     this unless you know what you are doing.
 
-``KIOSC_CELERY_TASK_ALWAYS_EAGER=0``
-    Wether background tasks should be always run synchronously. You can set this
-    to True for testing purposes during development, but should otherwise left
-    false. NOTE: when this variable is False, a celery daemon instance must
-    be running. You can start one from the kiosc-server repository by running
-    ``make celery``.
-
 ``KIOSC_UVICORN_WORKERS=16``
     Number of processes used to handle incoming connections by the web server.
 

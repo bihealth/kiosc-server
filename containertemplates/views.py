@@ -619,7 +619,19 @@ class ContainerTemplateSelectorApiView(LoginRequiredMixin, View):
 
         if site_or_project == 'site':
             if containertemplate_id == 'blank':
-                return JsonResponse({})
+                return JsonResponse({
+                    'title': '',
+                    'description': '',
+                    'repository': '',
+                    'tag': '',
+                    'registry_user': '',
+                    'registry_password': '',
+                    'container_port': 80,
+                    'container_path': '',
+                    'heartbeat_url': '',
+                    'environment': None,
+                    'command': '',
+                })
 
             try:
                 obj = ContainerTemplateSite.objects.get(id=containertemplate_id)

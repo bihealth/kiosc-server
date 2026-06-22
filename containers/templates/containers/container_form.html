@@ -22,16 +22,6 @@
       <span class="input-group-text">Container Template</span>
     </div>
     {{ containertemplate_form.source }}
-    <div class="input-group-append">
-      <button
-          id="containertemplate_submit"
-          type="submit"
-          class="btn btn-primary"
-          onclick="getTemplate()"
-          data-url="{% url 'containertemplates:ajax-get-containertemplate' %}">
-        <i class="iconify" data-icon="mdi:download"></i> Get
-      </button>
-    </div>
   </div>
   <form method="post" enctype="multipart/form-data">
     {% csrf_token %}
@@ -95,15 +85,16 @@
 {% block javascript %}
   {{ block.super }}
   <script>
-  function getTemplate() {
-      var btn = $("#containertemplate_submit")
-      var src = $("#containertemplate_source")
-      var values = src.val().split(":")
-      var site_or_project = values[0]
-      var containertemplate_id = values[1]
 
+  document.getElementById('containertemplate_source').addEventListener('change', (e) => {
+    const selection = e.target.selectedOptions[0];
+    const values = selection.value.split(":");
+    getTemplate(...values);
+  });
+
+  function getTemplate(site_or_project, containertemplate_id) {
       $.ajax({
-          url: btn.data("url"),
+          url: '{% url "containertemplates:ajax-get-containertemplate" %}',
           type: 'POST',
           dataType: 'json',
           data: {
@@ -113,23 +104,26 @@
           },
           success: function(data) {
               $.each(data, function(key, value) {
-                  if (key === "id") {
-                      $("#id_containertemplate" + site_or_project).val(value);
+                  if (key === 'id') {
+                      $('#id_containertemplate' + site_or_project).val(value);
                   }
-                  else if (key === "environment") {
-                      $("#id_" + key).val(JSON.stringify(value));
+                  else if (key === 'environment') {
+                      $('#id_' + key).val(JSON.stringify(value));
                   }
                   else {
-                      $("#id_" + key).val(value);
+                      $('#id_' + key).val(value);
                   }
-              })
+              });
+          },
+          fail: function(e) {
+              console.error(`Failed to fetch template (${site_or_project}, ${containertemplate_id}).`);
           }
       });
   }
 
   function insertFileUrl() {
-      let value = $("#id_file_url").val();
-      let insert_into = $("#id_command");
+      let value = $('#id_file_url').val();
+      let insert_into = $('#id_command');
 
       var cursor_pos = insert_into.prop('selectionStart');
       var v = insert_into.val();

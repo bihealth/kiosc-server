@@ -62,11 +62,16 @@ A Docker container can be in different states, and this is reflected in Kiosc.
 
 - **Initial**: The image was just downloaded and the container has not been
   started for the first time yet.
-- **Running**: The container is running and you can access the service provided
-  by the container.
+- **Running**: The container is running. Note that this does not mean that you
+  can access the app, since the container may need some time to download data
+  before starting the app.
 - **Paused**: The processes inside the container are sleeping and do not consume
   resources, but can be restarted at any time.
-- **Stopped**: The container has been killed by a user.
+- **Exited**: The container has been stopped by a user. It can be restarted at
+  any time.
+- **Terminated**: If the app is not accessed by anyone for a long time, it is
+  stopped automatically. It can be restarted at any time. The inactivity timeout
+  can be chosen when creating or updating the container.
 - **Failed**: Something went wrong inside the container, you should report this
   error to the container's authors.
 

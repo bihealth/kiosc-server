@@ -1,3 +1,6 @@
+from asgiref.sync import async_to_sync
+from channels.layers import get_channel_layer
+
 import shlex
 
 import docker
@@ -5,11 +8,10 @@ import docker.errors
 import logging
 
 from django.conf import settings
-from django.db import transaction
 from django.urls import reverse
-from django.utils import timezone
 from docker.types import Ulimit
 from statemachine import StateMachine, State
+from statemachine.exceptions import StateMachineError
 
 from containers.models import (
     STATE_CREATED,
@@ -22,19 +24,19 @@ from containers.models import (
     STATE_PULLING,
     STATE_INITIAL,
     STATE_FAILED,
+    STATE_TERMINATED,
     PROCESS_TASK,
-    PROCESS_DOCKER,
     ACTION_START,
     ACTION_STOP,
+    ACTION_TERMINATE,
     ACTION_RESTART,
     ACTION_PAUSE,
     ACTION_UNPAUSE,
     ACTION_DELETE,
 )
 
-
 logger = logging.getLogger(__name__)
-
+channel_layer = get_channel_layer()
 
 # Increase the timeout for communication with Docker daemon.
 APP_NAME = 'containers'
@@ -45,6 +47,7 @@ ACTION_TO_EXPECTED_STATE = {
     ACTION_START: STATE_RUNNING,
     ACTION_RESTART: STATE_RUNNING,
     ACTION_STOP: STATE_EXITED,
+    ACTION_TERMINATE: STATE_EXITED,
     ACTION_PAUSE: STATE_PAUSED,
     ACTION_UNPAUSE: STATE_RUNNING,
     ACTION_DELETE: STATE_DELETING,
@@ -59,6 +62,12 @@ def connect_docker(
 
 
 class ActionSwitch:
+    """
+    State machine to switch container state.
+
+    Exceptions raised here are caught by ``containers.tasks.container_task()``.
+    """
+
     def __init__(self, cm, job, tl_event):
         self.tl_event = tl_event
         self.cm = cm
@@ -66,6 +75,7 @@ class ActionSwitch:
         self._switches = {
             ACTION_START: self._start,
             ACTION_STOP: self._stop,
+            ACTION_TERMINATE: self._terminate,
             ACTION_PAUSE: self._pause,
             ACTION_UNPAUSE: self._unpause,
             ACTION_RESTART: self._restart,
@@ -73,29 +83,53 @@ class ActionSwitch:
         }
 
     def _start(self, state):
-        if state == STATE_INITIAL:
-            self.cm.pull()
-            self.cm.start_pulled()
+        try:
+            if state == STATE_INITIAL:
+                self.cm.pull()
+                self.cm.start_pulled()
 
-        elif state == STATE_DELETED:
-            self.cm.pull_deleted()
-            self.cm.start_pulled()
+            elif state == STATE_DELETED:
+                self.cm.pull_deleted()
+                self.cm.start_pulled()
 
-        elif state == STATE_CREATED:
-            self.cm.start_created()
+            elif state == STATE_CREATED:
+                self.cm.start_created()
 
-        elif state == STATE_EXITED:
-            self.cm.delete()
-            self.cm.delete_success()
-            self.cm.pull_deleted()
-            self.cm.start_pulled()
+            elif state == STATE_EXITED or state == STATE_TERMINATED:
+                # self.cm.delete_exited()
+                # self.cm.delete_success()
+                # self.cm.pull_deleted()
+                self.cm.start_exited()
 
-        elif state == STATE_FAILED:
-            self.cm.pull_failed()
-            self.cm.start_pulled()
+            elif state == STATE_FAILED:
+                self.cm.delete_failed()
+                self.cm.delete_success()
+                self.cm.pull_deleted()
+                self.cm.start_pulled()
 
-        else:
-            raise RuntimeError(f'Action start not allowed in state {state}')
+            elif state == STATE_RUNNING:
+                # Nothing to do, but we don't want to raise an exception
+                pass
+
+            else:
+                raise StateMachineError(
+                    f'Action start not allowed in state {state}'
+                )
+        except Exception as ex:
+            self.job.add_log_entry(f'Failed to start container: {ex}')
+            self.job.container.log_entries.create(
+                text=f'Failed to start container: {ex}\n',
+                process=PROCESS_TASK,
+                user=self.job.bg_job.user,
+            )
+            async_to_sync(channel_layer.group_send)(
+                str(self.job.container.sodar_uuid),
+                {
+                    'type': 'container_task.message',
+                    'text': f'Failed to start container: {ex}\n',
+                },
+            )
+            raise ex
 
     def _stop(self, state):
         if state == STATE_RUNNING:
@@ -104,39 +138,83 @@ class ActionSwitch:
         elif state == STATE_PAUSED:
             self.cm.stop_paused()
 
+        elif state == STATE_EXITED:
+            pass
+
         else:
-            raise RuntimeError(f'Action stop not allowed in state {state}')
+            raise StateMachineError(f'Action stop not allowed in state {state}')
+
+    def _terminate(self, state):
+        if state == STATE_RUNNING:
+            self.cm.terminate_running()
+
+        elif state == STATE_PAUSED:
+            self.cm.terminate_paused()
+
+        else:
+            raise StateMachineError(
+                f'Action terminate not allowed in state {state}'
+            )
 
     def _pause(self, state):
         if state == STATE_RUNNING:
             self.cm.pause()
 
         else:
-            raise RuntimeError(f'Action pause not allowed in state {state}')
+            raise StateMachineError(
+                f'Action pause not allowed in state {state}'
+            )
 
     def _unpause(self, state):
         if state == STATE_PAUSED:
             self.cm.unpause()
 
         else:
-            raise RuntimeError(f'Action unpause not allowed in state {state}')
+            raise StateMachineError(
+                f'Action unpause not allowed in state {state}'
+            )
 
     def _restart(self, state):
-        if state == STATE_RUNNING:
-            self.cm.stop_running()
-            self.cm.delete()
+        if state == STATE_INITIAL:
+            self.cm.pull()
+            self.cm.start_pulled()
+
+        elif state == STATE_CREATED:
+            self.cm.delete_created()
             self.cm.delete_success()
             self.cm.pull_deleted()
             self.cm.start_pulled()
 
-        elif state == STATE_EXITED:
-            self.cm.delete()
+        elif state == STATE_RUNNING:
+            self.cm.stop_running()
+            self.cm.delete_exited()
+            self.cm.delete_success()
+            self.cm.pull_deleted()
+            self.cm.start_pulled()
+
+        elif state == STATE_PAUSED:
+            self.cm.stop_paused()
+            self.cm.delete_exited()
+            self.cm.delete_success()
+            self.cm.pull_deleted()
+            self.cm.start_pulled()
+
+        elif state in (STATE_EXITED, STATE_TERMINATED):
+            self.cm.delete_exited()
+            self.cm.delete_success()
+            self.cm.pull_deleted()
+            self.cm.start_pulled()
+
+        elif state == STATE_FAILED:
+            self.cm.delete_failed()
             self.cm.delete_success()
             self.cm.pull_deleted()
             self.cm.start_pulled()
 
         else:
-            raise RuntimeError(f'Action restart not allowed in state {state}')
+            raise StateMachineError(
+                f'Action restart not allowed in state {state}'
+            )
 
     def _delete(self, state):
         if state == STATE_INITIAL:
@@ -145,16 +223,16 @@ class ActionSwitch:
 
         elif state == STATE_RUNNING:
             self.cm.stop_running()
-            self.cm.delete()
+            self.cm.delete_exited()
             self.cm.delete_success()
 
         elif state == STATE_PAUSED:
             self.cm.stop_paused()
-            self.cm.delete()
+            self.cm.delete_exited()
             self.cm.delete_success()
 
-        elif state == STATE_EXITED:
-            self.cm.delete()
+        elif state == STATE_EXITED or state == STATE_TERMINATED:
+            self.cm.delete_exited()
             self.cm.delete_success()
 
         elif state == STATE_FAILED:
@@ -174,23 +252,15 @@ class ActionSwitch:
             self.cm.delete_success()
 
         else:
-            raise RuntimeError(f'Action delete not allowed in state {state}')
+            raise StateMachineError(
+                f'Action delete not allowed in state {state}'
+            )
 
     def do(self, action, state):
         f = self._switches.get(action)
 
         if not f:
-            if self.tl_event:
-                self.tl_event.set_status('FAILED', 'action failed')
-                self.job.container.log_entries.create(
-                    text=f'Unknown action: {action}',
-                    process=PROCESS_TASK,
-                    user=self.job.bg_job.user,
-                )
-            raise RuntimeError(f'Unknown action: {action}')
-
-        if self.tl_event:
-            self.tl_event.set_status('OK', 'action succeeded')
+            raise StateMachineError(f'Unknown action: {action}')
 
         action_locks = self.cm.container.action_lock.all()
 
@@ -205,8 +275,7 @@ class ActionSwitch:
                 f'Maximal one lock per container expected, got {action_locks.count()}'
             )
 
-        with transaction.atomic():
-            f(state)
+        f(state)
 
 
 class ContainerMachine(StateMachine):
@@ -244,6 +313,9 @@ class ContainerMachine(StateMachine):
     #: State when container failed on action.
     failed = State(STATE_FAILED)
 
+    #: State when container is stopped due to inactivity.
+    terminated = State(STATE_TERMINATED)
+
     # Transitions
 
     #: Transition when a freshly created container object is started (action: start).
@@ -264,6 +336,9 @@ class ContainerMachine(StateMachine):
     #: Transition when starting an exited container (action: start).
     start_exited = exited.to(running)
 
+    #: Transition when starting a terminated container (action: start).
+    start_terminated = terminated.to(running)
+
     #: Transition when pausing a running container (action: pause).
     pause = running.to(paused)
 
@@ -276,11 +351,17 @@ class ContainerMachine(StateMachine):
     #: Transition when stopping a paused container (action: stop).
     stop_paused = paused.to(exited)
 
-    #: Transition when deleting a stopped container (action: delete).
-    delete = exited.to(deleting)
+    #: Transition when timing out a running container (action: terminate).
+    terminate_running = running.to(terminated)
 
-    #: Transition when successfully finishing deleting a container (no action).
-    delete_success = deleting.to(deleted)
+    #: Transition when timing out a paused container (action: terminate).
+    terminate_paused = paused.to(terminated)
+
+    #: Transition when deleting an exited container (action: delete).
+    delete_exited = exited.to(deleting)
+
+    #: Transition when deleting a terminated container (action: delete).
+    delete_terminated = terminated.to(deleting)
 
     #: Transition when deleting a failed container (action: delete).
     delete_failed = failed.to(deleting)
@@ -293,6 +374,9 @@ class ContainerMachine(StateMachine):
 
     #: Transition when deleting a pulled container (action: delete).
     delete_pulling = pulling.to(deleting)
+
+    #: Transition when successfully finishing deleting a container (no action).
+    delete_success = deleting.to(deleted)
 
     #: Transition when a newly created container failed to start (no action).
     failed_start = pulling.to(created)
@@ -313,6 +397,9 @@ class ContainerMachine(StateMachine):
 
     #: Transition ``exited`` to ``failed``
     failed_exited = exited.to(failed)
+
+    #: Transition ``terminated`` to ``failed``
+    failed_terminated = terminated.to(failed)
 
     #: Transition ``deleting`` to ``failed``
     failed_deleting = deleting.to(failed)
@@ -354,17 +441,36 @@ class ContainerMachine(StateMachine):
         )
         self.container.save()
 
-    def on_pull(self):
-        # Pulling image
-        self.job.add_log_entry(
-            f'Pulling image {self.container.get_repos_full()} ...'
-        )
+    def _log_task(self, text):
+        """Add logs for the current task.
+
+        In general, logs must be added in three places:
+
+        - The background job;
+        - The channel layer, so that they are forwarded in real time
+          to the ContainerWatcherConsumer;
+        - The database, so that they are stored with persistence.
+        """
+        self.job.add_log_entry(text)
+        textnl = text + '\n'
         self.container.log_entries.create(
-            text='Pulling image ...',
+            text=textnl,
             process=PROCESS_TASK,
             user=self.user,
         )
+        async_to_sync(channel_layer.group_send)(
+            str(self.container.sodar_uuid),
+            {
+                'type': 'container_task.message',
+                'text': textnl,
+            },
+        )
+
+    def on_pull(self):
+        # Pulling image
+        self._log_task(f'Pulling image {self.container.get_repos_full()} ...')
         self.container.state = STATE_PULLING
+        self.container.container_id = None
         self.container.save()
 
         need_to_pull = True
@@ -385,55 +491,74 @@ class ContainerMachine(StateMachine):
                         self.container.title,
                         self.user,
                     )
+                    self._log_task(
+                        f'Logging in to registry {registry} with user credentials...'
+                    )
                     self.cli.login(
                         self.container.registry_user,
                         self.container.registry_password,
                         registry=registry,
                     )
+                    self._log_task('Logged in successfully.')
                 except Exception as ex:
                     logger.error('Failed to login to registry: %s', ex)
-                    self.container.log_entries.create(
-                        text=str(ex),
-                        process=PROCESS_DOCKER,
-                        date_docker_log=timezone.now(),
-                        user=self.user,
-                    )
-                    self.job.add_log_entry(str(ex))
-                    return
+                    self._log_task(f'Login failed: {ex}')
+                    raise ex
             for line in self.cli.pull(
                 repository=self.container.repository,
                 tag=self.container.tag,
                 stream=True,
                 decode=True,
             ):
-                if (
-                    line.get('progressDetail')
-                    and line['progressDetail'].get('current')
-                    and line['progressDetail'].get('total')
+                pull_log = {'text': line.get('status')}
+                if (line_id := line.get('id')) and (
+                    line_progress := line.get('progressDetail')
                 ):
-                    docker_log_line = '{status} ({progressDetail[current]}/{progressDetail[total]})'.format(
-                        **line
-                    )
+                    pull_log['id'] = line_id
+                    pull_log['status'] = f'{line_id}: {line.get("status")}'
+                    if line_progress.get('current') and line_progress.get(
+                        'total'
+                    ):
+                        pull_log['status'] += (
+                            f' [{line_progress.get("current")}/{line_progress.get("total")}]'
+                        )
+                    elif line_progress.get('current') and line_progress.get(
+                        'units'
+                    ):
+                        pull_log['status'] += (
+                            f' [{line_progress.get("current")}{line_progress.get("units")}]'
+                        )
+                    else:
+                        # We create persistent log entries only for status lines
+                        # that don't change
+                        self.container.log_entries.create(
+                            text=pull_log['status'] + '\n',
+                            process=PROCESS_TASK,
+                            user=self.user,
+                        )
+                        self.job.add_log_entry(pull_log['status'])
                 else:
-                    docker_log_line = line['status']
+                    pull_log_status = line.get('status')
+                    pull_log = {'status': pull_log_status}
+                    self.container.log_entries.create(
+                        text=pull_log_status + '\n',
+                        process=PROCESS_TASK,
+                        user=self.user,
+                    )
+                    self.job.add_log_entry(pull_log_status)
 
-                self.container.log_entries.create(
-                    text=docker_log_line,
-                    process=PROCESS_DOCKER,
-                    date_docker_log=timezone.now(),
-                    user=self.user,
+                async_to_sync(channel_layer.group_send)(
+                    str(self.container.sodar_uuid),
+                    {
+                        'type': 'container_pull.message',
+                        **pull_log,
+                    },
                 )
-                self.job.add_log_entry(docker_log_line)
 
         image_details = self.cli.inspect_image(self.container.get_repos_full())
         self.container.image_id = image_details.get('Id')
         self.container.save()
-        self.job.add_log_entry('Pulling image succeeded')
-        self.container.log_entries.create(
-            text='Pulling image succeeded',
-            process=PROCESS_TASK,
-            user=self.user,
-        )
+        self._log_task('Pulling image succeeded')
 
         options = {}
         options_host_config = {}
@@ -489,6 +614,8 @@ class ContainerMachine(StateMachine):
             }
             options['volumes'] = [kiosc_volume_mountpoint]
 
+        self._log_task('Initializing the container...')
+
         # Create container
         container_info = self.cli.create_container(
             detach=True,
@@ -514,6 +641,8 @@ class ContainerMachine(StateMachine):
         )
         self.container.container_id = container_info.get('Id')
         self.container.save()
+
+        self._log_task('Container initialized successfully.')
         self._update_status(container_info)
 
     def on_pull_deleted(self):
@@ -524,18 +653,10 @@ class ContainerMachine(StateMachine):
 
     def on_start_pulled(self):
         # Starting container
-        self.container.log_entries.create(
-            text='Starting ...', process=PROCESS_TASK, user=self.user
-        )
-        self.job.add_log_entry('Starting container')
+        self._log_task('Starting...')
         self.cli.start(self.container.container_id)
         self._update_status()
-        self.job.add_log_entry('Starting container succeeded')
-        self.container.log_entries.create(
-            text='Starting succeeded',
-            process=PROCESS_TASK,
-            user=self.user,
-        )
+        self._log_task('Container started successfully')
 
     def on_start_created(self):
         self.on_start_pulled()
@@ -543,61 +664,56 @@ class ContainerMachine(StateMachine):
     def on_start_exited(self):
         self.on_start_pulled()
 
+    def on_start_terminated(self):
+        self.on_start_pulled()
+
     def on_pause(self):
-        self.container.log_entries.create(
-            text='Pausing ...', process=PROCESS_TASK, user=self.user
-        )
-        self.job.add_log_entry('Pausing container')
+        self._log_task('Pausing container')
         self.cli.pause(self.container.container_id)
         self._update_status()
-        self.job.add_log_entry('Pausing container succeeded')
-        self.container.log_entries.create(
-            text='Pausing succeeded',
-            process=PROCESS_TASK,
-            user=self.user,
-        )
+        self._log_task('Pausing container succeeded')
 
     def on_unpause(self):
-        self.container.log_entries.create(
-            text='Unpausing ...', process=PROCESS_TASK, user=self.user
-        )
-        self.job.add_log_entry('Unpausing container')
+        self._log_task('Unpausing container')
         self.cli.unpause(self.container.container_id)
         self._update_status()
-        self.job.add_log_entry('Unpausing container succeeded')
-        self.container.log_entries.create(
-            text='Unpausing succeeded',
-            process=PROCESS_TASK,
-            user=self.user,
-        )
+        self._log_task('Unpausing container succeeded')
 
     def on_stop_running(self):
-        self.container.log_entries.create(
-            text='Stopping ...', process=PROCESS_TASK, user=self.user
-        )
-        self.job.add_log_entry('Stopping container')
+        self._log_task('Stopping container')
 
         # Stopping container and updating status
         self.cli.stop(self.container.container_id)
         self._update_status()
 
-        self.container.log_entries.create(
-            text='Stopping succeeded',
-            process=PROCESS_TASK,
-            user=self.user,
-        )
-        self.job.add_log_entry('Stopping container succeeded')
+        self._log_task('Stopping container succeeded')
 
     def on_stop_paused(self):
         self.on_stop_running()
 
-    def on_delete(self):
-        self.container.log_entries.create(
-            text='Deleting ...', process=PROCESS_TASK, user=self.user
-        )
+    def on_terminate_running(self):
+        self._log_task('Terminating container due to inactivity...')
+
+        # Timing out container and updating status
+        self.cli.stop(self.container.container_id)
+        self.container.state = STATE_TERMINATED
+        self.container.save()
+
+        self._log_task('Container terminated due to inactivity.')
+
+    def on_terminate_paused(self):
+        self.on_terminate_running()
+
+    def on_delete_exited(self):
         self.job.add_log_entry('Deleting container')
         self.container.state = STATE_DELETING
         self.container.save()
+        self.container.log_entries.all().delete()
+
+        if not self.container.container_id:
+            # Nothing to do, the container probably doesn't even exist
+            logger.warning('Trying to delete container with no id')
+            return
 
         # Removing container and erasing container_id
         # NOTE: this will also remove the volumes associated with the container
@@ -606,43 +722,28 @@ class ContainerMachine(StateMachine):
             self.cli.remove_container(
                 self.container.container_id, force=True, v=True
             )
+        except docker.errors.NotFound:
+            # The container doesn't exist, so there is nothing to delete
+            logger.warning("Trying to delete container which doesn't exist")
+            pass
 
-        except docker.errors.NullResource as ex:
-            logger.error('Failed to delete container: %s', ex)
-            self.container.log_entries.create(
-                text="Empty container ID, don't know what to delete. Continuing.",
-                process=PROCESS_TASK,
-                user=self.user,
-            )
-
-        except docker.errors.NotFound as ex:
-            logger.error('Failed to delete container: %s', ex)
-            self.container.log_entries.create(
-                text=f'Container with {self.container.container_id} not found, nothing to delete',
-                process=PROCESS_TASK,
-                user=self.user,
-            )
+    def on_delete_terminated(self):
+        self.on_delete_exited()
 
     def on_delete_failed(self):
-        self.on_delete()
+        self.on_delete_exited()
 
     def on_delete_created(self):
-        self.on_delete()
+        self.on_delete_exited()
 
     def on_delete_dead(self):
-        self.on_delete()
+        self.on_delete_exited()
 
     def on_delete_pulling(self):
-        self.on_delete()
+        self.on_delete_exited()
 
     def on_delete_success(self):
         self.container.state = STATE_DELETED
         self.container.container_id = None
         self.container.save()
-
-        self.container.log_entries.create(
-            text='Deleting succeeded',
-            process=PROCESS_TASK,
-            user=self.user,
-        )
-        self.job.add_log_entry('Deleting container succeeded')
+        self._log_task('Previous container was deleted.')

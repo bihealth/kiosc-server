@@ -1,5 +1,4 @@
 from django.urls import path, re_path
-from django.views.decorators.csrf import csrf_exempt
 
 from . import views, consumers, views_api
 
@@ -59,13 +58,8 @@ ui_urlpatterns = [
     ),
     re_path(
         r'^proxy/(?P<container>[0-9a-f-]+)/(?P<path>.*)$',
-        view=csrf_exempt(views.ReverseProxyView.as_view()),
+        view=views.ReverseProxyView.as_view(),
         name='proxy',
-    ),
-    path(
-        'proxy/lobby/<uuid:container>',
-        view=views.ContainerProxyLobbyView.as_view(),
-        name='proxy-lobby',
     ),
     path(
         'file/serve/<uuid:file>/<str:filename>',
@@ -117,7 +111,12 @@ websocket_urlpatterns = [
     re_path(
         r'^containers/proxy/(?P<container>[0-9a-f-]+)/(?P<path>.*)$',
         consumers.TunnelConsumer.as_asgi(),
-    )
+    ),
+    re_path(
+        r'^containers/watcher/logs/(?P<container>[0-9a-f-]+)',
+        consumers.ContainerWatcherConsumer.as_asgi(),
+        name='log-watcher',
+    ),
 ]
 
 urlpatterns = ui_urlpatterns + api_urlpatterns

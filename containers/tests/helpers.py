@@ -1,10 +1,12 @@
 """Helpers for the container tests."""
 
-import uuid
 import dateutil.parser
-from django.conf import settings
+from pathlib import Path
+import uuid
 
+from django.conf import settings
 from django.utils import dateformat
+from django.test import LiveServerTestCase
 from test_plus.test import TestCase
 
 from containers.models import (
@@ -34,10 +36,27 @@ from projectroles.models import (
     SODAR_CONSTANTS,
     ROLE_RANKING,
 )
-from projectroles.tests.base import APIViewTestBase
+from projectroles.tests.base import (
+    APIViewTestBase,
+    LiveUserMixin,
+    SeleniumSetupMixin,
+    UITestMixin,
+)
+from timeline.models import TL_STATUS_OK
 
 
 PROJECT_ROLE_OWNER = SODAR_CONSTANTS['PROJECT_ROLE_OWNER']
+APP_NAME = 'containers'
+
+
+def build_testdata_container(cli, dockerfile_name):
+    dockerfile_path = (
+        Path(__file__).parent / 'testdata' / (dockerfile_name + '.Dockerfile')
+    )
+    with open(dockerfile_path, 'rb') as f:
+        stream = cli.build(fileobj=f, tag=dockerfile_name + ':testing')
+    # Block until building is done
+    _ = list(stream)
 
 
 class TestContainerCreationMixin:
@@ -69,6 +88,31 @@ class TestContainerCreationMixin:
         """Create a fake UUID."""
         self.fake_uuid = uuid.uuid4()
 
+    def create_container_event(
+        self,
+        timeline,
+        container,
+        user=None,
+        event_name='test_event',
+        status_type=TL_STATUS_OK,
+        status_description='status description',
+    ):
+        """Create a container event"""
+        tl_event = timeline.add_event(
+            project=container.project,
+            app_name=APP_NAME,
+            user=user,
+            event_name=event_name,
+            description='event description for {container}',
+        )
+        tl_event.add_object(
+            obj=container,
+            label='container',
+            name=container.get_display_name(),
+        )
+        tl_event.set_status(status_type, status_description)
+        return tl_event
+
 
 class TestBase(TestContainerCreationMixin, TestCase):
     """Test base class providing one project and a superuser."""
@@ -88,8 +132,13 @@ class TestBase(TestContainerCreationMixin, TestCase):
         self.superuser.is_superuser = True
         self.superuser.save()
 
+        # Setup regular owner user
         self.user = self.make_user('alice')
         self.user.save()
+
+        # Setup regular user with no roles
+        self.user_no_roles = self.make_user('bob')
+        self.user_no_roles.save()
 
         self.role_owner = Role.objects.get_or_create(
             name=PROJECT_ROLE_OWNER, rank=ROLE_RANKING[PROJECT_ROLE_OWNER]
@@ -97,6 +146,51 @@ class TestBase(TestContainerCreationMixin, TestCase):
         self.role_owner_as = RoleAssignment.objects.create(
             project=self.project, user=self.user, role=self.role_owner
         )
+
+
+class UITestBase(
+    SeleniumSetupMixin,
+    UITestMixin,
+    LiveUserMixin,
+    TestContainerCreationMixin,
+    LiveServerTestCase,
+):
+    """Test base class for UI tests providing one project and a superuser."""
+
+    def setUp(self):
+        super().setUp()
+
+        # Show full diff
+        self.maxDiff = None
+
+        # Setup project
+        self.project = ProjectFactory()
+
+        # Setup superuser
+        self.superuser = self.make_user(settings.PROJECTROLES_DEFAULT_ADMIN)
+        self.superuser.is_staff = True
+        self.superuser.is_superuser = True
+        self.superuser.save()
+
+        # Setup regular owner user
+        self.user = self.make_user('alice')
+        self.user.save()
+
+        # Setup regular user with no roles
+        self.user_no_roles = self.make_user('bob')
+        self.user_no_roles.save()
+
+        self.role_owner = Role.objects.get_or_create(
+            name=PROJECT_ROLE_OWNER, rank=ROLE_RANKING[PROJECT_ROLE_OWNER]
+        )[0]
+        self.role_owner_as = RoleAssignment.objects.create(
+            project=self.project, user=self.user, role=self.role_owner
+        )
+
+        self.set_up_selenium()
+
+    def tearDown(self):
+        self.selenium.quit()
 
 
 class ContainersAPIViewTestBase(APIViewTestBase):

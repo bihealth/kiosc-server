@@ -47,6 +47,9 @@ STATE_EXITED = 'exited'
 #: Token for 'dead' state of container.
 STATE_DEAD = 'dead'
 
+#: Token for 'terminated' state of container.
+STATE_TERMINATED = 'terminated'
+
 #: Token for 'deleting' state of container (no existing Docker container state).
 STATE_DELETING = 'deleting'
 
@@ -77,6 +80,7 @@ STATE_CHOICES = [
     (STATE_PULLING, STATE_PULLING),
     (STATE_INITIAL, STATE_INITIAL),
     (STATE_FAILED, STATE_FAILED),
+    (STATE_TERMINATED, STATE_TERMINATED),
 ]
 
 #: Background job action for starting a container.
@@ -87,6 +91,9 @@ ACTION_RESTART = 'restart'
 
 #: Background job action for stopping a container.
 ACTION_STOP = 'stop'
+
+#: Background job action for timing out a container.
+ACTION_TERMINATE = 'terminate'
 
 #: Background job action for pausing a container.
 ACTION_PAUSE = 'pause'
@@ -254,9 +261,9 @@ class Container(models.Model):
         auto_now=True, help_text='DateTime of last container modification'
     )
 
-    #: DateTime of last status update.
-    date_last_status_update = models.DateTimeField(
-        blank=True, null=True, help_text='DateTime of last status update'
+    #: DateTime when the container was accessed last.
+    date_last_access = models.DateTimeField(
+        auto_now_add=True, help_text='DateTime of latest app access'
     )
 
     #: The "repository" of the image.
@@ -472,6 +479,9 @@ class Container(models.Model):
 
     def get_date_modified(self):
         return localtime(self.date_modified).strftime('%Y-%m-%d %H:%M')
+
+    def get_date_last_access(self):
+        return localtime(self.date_last_access).strftime('%Y-%m-%d %H:%M')
 
     def get_display_name(self):
         return self.title
@@ -739,11 +749,11 @@ class ContainerLogEntry(models.Model):
         return self.get_date_docker_log() or self.get_date_created()
 
     def __str__(self):
-        return '[{} {} {}] ({}) {}'.format(
-            self.get_date_order_by(),
+        return '{} [Kiosc {} {} ({})] {}'.format(
+            self.date_created.strftime('%Y-%m-%dT%H:%M:%S.%f000Z'),
+            self.process.capitalize(),
             self.level.upper(),
             self.user.username if self.user else 'anonymous',
-            self.process.capitalize(),
             self.text,
         )
 

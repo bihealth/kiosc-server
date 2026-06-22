@@ -2,8 +2,10 @@
 {% extends 'projectroles/project_base.html' %}
 {% load rules %}
 {% load projectroles_common_tags %}
+{% load timeline_tags %}
 {% load container_tags %}
 {% load crispy_forms_filters %}
+{% load static %}
 
 {% block title %}
   Container {{ object.sodar_uuid }}
@@ -29,6 +31,18 @@
 {% with last_job=object.containerbackgroundjob.last date_last_docker_log=object.log_entries.get_date_last_docker_log %}
 <div class="container-fluid sodar-page-container">
   <div class="card">
+    <div class="card-header"><h4>Status</h4></div>
+    <div class="card-body">
+      <p id="id_container_state" class="card-text mb-3">Loading...</p>
+      <div id="id_container_last_errors" class="card-text mb-3">
+        {% get_container_last_errors object request.user 3 as last_errors %}
+        {% for error in last_errors %}
+          <div class="alert alert-danger" role="alert">{{ error }}</div>
+        {% endfor %}
+      </div>
+    </div>
+  </div>
+  <div class="card">
     <div class="card-header"><h4>Description</h4></div>
     <div class="card-body">
       <p class="card-text mb-3">
@@ -36,297 +50,331 @@
       </p>
     </div>
   </div>
-  <div class="card" id="id_details" data-url="{% url "containers:ajax-get-dynamic-details" container=object.sodar_uuid %}">
-    <div class="card-header"><h4>Details</h4></div>
-    <div class="card-body">
-      <p class="card-text">
-        <dl class="row">
-          <dt class="col-sm-3">SODAR UUID</dt>
-          <dd class="col-sm-9">{{ object.sodar_uuid }}</dd>
-        </dl>
-        <dl class="row">
-          <dt class="col-sm-3">Date Created</dt>
-          <dd class="col-sm-9">{{ object.get_date_created }}</dd>
-        </dl>
-        <dl class="row">
-          <dt class="col-sm-3">Date Modified</dt>
-          <dd class="col-sm-9">{{ object.get_date_modified }}</dd>
-        </dl>
-        <dl class="row">
-          <dt class="col-sm-3">Image ID</dt>
-          <dd class="col-sm-9">
-            {{ object.image_id|default:"<em class='text-muted'>no value</em>" }}
-          </dd>
-        </dl>
-        <dl class="row">
-          <dt class="col-sm-3">Container ID</dt>
-          <dd class="col-sm-9" id="id_container_id">
-            {{ object.container_id|default:"<em class='text-muted'>no value</em>" }}
-          </dd>
-        </dl>
-        <dl class="row">
-          <dt class="col-sm-3">Repository:Tag</dt>
-          <dd class="col-sm-9">{{ object.get_repos_full }}</dd>
-        </dl>
-        <dl class="row">
-          <dt class="col-sm-3">Registry credentials</dt>
-          {% if object.registry_user %}
-            <dd class="col-sm-9">User/password authentication required</dd>
-          {% else %}
-            <dd class="col-sm-9">No credentials</dd>
-          {% endif %}
-        </dl>
-        {% if network_mode == "host" %}
-          <dl class="row">
-            <dt class="col-sm-3">Host Port</dt>
-            <dd class="col-sm-9">{{ object.host_port }}</dd>
-          </dl>
-        {% endif %}
-        <dl class="row">
-          <dt class="col-sm-3">Container IP</dt>
-          <dd class="col-sm-9" id="id_container_ip">
-            {{ object.container_ip|default:"<em class='text-muted'>no value</em>" }}
-          </dd>
-        </dl>
-        <dl class="row">
-          <dt class="col-sm-3">Container Port</dt>
-          <dd class="col-sm-9">
-            {{ object.container_port|default:"<em class='text-muted'>no value</em>" }}
-          </dd>
-        </dl>
-        <dl class="row">
-          <dt class="col-sm-3">Container Path</dt>
-          <dd class="col-sm-9">
-            {{ object.container_path|default:"<em class='text-muted'>no value</em>" }}
-          </dd>
-        </dl>
-        <dl class="row">
-          <dt class="col-sm-3">Heartbeat URL</dt>
-          <dd class="col-sm-9">
-            {{ object.heartbeat_url|default:"<em class='text-muted'>no value</em>" }}
-          </dd>
-        </dl>
-        <dl class="row">
-          <dt class="col-sm-3">Timeout [s]</dt>
-          <dd class="col-sm-9">
-            {{ object.timeout|default:"<em class='text-muted'>no value</em>" }}
-          </dd>
-        </dl>
-        <dl class="row">
-          <dt class="col-sm-3">Command</dt>
-          <dd class="col-sm-9">
-            {% if object.command %}
-              <code>{{ object.command }}</code>
-            {% else %}
-              <em class='text-muted'>no value</em>
-            {% endif %}
-          </dd>
-        </dl>
-        <dl class="row">
-          <dt class="col-sm-3">Environment</dt>
-          <dd class="col-sm-9">
-            {% if object.get_environment_masked %}
-              <pre>{{ object.get_environment_masked|pretty_json }}</pre>
-            {% else %}
-              <em class="text-muted">no value</em>
-            {% endif %}
-          </dd>
-        </dl>
-        <dl class="row">
-          <dt class="col-sm-3">Environment Secret Keys</dt>
-          <dd class="col-sm-9">
-            {{ object.environment_secret_keys|default:"<em class='text-muted'>no value</em>" }}
-          </dd>
-        </dl>
-        <dl class="row">
-          <dt class="col-sm-3">Max Retries</dt>
-          <dd class="col-sm-9">
-            {{ object.max_retries|default:"<em class='text-muted'>no value</em>" }}
-          </dd>
-        </dl>
-        <dl class="row">
-          <dt class="col-sm-3">Inactivity Threshold [days]</dt>
-          <dd class="col-sm-9">
-            {{ object.inactivity_threshold|default:"<em class='text-muted'>no value</em>" }}
-          </dd>
-        </dl>
-        {% if object.containertemplatesite %}
-        <dl class="row">
-          <dt class="col-sm-3">Link to site-wide template</dt>
-          <dd class="col-sm-9">
-            <a href="{{ object.containertemplatesite.get_absolute_url }}">
-              {{ object.containertemplatesite }}
-            </a>
-          </dd>
-        </dl>
-        {% elif object.containertemplateproject %}
-        <dl class="row">
-          <dt class="col-sm-3">Link to project-wide template</dt>
-          <dd class="col-sm-9">
-            <a href="{{ object.containertemplateproject.get_absolute_url }}">
-              {{ object.containertemplateproject }}
-            </a>
-          </dd>
-        </dl>
-        {% endif %}
-        <dl class="row">
-          <dt class="col-sm-3">State</dt>
-          <dd class="col-sm-9">
-            <strong class="{{ container.state|colorize_state }}" id="id_state">{{ container.state }}</strong>
-            {% state_bell container.state last_job.action as state_bell_text %}
-            <i id="id_state_bell" class="iconify" {% if not state_bell_text %}style="display: none;"{% endif %} data-icon="mdi:bell" data-toggle="tooltip" title="{{ state_bell_text }}"></i>
-          </dd>
-        </dl>
-        {% if last_job.action %}
-        <dl class="row">
-          <dt class="col-sm-3">Last action</dt>
-          <dd class="col-sm-9">{{ last_job.action }} (<span id="id_retries">{{ last_job.retries }}</span>/{{ object.max_retries }})</dd>
-        </dl>
-        {% endif %}
-        {% if date_last_docker_log %}
-        <dl class="row">
-          <dt class="col-sm-3">Date of latest Docker log</dt>
-          <dd class="col-sm-9" id="id_date_last_docker_log">{{ date_last_docker_log }}</dd>
-        </dl>
-        {% endif %}
-      </p>
-    </div>
-  </div>
   {% if can_view_logs %}
-  <div class="card">
+  <div class="card" id="card-logs">
     <div class="card-header">
       <div class="row">
-        <div class="col-9">
-          <h4 class="float-left">
-            Logs
-          </h4>
-        </div>
-        <div class="col-3">
+        <h4>Logs</h4>
+        <div class="ml-auto float-right">
           <div class="input-group">
             <div class="input-group-prepend">
               <span class="input-group-text">Log lines</span>
             </div>
             <input type="number" class="form-control" id="id_log_lines" value="{{ default_log_lines }}" />
             <div class="input-group-append">
-              <button type="button" class="btn btn-info" onclick="setLogLinesCookie()">Apply</button>
+              <button type="button" class="btn btn-info" onclick="setLogLinesTail()">Apply</button>
             </div>
           </div>
         </div>
       </div>
     </div>
-    <div class="card-body">
-      <pre id="id_logs" class="p-2 text-light overflow-auto bg-dark border border-dark rounded-lg" style="height: 400px"><i class="iconify" data-icon="eos-icons:bubble-loading"></i> <em>Loading logs ...</em></pre>
+    <div class="card-body p-0">
+      <pre id="id_logs" class="p-2 mb-0 text-light overflow-auto bg-dark" style="height: 400px; font-size: 87.5%;"><i class="iconify" data-icon="eos-icons:bubble-loading"></i> <em>Loading...</em></pre>
+    </div>
+  </div>
+  <div class="card">
+    <div class="card-header">
+      <h4>Recent Events</h4>
+    </div>
+    <div class="card-body p-0">
+      {% get_plugin_lookup as plugin_lookup %}
+      <table class="table table-striped sodar-card-table" id="kiosc-container-tl-table">
+        <thead>
+          {% include 'timeline/_list_header.html' with details_card_mode=True %}
+        </thead>
+        <tbody>
+          {% get_container_events object as events %}
+          {% if events.count > 0 %}
+            {% for event in events|slice:":6" %}
+              {% include 'timeline/_list_item.html' with event=event details_card_mode=True %}
+            {% endfor %}
+            <tr>
+              <td colspan=3>
+                Click <a href="{% url 'timeline:list_object' project=object.project.sodar_uuid object_model='Container' object_uuid=object.sodar_uuid %}">here</a> to see the full timeline.
+              </td>
+            </tr>
+          {% else %}
+            <tr>
+              <td class="bg-faded font-italic text-center" colspan="3">
+                No events found.
+              </td>
+            </tr>
+          {% endif %}
+        </tbody>
+      </table>
+      {# Event list JQuery #}
+      <script type="text/javascript" src="{% static 'timeline/js/timeline.js' %}"></script>
     </div>
   </div>
   {% endif %}
+  <div class="card" id="id_details" data-url="{% url "containers:ajax-get-dynamic-details" container=object.sodar_uuid %}">
+    <div class="card-header"><h4>Details</h4></div>
+    <div class="card-body mt-2 mb-2">
+      <dl class="row">
+        <dt class="col-sm-3">SODAR UUID</dt>
+        <dd class="col-sm-9">{{ object.sodar_uuid }}</dd>
+      </dl>
+      <dl class="row">
+        <dt class="col-sm-3">Date Created</dt>
+        <dd class="col-sm-9">{{ object.get_date_created }}</dd>
+      </dl>
+      <dl class="row">
+        <dt class="col-sm-3">Date Modified</dt>
+        <dd class="col-sm-9">{{ object.get_date_modified }}</dd>
+      </dl>
+      <dl class="row">
+        <dt class="col-sm-3">Date of Last Access</dt>
+        <dd class="col-sm-9">
+          {{ object.get_date_last_access }}
+        </dd>
+      </dl>
+      <dl class="row">
+        <dt class="col-sm-3">Image ID</dt>
+        <dd class="col-sm-9">
+          {{ object.image_id|default:"<em class='text-muted'>no value</em>" }}
+        </dd>
+      </dl>
+      <dl class="row">
+        <dt class="col-sm-3">Container ID</dt>
+        <dd class="col-sm-9" id="id_container_id">
+          {{ object.container_id|default:"<em class='text-muted'>no value</em>" }}
+        </dd>
+      </dl>
+      <dl class="row">
+        <dt class="col-sm-3">Repository:Tag</dt>
+        <dd class="col-sm-9">{{ object.get_repos_full }}</dd>
+      </dl>
+      <dl class="row">
+        <dt class="col-sm-3">Registry credentials</dt>
+        {% if object.registry_user %}
+          <dd class="col-sm-9">User/password authentication required</dd>
+        {% else %}
+          <dd class="col-sm-9">No credentials</dd>
+        {% endif %}
+      </dl>
+      {% if network_mode == "host" %}
+        <dl class="row">
+          <dt class="col-sm-3">Host Port</dt>
+          <dd class="col-sm-9">{{ object.host_port }}</dd>
+        </dl>
+      {% endif %}
+      <dl class="row">
+        <dt class="col-sm-3">Container IP</dt>
+        <dd class="col-sm-9" id="id_container_ip">
+          {{ object.container_ip|default:"<em class='text-muted'>no value</em>" }}
+        </dd>
+      </dl>
+      <dl class="row">
+        <dt class="col-sm-3">Container Port</dt>
+        <dd class="col-sm-9">
+          {{ object.container_port|default:"<em class='text-muted'>no value</em>" }}
+        </dd>
+      </dl>
+      <dl class="row">
+        <dt class="col-sm-3">Container Path</dt>
+        <dd class="col-sm-9">
+          {{ object.container_path|default:"<em class='text-muted'>no value</em>" }}
+        </dd>
+      </dl>
+      <dl class="row">
+        <dt class="col-sm-3">Heartbeat URL</dt>
+        <dd class="col-sm-9">
+          {{ object.heartbeat_url|default:"<em class='text-muted'>no value</em>" }}
+        </dd>
+      </dl>
+      <dl class="row">
+        <dt class="col-sm-3">Timeout [s]</dt>
+        <dd class="col-sm-9">
+          {{ object.timeout|default:"<em class='text-muted'>no value</em>" }}
+        </dd>
+      </dl>
+      <dl class="row">
+        <dt class="col-sm-3">Command</dt>
+        <dd class="col-sm-9">
+          {% if object.command %}
+            <code>{{ object.command }}</code>
+          {% else %}
+            <em class='text-muted'>no value</em>
+          {% endif %}
+        </dd>
+      </dl>
+      <dl class="row">
+        <dt class="col-sm-3">Environment</dt>
+        <dd class="col-sm-9">
+          {% if object.get_environment_masked %}
+            <pre>{{ object.get_environment_masked|pretty_json }}</pre>
+          {% else %}
+            <em class="text-muted">no value</em>
+          {% endif %}
+        </dd>
+      </dl>
+      <dl class="row">
+        <dt class="col-sm-3">Environment Secret Keys</dt>
+        <dd class="col-sm-9">
+          {{ object.environment_secret_keys|default:"<em class='text-muted'>no value</em>" }}
+        </dd>
+      </dl>
+      <dl class="row">
+        <dt class="col-sm-3">Max Retries</dt>
+        <dd class="col-sm-9">
+          {{ object.max_retries|default:"<em class='text-muted'>no value</em>" }}
+        </dd>
+      </dl>
+      <dl class="row">
+        <dt class="col-sm-3">Inactivity Threshold [days]</dt>
+        <dd class="col-sm-9">
+          {{ object.inactivity_threshold|default:"<em class='text-muted'>no value</em>" }}
+        </dd>
+      </dl>
+      {% if object.containertemplatesite %}
+      <dl class="row">
+        <dt class="col-sm-3">Link to site-wide template</dt>
+        <dd class="col-sm-9">
+          <a href="{{ object.containertemplatesite.get_absolute_url }}">
+            {{ object.containertemplatesite }}
+          </a>
+        </dd>
+      </dl>
+      {% elif object.containertemplateproject %}
+      <dl class="row">
+        <dt class="col-sm-3">Link to project-wide template</dt>
+        <dd class="col-sm-9">
+          <a href="{{ object.containertemplateproject.get_absolute_url }}">
+            {{ object.containertemplateproject }}
+          </a>
+        </dd>
+      </dl>
+      {% endif %}
+      {% if last_job.action %}
+      <dl class="row">
+        <dt class="col-sm-3">Last action</dt>
+        <dd class="col-sm-9">{{ last_job.action }} (<span id="id_retries">{{ last_job.retries }}</span>/{{ object.max_retries }})</dd>
+      </dl>
+      {% endif %}
+      {% if date_last_docker_log %}
+      <dl class="row">
+        <dt class="col-sm-3">Date of latest Docker log</dt>
+        <dd class="col-sm-9" id="id_date_last_docker_log">{{ date_last_docker_log }}</dd>
+      </dl>
+      {% endif %}
+    </div>
+  </div>
 </div>
 {% endwith %}
 
 {% endblock projectroles_extend %}
 
 {% block javascript %}
-    {{ block.super }}
-    <script>
-    $(document).ready(function () {
-        setLogLinesField();
-        getDynamicDetails();
-        setInterval(getDynamicDetails, 30000);
-    });
+  {{ block.super }}
 
-    function setLogLinesCookie() {
-        let log_lines = $("#id_log_lines").val();
-        setCookie("log_lines", log_lines);
-        getDynamicDetails();
+  <!-- General project Javascript -->
+  <script type="text/javascript" src="{% static 'js/project.js' %}"></script>
+
+  <script>
+    var logWatcherSocket = createWebSocket();
+    const logsElement = document.querySelector("#id_logs");
+    const stateElement = document.querySelector("#id_container_state");
+    const logLinesInput = document.querySelector("#id_log_lines");
+    const logLinesCookie = getCookie("log_lines");
+    if (logLinesCookie !== null) {
+      logLinesInput.value = logLinesCookie;
     }
-
-    function setLogLinesField() {
-        let log_lines = getCookie("log_lines");
-        if (log_lines === null) {
-            setCookie("log_lines", $("#id_log_lines").val())
-        }
-        else {
-          $("#id_log_lines").val(log_lines);
-        }
-    }
-
-    function scrollLogs() {
-        var logs = $("#id_logs");
-        logs.animate({scrollTop: logs.prop("scrollHeight")}, 2000);
-    }
-
-    function getDynamicDetails() {
-        var url = $("#id_details").data("url") + "?log_lines=" + getCookie("log_lines");
-
-        $.ajax({
-            url: url,
-            success: function(data) {
-                $.each(data, function(key, value) {
-                    let element = $("#id_" + key);
-
-                    if (key === "state") {
-                        element.text(value);
-                        element.removeClass();
-                        element.addClass(data["state_color"]);
-
-                        var proxy_not_running = $("#id_proxy_not_running");
-                        var proxy_running = $("#id_proxy_running");
-                        var menu_not_running = $("#id_menu_not_running");
-                        var menu_paused = $("#id_menu_paused");
-                        var menu_running = $("#id_menu_running");
-
-                        proxy_not_running.hide();
-                        proxy_running.hide();
-                        menu_not_running.hide();
-                        menu_paused.hide();
-                        menu_running.hide();
-
-                        if (value === "running") {
-                            menu_running.show();
-                            proxy_running.show();
-                        }
-
-                        else if (value === "paused") {
-                            menu_paused.show();
-                            proxy_not_running.show();
-                        }
-
-                        else {
-                            menu_not_running.show();
-                            proxy_not_running.show();
-                        }
-                    }
-
-                    else if (key === "state_color") {
-                        return 0;
-                    }
-
-                    else if (key === "state_bell") {
-                        if (value !== "") {
-                            element.show();
-                            element.setAttribute("title", value);
-                        }
-
-                        else {
-                            element.hide();
-                        }
-                    }
-
-                    else {
-                        if (value === "") {
-                            element.text("no value");
-                            element.addClass("text-muted font-italic");
-                        }
-
-                        else {
-                            element.text(value);
-                            element.removeClass("text-muted font-italic");
-                        }
-                    }
-                });
-
-                scrollLogs();
+    function createWebSocket() {
+      const socket = new WebSocket(
+        `${window.location.protocol == "https:" ? "wss://" : "ws://"}` +
+        `${window.location.host}` +
+        `{% url "log-watcher" container=object.sodar_uuid %}`
+      );
+      socket.addEventListener("open", (event) => {
+        setCookie("log_lines", logLinesInput.value);
+        socket.send(logLinesInput.value);
+      });
+      socket.addEventListener("message", async (event) => {
+        data = JSON.parse(event.data);
+        if (data.type === "container_state") {
+          if (data.state == "running") {
+            // Do a pre-flight check of the app inside the container
+            // Our server returns status 299 when the app is not running, but it redirects the client to the proxy lobby
+            try {
+              const response = await fetch(
+                "{% url 'containers:proxy' container=object.sodar_uuid path=object.container_path %}",
+                {
+                  "headers": {
+                    "Kiosc-Preflight": "1",
+                  },
+                }
+              );
+              if (!response.ok) {
+                console.error(response);
+                throw new Error(`The app responded with ${response.status}`);
+              }
+              if (response.status == 299) {
+                throw new Error("The app is not reachable");
+              }
+              /* TODO: It is still possible that the proxy view responds with
+                 succes status, but it is actually a redirect to the referer.
+                 This happens when the view returns _redirect, e.g. when the
+                 host port is not set. */
+              stateElement.innerText = "The app is running.";
+            } catch (error) {
+              stateElement.innerText = "The app is not accepting connections; please be patient...";
             }
-        });
+          } else {
+            stateElement.innerText = data.text;
+          }
+        } else {  // static_logs channel_logs pull_logs daemon_logs
+          if (logsElement.innerText == " Loading...") {
+            logsElement.innerText = "";
+          }
+          let scrollHeightBefore = logsElement.scrollHeight;
+          if (data.type === "static_logs" || data.type === "channel_logs" || data.type === "daemon_logs") {
+            logsElement.append(data.text);
+          } else if (data.type === "pull_logs") {
+            if (data.id) {
+              const re = new RegExp(`^${data.id}.*`, 'm');
+              if (logsElement.innerText.search(re) != -1) {
+                // FIXME: we can use the output of search instead of replace.
+                logsElement.innerText = logsElement.innerText.replace(re, data.status);
+              } else {
+                logsElement.append(data.status + "\n");
+              }
+            } else {
+              console.log(data)
+              // logsElement.append(data.status + "\n");
+            }
+          } else if (data.type === "watcher_error") {
+            logsElement.append(data.text);
+            stateElement.innerText = "Something went wrong, please refresh the page and check the logs.";
+            console.error(data);
+          } else {
+            logsElement.append("Unsupported event data type from ContainerWatcher, please report this bug.");
+            console.error("Unsupported websocket event data type.", data);
+          }
+          const boundingHeight = logsElement.getBoundingClientRect()["height"];
+          if (scrollHeightBefore <= boundingHeight + logsElement.scrollTop + 20) {
+            logsElement.scrollTop = logsElement.scrollTopMax;
+          }
+        }
+      });
+      socket.addEventListener("error", (event) => {
+        console.error(event);
+      });
+      socket.addEventListener("close", (event) => {
+        if (event.code == 4403) {
+          logsElement.innerText = "You are not authorized to see the container logs.";
+        } if (event.code == 4422) {
+          console.error("The server received invalid data.");
+        } else if (event.code != 1000 && event.code != 1001) {
+          // 1000 and 1001 indicate regular closing events.
+          logsElement.innerText = "Failed to fetch logs, please refresh the page.";
+          console.error(event);
+        }
+      });
+      return socket;
     }
-    </script>
+    function setLogLinesTail(event) {
+      logWatcherSocket.close();
+      logWatcherSocket = createWebSocket();
+    }
+  </script>
 {% endblock javascript %}

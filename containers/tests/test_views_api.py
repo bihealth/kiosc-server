@@ -56,6 +56,9 @@ class TestContainerListAPIView(
         expected['date_created'] = self.get_drf_datetime(
             self.container1.date_created
         )
+        expected['date_last_access'] = self.get_drf_datetime(
+            self.container1.date_last_access
+        )
         expected['date_modified'] = self.get_drf_datetime(
             self.container1.date_modified
         )
@@ -86,6 +89,9 @@ class TestContainerListAPIView(
         container1['date_created'] = self.get_drf_datetime(
             self.container1.date_created
         )
+        container1['date_last_access'] = self.get_drf_datetime(
+            self.container1.date_last_access
+        )
         container1['date_modified'] = self.get_drf_datetime(
             self.container1.date_modified
         )
@@ -97,6 +103,9 @@ class TestContainerListAPIView(
         container2 = model_to_dict(self.container2, exclude=['id'])
         container2['date_created'] = self.get_drf_datetime(
             self.container2.date_created
+        )
+        container2['date_last_access'] = self.get_drf_datetime(
+            self.container2.date_last_access
         )
         container2['date_modified'] = self.get_drf_datetime(
             self.container2.date_modified
@@ -299,6 +308,9 @@ class TestContainerDetailAPIView(
         expected = model_to_dict(self.container1, exclude=['id'])
         expected['date_created'] = self.get_drf_datetime(
             self.container1.date_created
+        )
+        expected['date_last_access'] = self.get_drf_datetime(
+            self.container1.date_last_access
         )
         expected['date_modified'] = self.get_drf_datetime(
             self.container1.date_modified

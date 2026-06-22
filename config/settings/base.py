@@ -321,6 +321,20 @@ CELERY_TASK_ALWAYS_EAGER = False
 # http://docs.celeryproject.org/en/latest/userguide/configuration.html#task-eager-propagates
 CELERY_TASK_EAGER_PROPAGATES = False
 
+# Django Channels Configuration
+# ------------------------------------------------------------------------------
+
+CHANNEL_LAYERS = {
+    'default': {
+        'BACKEND': 'channels_redis.core.RedisChannelLayer',
+        'CONFIG': {
+            'hosts': [(env('REDIS_URL', default='127.0.0.1'), 6379)],
+            'capacity': 10_000,  # Default 100
+            'expiry': 10,  # Default 60
+        },
+    },
+}
+
 
 # API Settings
 # ------------------------------------------------------------------------------

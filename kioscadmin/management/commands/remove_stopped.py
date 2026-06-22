@@ -76,7 +76,7 @@ class Command(BaseCommand):
 
                     # Add container log entry
                     container.log_entries.create(
-                        text='Delete',
+                        text='Delete\n',
                         process=PROCESS_ACTION,
                         user=user,
                     )

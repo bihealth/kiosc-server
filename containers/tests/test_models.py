@@ -63,7 +63,6 @@ class TestContainerModel(TestBase):
             'environment': None,
             'environment_secret_keys': None,
             'image_id': None,
-            'date_last_status_update': None,
             'project': self.project.pk,
             'registry_user': None,
             'registry_password': None,
@@ -97,7 +96,6 @@ class TestContainerModel(TestBase):
             'host_port': None,
             'environment_secret_keys': None,
             'image_id': None,
-            'date_last_status_update': None,
             'project': self.project.pk,
             'registry_user': None,
             'registry_password': None,
@@ -126,7 +124,6 @@ class TestContainerModel(TestBase):
             'environment': None,
             'environment_secret_keys': None,
             'image_id': None,
-            'date_last_status_update': None,
             'project': self.project.pk,
             'registry_user': None,
             'registry_password': None,
@@ -157,7 +154,6 @@ class TestContainerModel(TestBase):
             'environment': None,
             'environment_secret_keys': None,
             'image_id': None,
-            'date_last_status_update': None,
             'project': self.project.pk,
             'registry_user': None,
             'registry_password': None,
@@ -205,7 +201,6 @@ class TestContainerModel(TestBase):
             'environment': None,
             'environment_secret_keys': None,
             'image_id': None,
-            'date_last_status_update': None,
             'project': self.project.pk,
             'volume_name': container.volume_name,
             'id': container.id,
@@ -404,34 +399,26 @@ class TestContainerLogEntry(TestBase):
     def test___str__(self):
         self.assertEqual(
             str(self.log_entry),
-            '[{} {} {}] ({}) {}'.format(
-                self.log_entry.get_date_order_by(),
-                self.log_entry.level.upper(),
-                self.log_entry.user.username,
+            '{} [Kiosc {} {} ({})] {}'.format(
+                self.log_entry.date_created.strftime(
+                    '%Y-%m-%dT%H:%M:%S.%f000Z'
+                ),
                 self.log_entry.process.capitalize(),
+                self.log_entry.level.upper(),
+                self.log_entry.user.username if self.user else 'anonymous',
                 self.log_entry.text,
-            ),
-        )
-
-    def test___str___docker_log(self):
-        self.assertEqual(
-            str(self.log_entry_docker1),
-            '[{} {} {}] ({}) {}'.format(
-                self.log_entry_docker1.get_date_order_by(),
-                self.log_entry_docker1.level.upper(),
-                self.log_entry_docker1.user.username,
-                self.log_entry_docker1.process.capitalize(),
-                self.log_entry_docker1.text,
             ),
         )
 
     def test___str___no_user(self):
         self.assertEqual(
             str(self.log_entry_no_user),
-            '[{} {} anonymous] ({}) {}'.format(
-                self.log_entry_no_user.get_date_order_by(),
-                self.log_entry_no_user.level.upper(),
+            '{} [Kiosc {} {} (anonymous)] {}'.format(
+                self.log_entry_no_user.date_created.strftime(
+                    '%Y-%m-%dT%H:%M:%S.%f000Z'
+                ),
                 self.log_entry_no_user.process.capitalize(),
+                self.log_entry_no_user.level.upper(),
                 self.log_entry_no_user.text,
             ),
         )

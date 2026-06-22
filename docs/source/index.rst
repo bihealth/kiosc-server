@@ -80,6 +80,7 @@ Kiosc is NOT
     :titlesonly:
 
     apps_containers
+    apps_containerlist
     apps_containertemplates
     apps_filesfolders
 

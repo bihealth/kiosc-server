@@ -15,7 +15,6 @@ class TestContainerSerializer(TestCase):
         }
         expected = {
             **data,
-            'date_last_status_update': None,
             'image_id': None,
             'container_ip': None,
             'container_id': None,
@@ -92,7 +91,6 @@ class TestContainerSerializer(TestCase):
         }
         expected = {
             **data,
-            'date_last_status_update': None,
             'image_id': None,
             'container_ip': None,
             'container_id': None,

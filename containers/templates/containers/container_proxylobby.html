@@ -18,7 +18,7 @@
     <meta http-equiv="x-ua-compatible" content="ie=edge">
     <title>
       {{ site_title }}{% if site_subtitle %} {{ site_subtitle }}{% endif %}:
-      {% block title %}Page Title{% endblock title %}
+      {% block title %}Lobby for {{ object.title }}{% endblock title %}
     </title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="description" content="">
@@ -109,17 +109,23 @@
     {% endblock head_extend %}
   </head>
 
-  <body id="body" style="background-color: #4285F4">
+  <body id="body" style="background-color: #6a0846">
     <div class="container d-flex h-100 justify-content-center text-light">
       <div class="row align-content-center">
-        <ul class="list-unstyled text-center">
+        <ul id="kiosc-lobby-text" class="list-unstyled text-center">
           <li>
             <i class="iconify" id="iconLoading" style="width:128px; height: 128px" data-icon="eos-icons:bubble-loading"></i>
             <i class="iconify d-none" id="iconFail" style="width:128px; height: 128px" data-icon="mdi:cancel"></i>
             <i class="iconify d-none" id="iconSuccess" style="width:128px; height: 128px" data-icon="mdi:check-decagram"></i>
           </li>
           <li>
-            <em><strong id="message">Container is loading ...</strong></em>
+            <em><strong id="kiosc-lobby-phrase">{{ waiting_phrases|random }}</strong></em>
+          </li>
+          <li>
+            <em><strong>Check the <a href="{% url 'containers:detail' container=object.sodar_uuid %}#card-logs">logs</a> for more info.</strong></em>
+          </li>
+          <li>
+            <em><strong>If this takes longer than one hour, contact the container author or the project owner.</strong></em>
           </li>
         </ul>
     </div>
@@ -127,42 +133,23 @@
     <!-- Standard Javascript includes -->
     {# Include additional Javascript here #}
     {% block javascript %}
-      <!-- Settings -->
       <script type="text/javascript">
-        {% get_django_setting name='PROJECTROLES_BROWSER_WARNING' js=True as browser_warning %}
-        window.sodarBrowserWarning = {{ browser_warning }};
-      </script>
-
-      <!-- General project Javascript -->
-      <script type="text/javascript" src="{% static 'js/project.js' %}"></script>
-
-      <script type="text/javascript">
-        let interval = null;
-
         function checkIfContainerIsRunning() {
             $.ajax({
-                url: "{% url 'containers:ajax-get-dynamic-details' container=object.sodar_uuid %}?log_lines=0",
+                url: "{% url 'containers:api-detail' container=object.sodar_uuid %}",
                 type: 'GET',
                 dataType: 'json',
                 success: function(data) {
-                    if (data["state"] === "running") {
-                        clearInterval(interval);
-                        $("#body").addClass("bg-success")
-                        $("#iconLoading").addClass("d-none")
-                        $("#iconSuccess").removeClass("d-none")
-                        $("#message").text("Container successfully started. Redirecting ...");
-                        window.location.replace("{% url 'containers:proxy' container=object.sodar_uuid path=object.path %}")
-                    }
-                    else if (data["state"] === "failed") {
-                        clearInterval(interval);
+                    if (data["state"] === "running" || data["state"] === "pulling") {
+                        window.location.replace("{% url 'containers:proxy' container=object.sodar_uuid path=object.path %}");
+                    } else {
                         $("#body").addClass("bg-danger")
                         $("#iconLoading").addClass("d-none")
                         $("#iconFail").removeClass("d-none")
-                        $("#message").text("Container failed to start. Please click the icon again or inform the project owner.");
+                        $("#message").text("The container is not running. Please try to restart it or inform the project owner.");
                     }
                 },
                 fail: function(jqXHR, textStatus, errorThrown) {
-                    clearInterval(interval);
                     $("#body").addClass("bg-danger")
                     $("#iconLoading").addClass("d-none")
                     $("#iconFail").removeClass("d-none")
@@ -172,7 +159,7 @@
         }
 
         $(document).ready(function() {
-            interval = setInterval(checkIfContainerIsRunning, 5000);
+            setTimeout(checkIfContainerIsRunning, 5000);
         });
       </script>
 

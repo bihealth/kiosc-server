@@ -1279,4 +1279,5 @@ class TestContainerTemplateSelectorApiView(TestBase):
             )
 
             self.assertEqual(response.status_code, 200)
-            self.assertEqual(response.json(), {})
+            data = response.json()
+            self.assertEqual(data['title'], '')

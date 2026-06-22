@@ -7,27 +7,36 @@ Loosely follows the `Keep a Changelog <http://keepachangelog.com/en/1.0.0/>`_ gu
 Current
 =======
 
-- Disabled CELERY_ALWAYS_EAGER in local settings (#119)
-  - After this, tasks will run asynchronously during development, like in the production configuration, allowing us to find more bugs before it's too late
-  - NOTE: this implies that the celery process must be active during development, otherwise background tasks will not execute (you can simply run `make celery`)
-  - TODO: maybe we should introduce an env variable.
+Major changes
+-------------
 
-- Add ContainerWatcher websocket which monitors container state and logs in real time (#119)
-- Container log entries are deleted when the container is restarted (but not when it's stopped and started again)
-- Container log entries are not saved to the db anymore, but they are still visible in the container detail page (they come from the docker daemon)
-  - For now they are not searchable, this will be fixed in the next version
+This release brings updates in the container management workflow. The logs are more responsive to container actions, which should make it easier to debug problems.
 
-- When a container is updated, it is not automatically restarted if it was running (#119), users have to manually restart it if necessary.
+- Added a TERMINATED container state, which is used when a container is stopped due to inactivity (previously the state was FAILED).
+- Action RESTART was renamed to RESET, which makes it clearer that the container is actually deleted and re-created from scratch.
+- All container logs are deleted when the container is RESET.
+- On the other hand, STOPPING and STARTING a container does not delete anything.
+- Accessing a container which is not ready to take connections will redirect to a waiting page instead of throwing an error.
+- The latest errors are highlighted in the container page.
+  - Currently, a page refresh is needed, but in a future release they will be updated dynamically, like the logs.
+- Container log entries are not saved to the database anymore, but they are still visible in the container detail page (they come directly from the Docker daemon).
+  - For now, these logs are not searchable, but this will be fixed in the next version.
+- When a container is updated, it is not automatically restarted, even if it was previously running: you have to manually start it, if needed.
+- Enhanced container timeline: all actions are now logged as "timeline events".
+  - The container detail page shows the most recent entries, the full timeline can be accessed in a separate page.
+- We do not attempt to sync container state with latest user action: if the action fails, so be it.
 
-- Added TERMINATED container state, more specific than "exited" (#119)
+Containers app
+--------------
 
-- Enhanced container timeline: all actions should now be logged as "timeline events" (#119)
+- The field ``date_last_status_update`` was removed (#251)
+- The field ``date_last_access`` was added (#251)
 
-- Accessing a container which is not ready to take connections will redirect to a waiting page instead of throwing an error (#119)
+Container Templates
+-------------------
 
-- We do not attempt to sync container state with latest user action: if the action fails, so be it (#119)
-
-- Added a "blank" containertemplate entry (#119)
+- Added a "blank" containertemplate entry, which is selected by default in the container creation form.
+- Selecting a container template automatically imports it.
 
 v0.5.3 (2026-06-18)
 ===================

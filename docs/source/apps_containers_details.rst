@@ -70,4 +70,5 @@ as ``<masked>``, indicating that they are available to the system but
 are not displayed for security reasons. However, they will still be visible
 in plain in the container environment.
 
-Similary, if your container image comes from a private registry, the username and password fields will be masked.
+Similary, if your container image comes from a private registry, the username and password fields will not be shown.
+Instead, the "Registry credentials" field will only show whether the image is password-protected or not.

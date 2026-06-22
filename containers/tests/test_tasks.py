@@ -310,10 +310,10 @@ class TestContainerTask(TestBase):
 
         self.container1.refresh_from_db()
 
-        print(bg_job2.log_entries.last())
         self.assertEqual(
             self.container1.log_entries.last().text,
-            f'Action not performed: {bg_job2.action}. Cool-down is active ({settings.KIOSC_DOCKER_ACTION_MIN_DELAY}s)',
+            'Action cancelled due to cool down '
+            f'({settings.KIOSC_DOCKER_ACTION_MIN_DELAY}s): stop\n',
         )
 
         # Assert mocks

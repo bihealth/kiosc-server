@@ -5,6 +5,7 @@ Tests for the websocket providing real-time logs in the container detail view.
 import json
 from threading import Thread
 import time
+from unittest.mock import patch, call
 
 from channels.layers import get_channel_layer
 from django.conf import settings
@@ -296,19 +297,22 @@ class TestContainerWatcherConsumer(
         # We get some residual daemon logs because it takes a while to stop the container
         for i in range(60):
             response = json.loads(await ws.receive_from(timeout=10))
-            if response['type'] != 'daemon_logs':
+            if response['type'] == 'daemon_logs':
+                continue
+            elif response['type'] == 'channel_logs':
+                self.assertIn('Stopping container', response['text'])
+            else:
+                self.assertEqual(response['type'], 'container_state')
+                self.assertEqual(response['state'], STATE_EXITED)
                 break
         else:
             assert False, "ContainerWatcher didn't detect a change of state"
 
-        # Now we should get just status updates (and empty daemon logs)
+        # Now we should get just status updates (but no empty daemon logs)
         for i in range(3):
             response = json.loads(await ws.receive_from(timeout=10))
             self.assertEqual(response['type'], 'container_state')
             self.assertEqual(response['state'], STATE_EXITED)
-            response = json.loads(await ws.receive_from(timeout=10))
-            self.assertEqual(response['type'], 'daemon_logs')
-            self.assertEqual(response['text'], '')
 
         await ws.disconnect()
 
@@ -383,7 +387,8 @@ class TestContainerWatcherConsumerLive(
         self.selenium.quit()
         super().tearDown()
 
-    def test_live_container_watcher(self):
+    @patch('containers.statemachines.ContainerMachine._log_task')
+    def test_live_container_watcher(self, _log_task):
         """Test container watcher in a live site with selenium."""
         self.login_and_redirect(
             self.superuser, f'/containers/detail/{self.container1.sodar_uuid}'
@@ -419,16 +424,29 @@ class TestContainerWatcherConsumerLive(
             'The app is not accepting connections; please be patient...',
         )
 
-        WebDriverWait(logs_elem, 10).until(lambda el: el.text != initial_logs)
-        channel_logs = logs_elem.text
-        self.assertIn('Pulling image', channel_logs)
-        self.assertIn('Pulling image succeeded', channel_logs)
-        self.assertIn('Starting', channel_logs)
-        self.assertIn('Container started successfully', channel_logs)
+        # At this point we should see the Django channels logs, but unfortunately
+        # with the InMemoryChannelLayer backend they are not sent (https://channels.readthedocs.io/en/stable/topics/channel_layers.html#in-memory-channel-layer). Thus, we use a mock.
+        _log_task.assert_has_calls(
+            [
+                call('Pulling image sample-app-logging:testing ...'),
+                call('Pulling image succeeded'),
+                call('Initializing the container...'),
+                call('Container initialized successfully.'),
+                call('Starting...'),
+                call('Container started successfully'),
+            ]
+        )
+        _log_task.reset_mock()
+        # WebDriverWait(logs_elem, 10).until(lambda el: el.text != '')
+        # channel_logs = logs_elem.text
+        # self.assertIn('Pulling image', channel_logs)
+        # self.assertIn('Pulling image succeeded', channel_logs)
+        # self.assertIn('Starting', channel_logs)
+        # self.assertIn('Container started successfully', channel_logs)
 
         # This container logs an increasing sequence of numbers: we try and
         # detect it.
-        WebDriverWait(logs_elem, 10).until(lambda el: el.text != channel_logs)
+        WebDriverWait(logs_elem, 10).until(lambda el: el.text != '')
         daemon_logs = logs_elem.text
         log_line_count = 1
         for log_line in daemon_logs.split('\n'):
@@ -446,9 +464,16 @@ class TestContainerWatcherConsumerLive(
         t.start()
         t.join()
 
-        WebDriverWait(logs_elem, 10).until(lambda el: el.text != daemon_logs)
-        stopped_logs = logs_elem.text
-        self.assertIn('Stopping container succeeded', stopped_logs)
+        _log_task.assert_has_calls(
+            [
+                call('Stopping container'),
+                call('Stopping container succeeded'),
+            ]
+        )
+        _log_task.reset_mock()
+        # WebDriverWait(logs_elem, 10).until(lambda el: el.text != daemon_logs)
+        # stopped_logs = logs_elem.text
+        # self.assertIn('Stopping container succeeded', stopped_logs)
 
         # Finally we check the status update
         WebDriverWait(state_elem, 10).until(
@@ -472,6 +497,13 @@ class TestContainerWatcherConsumerLive(
             'The app is not accepting connections; please be patient...',
         )
 
-        WebDriverWait(logs_elem, 10).until(lambda el: el.text != stopped_logs)
-        restarted_logs = logs_elem.text
-        self.assertIn('Container started successfully', restarted_logs)
+        _log_task.assert_has_calls(
+            [
+                call('Starting...'),
+                call('Container started successfully'),
+            ]
+        )
+        _log_task.reset_mock()
+        # WebDriverWait(logs_elem, 10).until(lambda el: el.text != stopped_logs)
+        # restarted_logs = logs_elem.text
+        # self.assertIn('Container started successfully', restarted_logs)

@@ -140,7 +140,7 @@ class TestContainerCrash(TestBase):
         # Test from the database
         self.container.refresh_from_db()
         logs = [log.text for log in ContainerLogEntry.objects.all()]
-        self.assertIn('Deleting succeeded\n', logs)
+        self.assertIn('Previous container was deleted.\n', logs)
         container_id_after = self.container.container_id
         self.assertNotEqual(container_id_before, container_id_after)
         self.assertEqual(self.container.state, STATE_RUNNING)

@@ -7,7 +7,6 @@ import statemachine.exceptions
 from django.conf import settings
 
 from django.db import transaction
-from django.utils import timezone
 
 from projectroles.models import SODAR_CONSTANTS
 from projectroles.plugins import PluginAPI
@@ -27,14 +26,12 @@ from timeline.models import (
 
 from containers.models import (
     ContainerBackgroundJob,
-    LOG_LEVEL_ERROR,
     STATE_EXITED,
     STATE_INITIAL,
     STATE_PULLING,
     STATE_FAILED,
     STATE_DELETED,
     STATE_TERMINATED,
-    LOG_LEVEL_WARNING,
     ContainerActionLock,
 )
 from containers.statemachines import (

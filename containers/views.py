@@ -788,7 +788,9 @@ class ReverseProxyView(
                 return _redirect
 
         else:
-            upstream = f'http://{container.container_id[:12]}:{container.container_port}'
+            upstream = (
+                f'http://{container.container_ip}:{container.container_port}'
+            )
 
         self.upstream = upstream
         self.suppress_empty_body = True

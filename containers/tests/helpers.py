@@ -42,15 +42,11 @@ from projectroles.tests.base import (
     SeleniumSetupMixin,
     UITestMixin,
 )
-from projectroles.plugins import PluginAPI
 from timeline.models import TL_STATUS_OK
 
 
 PROJECT_ROLE_OWNER = SODAR_CONSTANTS['PROJECT_ROLE_OWNER']
 APP_NAME = 'containers'
-
-plugin_api = PluginAPI()
-timeline = plugin_api.get_backend_api('timeline_backend')
 
 
 def build_testdata_container(cli, dockerfile_name):
@@ -94,6 +90,7 @@ class TestContainerCreationMixin:
 
     def create_container_event(
         self,
+        timeline,
         container,
         user=None,
         event_name='test_event',

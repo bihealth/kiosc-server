@@ -2,10 +2,10 @@
 
 import json
 
-from containers.tests.helpers import TestBase
+from projectroles.plugins import PluginAPI
 from timeline.models import TL_STATUS_OK, TL_STATUS_FAILED
 
-
+from containers.tests.helpers import TestBase
 from containers.models import (
     STATE_INITIAL,
     STATE_RUNNING,
@@ -31,6 +31,8 @@ class TestContainerTags(TestBase):
     def setUp(self):
         super().setUp()
         self.create_one_container()
+        plugin_api = PluginAPI()
+        self.timeline = plugin_api.get_backend_api('timeline_backend')
 
     def test_colorize_state_initial(self):
         self.assertEqual(colorize_state(STATE_INITIAL), 'text-primary')
@@ -115,14 +117,14 @@ class TestContainerTags(TestBase):
 
     def test_get_container_events(self):
         """Test get_container_events() with no one event"""
-        self.create_container_event(self.container1)
+        self.create_container_event(self.timeline, self.container1)
         q = get_container_events(self.container1)
         self.assertEqual(q.count(), 1)
 
     def test_get_container_last_errors_empty(self):
         """Test get_container_last_errors() with no errors"""
         self.create_container_event(
-            self.container1, status_type=TL_STATUS_OK, user=None
+            self.timeline, self.container1, status_type=TL_STATUS_OK, user=None
         )
         res = get_container_last_errors(self.container1)
         self.assertEqual(len(res), 0)
@@ -130,6 +132,7 @@ class TestContainerTags(TestBase):
     def test_get_container_last_errors_superuser(self):
         """Test get_container_last_errors() as superuser"""
         self.create_container_event(
+            self.timeline,
             self.container1,
             status_type=TL_STATUS_FAILED,
             user=self.user,
@@ -137,6 +140,7 @@ class TestContainerTags(TestBase):
             status_description='desc1',
         )
         self.create_container_event(
+            self.timeline,
             self.container1,
             status_type=TL_STATUS_FAILED,
             user=None,
@@ -155,6 +159,7 @@ class TestContainerTags(TestBase):
     def test_get_container_last_errors_user(self):
         """Test get_container_last_errors() as regular user"""
         self.create_container_event(
+            self.timeline,
             self.container1,
             status_type=TL_STATUS_FAILED,
             user=self.superuser,
@@ -162,6 +167,7 @@ class TestContainerTags(TestBase):
             status_description='desc1',
         )
         self.create_container_event(
+            self.timeline,
             self.container1,
             status_type=TL_STATUS_FAILED,
             user=self.user,
@@ -169,6 +175,7 @@ class TestContainerTags(TestBase):
             status_description='desc2',
         )
         self.create_container_event(
+            self.timeline,
             self.container1,
             status_type=TL_STATUS_FAILED,
             user=None,
@@ -187,6 +194,7 @@ class TestContainerTags(TestBase):
     def test_get_container_last_errors_anon(self):
         """Test get_container_last_errors() as anonymous"""
         self.create_container_event(
+            self.timeline,
             self.container1,
             status_type=TL_STATUS_FAILED,
             user=self.superuser,
@@ -194,6 +202,7 @@ class TestContainerTags(TestBase):
             status_description='desc1',
         )
         self.create_container_event(
+            self.timeline,
             self.container1,
             status_type=TL_STATUS_FAILED,
             user=self.user,
@@ -201,6 +210,7 @@ class TestContainerTags(TestBase):
             status_description='desc2',
         )
         self.create_container_event(
+            self.timeline,
             self.container1,
             status_type=TL_STATUS_FAILED,
             user=None,
@@ -216,6 +226,7 @@ class TestContainerTags(TestBase):
     def test_get_container_last_errors_break(self):
         """Test get_container_last_errors() breaking at the first success"""
         self.create_container_event(
+            self.timeline,
             self.container1,
             status_type=TL_STATUS_FAILED,
             user=self.superuser,
@@ -223,6 +234,7 @@ class TestContainerTags(TestBase):
             status_description='desc1',
         )
         self.create_container_event(
+            self.timeline,
             self.container1,
             status_type=TL_STATUS_OK,
             user=self.superuser,
@@ -230,6 +242,7 @@ class TestContainerTags(TestBase):
             status_description='desc2',
         )
         self.create_container_event(
+            self.timeline,
             self.container1,
             status_type=TL_STATUS_FAILED,
             user=self.user,
@@ -237,6 +250,7 @@ class TestContainerTags(TestBase):
             status_description='desc3',
         )
         self.create_container_event(
+            self.timeline,
             self.container1,
             status_type=TL_STATUS_FAILED,
             user=None,
@@ -254,6 +268,7 @@ class TestContainerTags(TestBase):
     def test_get_container_last_errors_limit(self):
         """Test get_container_last_errors() limit argument"""
         self.create_container_event(
+            self.timeline,
             self.container1,
             status_type=TL_STATUS_FAILED,
             user=self.superuser,
@@ -261,6 +276,7 @@ class TestContainerTags(TestBase):
             status_description='desc1',
         )
         self.create_container_event(
+            self.timeline,
             self.container1,
             status_type=TL_STATUS_OK,
             user=self.superuser,
@@ -268,6 +284,7 @@ class TestContainerTags(TestBase):
             status_description='desc2',
         )
         self.create_container_event(
+            self.timeline,
             self.container1,
             status_type=TL_STATUS_FAILED,
             user=self.user,
@@ -275,6 +292,7 @@ class TestContainerTags(TestBase):
             status_description='desc3',
         )
         self.create_container_event(
+            self.timeline,
             self.container1,
             status_type=TL_STATUS_FAILED,
             user=None,

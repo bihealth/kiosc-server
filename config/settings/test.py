@@ -28,6 +28,7 @@ MANAGERS = ADMINS
 # Set False to support parallel testing, see
 # https://github.com/bihealth/sodar-core/issues/1428
 DATABASES['default']['ATOMIC_REQUESTS'] = False
+DATABASES['default']['TEST'] = {'NAME': 'test_kiosc'}
 
 # Mail settings
 # ------------------------------------------------------------------------------
@@ -155,3 +156,10 @@ CELERY_TASK_ALWAYS_EAGER = True
 CELERY_TASK_EAGER_PROPAGATES = True
 
 ASGI_APPLICATION = 'config.asgi.application'
+
+# Django Channels Configuration for Testing
+# ------------------------------------------------------------------------------
+
+CHANNEL_LAYERS = {
+    'default': {'BACKEND': 'channels.layers.InMemoryChannelLayer'}
+}

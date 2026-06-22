@@ -363,8 +363,10 @@ class TestPruneZombieContainers(TestBase):
         # Build the sample container image
         build_testdata_container(self.cli, 'sample-app-logging')
         # Create the network
-        self.cli.create_network(
-            settings.KIOSC_DOCKER_NETWORK, driver='bridge', check_duplicate=True
+        self.network = self.cli.create_network(
+            settings.KIOSC_DOCKER_NETWORK,
+            driver='bridge',
+            check_duplicate=True,
         )
 
         self.container = ContainerFactory(
@@ -375,8 +377,8 @@ class TestPruneZombieContainers(TestBase):
         )
 
     def tearDown(self):
-        network = self.cli.networks(settings.KIOSC_DOCKER_NETWORK)[0]
-        self.cli.remove_network(network['Id'])
+        self.cli.remove_network(self.network['Id'])
+        super().tearDown()
 
     def test_prune_zombie_containers(self):
         bg_job = ContainerBackgroundJobFactory(
@@ -387,15 +389,15 @@ class TestPruneZombieContainers(TestBase):
         container_task(job_id=bg_job.pk)
         self.container.refresh_from_db()
         logs = [log.text for log in ContainerLogEntry.objects.all()]
-        self.assertIn('Starting succeeded', logs)
+        self.assertIn('Container started successfully\n', logs)
         self.assertEqual(self.container.state, STATE_RUNNING)
-        image_id = self.container.image_id
+        container_id = self.container.container_id
         # Artificially cut the tie between kiosc and the container
         self.container.container_id = None
         self.container.save()
         # Test that pruning the zombies does the job
         prune_zombie_containers()
         for container in self.cli.containers():
-            if container['ImageID'] == image_id:
+            if container['Id'] == container_id:
                 # Container should not be found
                 raise RuntimeError('Container did not stop successfully')

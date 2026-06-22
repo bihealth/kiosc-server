@@ -5,6 +5,7 @@ import json
 import time
 from unittest.mock import patch
 
+from django.conf import settings
 from django.contrib.messages import get_messages
 from django.utils import timezone
 from urllib3_mock import Responses
@@ -19,6 +20,7 @@ from containers.models import (
     ACTION_START,
     ACTION_STOP,
     ACTION_RESTART,
+    ACTION_DELETE,
     ACTION_PAUSE,
     ACTION_UNPAUSE,
     STATE_INITIAL,
@@ -580,8 +582,7 @@ class TestContainerUpdateView(TestBase):
             self.assertDictEqual(result, self.post_data_shared)
 
     @override_settings(KIOSC_NETWORK_MODE='host')
-    @patch('containers.tasks.container_task.apply_async')
-    def test_post_success_updated_running_mode_host(self, mock):
+    def test_post_success_updated_running_mode_host(self):
         self.container1.state = STATE_RUNNING
         self.container1.save()
 
@@ -599,9 +600,10 @@ class TestContainerUpdateView(TestBase):
 
             self.assertRedirects(
                 response,
-                reverse('home'),
-                status_code=302,
-                target_status_code=302,
+                reverse(
+                    'containers:detail',
+                    kwargs={'container': self.container1.sodar_uuid},
+                ),
             )
 
             self.post_data_host['environment'] = json.loads(
@@ -617,16 +619,10 @@ class TestContainerUpdateView(TestBase):
             # Assert background job
             self.assertEqual(ContainerBackgroundJob.objects.count(), 1)
             bg_job = ContainerBackgroundJob.objects.first()
-            self.assertEqual(bg_job.action, ACTION_RESTART)
-
-            # Assert job call
-            mock.assert_called_with(
-                kwargs={'job_id': bg_job.pk}, countdown=CELERY_SUBMIT_COUNTDOWN
-            )
+            self.assertEqual(bg_job.action, ACTION_DELETE)
 
     @override_settings(KIOSC_NETWORK_MODE='docker-shared')
-    @patch('containers.tasks.container_task.apply_async')
-    def test_post_success_updated_running_mode_docker_shared(self, mock):
+    def test_post_success_updated_running_mode_docker_shared(self):
         self.container1.state = STATE_RUNNING
         self.container1.save()
 
@@ -644,9 +640,10 @@ class TestContainerUpdateView(TestBase):
 
             self.assertRedirects(
                 response,
-                reverse('home'),
-                status_code=302,
-                target_status_code=302,
+                reverse(
+                    'containers:detail',
+                    kwargs={'container': self.container1.sodar_uuid},
+                ),
             )
 
             self.post_data_shared['environment'] = json.loads(
@@ -662,16 +659,10 @@ class TestContainerUpdateView(TestBase):
             # Assert background job
             self.assertEqual(ContainerBackgroundJob.objects.count(), 1)
             bg_job = ContainerBackgroundJob.objects.first()
-            self.assertEqual(bg_job.action, ACTION_RESTART)
-
-            # Assert job call
-            mock.assert_called_with(
-                kwargs={'job_id': bg_job.pk}, countdown=CELERY_SUBMIT_COUNTDOWN
-            )
+            self.assertEqual(bg_job.action, ACTION_DELETE)
 
     @override_settings(KIOSC_NETWORK_MODE='host')
-    @patch('containers.tasks.container_task.apply_async')
-    def test_post_success_updated_paused_mode_host(self, mock):
+    def test_post_success_updated_paused_mode_host(self):
         self.container1.state = STATE_PAUSED
         self.container1.save()
 
@@ -689,9 +680,10 @@ class TestContainerUpdateView(TestBase):
 
             self.assertRedirects(
                 response,
-                reverse('home'),
-                status_code=302,
-                target_status_code=302,
+                reverse(
+                    'containers:detail',
+                    kwargs={'container': self.container1.sodar_uuid},
+                ),
             )
 
             self.post_data_host['environment'] = json.loads(
@@ -707,14 +699,10 @@ class TestContainerUpdateView(TestBase):
             # Assert background job
             self.assertEqual(ContainerBackgroundJob.objects.count(), 1)
             bg_job = ContainerBackgroundJob.objects.first()
-            self.assertEqual(bg_job.action, ACTION_RESTART)
-            mock.assert_called_with(
-                kwargs={'job_id': bg_job.pk}, countdown=CELERY_SUBMIT_COUNTDOWN
-            )
+            self.assertEqual(bg_job.action, ACTION_DELETE)
 
     @override_settings(KIOSC_NETWORK_MODE='docker-shared')
-    @patch('containers.tasks.container_task.apply_async')
-    def test_post_success_updated_paused_mode_docker_shared(self, mock):
+    def test_post_success_updated_paused_mode_docker_shared(self):
         self.container1.state = STATE_PAUSED
         self.container1.save()
 
@@ -732,9 +720,10 @@ class TestContainerUpdateView(TestBase):
 
             self.assertRedirects(
                 response,
-                reverse('home'),
-                status_code=302,
-                target_status_code=302,
+                reverse(
+                    'containers:detail',
+                    kwargs={'container': self.container1.sodar_uuid},
+                ),
             )
 
             self.post_data_shared['environment'] = json.loads(
@@ -750,12 +739,7 @@ class TestContainerUpdateView(TestBase):
             # Assert background job
             self.assertEqual(ContainerBackgroundJob.objects.count(), 1)
             bg_job = ContainerBackgroundJob.objects.first()
-            self.assertEqual(bg_job.action, ACTION_RESTART)
-
-            # Assert job call
-            mock.assert_called_with(
-                kwargs={'job_id': bg_job.pk}, countdown=CELERY_SUBMIT_COUNTDOWN
-            )
+            self.assertEqual(bg_job.action, ACTION_DELETE)
 
     def test_post_non_existent(self):
         with self.login(self.superuser):
@@ -1199,9 +1183,18 @@ class TestReverseProxyView(TestBase):
             self.assertEqual(response.context['object'], self.container)
             self.assertTrue(len(response.context['waiting_phrases']) > 0)
 
-    @override_settings(KIOSC_NETWORK_MODE='docker-shared')
+    @override_settings(
+        KIOSC_NETWORK_MODE='docker-shared',
+        KIOSC_DOCKER_NETWORK='kiosc-docker-network-testing',
+    )
     def test_get_success_running_mode_shared(self):
         """Test ReverseProxy GET in "docker-shared" mode"""
+        cli = connect_docker()
+        network = cli.create_network(
+            settings.KIOSC_DOCKER_NETWORK,
+            driver='bridge',
+            check_duplicate=True,
+        )
         bg_job = ContainerBackgroundJobFactory(
             user=self.superuser,
             action=ACTION_START,
@@ -1224,7 +1217,12 @@ class TestReverseProxyView(TestBase):
                 ),
             )
             self.assertEqual(response.status_code, 200)
-            self.assertEqual(response.text, '<h1>Hello World</h1>')
+            self.assertEqual(response.text, '<h1>Hello World</h1>\n')
+
+        self.cli.remove_container(
+            self.container.container_id, force=True, v=True
+        )
+        self.cli.remove_network(network['Id'])
 
     def test_get_no_permission(self):
         """Test GET when user has no permission"""

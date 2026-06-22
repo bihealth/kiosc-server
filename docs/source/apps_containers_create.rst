@@ -42,13 +42,13 @@ Container templates
 It is often the case that the same type of container will be used multiple times
 across the site. To save some time and reduce the chances of mistakes, Kiosc
 provides container templates. To make use of them, select a template from the
-top-hand dropdown menu and click ``Get``. This will populate all form fields
-that are set in the template with you create form. Anything you already entered
-will be overwritten. The prefix ``[Site-wide]`` or ``[Project-wide]`` indicates
-whether this template is either a site-wide or a project-wide template. By
-default, one template for an example Shiny app is available (it does not contain
-any meaningful data and is just meant as a toy example). Admins can then create
-additional site-wide templates.
+top-hand dropdown menu. This will populate all form fields that are set in the
+template with you create form. Anything you already entered will be overwritten.
+The prefix ``[Site-wide]`` or ``[Project-wide]`` indicates whether this template
+is either a site-wide or a project-wide template. By default, one template for
+an example Shiny app is available (it does not contain any meaningful data and
+is just meant as a toy example). Admins can then create additional site-wide
+templates.
 
 Registry user and Registry password
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^

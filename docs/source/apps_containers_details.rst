@@ -12,21 +12,30 @@ A detailed description of all the fields can be found below.
 Initial container
 ^^^^^^^^^^^^^^^^^
 
-When you create a container, the detail page will provide
-you with information about the container object. Please note
-that the container is still in initial state and not running yet.
+When you create a container, the detail page will provide you with information about the container object.
+Please note that the container is still in initial state and not running yet.
 
 .. image:: figures/apps/containers/details_created1.png
   :alt: Details of an initial container
 
-In the bottom of the page the logs are displayed. In this case
-the logs only contain one entry, indicating that the object
-has been created.
+The "Status" box tells you about the current state of the container.
+If any errors occur, they will also appear here.
+
+The "Description" box repeats the description you chose to give to your container.
+
+Then come the "Logs", which report two types of entries:
+
+- Actions performed on the container.
+- Logs coming from the app inside the container.
+
+The "Recent Events" table displays a timeline of all the events related to the container, including who and when accessed it.
 
 .. image:: figures/apps/containers/details_created2.png
   :alt: Details of an initial container, showing logs
 
-To start the container, open the operator menu located on the
+Finally, the "Details" card provides the technical details of the container, which normally shouldn't concern you too much, unless you want to change something.
+
+To start the container, open the Controls menu located on the
 right-hand side of the title and click the ``Start`` item. The Docker container
 will be created and started. This menu also provides you with the
 options to edit (``Update``) or ``Delete`` the container.
@@ -37,34 +46,22 @@ options to edit (``Update``) or ``Delete`` the container.
 Running container
 ^^^^^^^^^^^^^^^^^
 
-Once the container is running, the detail page for the container
-changes. The operator menu will change its entries, the button
-to access the proxy server with the eye icon will turn blue and
-the state of the container will be set to ``running``.
-
-.. image:: figures/apps/containers/details_running1.png
-  :alt: Details of a running container
-
-The logs will be updated and now contain the logs coming
-from the Docker container.
-
-.. image:: figures/apps/containers/details_running2.png
+.. image:: figures/apps/containers/details_running_logs.png
   :alt: Details of a running container, showing logs
 
-When a user accesses the container via the proxy URL (which
-is triggered by clicking the button with the eye icon),
-this will also be displayed in the logs. Look out for an entry
-that is provided by ``(Proxy)``, starting with ``Accessing [...]``.
+Once the container is running, the logs will be updated in real time with entries coming mostly from the container itself.
+However, for convenience, container actions triggered either by users or backgrond jobs (such as stopping the container) will also be logged.
 
-.. image:: figures/apps/containers/details_running3.png
+.. image:: figures/apps/containers/details_running_timeline.png
   :alt: Details of a running container, proxy access
 
-Fields
-^^^^^^
+When a user opens the container app, an entry will be created in the container timeline.
 
-Environment & Environment Secret Keys
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Container Details Card
+^^^^^^^^^^^^^^^^^^^^^^
 
+The container details card is a low-level description of the container object.
+A few clarifications are in order.
 Names of sensitive environment variables can be entered in the ``Environment secret keys`` field.
 
 If you have set an ``environment`` and registered ``environment_secret_keys``,
@@ -73,59 +70,4 @@ as ``<masked>``, indicating that they are available to the system but
 are not displayed for security reasons. However, they will still be visible
 in plain in the container environment.
 
-State
-~~~~~
-
-The current state is presented and highlighted:
-
-- **initial**, indicating that the database object has been created but no actual Docker container exists yet.
-- **running**
-- **failed**, indicating that something went wrong
-- **exited**
-- **paused**
-
-If there is a small bell icon next to the state, this indicates
-that the last user action and the current state of the Docker container
-do not match.
-
-Last action
-~~~~~~~~~~~
-
-The last action performed on the container of any user is displayed, if available.
-If there is an inconsistency found between the actual Docker state and the last
-user action (indicated by the bell icon right to the state), a cron job running
-every few minutes tries to perform the last known issued user action. The first
-number next to the action is a counter, indicating how many times it tried to re-perform the action,
-with the maximal limit indicated by the second number.
-
-Date of latest Docker log
-~~~~~~~~~~~~~~~~~~~~~~~~~
-
-When a Docker log has been fetched in the past, this date indicates the
-timestamp of the latest Docker log and synchronisation of the Docker
-state. Docker logs are not displayed immediately in the log file but
-fetched by a background process every few minutes. This line is missing
-when there are no fetched Docker logs.
-
-Logs
-~~~~
-
-The logs will update themselves every half minute. As described above, Docker logs
-are also fetched only every few minutes from the Docker container, thus there can
-be a bit of latency until logs are displayed.
-
-The log window combines logs from multiple sources. The structure of a log entry is::
-
-    [YYYY-MM-DD HH:MM:SS <LOG_LEVEL> <USER>] (<PROCESS>) <MESSAGE>
-
-For example::
-
-    [2021-09-08 22:57:26 INFO anonymous] (Task) Syncing last registered container state (running) with current Docker state (exited)
-
-Currently the following sources can contribute to the log:
-
-- **Task:** Logs reported by automatically running background tasks. Usually they are issued by ``anonymous``.
-- **Docker:** Logs reported by Docker for this container. They are fetched every half minute, so they might not appear immediately.
-- **Action:** Any action the user issues on the container.
-- **Proxy:** Issued when accessing the proxy.
-- **Object:** Issued when changes in the database object are made that represents the Container in Kiosc.
+Similary, if your container image comes from a private registry, the username and password fields will be masked.

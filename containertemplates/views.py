@@ -592,7 +592,11 @@ class ContainerTemplateProjectCopyView(
 
 
 class ContainerTemplateSelectorApiView(LoginRequiredMixin, View):
-    """Class for returning containertemplate values."""
+    """Class for returning containertemplate values.
+
+    The special site-wide template identified by the string 'blank' is an
+    empty template which doesn't change any field when applied.
+    """
 
     def post(self, *args, **kwargs):
         containertemplate_id = self.request.POST.get('containertemplate_id')
@@ -614,6 +618,23 @@ class ContainerTemplateSelectorApiView(LoginRequiredMixin, View):
             )
 
         if site_or_project == 'site':
+            if containertemplate_id == 'blank':
+                return JsonResponse(
+                    {
+                        'title': '',
+                        'description': '',
+                        'repository': '',
+                        'tag': '',
+                        'registry_user': '',
+                        'registry_password': '',
+                        'container_port': 80,
+                        'container_path': '',
+                        'heartbeat_url': '',
+                        'environment': None,
+                        'command': '',
+                    }
+                )
+
             try:
                 obj = ContainerTemplateSite.objects.get(id=containertemplate_id)
 

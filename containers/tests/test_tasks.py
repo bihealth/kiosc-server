@@ -54,6 +54,7 @@ class TestContainerTask(TestBase):
         time.sleep(1)
         self.cli.prune_containers()
         self.cli.prune_images()
+        super().tearDown()
 
     @override_settings(KIOSC_NETWORK_MODE='host')
     @patch('containers.tasks.sync_container_state')
@@ -312,7 +313,8 @@ class TestContainerTask(TestBase):
 
         self.assertEqual(
             self.container1.log_entries.last().text,
-            f'Action not performed: {bg_job2.action}. Cool-down is active ({settings.KIOSC_DOCKER_ACTION_MIN_DELAY}s)',
+            'Action cancelled due to cool down '
+            f'({settings.KIOSC_DOCKER_ACTION_MIN_DELAY}s): stop\n',
         )
 
         # Assert mocks
@@ -424,7 +426,8 @@ class TestContainerTask(TestBase):
         self.container1.refresh_from_db()
 
         self.assertEqual(
-            self.container1.log_entries.last().text, 'Stopping succeeded'
+            self.container1.log_entries.last().text,
+            'Stopping container succeeded\n',
         )
 
         create_container.assert_called_once_with(

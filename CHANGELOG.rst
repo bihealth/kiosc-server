@@ -4,6 +4,40 @@ Kiosc Changelog
 Changelog for the **Kiosc** Django app package.
 Loosely follows the `Keep a Changelog <http://keepachangelog.com/en/1.0.0/>`_ guidelines.
 
+Current
+=======
+
+Major changes
+-------------
+
+This release brings updates in the container management workflow. The logs are more responsive to container actions, which should make it easier to debug problems.
+
+- Added a TERMINATED container state, which is used when a container is stopped due to inactivity (previously the state was FAILED).
+- Action RESTART was renamed to RESET, which makes it clearer that the container is actually deleted and re-created from scratch.
+- All container logs are deleted when the container is RESET.
+- On the other hand, STOPPING and STARTING a container does not delete anything.
+- Accessing a container which is not ready to take connections will redirect to a waiting page instead of throwing an error.
+- The latest errors are highlighted in the container page.
+  - Currently, a page refresh is needed, but in a future release they will be updated dynamically, like the logs.
+- Container log entries are not saved to the database anymore, but they are still visible in the container detail page (they come directly from the Docker daemon).
+  - For now, these logs are not searchable, but this will be fixed in the next version.
+- When a container is updated, it is not automatically restarted, even if it was previously running: you have to manually start it, if needed.
+- Enhanced container timeline: all actions are now logged as "timeline events".
+  - The container detail page shows the most recent entries, the full timeline can be accessed in a separate page.
+- We do not attempt to sync container state with latest user action: if the action fails, so be it.
+
+Containers app
+--------------
+
+- The field ``date_last_status_update`` was removed (#251)
+- The field ``date_last_access`` was added (#251)
+
+Container Templates
+-------------------
+
+- Added a "blank" containertemplate entry, which is selected by default in the container creation form.
+- Selecting a container template automatically imports it.
+
 v0.5.3 (2026-06-18)
 ===================
 
@@ -46,6 +80,7 @@ General
 
 - Fix bug in kioscadmin which made kiosc crash (#220)
 
+
 v0.5.1 (2026-03-27)
 ===================
 
@@ -53,6 +88,7 @@ General
 -------
 
 - Fix bug in containerlist app template which prevented viewing containers
+
 
 v0.5.0 (2026-03-27)
 ===================

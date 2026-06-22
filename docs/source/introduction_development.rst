@@ -108,6 +108,18 @@ to the one :ref:`described for the production environment
 ``env.example`` in the kiosc-server repository is more geared
 towards development.
 
+.. hint::
+
+    By default, in local development settings (i.e., using
+    ``config.settings.local``), background tasks run synchronously, therefore
+    long-running actions can block the website. In production mode, they
+    are executed by a Celery daemon asynchronously. If you want to always
+    run background tasks through Celery, set the environment variable
+    ``CELERY_TASK_ALWAYS_EAGER=0``. Note, however, that a Celery daemon instance
+    must be running (otherwise the tasks will not be carried out). From the root
+    of the repository, you can start a celery process with ``make celery``.
+
+
 .. rubric:: Footnotes
 
 .. [#footnote-make-dev] You may also simply run ``make dev``, using the Makefile

@@ -43,7 +43,7 @@
               <td>{{ container.host_port }}</td>
             {% endif %}
             <td>{{ container.date_created }}</td>
-            <td>{{ container.date_modified }}</td> {# There is also date_last_status_update #}
+            <td>{{ container.date_modified }}</td>
             <td><strong class="{{ container.state|colorize_state }}">{{ container.state }}</strong></td>
             <td class="text-right">
               {% container_controls container request.user %}

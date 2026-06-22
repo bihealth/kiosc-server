@@ -281,7 +281,7 @@
     }
     function createWebSocket() {
       const socket = new WebSocket(
-        `${window.location.protocol == "https:" ? "wss" : "ws:"}//` +
+        `${window.location.protocol == "https:" ? "wss://" : "ws://"}` +
         `${window.location.host}` +
         `{% url "log-watcher" container=object.sodar_uuid %}`
       );

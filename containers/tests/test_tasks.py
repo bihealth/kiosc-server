@@ -54,6 +54,7 @@ class TestContainerTask(TestBase):
         time.sleep(1)
         self.cli.prune_containers()
         self.cli.prune_images()
+        super().tearDown()
 
     @override_settings(KIOSC_NETWORK_MODE='host')
     @patch('containers.tasks.sync_container_state')

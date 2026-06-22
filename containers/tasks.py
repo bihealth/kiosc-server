@@ -1,7 +1,7 @@
-import logging
-
+from channels.layers import get_channel_layer
 import docker
 import docker.errors
+import logging
 import statemachine.exceptions
 
 from django.conf import settings
@@ -47,6 +47,7 @@ User = auth.get_user_model()
 app_settings = AppSettingAPI()
 plugin_api = PluginAPI()
 logger = logging.getLogger(__name__)
+channel_layer = get_channel_layer()
 
 # Increase the timeout for communication with Docker daemon.
 APP_NAME = 'containers'
@@ -106,7 +107,6 @@ def sync_container_state(container, timeline=None):
                 ex,
                 container.state,
             )
-            container.date_last_status_update = timezone.now()
             container.state = STATE_FAILED
             container.save()
             if timeline:
@@ -133,7 +133,6 @@ def sync_container_state(container, timeline=None):
         # but failed is more general. Besides, the container record in the db
         # is NOT deleted.
         logger.error('Container not found: %s', str(ex))
-        container.date_last_status_update = timezone.now()
         container.state = STATE_FAILED
         container.save()
         if timeline:
@@ -196,9 +195,7 @@ def container_task(_self, job_id):
                 job.container.sodar_uuid,
                 e,
             )
-            job.add_log_entry(
-                f'Action failed: {job.action}: {e}', level=LOG_LEVEL_ERROR
-            )
+            cm._log_task(f'Action failed: {job.action}: {e}')
             tl_event.set_status(TL_STATUS_FAILED, str(e))
             with transaction.atomic():
                 job.container.refresh_from_db()
@@ -214,9 +211,7 @@ def container_task(_self, job_id):
                 job.container.sodar_uuid,
                 e,
             )
-            job.add_log_entry(
-                f'Action failed: {job.action}: {e}', level=LOG_LEVEL_ERROR
-            )
+            cm._log_task(f'Action failed: {job.action}: {e}')
             tl_event.set_status(TL_STATUS_FAILED, str(e))
             with transaction.atomic():
                 container.refresh_from_db()
@@ -230,9 +225,7 @@ def container_task(_self, job_id):
                 job.container.sodar_uuid,
                 e,
             )
-            job.add_log_entry(
-                f'Action failed: {job.action}: {e}', level=LOG_LEVEL_ERROR
-            )
+            cm._log_task(f'Action failed: {job.action}: {e}')
             tl_event.set_status(TL_STATUS_FAILED, str(e))
 
         except ContainerActionLock.CoolDown as e:
@@ -242,9 +235,8 @@ def container_task(_self, job_id):
                 job.container.sodar_uuid,
                 e,
             )
-            job.add_log_entry(
-                f'Action cancelled due to cool down ({settings.KIOSC_DOCKER_ACTION_MIN_DELAY}s): {job.action}: {e}',
-                level=LOG_LEVEL_WARNING,
+            cm._log_task(
+                f'Action cancelled due to cool down ({settings.KIOSC_DOCKER_ACTION_MIN_DELAY}s): {job.action}',
             )
             tl_event.set_status(TL_STATUS_CANCEL)
 
@@ -255,9 +247,7 @@ def container_task(_self, job_id):
                 job.container.sodar_uuid,
                 e,
             )
-            job.add_log_entry(
-                f'Action failed: {job.action}: {e}', level=LOG_LEVEL_ERROR
-            )
+            cm._log_task(f'Action failed: {job.action}: {e}')
             tl_event.set_status(TL_STATUS_FAILED, str(e))
 
             with transaction.atomic():

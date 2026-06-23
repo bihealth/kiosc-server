@@ -1,6 +1,6 @@
 from django.conf import settings
 from django.conf.urls import include
-from django.urls import path
+from django.urls import path, re_path
 from django.conf.urls.static import static
 from django.contrib import admin
 from django.contrib.auth import views as auth_views
@@ -10,6 +10,7 @@ from django.views.generic import TemplateView
 
 from projectroles.views import HomeView
 from containers.urls import websocket_urlpatterns
+from containers.views import KioscRegistryProxyView
 
 urlpatterns = (
     [
@@ -61,6 +62,8 @@ urlpatterns = (
         path('containers/', include('containers.urls')),
         # Containertemplates URLs
         path('containertemplates/', include('containertemplates.urls')),
+        # Docker registry proxy view (at this time, Docker clients do not support subpaths in a registry)
+        re_path(r'^v2/(?P<path>.*)$', KioscRegistryProxyView.as_view()),
         # Iconify icon URLs
         path('icons/', include('dj_iconify.urls')),
     ]

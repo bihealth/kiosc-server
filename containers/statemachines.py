@@ -468,7 +468,6 @@ class ContainerMachine(StateMachine):
 
     def on_pull(self):
         # Pulling image
-        self._log_task(f'Pulling image {self.container.get_repos_full()} ...')
         self.container.state = STATE_PULLING
         self.container.container_id = None
         self.container.save()
@@ -480,6 +479,9 @@ class ContainerMachine(StateMachine):
                 break
 
         if need_to_pull:
+            self._log_task(
+                f'Pulling image {self.container.get_repos_full()} ...'
+            )
             need_to_login = self.container.registry_user is not None
             registry = self.container.repository.split('/')[0]
             if need_to_login:
@@ -554,11 +556,15 @@ class ContainerMachine(StateMachine):
                         **pull_log,
                     },
                 )
+            self._log_task('Pulling image succeeded')
+        else:
+            self._log_task(
+                f'Using cached image for {self.container.get_repos_full()}'
+            )
 
         image_details = self.cli.inspect_image(self.container.get_repos_full())
         self.container.image_id = image_details.get('Id')
         self.container.save()
-        self._log_task('Pulling image succeeded')
 
         options = {}
         options_host_config = {}

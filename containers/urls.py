@@ -1,4 +1,5 @@
 from django.urls import path, re_path
+from django.views.decorators.csrf import csrf_exempt
 
 from . import views, consumers, views_api
 
@@ -65,6 +66,11 @@ ui_urlpatterns = [
         'file/serve/<uuid:file>/<str:filename>',
         view=views.FileServeView.as_view(),
         name='file-serve',
+    ),
+    path(
+        'registry',
+        view=csrf_exempt(views.KioscRegistryNotificationsView.as_view()),
+        name='registry',
     ),
     # Ajax views
     path(

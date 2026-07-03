@@ -2,6 +2,7 @@ from asgiref.sync import async_to_sync
 from channels.layers import get_channel_layer
 
 import shlex
+from urllib.parse import urlsplit
 
 import docker
 import docker.errors
@@ -472,9 +473,19 @@ class ContainerMachine(StateMachine):
         self.container.container_id = None
         self.container.save()
 
+        if self.container.repository.startswith(
+            str(self.container.project.sodar_uuid)
+        ):
+            registry = urlsplit(settings.KIOSC_CUSTOM_REGISTRY_URL).netloc
+            image_repository = f'{registry}/{self.container.repository}'
+            image_reference = f'{registry}/{self.container.get_repos_full()}'
+        else:
+            image_repository = self.container.repository
+            image_reference = self.container.get_repos_full()
+
         need_to_pull = True
         for image in self.cli.images(self.container.repository):
-            if self.container.get_repos_full() in image['RepoTags']:
+            if image_reference in image['RepoTags']:
                 need_to_pull = False
                 break
 
@@ -483,23 +494,23 @@ class ContainerMachine(StateMachine):
                 f'Pulling image {self.container.get_repos_full()} ...'
             )
             need_to_login = self.container.registry_user is not None
-            registry = self.container.repository.split('/')[0]
             if need_to_login:
                 try:
+                    image_registry = self.container.repository.split('/', 1)[0]
                     logger.info(
                         'Logging in to registry %s for %s/%s on behalf of %s',
-                        registry,
+                        image_registry,
                         self.container.project.title,
                         self.container.title,
                         self.user,
                     )
                     self._log_task(
-                        f'Logging in to registry {registry} with user credentials...'
+                        f'Logging in to registry {image_registry} with user credentials...'
                     )
                     self.cli.login(
                         self.container.registry_user,
                         self.container.registry_password,
-                        registry=registry,
+                        registry=image_registry,
                     )
                     self._log_task('Logged in successfully.')
                 except Exception as ex:
@@ -507,7 +518,7 @@ class ContainerMachine(StateMachine):
                     self._log_task(f'Login failed: {ex}')
                     raise ex
             for line in self.cli.pull(
-                repository=self.container.repository,
+                repository=image_repository,
                 tag=self.container.tag,
                 stream=True,
                 decode=True,
@@ -562,7 +573,7 @@ class ContainerMachine(StateMachine):
                 f'Using cached image for {self.container.get_repos_full()}'
             )
 
-        image_details = self.cli.inspect_image(self.container.get_repos_full())
+        image_details = self.cli.inspect_image(image_reference)
         self.container.image_id = image_details.get('Id')
         self.container.save()
 

@@ -735,7 +735,9 @@ class KioscRegistryProxyView(KioscRegistryMixin, ProxyView):
             project_uuid = path.split('/', 1)[0]
             try:
                 project = Project.objects.get(sodar_uuid=project_uuid)
-                assert project.is_project()
+                assert project.is_project(), (
+                    f'{project_uuid} is not a valid project'
+                )
             except (
                 Project.DoesNotExist,
                 ValidationError,
@@ -775,7 +777,7 @@ class KioscRegistryNotificationsView(View):
             logger.warning(
                 'Registry notification error (missing Authorization header)'
             )
-            return HttpResponse(401)
+            return HttpResponse(status=401)
         else:
             auth_header = request.headers['Authorization']
             token = auth_header.removeprefix('Bearer ').strip()
@@ -787,34 +789,41 @@ class KioscRegistryNotificationsView(View):
         try:
             body = json.loads(request.body.decode('utf-8'))
             events = body['events']
-        except (json.decoder.JSONDecodeError, KeyError):
+            assert isinstance(events, list)
+        except (json.decoder.JSONDecodeError, KeyError, AssertionError):
             logger.warning(
                 'Registry notification error (malformed notification)'
             )
             return HttpResponse(status=400)
         for event in events:
-            # We should get only push events as per the registry config,
-            # but still, we double check here.
-            if event['action'] != 'push':
-                continue
-            repository = event['target']['repository']
-            project_uuid, image = repository.split('/', 1)
-            tag = event['target']['tag']
-            # XXX: Can we assume that the actor has a name field?
-            actor = event['actor']['name']
-            host = event['request']['host']
-            project = Project.objects.get(sodar_uuid=project_uuid)
-            logger.info(
-                f'Registry notification: user "{actor}" just pushed '
-                f'{image}:{tag} for project "{project}" ({project_uuid})'
-            )
-            # Create a new container for the image which was just pushed
-            Container.objects.create(
-                repository=host + '/' + repository,
-                tag=tag,
-                project=project,
-                title=image.title() + ':' + tag,
-            )
+            try:
+                # We should get only push events as per the registry config,
+                # but still, we double check here. We don't care about pulls.
+                if event['action'] != 'push':
+                    continue
+                repository = event['target']['repository']
+                project_uuid, image = repository.split('/', 1)
+                tag = event['target']['tag']
+                # XXX: Can we assume that the actor has a name field?
+                actor = event['actor']['name']
+                project = Project.objects.get(sodar_uuid=project_uuid)
+                logger.info(
+                    f'Registry notification: user "{actor}" just pushed '
+                    f'{image}:{tag} for project "{project}" ({project_uuid})'
+                )
+                # Create a new container for the image which was just pushed
+                Container.objects.get_or_create(
+                    repository=repository,
+                    tag=tag,
+                    project=project,
+                    title=image.title() + ':' + tag,
+                )
+            except Exception as ex:
+                logger.error(
+                    'Failed to create container from registry push (%s): %s',
+                    str(ex),
+                    event,
+                )
         return HttpResponse()
 
 

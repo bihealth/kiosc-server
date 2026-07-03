@@ -63,7 +63,11 @@ urlpatterns = (
         # Containertemplates URLs
         path('containertemplates/', include('containertemplates.urls')),
         # Docker registry proxy view (at this time, Docker clients do not support subpaths in a registry)
-        re_path(r'^v2/(?P<path>.*)$', KioscRegistryProxyView.as_view()),
+        re_path(
+            r'^v2/(?P<path>.*)$',
+            KioscRegistryProxyView.as_view(),
+            name='registry-proxy',
+        ),
         # Iconify icon URLs
         path('icons/', include('dj_iconify.urls')),
     ]

@@ -70,7 +70,7 @@ ui_urlpatterns = [
     path(
         'registry',
         view=csrf_exempt(views.KioscRegistryNotificationsView.as_view()),
-        name='registry',
+        name='registry-notifications',
     ),
     # Ajax views
     path(

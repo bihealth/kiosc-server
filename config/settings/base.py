@@ -103,6 +103,7 @@ LOCAL_APPS = [
     'containers.apps.ContainersConfig',
     'containertemplates.apps.ContainertemplatesConfig',
     'containerlist.apps.ContainerListConfig',
+    'registry.apps.RegistryConfig',
     'kioscadmin.apps.KioscAdminConfig',
 ]
 

@@ -67,11 +67,6 @@ ui_urlpatterns = [
         view=views.FileServeView.as_view(),
         name='file-serve',
     ),
-    path(
-        'registry',
-        view=csrf_exempt(views.KioscRegistryNotificationsView.as_view()),
-        name='registry-notifications',
-    ),
     # Ajax views
     path(
         'ajax/get-dynamic-details/<uuid:container>',

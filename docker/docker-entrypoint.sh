@@ -25,7 +25,7 @@ set -euo pipefail
 #   HTTP_HOST       -- host to listen on
 #                      default: 0.0.0.0
 #   HTTP_PORT       -- port
-#                      default: 8080
+#                      default: 8000
 #   LOG_LEVEL       -- logging verbosity
 #                      default: info
 #   DAPHNE_TIMEOUT  -- timeout for daphne workers in seconds
@@ -40,7 +40,7 @@ NO_WAIT=${NO_WAIT-0}
 export WAIT_HOSTS=${WAIT_HOSTS-postgres:5432, redis:6379}
 export PYTHONUNBUFFERED=${PYTHONUNBUFFERED-1}
 HTTP_HOST=${HTTP_HOST-0.0.0.0}
-HTTP_PORT=${HTTP_PORT-8080}
+HTTP_PORT=${HTTP_PORT-8000}
 LOG_LEVEL=${LOG_LEVEL-info}
 DAPHNE_TIMEOUT=${DAPHNE_TIMEOUT-600}
 UVICORN_WORKERS=${UVICORN_WORKERS-4}

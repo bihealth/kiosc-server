@@ -112,7 +112,7 @@ class FileSelectorForm(forms.Form):
         super().__init__(*args, **kwargs)
 
         def get_link(obj):
-            return 'http://{}:8080{}'.format(
+            return 'http://{}:8000{}'.format(
                 settings.KIOSC_DOCKER_WEB_SERVER,
                 reverse(
                     'containers:file-serve',

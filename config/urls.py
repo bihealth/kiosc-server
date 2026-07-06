@@ -6,11 +6,15 @@ from django.contrib import admin
 from django.contrib.auth import views as auth_views
 from django.contrib.staticfiles.urls import staticfiles_urlpatterns
 from django.views import defaults as default_views
+from django.views.decorators.csrf import csrf_exempt
 from django.views.generic import TemplateView
 
 from projectroles.views import HomeView
 from containers.urls import websocket_urlpatterns
-from registry.views import KioscRegistryProxyView
+from registry.views import (
+    KioscRegistryProxyView,
+    KioscRegistryNotificationsView,
+)
 
 urlpatterns = (
     [
@@ -63,7 +67,11 @@ urlpatterns = (
         # Containertemplates URLs
         path('containertemplates/', include('containertemplates.urls')),
         # Reigstry URLs
-        path('registry', include('registry.urls')),
+        path(
+            'registry',
+            view=csrf_exempt(KioscRegistryNotificationsView.as_view()),
+            name='registry-notifications',
+        ),
         # Docker registry proxy view (at this time, Docker clients do not support subpaths in a registry)
         re_path(
             r'^v2/(?P<path>.*)$',

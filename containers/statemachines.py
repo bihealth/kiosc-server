@@ -2,7 +2,6 @@ from asgiref.sync import async_to_sync
 from channels.layers import get_channel_layer
 
 import shlex
-from urllib.parse import urlsplit
 
 import docker
 import docker.errors
@@ -476,7 +475,7 @@ class ContainerMachine(StateMachine):
         if self.container.repository.startswith(
             str(self.container.project.sodar_uuid)
         ):
-            registry = urlsplit(settings.KIOSC_CUSTOM_REGISTRY_URL).netloc
+            registry = settings.KIOSC_CUSTOM_REGISTRY_DOCKER_URL
             image_repository = f'{registry}/{self.container.repository}'
             image_reference = f'{registry}/{self.container.get_repos_full()}'
         else:

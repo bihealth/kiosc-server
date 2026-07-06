@@ -222,17 +222,26 @@ CRISPY_TEMPLATE_PACK = 'bootstrap4'
 
 # CUSTOM CONTAINER REGISTRY CONFIGURATION
 
-# Needs to be increased to allow uploading large images to the regsitry
+# Needs to be increased to allow uploading large images to the regsitry.
 DATA_UPLOAD_MAX_MEMORY_SIZE = env.int(
     'KIOSC_DATA_UPLOAD_MAX_MEMORY_SIZE',
     default=2**32,  # 4GB
 )
 
-KIOSC_CUSTOM_REGISTRY_URL = env.str(
-    'KIOSC_CUSTOM_REGISTRY_URL', default='http://127.0.0.1:5000'
+# The URL at which the docker registry can be reached by kiosc.
+KIOSC_CUSTOM_REGISTRY_HTTP_URL = env.str(
+    'KIOSC_CUSTOM_REGISTRY_HTTP_URL', default='http://127.0.0.1:5000'
 )
+# The URL at which the docker registry can be reached by the docker daemon on
+# the host machine. It must not have a schema, and it can be different from
+# KIOSC_CUSTOM_REGISTRY_HTTP_URL if kiosc runs in Docker compose.
+KIOSC_CUSTOM_REGISTRY_DOCKER_URL = env.str(
+    'KIOSC_CUSTOM_REGISTRY_DOCKER_URL', default='127.0.0.1:5000'
+)
+# Token used to authenticate the registry notification. The registry must be
+# configured to use the same token.
 KIOSC_CUSTOM_REGISTRY_NOTIFICATIONS_TOKEN = env.str(
-    'KIOSC_CUSTOM_REGISTRY_NOTIFICATION_TOKEN', default='PleaseChangeMeToo'
+    'KIOSC_CUSTOM_REGISTRY_NOTIFICATIONS_TOKEN', default='PleaseChangeMeToo'
 )
 
 # STATIC FILE CONFIGURATION

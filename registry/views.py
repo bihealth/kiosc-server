@@ -74,7 +74,7 @@ class KioscRegistryProxyView(KioscRegistryMixin, ProxyView):
     - https://distribution.github.io/distribution/recipes/nginx/
     """
 
-    upstream = settings.KIOSC_CUSTOM_REGISTRY_URL
+    upstream = settings.KIOSC_CUSTOM_REGISTRY_HTTP_URL
     add_x_forwarded = True
 
     def dispatch(self, request, path):
@@ -161,7 +161,7 @@ class KioscRegistryNotificationsView(View):
     def post(self, request, *args, **kwargs):
         if 'Authorization' not in request.headers:
             logger.warning(
-                'Registry notification error (missing Authorization header)'
+                'Registry notifications error (missing Authorization header)'
             )
             return HttpResponse(status=401)
         else:
@@ -169,7 +169,7 @@ class KioscRegistryNotificationsView(View):
             token = auth_header.removeprefix('Bearer ').strip()
             if token != self.secret_token:
                 logger.warning(
-                    'Registry notification error (invalid Bearer token)'
+                    'Registry notifications error (invalid Bearer token)'
                 )
                 return HttpResponse(status=401)
         try:
@@ -178,7 +178,7 @@ class KioscRegistryNotificationsView(View):
             assert isinstance(events, list)
         except (json.decoder.JSONDecodeError, KeyError, AssertionError):
             logger.warning(
-                'Registry notification error (malformed notification)'
+                'Registry notifications error (malformed notification)'
             )
             return HttpResponse(status=400)
         for event in events:
@@ -194,7 +194,7 @@ class KioscRegistryNotificationsView(View):
                 actor = event['actor']['name']
                 project = Project.objects.get(sodar_uuid=project_uuid)
                 logger.info(
-                    f'Registry notification: user "{actor}" just pushed '
+                    f'Registry notifications: user "{actor}" just pushed '
                     f'{image}:{tag} for project "{project}" ({project_uuid})'
                 )
                 # Create a new container for the image which was just pushed

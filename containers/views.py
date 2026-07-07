@@ -741,9 +741,14 @@ class ReverseProxyView(
         container = self.get_object()
         kwargs.pop('container')
 
-        # Kiosc will pass this header when doing automated checks; we don't need
-        # to track these accesses in the timeline.
-        if not request.headers.get('Kiosc-Preflight'):
+        # We don't need to track all accesses. First, Kiosc will pass a
+        # Kiosc-Preflight header when doing automated checks. Second, we don't
+        # need to track internal requests to the app, just tracking the initial
+        # request should be enough.
+        if (
+            not request.headers.get('Kiosc-Preflight')
+            and kwargs['path'] == container.container_path
+        ):
             timeline = plugin_api.get_backend_api('timeline_backend')
         else:
             timeline = None

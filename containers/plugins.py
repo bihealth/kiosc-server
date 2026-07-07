@@ -252,7 +252,9 @@ class ProjectAppPlugin(
             else:
                 stats['unknown'] = stats.get('unknown', 0) + el['count']
 
-        return ',</br>'.join(f'{count} {state}' for state, count in stats.items())
+        return ',</br>'.join(
+            f'{count} {state}' for state, count in stats.items()
+        )
 
     def get_object_link(
         self, model_str: str, uuid: Union[str, UUID]

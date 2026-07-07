@@ -4,27 +4,39 @@ Kiosc Changelog
 Changelog for the **Kiosc** Django app package.
 Loosely follows the `Keep a Changelog <http://keepachangelog.com/en/1.0.0/>`_ guidelines.
 
-Current
-=======
+v0.6.0 (2026-07-07)
+===================
 
 Major changes
 -------------
 
 This release brings updates in the container management workflow. The logs are more responsive to container actions, which should make it easier to debug problems.
 
-- Added a TERMINATED container state, which is used when a container is stopped due to inactivity (previously the state was FAILED).
-- Action RESTART was renamed to RESET, which makes it clearer that the container is actually deleted and re-created from scratch.
-- All container logs are deleted when the container is RESET.
-- On the other hand, STOPPING and STARTING a container does not delete anything.
-- Accessing a container which is not ready to take connections will redirect to a waiting page instead of throwing an error.
-- The latest errors are highlighted in the container page.
-  - Currently, a page refresh is needed, but in a future release they will be updated dynamically, like the logs.
-- Container log entries are not saved to the database anymore, but they are still visible in the container detail page (they come directly from the Docker daemon).
-  - For now, these logs are not searchable, but this will be fixed in the next version.
-- When a container is updated, it is not automatically restarted, even if it was previously running: you have to manually start it, if needed.
-- Enhanced container timeline: all actions are now logged as "timeline events".
-  - The container detail page shows the most recent entries, the full timeline can be accessed in a separate page.
-- We do not attempt to sync container state with latest user action: if the action fails, so be it.
+- Better awareness of container state (#251)
+  - Added a TERMINATED container state, which is used when a container is stopped due to inactivity (previously the state was FAILED).
+  - Action RESTART was renamed to RESET, which makes it clearer that the container is actually deleted and re-created from scratch.
+  - All container logs are deleted when the container is RESET.
+  - On the other hand, STOPPING and STARTING a container does not delete anything.
+  - Accessing a container which is not ready to take connections will redirect to a waiting page instead of throwing an error.
+  - The latest errors are highlighted in the container page.
+    - Currently, a page refresh is needed, but in a future release they will be updated dynamically, like the logs.
+  - Container log entries are not saved to the database anymore, but they are still visible in the container detail page (they come directly from the Docker daemon).
+    - For now, these logs are not searchable, but this will be fixed in the next version.
+  - When a container is updated, it is not automatically restarted, even if it was previously running: you have to manually start it, if needed.
+  - Enhanced container timeline: all actions are now logged as "timeline events".
+    - The container detail page shows the most recent entries, the full timeline can be accessed in a separate page.
+  - We do not attempt to sync container state with latest user action: if the action fails, so be it.
+- Added a private Docker registry to which images can be pushed (#228)
+
+Build changes
+-------------
+
+- The Docker entrypoint script runs the server on port 8000 instead of 8080 (#228)
+
+Development environment changes
+-------------------------------
+
+- Added an environment variable ``CELERY_TASK_ALWAYS_EAGER`` which, if set to false, will instruct Celery to run jobs in the background (the Celery daemon must be started separately) (#251)
 
 Containers app
 --------------
@@ -47,7 +59,7 @@ General
 - Add Kiosc models to Django admin (#243)
 - Add default container template for a Shiny demo app (#242)
 - Add "createtoyapp" management command to create a demo project (#242)
-- Fix behaviour of SITE_APP environment variable (#244)
+- Fix behaviour of SITE_TITLE environment variable (#244)
 - Fix behaviour of ADMINS environment variable (#244)
 
 Containers

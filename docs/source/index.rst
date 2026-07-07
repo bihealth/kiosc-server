@@ -82,6 +82,7 @@ Kiosc is NOT
     apps_containers
     apps_containerlist
     apps_containertemplates
+    apps_registry
     apps_filesfolders
 
 .. toctree::

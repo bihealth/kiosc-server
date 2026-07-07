@@ -140,6 +140,9 @@ you'll need to make some tweaks to adapt it to your specific requirements. At
 the very least, you should change the following variables:
 
 - ``KIOSC_DJANGO_SECRET_KEY``: set it to a randomly generated string
+- ``KIOSC_CUSTOM_REGISTRY_NOTIFICATIONS_TOKEN``: set it to a randomly generated
+  string
+- ``KIOSC_CUSTOM_REGISTRY_HTTP_SECRET``: set it to a randomly generated string
 - ``KIOSC_UVICORN_WORKERS``: set it to the number of CPUs on your machine (or
   fewer)
 - ``KIOSC_ADMINS``: set the admin real name and email address
@@ -449,6 +452,55 @@ You can change the axis settings through the following environment variables.
 
 ``KIOSC_LOGGING_FILE_PATH=``
     Logging file used througout Kiosc apps.
+
+
+.. rubric:: Kiosc custom registry settings
+
+``KIOSC_CUSTOM_REGISTRY_HTTP_URL="http://kiosc-registry:5000"``
+    The URL at which Kiosc can access the custom registry. When running the
+    official Docker compose, the hostname ``kiosc-registry`` is automatically
+    mapped to the IP of the registry in the Docker compose network, so there
+    should be no need to change this. However, when running Kiosc in development
+    mode, ``kiosc-registry`` will not be recognized automatically, so you should
+    change this to, *e.g.,*, ``http://127.0.0.1:5000``.
+
+``KIOSC_CUSTOM_REGISTRY_DOCKER_URL="127.0.0.1:5000"``
+    The URL at which the host machine can access the custom registry. This
+    URL must not contain the *https* scheme, and it can be different from
+    ``KIOSC_CUSTOM_REGISTRY_HTTP_URL`` if Kiosc is running in a Docker
+    container. Unless you have a special set up, you don't need to change this
+    variable.
+
+``KIOSC_CUSTOM_REGISTRY_NOTIFICATIONS_URL="http://kiosc-web:8000/registry"``
+    The URL at which the registry can access Kiosc to send notifications about
+    events involving the registry. The hostname ``kiosc-web`` will be recognized
+    automatically if the registry is run through the official Docker compose
+    image.
+
+``KIOSC_CUSTOM_REGISTRY_NOTIFICATIONS_TOKEN="PleaseChangeMeToo"``
+    The authentication token used by the registry to authenticate itself. You
+    should change this to a random string and keep it private, otherwise bad
+    actors could impersonate the registry and send fake notifications to Kiosc.
+
+``KIOSC_CUSTOM_REGISTRY_HTTP_SECRET="ChangeMeAsWell"``
+    A random piece of data used to sign state that may be stored with the
+    registry's HTTP client to protect against tampering. You should change this
+    to a random string and keep it private.
+
+``KIOSC_DATA_UPLOAD_MAX_MEMORY_SIZE="4294967296"``
+    Since pushing images to the Kiosc registry requires transferring large data
+    packets, you may need to increase the maximum memory size used for uploads.
+    The default value is 4GB, but you can increase it if needed.
+
+
+.. note::
+
+    The custom registry can be additionally configured by modifying the
+    file `config/registry/config.yaml` in the `kiosc-docker-compose
+    <https://github.com/bihealth/kiosc-docker-compose>`__
+    repository. Read the `official registry docs
+    <https://distribution.github.io/distribution/about/configuration/>`__ to
+    find out more.
 
 
 .. rubric:: Kiosc REST API settings

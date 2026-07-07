@@ -19,16 +19,18 @@ available:
 - A PostgreSQL database to store project and container metadata (the minimum
   supported version is v12, but we recommend v16)
 - Redis (we recommend v8), used as celery broker and generic cache provider
+- A private Docker registry
 
 The Kiosc repository provides scripts and Makefile rules to conveniently run
-the django web app through an ASGI server, as well as the celery daemon and
-the celerybeat process, but you are still required to install and run the
-database and redis. These services can be installed manually as well; we
-refer the interested reader to the relevant documentation for `PostgreSQL
-<https://www.postgresql.org/>`__ and `Redis <https://github.com/redis/redis>`__.
-However, the same Docker Compose file used for the production deployment can
-also be used as a development environment which provides just PostgreSQL and
-Redis. We describe this setup in detail here.
+the Django web app through an ASGI server, as well as the Celery daemon and the
+celerybeat process, but you are still required to install and run the database,
+redis, and the registry. These services can be installed manually as well;
+we refer the interested reader to the relevant documentation for `PostgreSQL
+<https://www.postgresql.org/>`__, `Redis <https://github.com/redis/redis>`__,
+and `Docker registry <https://distribution.github.io/distribution/>`__. However,
+the same Docker Compose file used for the production deployment can also be used
+as a development environment which provides just PostgreSQL, Redis, and the
+registry. We describe this setup in detail here.
 
 After cloning the `docker compose repository
 <https://github.com/bihealth/kiosc-docker-compose>`__, follow the instructions

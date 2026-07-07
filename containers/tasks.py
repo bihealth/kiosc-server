@@ -125,7 +125,7 @@ def sync_container_state(container, timeline=None):
         # If the state is failed, it is expected that sometimes the container
         # doesn't exist. We don't need to add infinitely many logs for this.
         if container.state == STATE_FAILED:
-            pass
+            return
         # We mark it as failed. STATE_DELETED could also be an option,
         # but failed is more general. Besides, the container record in the db
         # is NOT deleted.

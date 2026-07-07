@@ -267,9 +267,12 @@ class ContainerWatcherConsumer(WebsocketConsumer):
         have settimeout on it. To avoid missing the correct one, we try both."
         """
         cli = connect_docker()
-        while not self.watch_signal.wait(1):
-            # This outer loop is used to check the container state if the logs
-            # are not available.
+        # Send a status update immediately
+        msg = self._get_state(self.container, cli)
+        self.send(json.dumps(msg))
+        # This outer loop is used to check the container state if the logs
+        # are not available.
+        while not self.watch_signal.wait(2):
             try:
                 logs_generator = cli.logs(
                     self.container.container_id,
@@ -284,10 +287,12 @@ class ContainerWatcherConsumer(WebsocketConsumer):
                 for s in socks:
                     if not hasattr(s, 'settimeout'):
                         continue
-                    s.settimeout(1)
+                    s.settimeout(10)
+
+                self._send_logs(res)
 
                 # If the logs are available, we enter this inner loop
-                while not self.watch_signal.wait(1):
+                while not self.watch_signal.wait(5):
                     # First we send a status update
                     msg = self._get_state(self.container, cli)
                     self.send(json.dumps(msg))
@@ -439,7 +444,10 @@ class ContainerWatcherConsumer(WebsocketConsumer):
         )
         # Send existing log entries from the db, batched for efficiency
         for log_batch in batched(
-            self.container.log_entries.all()[:logs_tail], 1024
+            self.container.log_entries.order_by('date_created').all()[
+                :logs_tail
+            ],
+            1024,
         ):
             msg = {
                 'type': 'static_logs',

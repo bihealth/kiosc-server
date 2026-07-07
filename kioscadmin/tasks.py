@@ -145,9 +145,6 @@ def prune_zombie_containers(_self):
 def setup_periodic_tasks(sender, **_kwargs):
     """Register periodic tasks"""
     sender.add_periodic_task(30, sig=poll_docker_status.s())
-    # sender.add_periodic_task(
-    #     60, sig=sync_container_state_with_last_user_action.s()
-    # )
     sender.add_periodic_task(
         crontab(hour=1, minute=11), sig=stop_inactive_containers.s()
     )

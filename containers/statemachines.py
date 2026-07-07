@@ -95,11 +95,14 @@ class ActionSwitch:
             elif state == STATE_CREATED:
                 self.cm.start_created()
 
-            elif state == STATE_EXITED or state == STATE_TERMINATED:
+            elif state == STATE_EXITED:
                 # self.cm.delete_exited()
                 # self.cm.delete_success()
                 # self.cm.pull_deleted()
                 self.cm.start_exited()
+
+            elif state == STATE_TERMINATED:
+                self.cm.start_terminated()
 
             elif state == STATE_FAILED:
                 self.cm.delete_failed()
@@ -199,8 +202,14 @@ class ActionSwitch:
             self.cm.pull_deleted()
             self.cm.start_pulled()
 
-        elif state in (STATE_EXITED, STATE_TERMINATED):
+        elif state == STATE_EXITED:
             self.cm.delete_exited()
+            self.cm.delete_success()
+            self.cm.pull_deleted()
+            self.cm.start_pulled()
+
+        elif state == STATE_TERMINATED:
+            self.cm.delete_terminated()
             self.cm.delete_success()
             self.cm.pull_deleted()
             self.cm.start_pulled()
@@ -231,8 +240,12 @@ class ActionSwitch:
             self.cm.delete_exited()
             self.cm.delete_success()
 
-        elif state == STATE_EXITED or state == STATE_TERMINATED:
+        elif state == STATE_EXITED:
             self.cm.delete_exited()
+            self.cm.delete_success()
+
+        elif state == STATE_TERMINATED:
+            self.cm.delete_terminated()
             self.cm.delete_success()
 
         elif state == STATE_FAILED:

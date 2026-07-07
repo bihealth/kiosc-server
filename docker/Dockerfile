@@ -89,4 +89,4 @@ RUN chmod +x /usr/local/bin/docker-entrypoint.sh && \
     ln -s /usr/local/bin/docker-entrypoint.sh / # backwards compat
 ENTRYPOINT ["/usr/local/bin/docker-entrypoint.sh"]
 CMD ["asgi"]
-EXPOSE 8080/tcp
+EXPOSE 8000/tcp

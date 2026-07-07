@@ -82,3 +82,7 @@ Docker terms
     Docker Compose
         A program for running multiple containers so that they can interact with
         each other. Can be used to run Kiosc.
+
+    Docker Registry
+        A repository where Docker images can be uploaded to or downloaded from
+        using ``docker login``, ``docker push``, and ``docker pull`` commands.

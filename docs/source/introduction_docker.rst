@@ -90,6 +90,45 @@ Further reading
 
 - `<https://docs.docker.com/compose/gettingstarted/>`__
 
+Docker registries
+-----------------
+
+A Docker image can be either built from scratch or downloaded from a registry.
+Thus, a registry is a storage space from which Docker images are downloaded.
+The most popular registry is `Docker Hub <hub.docker.com>`__, which hosts the
+official Docker images for many projects, including the *hello-world* in the
+example above. By default, ``docker run <image name>`` will download the image
+from Docker hub if it's not already available locally. If you want to use an
+image from a different registry, you can do so by specifying the registry name
+along with the image, for example ``docker run quay.io/<image name>`` will use
+quay.io instead of Docker Hub.
+
+Some registries require authentication. Running ``docker login <registry name>``
+will prompt you to enter your credentials, which will be stored in a file in
+your home directory so that you won't have to enter them every time.
+
+If you build your own Docker image and want to make it available to others,
+you can upload it to a registry with the ``docker push <image name>`` command.
+Normally, before you can push an image, you must have an account on the registry
+and you need to tag the image in a special way which depends on the registry.
+In general, the steps to push an image to a registry are as follows::
+
+    # Log in to the registry (only the first time)
+    docker login <registry name>
+    # Tag the image with the registry name
+    docker image tag <existing image name> <registry name>/<image name>
+    # Push the image
+    docker push <registry name>/<image name>
+
+Starting from v0.6.0, Kiosc hosts its own Docker registry, so you can store your
+images privately. Head to the :ref:`custom registry chapter <apps_registry>` to
+learn how to use the Kiosc registry.
+
+Further reading
+^^^^^^^^^^^^^^^
+
+- `<https://docs.docker.com/get-started/introduction/build-and-push-first-image/>`__
+
 Conclusion
 ----------
 

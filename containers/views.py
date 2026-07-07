@@ -6,6 +6,11 @@ from urllib3.exceptions import NewConnectionError, MaxRetryError
 from urllib3.response import is_fp_closed
 from wsgiref.util import FileWrapper
 
+from django.conf import settings
+from django.contrib import messages
+from django.contrib.auth import get_user_model
+from django.contrib.auth.mixins import LoginRequiredMixin
+from django.db import transaction
 from django.http import (
     HttpResponse,
     HttpResponseBadRequest,
@@ -14,11 +19,6 @@ from django.http import (
     JsonResponse,
     StreamingHttpResponse,
 )
-from django.conf import settings
-from django.contrib import messages
-from django.contrib.auth import get_user_model
-from django.contrib.auth.mixins import LoginRequiredMixin
-from django.db import transaction
 from django.shortcuts import redirect, render
 from django.utils import timezone
 from django.urls import reverse
@@ -636,7 +636,11 @@ class ContainerRestartView(
 
 
 class KioscProxyView(ProxyView):
-    """Inheriting the ProxyView to adjust settings."""
+    """Inheriting the ProxyView to adjust settings.
+
+    This view is routed to the "Open App" button for containers. It dispatches
+    the request to the actual reverse proxy.
+    """
 
     rewrite = ((r'^/container/proxy/(?P<container>[a-f0-9-]+)/', '/'),)
 

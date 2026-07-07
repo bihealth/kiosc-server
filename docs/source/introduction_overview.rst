@@ -60,6 +60,10 @@ A typical workflow scheme is then as follows:
 5. Authorized users can stop, pause, restart, or delete containers, as well as
    checking their health status and logs
 
+Power users may also push Docker images directly to a private Docker registry
+hosted in Kiosc. In that case, the corresponding container is created
+automatically and step ``1.`` can be skipped.
+
 SODAR Universe
 --------------
 

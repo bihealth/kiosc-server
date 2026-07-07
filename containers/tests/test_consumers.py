@@ -176,8 +176,7 @@ class TestContainerWatcherConsumer(
         # We receive any existing ContainerLogEntries from the db.
         response = json.loads(await ws.receive_from(timeout=10))
         self.assertEqual(response['type'], 'static_logs')
-        self.assertIn('Pulling image', response['text'])
-        self.assertIn('Pulling image succeeded', response['text'])
+        self.assertIn('Using cached image', response['text'])
         self.assertIn('Starting', response['text'])
         self.assertIn('Container started successfully', response['text'])
 
@@ -227,7 +226,7 @@ class TestContainerWatcherConsumer(
 
         # Now we expect pulling and task messages from the channel layer, not
         # from the db
-        for i in range(6):
+        for i in range(5):
             response = json.loads(await ws.receive_from(timeout=10))
             self.assertEqual(response['type'], 'channel_logs')
 
@@ -236,8 +235,7 @@ class TestContainerWatcherConsumer(
         # And we expect the response to come from the DB
         response = json.loads(await ws.receive_from(timeout=10))
         self.assertEqual(response['type'], 'static_logs')
-        self.assertIn('Pulling image', response['text'])
-        self.assertIn('Pulling image succeeded', response['text'])
+        self.assertIn('Using cached image', response['text'])
         self.assertIn('Starting', response['text'])
         self.assertIn('Container started successfully', response['text'])
 
@@ -270,8 +268,7 @@ class TestContainerWatcherConsumer(
         # We receive any existing ContainerLogEntries from the db.
         response = json.loads(await ws.receive_from(timeout=10))
         self.assertEqual(response['type'], 'static_logs')
-        self.assertIn('Pulling image', response['text'])
-        self.assertIn('Pulling image succeeded', response['text'])
+        self.assertIn('Using cached image', response['text'])
         self.assertIn('Starting', response['text'])
         self.assertIn('Container started successfully', response['text'])
 
@@ -339,8 +336,7 @@ class TestContainerWatcherConsumer(
         # We receive any existing ContainerLogEntries from the db.
         response = json.loads(await ws.receive_from(timeout=10))
         self.assertEqual(response['type'], 'static_logs')
-        self.assertIn('Pulling image', response['text'])
-        self.assertIn('Pulling image succeeded', response['text'])
+        self.assertIn('Using cached image', response['text'])
         self.assertIn('Starting', response['text'])
         self.assertIn('Failed to start container', response['text'])
 
@@ -428,8 +424,7 @@ class TestContainerWatcherConsumerLive(
         # with the InMemoryChannelLayer backend they are not sent (https://channels.readthedocs.io/en/stable/topics/channel_layers.html#in-memory-channel-layer). Thus, we use a mock.
         _log_task.assert_has_calls(
             [
-                call('Pulling image sample-app-logging:testing ...'),
-                call('Pulling image succeeded'),
+                call('Using cached image for sample-app-logging:testing'),
                 call('Initializing the container...'),
                 call('Container initialized successfully.'),
                 call('Starting...'),
@@ -439,8 +434,7 @@ class TestContainerWatcherConsumerLive(
         _log_task.reset_mock()
         # WebDriverWait(logs_elem, 10).until(lambda el: el.text != '')
         # channel_logs = logs_elem.text
-        # self.assertIn('Pulling image', channel_logs)
-        # self.assertIn('Pulling image succeeded', channel_logs)
+        # self.assertIn('Using cached image', channel_logs)
         # self.assertIn('Starting', channel_logs)
         # self.assertIn('Container started successfully', channel_logs)
 

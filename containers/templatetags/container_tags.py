@@ -77,9 +77,7 @@ def get_container_last_errors(
     # We don't want duplicates, but we want to preserve insertion order,
     # so we use a dict
     failures = {}
-    for event in events:
-        if len(failures) >= limit:
-            break
+    for event in events[:limit]:
         event_status = event.status_changes.last().status_type
         if event_status == TL_STATUS_OK:
             break

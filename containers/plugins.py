@@ -233,10 +233,10 @@ class ProjectAppPlugin(
         if not container_states:
             return '0'
 
-        stats = []
+        stats = {}
         for el in container_states:
             if el['state'] in (STATE_RUNNING, STATE_RESTARTING, STATE_PULLING):
-                stats.append(str(el['count']) + ' running')
+                stats['running'] = stats.get('running', 0) + el['count']
             elif el['state'] in (
                 STATE_PAUSED,
                 STATE_TERMINATED,
@@ -244,15 +244,15 @@ class ProjectAppPlugin(
                 STATE_CREATED,
                 STATE_INITIAL,
             ):
-                stats.append(str(el['count']) + ' stopped')
+                stats['stopped'] = stats.get('stopped', 0) + el['count']
             elif el['state'] in (STATE_FAILED, STATE_DEAD):
-                stats.append(str(el['count']) + ' failed')
+                stats['failed'] = stats.get('failed', 0) + el['count']
             elif el['state'] in (STATE_DELETED, STATE_DELETING):
                 pass
             else:
-                stats.append(str(el['count']) + ' unknown')
+                stats['unknown'] = stats.get('unknown', 0) + el['count']
 
-        return ',</br>'.join(stats)
+        return ',</br>'.join(f'{count} {state}' for state, count in stats.items())
 
     def get_object_link(
         self, model_str: str, uuid: Union[str, UUID]

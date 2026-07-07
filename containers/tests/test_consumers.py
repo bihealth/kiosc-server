@@ -171,7 +171,7 @@ class TestContainerWatcherConsumer(
         self.assertTrue(connected)
 
         # 2a. We send the configuration: currently just the number of log lines.
-        await ws.send_to(text_data='20')
+        await ws.send_to(text_data='30')
 
         # We receive any existing ContainerLogEntries from the db.
         response = json.loads(await ws.receive_from(timeout=10))
@@ -263,7 +263,7 @@ class TestContainerWatcherConsumer(
         self.assertTrue(connected)
 
         # 2a. We send the configuration: currently just the number of log lines.
-        await ws.send_to(text_data='20')
+        await ws.send_to(text_data='30')
 
         # We receive any existing ContainerLogEntries from the db.
         response = json.loads(await ws.receive_from(timeout=10))
@@ -292,7 +292,7 @@ class TestContainerWatcherConsumer(
         t.join()
 
         # We get some residual daemon logs because it takes a while to stop the container
-        for i in range(60):
+        for i in range(90):
             response = json.loads(await ws.receive_from(timeout=10))
             if response['type'] == 'daemon_logs':
                 continue

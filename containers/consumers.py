@@ -267,13 +267,14 @@ class ContainerWatcherConsumer(WebsocketConsumer):
         have settimeout on it. To avoid missing the correct one, we try both."
         """
         cli = connect_docker()
-        # Send a status update immediately
-        msg = self._get_state(self.container, cli)
-        self.send(json.dumps(msg))
         # This outer loop is used to check the container state if the logs
         # are not available.
-        while not self.watch_signal.wait(2):
+        while not self.watch_signal.wait(4):
             try:
+                # Send a status update immediately
+                msg = self._get_state(self.container, cli)
+                self.send(json.dumps(msg))
+
                 logs_generator = cli.logs(
                     self.container.container_id,
                     tail=tail,
@@ -287,12 +288,13 @@ class ContainerWatcherConsumer(WebsocketConsumer):
                 for s in socks:
                     if not hasattr(s, 'settimeout'):
                         continue
-                    s.settimeout(10)
+                    s.settimeout(8)
 
+                # Send logs immediately, if available
                 self._send_logs(res)
 
                 # If the logs are available, we enter this inner loop
-                while not self.watch_signal.wait(5):
+                while not self.watch_signal.wait(4):
                     # First we send a status update
                     msg = self._get_state(self.container, cli)
                     self.send(json.dumps(msg))
@@ -343,10 +345,6 @@ class ContainerWatcherConsumer(WebsocketConsumer):
                     }
                     self.send(json.dumps(msg))
                     break
-                # The container is not running (yet), we simply send a status
-                # update and try again in a loop
-                msg = self._get_state(self.container, cli)
-                self.send(json.dumps(msg))
                 # Actually we also send an empty logs message to clear the
                 # initial "Loading" text.
                 msg = {

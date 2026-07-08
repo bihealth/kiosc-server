@@ -53,9 +53,9 @@ urlpatterns = (
         # User Profile URLs
         path('user/', include('userprofile.urls')),
         # Admin Alerts URLs
-        path('adminalerts/', include('adminalerts.urls')),
+        path('alerts/adm/', include('adminalerts.urls')),
         # App Alerts URLs
-        path('appalerts/', include('appalerts.urls')),
+        path('alerts/app/', include('appalerts.urls')),
         # Site Info URLs
         path('siteinfo/', include('siteinfo.urls')),
         # Container List URLs

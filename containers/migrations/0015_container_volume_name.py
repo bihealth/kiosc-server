@@ -14,6 +14,16 @@ class Migration(migrations.Migration):
             model_name='container',
             name='volume_name',
             field=models.UUIDField(
+                default=None,
+                help_text='Name of the Docker volume associated to the container',
+                null=True,
+                unique=True,
+            ),
+        ),
+        migrations.AlterField(
+            model_name='container',
+            name='volume_name',
+            field=models.UUIDField(
                 default=uuid.uuid4,
                 help_text='Name of the Docker volume associated to the container',
                 null=True,

@@ -56,7 +56,6 @@ class TunnelConsumer(WebsocketConsumer):
 
     def connect(self):
         """Upon connect, create internal web socket to tunnel target."""
-        self.accept()
         # Get DockerApp information for querying the port information.
         user = self.scope['user']
         container = Container.objects.get(
@@ -92,6 +91,7 @@ class TunnelConsumer(WebsocketConsumer):
             target=self.ws.run_forever, args=(), daemon=True
         )
         thread.start()
+        self.accept()
 
     def disconnect(self, close_code):
         """On disconnecting, disconnect the internal web socket."""

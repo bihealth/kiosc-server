@@ -4,11 +4,12 @@ Kiosc Changelog
 Changelog for the **Kiosc** Django app package.
 Loosely follows the `Keep a Changelog <http://keepachangelog.com/en/1.0.0/>`_ guidelines.
 
-Current
-=======
+v0.6.1 (2026-07-09)
+===================
 
 - Fix kiosc package version in the Docker image (#262)
 - Update admin alerts url to fix a bug which prevented accessing them (#232)
+- Fix bug in `TunnelConsumer` connect() method, which prevented websockets from being started (#263)
 
 v0.6.0 (2026-07-07)
 ===================

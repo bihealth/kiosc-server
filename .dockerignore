@@ -1,8 +1,5 @@
 .env
-.git/
-.gitattributes
 .github/
-.gitignore
 .venv/
 .vscode/
 Dockerfile

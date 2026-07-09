@@ -28,6 +28,7 @@ RUN utility/install_python.sh
 # Install extra system utilities
 RUN apt-get install -y \
         apt-utils \
+        git \
         postgresql-client \
         wget
 

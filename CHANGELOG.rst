@@ -4,6 +4,12 @@ Kiosc Changelog
 Changelog for the **Kiosc** Django app package.
 Loosely follows the `Keep a Changelog <http://keepachangelog.com/en/1.0.0/>`_ guidelines.
 
+Current
+=======
+
+- Fix kiosc package version in the Docker image (#262)
+- Update admin alerts url to fix a bug which prevented accessing them (#232)
+
 v0.6.0 (2026-07-07)
 ===================
 

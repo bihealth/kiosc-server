@@ -8,5 +8,5 @@ whitenoise==6.7.0
 
 # WSGI Handler
 gevent==24.10.3
-daphne==4.1.2
+daphne==4.2.2
 uvicorn==0.32.0

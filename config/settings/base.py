@@ -58,8 +58,7 @@ THIRD_PARTY_APPS = [
     'crispy_bootstrap4',
     'rules.apps.AutodiscoverRulesConfig',  # Django rules engine
     'djangoplugins',  # Django plugins
-    'pagedown',  # For markdown
-    'markupfield',  # For markdown
+    'martor',  # For markdown
     'rest_framework',  # For API views
     'knox',  # For token auth
     'social_django',  # For OIDC authentication
@@ -272,6 +271,25 @@ STORAGES = {
         'BACKEND': 'django.contrib.staticfiles.storage.StaticFilesStorage'
     },
 }
+
+# MARTOR CONFIGURATION FOR MARKDOWN
+# ------------------------------------------------------------------------------
+# NOTE: Setting CSRF_COOKIE_HTTPONLY to `False` is required for AJAX uploads
+# Choose your preferred theme: "bootstrap" or "semantic"
+MARTOR_THEME = 'bootstrap'
+MARTOR_ENABLE_LABEL = True
+MARTOR_ENABLE_CONFIGS = {
+    'imgur': 'false',
+    'mention': 'false',
+    'jquery': 'false',
+    'living': 'true',
+    'spellcheck': 'false',
+    'hljs': 'false',
+}
+# By default, martor loads bootstrap v5. We don't want that, so we supply an
+# alternative CSS file.
+MARTOR_ALTERNATIVE_CSS_FILE_THEME = 'projectroles/css/martor_theme.css'
+MARTOR_ENABLE_ADMIN_CSS = False
 
 # URL Configuration
 # ------------------------------------------------------------------------------

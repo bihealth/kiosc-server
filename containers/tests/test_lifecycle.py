@@ -237,6 +237,7 @@ class TestContainerVolumes(TestBase):
     def _check_exit_status(self, container, status):
         for i in range(5):
             container.refresh_from_db()
+            sync_container_state(container)
             if container.state == STATE_RUNNING:
                 time.sleep(1)
             else:

@@ -1,18 +1,18 @@
 # Setuptools
-setuptools>=80.9.0, <80.10
+setuptools>=82.0.1, <83.0
 
 # Packaging
-packaging>=25.0, <26.0
+packaging>=26.2, <27.0
 
 # Django
-django>=5.2.10, <6.0
+django>=5.2.15, <6.0
 
 # Configuration
-django-environ>=0.12.0, <0.13
+django-environ>=0.13.0, <0.14
 
 # Forms
-django-crispy-forms>=2.4, <2.5
-crispy-bootstrap4==2025.6
+django-crispy-forms>=2.6, <2.7
+crispy-bootstrap4==2026.2
 
 # Models
 django-model-utils>=5.0.0, <5.1
@@ -27,17 +27,21 @@ psycopg2-binary>=2.9.11, <2.10
 python-slugify>=8.0.4, <8.1
 
 # SVG icon support
-# NOTE: v0.3 crashes, see issue
-django-iconify==0.4.1
+django-iconify>=0.5.0, <0.6
 
 # OpenID Connect (OIDC) authentication support
-social-auth-app-django>=5.6.0, <5.7
+social-auth-app-django>=5.9.0, <5.10
+
+# Login security
+django-axes[ipware]>=8.3.1, <8.4
 
 # Online documentation via django-docs
-docutils==0.21.2
-Sphinx==8.2.3
+# NOTE: Sphinx v9.0 needs docutils <0.23
+docutils==0.22.4
+# NOTE: Sphinx v9.1+ requires Python 3.12+
+Sphinx==9.0.4
 django-docs==0.3.3
-sphinx-rtd-theme==3.0.2
+sphinx-rtd-theme==3.1.0
 
 # Versioning
 versioneer==0.29
@@ -46,64 +50,62 @@ versioneer==0.29
 # Project app imports
 ######################
 
-# Django-plugins (with Django v3.0+ support)
+# Django-plugins (with Django v4.2 support)
 django-plugins-bihealth>=0.5.2, <0.6
 
 # Rules for permissions
 rules>=3.5, <3.6
 
 # REST framework
-djangorestframework>=3.16.1, <3.17
+djangorestframework>=3.17.1, <3.18
 
 # Keyed list addon for DRF
 drf-keyed-list-bihealth>=0.2.1, <0.3
 
 # Token authentication
-django-rest-knox>=5.0.2, <5.1
+django-rest-knox>=5.0.4, <5.1
 
 # Markdown field support
-markdown==3.9
+markdown==3.10.2
 django-markupfield>=2.0.1, <2.1
-django-pagedown>=2.2.1, <2.3
-mistune>=3.1.4, <3.2
+mistune>=3.2.1, <3.3
+martor>=1.8.1, <1.9
 
 # Database file storage for filesfolders
 django-db-file-storage==0.5.6.1
 
 # Celery dependency
-redis>=7.0.0
+redis>=8.0.0
 
 # Backround Jobs requirements
-celery>=5.5.3, <5.6
+celery>=5.6.3, <5.7
 
 # Django autocomplete light (DAL)
-# NOTE: 3.9.5 causes crash with Whitenoise (see issue #1224)
-django-autocomplete-light==3.12.1
+django-autocomplete-light>=5.0.0, <5.1
 
 # SODAR Core
-django-sodar-core==1.3.2
+django-sodar-core==1.4.1
 
 # Docker
-docker==7.1.0
+docker==7.2.0
 
 # Django reverse proxy
 django-revproxy==0.13.0
-#-e git+https://github.com/TracyWebTech/django-revproxy.git@9517fc26120e93e1a947f55b9dc571e68178efc0#egg=django-revproxy
 
 # State machine
-python-statemachine==2.5.0
+python-statemachine==3.2.0
 
 # Django Channels
 channels==4.3.2
 channels_redis==4.3.0
-service_identity==24.2.0
+service_identity==26.1.0
 
 # Websockets
 websockets==16.0
 websocket-client==1.9.0
 
 # Django redis
-django-redis==6.0.0
+django-redis==7.0.0
 
 # Requests
-requests==2.33.0
+requests==2.34.2

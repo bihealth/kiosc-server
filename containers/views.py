@@ -67,6 +67,9 @@ from containers.models import (
     STATE_RUNNING,
     STATE_DELETED,
     STATE_INITIAL,
+    STATE_EXITED,
+    STATE_CREATED,
+    STATE_TERMINATED,
     LOG_LEVEL_ERROR,
     LOG_LEVEL_INFO,
     MASKED_KEYWORD,
@@ -643,6 +646,7 @@ class KioscProxyView(ProxyView):
     """
 
     rewrite = ((r'^/container/proxy/(?P<container>[a-f0-9-]+)/', '/'),)
+    suppress_empty_body = True
 
     def dispatch(self, request, path):
         """Override the dispatch method.
@@ -770,9 +774,60 @@ class ReverseProxyView(
         else:
             tl_event = None
 
-        _redirect = redirect(request.headers.get('Referer', reverse('home')))
+        _redirect = redirect(
+            reverse(
+                'containers:detail',
+                kwargs={'container': container.sodar_uuid},
+            )
+        )
+        # XXX: Maybe we should use a custom header instead of custom return code
+        _proxylobby = render(
+            request,
+            'containers/container_proxylobby.html',
+            {'object': container, 'waiting_phrases': LOBBY_WAITING_PHRASES},
+            status=299,
+        )
 
-        if container.state not in (STATE_RUNNING, STATE_PULLING):
+        if settings.KIOSC_NETWORK_MODE == 'host':
+            if container.host_port:
+                self.upstream = f'http://localhost:{container.host_port}'
+            else:
+                if tl_event:
+                    tl_event.set_status(
+                        TL_STATUS_FAILED,
+                        'The host port is not set, please update the container.',
+                    )
+                messages.error(request, 'Host port not set.')
+                return _redirect
+        else:
+            self.upstream = (
+                f'http://{container.container_ip}:{container.container_port}'
+            )
+
+        if container.state in (
+            STATE_CREATED,
+            STATE_INITIAL,
+            STATE_EXITED,
+            STATE_TERMINATED,
+        ):
+            bg_job = BackgroundJob.objects.create(
+                name='Start container',
+                project=container.project,
+                job_type=ContainerBackgroundJob.spec_name,
+                user=request.user,
+            )
+            job = ContainerBackgroundJob.objects.create(
+                action=ACTION_START,
+                project=container.project,
+                container=container,
+                bg_job=bg_job,
+            )
+            container_task.apply_async(
+                kwargs={'job_id': job.id}, countdown=CELERY_SUBMIT_COUNTDOWN
+            )
+            return _proxylobby
+
+        elif container.state not in (STATE_RUNNING, STATE_PULLING):
             if tl_event:
                 tl_event.set_status(
                     TL_STATUS_FAILED,
@@ -782,27 +837,6 @@ class ReverseProxyView(
                 request, f'Container "{container.title}" not running.'
             )
             return _redirect
-
-        if settings.KIOSC_NETWORK_MODE == 'host':
-            if container.host_port:
-                upstream = f'http://localhost:{container.host_port}'
-
-            else:
-                if tl_event:
-                    tl_event.set_status(
-                        TL_STATUS_FAILED,
-                        'The host port is not set, please update the container.',
-                    )
-                messages.error(request, 'Host port not set.')
-                return _redirect
-
-        else:
-            upstream = (
-                f'http://{container.container_ip}:{container.container_port}'
-            )
-
-        self.upstream = upstream
-        self.suppress_empty_body = True
 
         try:
             res = super().dispatch(request, *args, **kwargs)
@@ -819,13 +853,7 @@ class ReverseProxyView(
                     'The app is not ready to take connections, please wait a moment.',
                 )
             # The upstream app in the container is not ready yet
-            # XXX: Maybe we should use a custom header instead of custom return code
-            return render(
-                request,
-                'containers/container_proxylobby.html',
-                {'object': container, 'waiting_phrases': LOBBY_WAITING_PHRASES},
-                status=299,
-            )
+            return _proxylobby
         except NewConnectionError as e:
             logger.error(f'Connection error in proxy: {e}')
             if tl_event:

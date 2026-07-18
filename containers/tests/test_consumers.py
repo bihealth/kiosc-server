@@ -226,9 +226,23 @@ class TestContainerWatcherConsumer(
 
         # Now we expect pulling and task messages from the channel layer, not
         # from the db
-        for i in range(5):
+        expected_count = 0
+        residual_count = 0
+        while expected_count < 5 and residual_count < 5:
             response = json.loads(await ws.receive_from(timeout=10))
-            self.assertEqual(response['type'], 'channel_logs')
+            # We may get some residual container_state and daemon_logs if the
+            # container doesn't start immediately
+            if response['type'] == 'channel_logs':
+                expected_count += 1
+            else:
+                self.assertIn(
+                    response['type'], ('container_state', 'daemon_logs')
+                )
+                residual_count += 1
+        self.assertLess(residual_count, 5, 'Container did not start')
+        self.assertEqual(
+            expected_count, 5, 'Wrong number of pulling and task messages'
+        )
 
         # Now we try to trick the server by re-sending the text data
         await ws.send_to(text_data='20')
@@ -292,7 +306,7 @@ class TestContainerWatcherConsumer(
         t.join()
 
         # We get some residual daemon logs because it takes a while to stop the container
-        for i in range(90):
+        for i in range(150):
             response = json.loads(await ws.receive_from(timeout=10))
             if response['type'] == 'daemon_logs':
                 continue

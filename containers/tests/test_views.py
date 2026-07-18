@@ -23,7 +23,9 @@ from containers.models import (
     ACTION_DELETE,
     ACTION_PAUSE,
     ACTION_UNPAUSE,
+    STATE_FAILED,
     STATE_INITIAL,
+    STATE_EXITED,
     STATE_RUNNING,
     STATE_PULLING,
     STATE_PAUSED,
@@ -1087,7 +1089,13 @@ class TestReverseProxyView(TestBase):
                     },
                 ),
             )
-            self.assertRedirects(response, reverse('home'))
+            self.assertRedirects(
+                response,
+                reverse(
+                    'containers:detail',
+                    kwargs={'container': self.container.sodar_uuid},
+                ),
+            )
 
     @override_settings(KIOSC_NETWORK_MODE='host')
     def test_get_with_path(self):
@@ -1117,9 +1125,41 @@ class TestReverseProxyView(TestBase):
             self.assertIn('nginx', response.headers['server'])
             self.assertIn('404 Not Found', response.text)
 
-    def test_get_not_running(self):
-        """Test GET with container not running or pulling"""
+    def test_get_initial(self):
+        """Test GET with container in initial state"""
         self.assertEqual(self.container.state, STATE_INITIAL)
+        with self.login(self.superuser):
+            response = self.client.get(
+                reverse(
+                    'containers:proxy',
+                    kwargs={
+                        'container': str(self.container.sodar_uuid),
+                        'path': self.container.container_path,
+                    },
+                ),
+            )
+            self.assertEqual(response.status_code, 299)
+
+    def test_get_exited(self):
+        """Test GET with container in exited state"""
+        self.container.state = STATE_EXITED
+        self.container.save()
+        with self.login(self.superuser):
+            response = self.client.get(
+                reverse(
+                    'containers:proxy',
+                    kwargs={
+                        'container': str(self.container.sodar_uuid),
+                        'path': self.container.container_path,
+                    },
+                ),
+            )
+            self.assertEqual(response.status_code, 299)
+
+    def test_get_failed(self):
+        """Test GET with container in failed state"""
+        self.container.state = STATE_FAILED
+        self.container.save()
         with self.login(self.superuser):
             response = self.client.get(
                 reverse(
@@ -1130,7 +1170,13 @@ class TestReverseProxyView(TestBase):
                     },
                 ),
             )
-            self.assertRedirects(response, reverse('home'))
+            self.assertRedirects(
+                response,
+                reverse(
+                    'containers:detail',
+                    kwargs={'container': self.container.sodar_uuid},
+                ),
+            )
             messages = list(get_messages(response.wsgi_request))
             self.assertEqual(len(messages), 1)
             self.assertEqual(

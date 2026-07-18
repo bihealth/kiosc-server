@@ -4,6 +4,12 @@ Kiosc Changelog
 Changelog for the **Kiosc** Django app package.
 Loosely follows the `Keep a Changelog <http://keepachangelog.com/en/1.0.0/>`_ guidelines.
 
+Current
+=======
+
+- Start container on demand when accessed in state INITIAL, EXITED, or TERMINATED (#268)
+- Failing to access a container will redirect to the container details rather than to the HTTP referer (#268)
+
 v0.6.1 (2026-07-09)
 ===================
 

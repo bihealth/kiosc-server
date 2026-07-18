@@ -2,7 +2,6 @@ from typing import Optional
 import uuid
 
 from django.conf import settings
-from django.core.exceptions import ValidationError
 from django.db import models
 from django.db.models import JSONField, Q, QuerySet
 from django.urls import reverse
@@ -162,12 +161,16 @@ class ContainerTemplateSiteManager(models.Manager):
     """Manager for custom queries on container site templates"""
 
     def find(
-        self, search_terms: list[str], keywords: Optional[dict] = None
+        self,
+        search_terms: list[str],
+        projects: QuerySet[Project] = Project.objects.all(),
+        keywords: Optional[dict] = None,
     ) -> QuerySet:
         """
         Return container templates matching the query.
 
         :param search_terms: Search terms (list of strings)
+        :param projects: QuerySet of projects where the terms are searched (not used)
         :param keywords: Optional search keywords as key/value pairs (dict)
         :return: QuerySet of Container objects
         """
@@ -229,12 +232,16 @@ class ContainerTemplateProjectManager(models.Manager):
     """Manager for custom queries on container project templates"""
 
     def find(
-        self, search_terms: list[str], keywords: Optional[dict] = None
+        self,
+        search_terms: list[str],
+        projects: QuerySet[Project] = Project.objects.all(),
+        keywords: Optional[dict] = None,
     ) -> QuerySet:
         """
         Return container templates matching the query.
 
         :param search_terms: Search terms (list of strings)
+        :param projects: QuerySet of projects where the terms are searched
         :param keywords: Optional search keywords as key/value pairs (dict)
         :return: QuerySet of Container objects
         """
@@ -248,17 +255,13 @@ class ContainerTemplateProjectManager(models.Manager):
                 term_query.add(Q(sodar_uuid=t), Q.OR)
             except ValueError:
                 pass
-        if keywords and 'project' in keywords:
-            try:
-                project = Project.objects.get(sodar_uuid=keywords['project'])
-                term_query.add(
-                    Q(project__full_title__startswith=project.full_title), Q.AND
-                )
-            except Project.DoesNotExist:
-                return ContainerTemplateProject.objects.none()
-            except ValidationError:
-                return ContainerTemplateProject.objects.none()
-        return super().get_queryset().filter(term_query).order_by('title')
+        return (
+            super()
+            .get_queryset()
+            .filter(project__in=projects)
+            .filter(term_query)
+            .order_by('title')
+        )
 
 
 class ContainerTemplateProject(ContainerTemplateBase):

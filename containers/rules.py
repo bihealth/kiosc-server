@@ -104,5 +104,6 @@ rules.add_perm(
     'containers.view_logs',
     pr_rules.is_project_owner
     | pr_rules.is_project_delegate
-    | pr_rules.is_project_contributor,
+    | pr_rules.is_project_contributor
+    | pr_rules.is_project_guest,
 )

@@ -5,6 +5,7 @@ from pathlib import Path
 import uuid
 
 from django.conf import settings
+from django.contrib.auth import get_user_model
 from django.utils import dateformat
 from django.test import LiveServerTestCase
 from test_plus.test import TestCase
@@ -44,6 +45,8 @@ from projectroles.tests.base import (
 )
 from timeline.models import TL_STATUS_OK
 
+
+User = get_user_model()
 
 PROJECT_ROLE_OWNER = SODAR_CONSTANTS['PROJECT_ROLE_OWNER']
 APP_NAME = 'containers'
@@ -112,6 +115,28 @@ class TestContainerCreationMixin:
         )
         tl_event.set_status(status_type, status_description)
         return tl_event
+
+
+class TestSearchMixin:
+    """Mixin for container and logs search"""
+
+    def _get_search_results(self, user: User, data: dict):
+        """Get search results"""
+        with self.login(user):
+            res = self.client.post(
+                reverse('projectroles:ajax_search'),
+                {
+                    'plugin': 'containers',
+                    'keywords': '{}',
+                    **data,
+                },
+            )
+        self.assertEqual(res.status_code, 200)
+        data = res.json()
+        self.assertIsNone(data['error'])
+        self.assertEqual(data['results'][0]['category'], 'containers')
+        self.assertEqual(data['results'][1]['category'], 'logs')
+        return data['results'][0]['rows'], data['results'][1]['rows']
 
 
 class TestBase(TestContainerCreationMixin, TestCase):

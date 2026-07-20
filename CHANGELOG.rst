@@ -7,6 +7,13 @@ Loosely follows the `Keep a Changelog <http://keepachangelog.com/en/1.0.0/>`_ gu
 Current
 =======
 
+- Implement search for log entries from the Docker daemon (#269)
+- Add projects keyword for find() model manager method in Container, ContainerTemplateSite, ContainerTemplateProject, ContainerBackgroundJob, ContainerLogEntry (#269)
+- Remove sync_to_async monkey patch (#269)
+- Use whitenoise backend for static files also in development (#269)
+- Reorganize Django settings (#269)
+- Upgrade SODAR Core to v1.4.2 (#269)
+- Allow project guests to see container logs (#269)
 - Start container on demand when accessed in state INITIAL, EXITED, or TERMINATED (#268)
 - Failing to access a container will redirect to the container details rather than to the HTTP referer (#268)
 

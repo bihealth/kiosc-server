@@ -15,6 +15,14 @@ LABEL org.opencontainers.image.source=https://github.com/bihealth/kiosc-server
 ADD https://github.com/ufoscout/docker-compose-wait/releases/download/2.12.1/wait /usr/local/bin/wait
 RUN chmod +x /usr/local/bin/wait
 
+# Install extra system utilities
+RUN apt-get -y update
+RUN apt-get install -y \
+        apt-utils \
+        git \
+        postgresql-client \
+        wget
+
 # Copy the project files.
 COPY . .
 
@@ -24,13 +32,6 @@ RUN utility/install_postgres.sh
 RUN utility/install_redis.sh
 RUN utility/install_ldap_dependencies.sh
 RUN utility/install_python.sh
-
-# Install extra system utilities
-RUN apt-get install -y \
-        apt-utils \
-        git \
-        postgresql-client \
-        wget
 
 RUN apt-get clean autoclean && \
     apt-get autoremove --yes && \

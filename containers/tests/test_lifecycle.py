@@ -266,9 +266,9 @@ class TestContainerVolumes(TestBase):
         # Test from the daemon
         for container in self.cli.containers():
             if container['Id'] == self.container.container_id:
-                for x in self.cli.containers(all=True):
-                    if x['Id'] == self.container.container_id:
-                        print(x)
+                # for x in self.cli.containers(all=True):
+                #     if x['Id'] == self.container.container_id:
+                #         print(x)
                 self.assertEqual(container['State'], STATE_RUNNING)
                 for mount in container['Mounts']:
                     if (

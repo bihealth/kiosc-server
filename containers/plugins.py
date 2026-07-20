@@ -187,12 +187,10 @@ class ProjectAppPlugin(
                         'containers.view_container', item.project
                     ):
                         continue
-                    project_value = (item.project.title,)
-                    project_url = (
-                        reverse(
-                            'projectroles:detail',
-                            kwargs={'project': item.project.sodar_uuid},
-                        ),
+                    project_value = item.project.title
+                    project_url = reverse(
+                        'projectroles:detail',
+                        kwargs={'project': item.project.sodar_uuid},
                     )
                     if isinstance(item, Container):
                         container_url = reverse(
@@ -207,7 +205,7 @@ class ProjectAppPlugin(
                             },
                         )
                 case _:
-                    logger.debug(f'Unexpected search result: {item}')
+                    logger.error(f'Unexpected search result: {item}')
                     continue
             rows.append(
                 [
@@ -238,14 +236,11 @@ class ProjectAppPlugin(
         **kwargs: str,
     ) -> list[PluginSearchResult]:
         rows = []
-        searched_containers = set()
         for item in items:
             if not user.has_perm(
                 'containers.view_logs', item.container.project
             ):
                 continue
-            if item.container.container_id:
-                searched_containers.add(item.container)
             rows.append(
                 [
                     PluginSearchResultCell(
@@ -273,7 +268,9 @@ class ProjectAppPlugin(
                 ]
             )
         cli = connect_docker()
-        for container in searched_containers:
+        for container in Container.objects.exclude(container_id=None):
+            if not user.has_perm('containers.view_logs', container.project):
+                continue
             try:
                 logs = cli.logs(container.container_id, timestamps=True)
             except (docker.errors.NotFound, docker.errors.NullResource) as ex:

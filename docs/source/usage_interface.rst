@@ -107,9 +107,6 @@ search box along with an explanation of what they do.
   search all *containers* with "proteomics" in the title, description, or
   repository
 
-``seapiper type:containerbackgroundjob``
-  search all *container background jobs* related to "seapiper" containers
-
 ``seapiper type:containerlogentry``
   search all *container log entries* containing the string "seapiper"
 
@@ -117,5 +114,15 @@ search box along with an explanation of what they do.
   search for errors in log entries for the project with UUID
   ``0f0556cf-0e9f-4923-b2b9-49e573b893f0``
 
+``shiny seapiper type:containertemplate``
+  search for container templates containing either shiny or seapiper in the
+  title, description, or repository
+
+``"starting app" type:containerlogentry``
+  search for logs containing the string "starting app" (the quotes are needed
+  because the search string contains a space)
+
 For complex searches involving multiple terms you can press the *Advanced
-Search* button to the left of the search box.
+Search* button to the left of the search box. In that case, enter one search
+term per line (no need to quote them), and add the keywords in the boxes at the
+bottom.

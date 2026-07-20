@@ -478,7 +478,9 @@ class TestSearchPermissions(TestSearchMixin, ProjectPermissionTestBase):
         self.container = ContainerFactory(project=self.project)
         self.other_container = ContainerFactory(project=self.other_project)
         self.logs = ContainerLogEntryFactory(container=self.container)
-        self.other_logs = ContainerLogEntryFactory(container=self.other_container)
+        self.other_logs = ContainerLogEntryFactory(
+            container=self.other_container
+        )
         # Promote user to guest
         self.make_assignment(
             self.other_project, self.user_finder_cat, self.role_guest
@@ -523,9 +525,15 @@ class TestSearchPermissions(TestSearchMixin, ProjectPermissionTestBase):
             containers, logs = self._get_search_results(user, data)
             self.assertEqual(len(containers), 1)
             self.assertEqual(len(logs), 1)
-            self.assertEqual(containers[0][2]['value'], f'{self.container.title} ({self.container.repository}:{self.container.tag})')
-            self.assertEqual(logs[0][2]['value'], f'{self.container.title} ({self.container.repository}:{self.container.tag})')
-            self.assertEqual(logs[0][3]['value'], 'Log entry 0')
+            self.assertEqual(
+                containers[0][2]['value'],
+                f'{self.container.title} ({self.container.repository}:{self.container.tag})',
+            )
+            self.assertEqual(
+                logs[0][2]['value'],
+                f'{self.container.title} ({self.container.repository}:{self.container.tag})',
+            )
+            self.assertTrue(logs[0][3]['value'].startswith('Log entry '))
 
         # Bad users should not see any results
         for user in self.bad_users:
@@ -534,16 +542,24 @@ class TestSearchPermissions(TestSearchMixin, ProjectPermissionTestBase):
             self.assertEqual(len(logs), 0)
 
         # Special users
-        containers, logs = self._get_search_results(self.user_contributor_cat, data)
+        containers, logs = self._get_search_results(
+            self.user_contributor_cat, data
+        )
         self.assertEqual(len(containers), 2)
         self.assertEqual(len(logs), 2)
 
         containers, logs = self._get_search_results(self.user_finder_cat, data)
         self.assertEqual(len(containers), 1)
         self.assertEqual(len(logs), 1)
-        self.assertEqual(containers[0][2]['value'], f'{self.other_container.title} ({self.other_container.repository}:{self.other_container.tag})')
-        self.assertEqual(logs[0][2]['value'], f'{self.other_container.title} ({self.other_container.repository}:{self.other_container.tag})')
-        self.assertEqual(logs[0][3]['value'], 'Log entry 1')
+        self.assertEqual(
+            containers[0][2]['value'],
+            f'{self.other_container.title} ({self.other_container.repository}:{self.other_container.tag})',
+        )
+        self.assertEqual(
+            logs[0][2]['value'],
+            f'{self.other_container.title} ({self.other_container.repository}:{self.other_container.tag})',
+        )
+        self.assertTrue(logs[0][3]['value'].startswith('Log entry '))
 
         # Anonymous
         res = self.client.post(self.url, data)

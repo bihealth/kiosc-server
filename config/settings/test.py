@@ -73,6 +73,13 @@ TEMPLATES[0]['OPTIONS']['loaders'] = [
     ]
 ]
 
+# STATIC FILES
+# ------------------------------------------------------------------------------
+# The whitenoise backend breaks the websocket tests
+STORAGES['staticfiles']['BACKEND'] = (
+    'django.contrib.staticfiles.storage.StaticFilesStorage'
+)
+
 # Django REST framework
 # ------------------------------------------------------------------------------
 

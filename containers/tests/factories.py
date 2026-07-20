@@ -6,13 +6,13 @@ from projectroles.constants import SODAR_CONSTANTS
 from projectroles.models import Project
 
 from containers.models import (
-    Container,
-    STATE_INITIAL,
-    ContainerBackgroundJob,
     ACTION_START,
-    ContainerLogEntry,
+    STATE_INITIAL,
     LOG_LEVEL_INFO,
     PROCESS_OBJECT,
+    Container,
+    ContainerBackgroundJob,
+    ContainerLogEntry,
 )
 
 

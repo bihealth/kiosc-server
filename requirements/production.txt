@@ -1,12 +1,8 @@
 # Pro-tip: Try not to put anything here. Avoid dependencies in
-#	production that aren't in development.
+# production that aren't in development.
 -r base.txt
+-r ldap.txt
 
-
-# Whitenoise for static files
-whitenoise==6.7.0
-
-# WSGI Handler
-gevent==24.10.3
-daphne==4.1.2
-uvicorn==0.32.0
+# Sentry (not configured yet)
+# TODO: configure Sentry/GlitchTip
+sentry-sdk==2.66.0

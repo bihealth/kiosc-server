@@ -4,34 +4,32 @@ set -euo pipefail
 
 # Commands:
 #
-#   asgi            -- run daphne with Django ASGI
-#   celeryd         -- run celery worker
-#   celerybeat      -- run celerybeat daemon
+#   asgi              -- run uvicorn to serve the ASGI application
+#   celeryd           -- run celery worker
+#   celerybeat        -- run celerybeat daemon
 #
 # Environment Variables:
 #
-#   APP_DIR         -- path to application directory
-#                      default: "/usr/src/app"
-#   CELERY_QUEUES   -- argument for Celery queues
-#                      default: "default,query,import" (all)
-#   CELERY_WORKERS  -- celery concurrency/process count
-#                      default: "8"
+#   APP_DIR           -- path to application directory
+#                        default: "/usr/src/app"
+#   CELERY_QUEUES     -- argument for Celery queues
+#                        default: "default,query,import" (all)
+#   CELERY_WORKERS    -- celery concurrency/process count
+#                        default: "8"
 #
-#   NO_WAIT         -- skip waiting for servers
-#                      default: "0"
-#   WAIT_HOSTS      -- hosts to wait for with `wait`
-#                      default: "postgres:5432, redis:6379"
+#   NO_WAIT           -- skip waiting for servers
+#                        default: "0"
+#   WAIT_HOSTS        -- hosts to wait for with `wait`
+#                        default: "postgres:5432, redis:6379"
 #
-#   HTTP_HOST       -- host to listen on
-#                      default: 0.0.0.0
-#   HTTP_PORT       -- port
-#                      default: 8000
-#   LOG_LEVEL       -- logging verbosity
-#                      default: info
-#   DAPHNE_TIMEOUT  -- timeout for daphne workers in seconds
-#                      default: 600
-#   UVICORN_WORKERS -- number of workers for uvicorn
-#                      default: 4
+#   HTTP_HOST         -- host to listen on
+#                        default: 0.0.0.0
+#   HTTP_PORT         -- port
+#                        default: 8000
+#   LOG_LEVEL         -- logging verbosity
+#                        default: info
+#   UVICORN_WORKERS   -- number of uvicorn workers (process-based parallelism)
+#                        default: 8
 
 APP_DIR=${APP_DIR-/usr/src/app}
 CELERY_QUEUES=${CELERY_QUEUES-default,query,import}
@@ -42,8 +40,7 @@ export PYTHONUNBUFFERED=${PYTHONUNBUFFERED-1}
 HTTP_HOST=${HTTP_HOST-0.0.0.0}
 HTTP_PORT=${HTTP_PORT-8000}
 LOG_LEVEL=${LOG_LEVEL-info}
-DAPHNE_TIMEOUT=${DAPHNE_TIMEOUT-600}
-UVICORN_WORKERS=${UVICORN_WORKERS-4}
+UVICORN_WORKERS=${UVICORN_WORKERS-8}
 
 if [[ "$NO_WAIT" -ne 1 ]]; then
   /usr/local/bin/wait

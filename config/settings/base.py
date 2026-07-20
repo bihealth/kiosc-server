@@ -155,13 +155,34 @@ MANAGERS = ADMINS
 
 # DATABASE CONFIGURATION
 # ------------------------------------------------------------------------------
-# See: https://docs.djangoproject.com/en/dev/ref/settings/#databases
 # Uses django-environ to accept uri format
+# Raises ImproperlyConfigured exception if DATABASE_URL not in os.environ
+# See: https://docs.djangoproject.com/en/dev/ref/settings/#databases
 # See: https://django-environ.readthedocs.io/en/latest/#supported-types
-DATABASES = {'default': env.db('DATABASE_URL', default='postgres:///kiosc')}
+DATABASES = {'default': env.db('DATABASE_URL')}
 DATABASES['default']['ATOMIC_REQUESTS'] = False
 
 DEFAULT_AUTO_FIELD = 'django.db.models.AutoField'
+
+# CACHING
+# ------------------------------------------------------------------------------
+
+REDIS_LOCATION = '{host}/0'.format(
+    host=env.str('REDIS_URL', default='redis://127.0.0.1:6379')
+)
+
+# Heroku URL does not pass the DB number, so we parse it in
+# http://niwinz.github.io/django-redis/latest/#_memcached_exceptions_behavior
+CACHES = {
+    'default': {
+        'BACKEND': 'django_redis.cache.RedisCache',
+        'LOCATION': REDIS_LOCATION,
+        'OPTIONS': {
+            'CLIENT_CLASS': 'django_redis.client.DefaultClient',
+            'IGNORE_EXCEPTIONS': True,  # mimics memcache behavior
+        },
+    }
+}
 
 # GENERAL CONFIGURATION
 # ------------------------------------------------------------------------------
@@ -196,8 +217,13 @@ TEMPLATES = [
         'OPTIONS': {
             'debug': DEBUG,
             'loaders': [
-                'django.template.loaders.filesystem.Loader',
-                'django.template.loaders.app_directories.Loader',
+                (
+                    'django.template.loaders.cached.Loader',
+                    [
+                        'django.template.loaders.filesystem.Loader',
+                        'django.template.loaders.app_directories.Loader',
+                    ],
+                )
             ],
             'context_processors': [
                 'django.template.context_processors.debug',
@@ -255,6 +281,11 @@ STATICFILES_FINDERS = [
     'django.contrib.staticfiles.finders.AppDirectoriesFinder',
 ]
 
+# Use Whitenoise to serve static files
+# See: https://whitenoise.readthedocs.io/
+MIDDLEWARE += ['whitenoise.middleware.WhiteNoiseMiddleware']
+
+
 # MEDIA CONFIGURATION
 # ------------------------------------------------------------------------------
 MEDIA_ROOT = str(APPS_DIR('media'))
@@ -268,7 +299,7 @@ STORAGES = {
         'BACKEND': 'db_file_storage.storage.DatabaseFileStorage',
     },
     'staticfiles': {
-        'BACKEND': 'django.contrib.staticfiles.storage.StaticFilesStorage'
+        'BACKEND': 'whitenoise.storage.CompressedManifestStaticFilesStorage',
     },
 }
 
@@ -337,14 +368,10 @@ LOGIN_URL = 'login'
 AUTOSLUG_SLUGIFY_FUNCTION = 'slugify.slugify'
 
 # Location of root django.contrib.admin URL, use {% url 'admin:index' %}
-ADMIN_URL = 'admin/'
+ADMIN_URL = env('DJANGO_ADMIN_URL', default='admin')
 
 # Celery configuration (for background jobs)
 # ------------------------------------------------------------------------------
-
-REDIS_LOCATION = '{host}/0'.format(
-    host=env.str('REDIS_URL', default='redis://127.0.0.1:6379')
-)
 
 if USE_TZ:
     # http://docs.celeryproject.org/en/latest/userguide/configuration.html#std:setting-timezone

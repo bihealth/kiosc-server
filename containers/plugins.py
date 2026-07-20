@@ -1,8 +1,11 @@
 """Plugins for the containers app"""
 
+from datetime import datetime
 from typing import Optional, Union
 from uuid import UUID
 import logging
+
+import docker
 
 # Projectroles dependency
 from django.contrib.auth import get_user_model
@@ -37,6 +40,7 @@ from containers.models import (
 )
 from containers.urls import urlpatterns
 from containers.views import ContainerModifyMixin
+from containers.statemachines import connect_docker
 
 from containertemplates.models import (
     ContainerTemplateSite,
@@ -160,6 +164,156 @@ class ProjectAppPlugin(
             'align': 'center',
         },
     }
+
+    @classmethod
+    def _get_container_search_results(
+        cls,
+        items: list,
+        user: User,
+        **kwargs: str,
+    ) -> list[PluginSearchResult]:
+        rows = []
+        for item in items:
+            type_name = item.__class__.__name__
+            match item:
+                case ContainerTemplateSite():
+                    project_value = project_url = None
+                    container_url = reverse(
+                        'containertemplates:site-detail',
+                        kwargs={'containertemplatesite': item.sodar_uuid},
+                    )
+                case Container() | ContainerTemplateProject():
+                    if not user.has_perm(
+                        'containers.view_container', item.project
+                    ):
+                        continue
+                    project_value = (item.project.title,)
+                    project_url = (
+                        reverse(
+                            'projectroles:detail',
+                            kwargs={'project': item.project.sodar_uuid},
+                        ),
+                    )
+                    if isinstance(item, Container):
+                        container_url = reverse(
+                            'containers:detail',
+                            kwargs={'container': item.sodar_uuid},
+                        )
+                    elif isinstance(item, ContainerTemplateProject):
+                        container_url = reverse(
+                            'containertemplates:project-detail',
+                            kwargs={
+                                'containertemplateproject': item.sodar_uuid
+                            },
+                        )
+                case _:
+                    logger.debug(f'Unexpected search result: {item}')
+                    continue
+            rows.append(
+                [
+                    PluginSearchResultCell(
+                        value=type_name,
+                    ),
+                    PluginSearchResultCell(
+                        value=project_value,
+                        value_url=project_url,
+                    ),
+                    PluginSearchResultCell(
+                        value=f'{item.title} ({item.repository}:{item.tag})',
+                        value_url=container_url,
+                    ),
+                    PluginSearchResultCell(
+                        value=item.description,
+                    ),
+                ]
+            )
+        return rows
+
+    @classmethod
+    def _get_log_search_results(
+        cls,
+        search_terms: list[str],
+        items: list,
+        user: User,
+        **kwargs: str,
+    ) -> list[PluginSearchResult]:
+        rows = []
+        searched_containers = set()
+        for item in items:
+            if not user.has_perm(
+                'containers.view_logs', item.container.project
+            ):
+                continue
+            if item.container.container_id:
+                searched_containers.add(item.container)
+            rows.append(
+                [
+                    PluginSearchResultCell(
+                        value=item.date_created,
+                    ),
+                    PluginSearchResultCell(
+                        value=item.container.project.title,
+                        value_url=reverse(
+                            'projectroles:detail',
+                            kwargs={
+                                'project': item.container.project.sodar_uuid
+                            },
+                        ),
+                    ),
+                    PluginSearchResultCell(
+                        value=f'{item.container.title} ({item.container.repository}:{item.container.tag})',
+                        value_url=reverse(
+                            'containers:detail',
+                            kwargs={'container': item.container.sodar_uuid},
+                        ),
+                    ),
+                    PluginSearchResultCell(
+                        value=item.text,
+                    ),
+                ]
+            )
+        cli = connect_docker()
+        for container in searched_containers:
+            try:
+                logs = cli.logs(container.container_id, timestamps=True)
+            except (docker.errors.NotFound, docker.errors.NullResource) as ex:
+                logger.warning('Error while searching container logs: %s', ex)
+                continue
+            for log in logs.decode('utf8').splitlines():
+                timestamp, text = log.split(' ', maxsplit=1)
+                for term in search_terms:
+                    if term in text:
+                        break
+                else:
+                    continue
+                rows.append(
+                    [
+                        PluginSearchResultCell(
+                            value=datetime.fromisoformat(timestamp),
+                        ),
+                        PluginSearchResultCell(
+                            value=container.project.title,
+                            value_url=reverse(
+                                'projectroles:detail',
+                                kwargs={
+                                    'project': container.project.sodar_uuid
+                                },
+                            ),
+                        ),
+                        PluginSearchResultCell(
+                            value=f'{container.title} ({container.repository}:{container.tag})',
+                            value_url=reverse(
+                                'containers:detail',
+                                kwargs={'container': container.sodar_uuid},
+                            ),
+                        ),
+                        PluginSearchResultCell(
+                            value=text,
+                        ),
+                    ]
+                )
+        rows.sort(key=lambda x: (x[1].value, x[2].value, x[0].value))
+        return rows
 
     def get_statistics(self):
         return {
@@ -307,8 +461,6 @@ class ProjectAppPlugin(
         for container in containers:
             self._container_delete_docker(container, user)
 
-    # TODO: separate logs into a different category, whose table includes the date.
-    # TODO: add docker daemon logs.
     def search(
         self,
         search_terms: list[str],
@@ -330,152 +482,90 @@ class ProjectAppPlugin(
         :param kwargs: Search options as key/value pairs (optional)
         :return: List of PluginSearchResult objects
         """
-        items = []
+        container_items = []
         if kwargs.get('type', 'container') == 'container':
-            items.extend(Container.objects.find(search_terms, projects, kwargs))
+            container_items.extend(
+                Container.objects.find(search_terms, projects, kwargs)
+            )
         if kwargs.get('type', 'containertemplate') == 'containertemplate':
-            items.extend(
+            container_items.extend(
                 ContainerTemplateProject.objects.find(
                     search_terms, projects, kwargs
                 )
             )
-            items.extend(
+            container_items.extend(
                 ContainerTemplateSite.objects.find(
                     search_terms, projects, kwargs
                 )
             )
+        log_items = []
         if kwargs.get('type', 'containerlogentry') == 'containerlogentry':
-            items.extend(
+            log_items.extend(
                 ContainerLogEntry.objects.find(search_terms, projects, kwargs)
             )
-        rows = []
-        for item in items:
-            match item:
-                case ContainerTemplateSite():
-                    rows.append(
-                        [
-                            PluginSearchResultCell(
-                                value=item.__class__.__name__,
-                            ),
-                            PluginSearchResultCell(
-                                value=None,
-                            ),
-                            PluginSearchResultCell(
-                                value=f'{item.title} ({item.repository}:{item.tag})',
-                                value_url=reverse(
-                                    'containertemplates:site-detail',
-                                    kwargs={
-                                        'containertemplatesite': item.sodar_uuid
-                                    },
-                                ),
-                            ),
-                            PluginSearchResultCell(
-                                value=item.description,
-                            ),
-                        ]
-                    )
-                case Container() | ContainerTemplateProject():
-                    if not user.has_perm(
-                        'containers.view_container', item.project
-                    ):
-                        continue
-                    if item.__class__.__name__ == 'Container':
-                        container_url = reverse(
-                            'containers:detail',
-                            kwargs={'container': item.sodar_uuid},
-                        )
-                    elif item.__class__.__name__ == 'ContainerTemplateProject':
-                        container_url = reverse(
-                            'containertemplate:project-detail',
-                            kwargs={
-                                'containertemplateproject': item.sodar_uuid
-                            },
-                        )
-                    rows.append(
-                        [
-                            PluginSearchResultCell(
-                                value=item.__class__.__name__,
-                            ),
-                            PluginSearchResultCell(
-                                value=item.project.title,
-                                value_url=reverse(
-                                    'projectroles:detail',
-                                    kwargs={'project': item.project.sodar_uuid},
-                                ),
-                            ),
-                            PluginSearchResultCell(
-                                value=f'{item.title} ({item.repository}:{item.tag})',
-                                value_url=container_url,
-                            ),
-                            PluginSearchResultCell(
-                                value=item.description,
-                            ),
-                        ]
-                    )
-                case ContainerLogEntry():
-                    if not user.has_perm(
-                        'containers.view_logs', item.container.project
-                    ):
-                        continue
-                    rows.append(
-                        [
-                            PluginSearchResultCell(
-                                value=item.__class__.__name__,
-                            ),
-                            PluginSearchResultCell(
-                                value=item.container.project.title,
-                                value_url=reverse(
-                                    'projectroles:detail',
-                                    kwargs={
-                                        'project': item.container.project.sodar_uuid
-                                    },
-                                ),
-                            ),
-                            PluginSearchResultCell(
-                                value=f'{item.container.title} ({item.container.repository}:{item.container.tag})',
-                                value_url=reverse(
-                                    'containers:detail',
-                                    kwargs={
-                                        'container': item.container.sodar_uuid
-                                    },
-                                ),
-                            ),
-                            PluginSearchResultCell(
-                                value=item.text,
-                            ),
-                        ]
-                    )
-                case _:
-                    logger.debug(f'Unexpected search result: {item}')
-        ret = PluginSearchResult(
-            category='all',
-            title='Containers, Templates, and Logs',
-            search_types=[
-                'container',
-                'containerlogentry',
-                'containertemplate',
-            ],
-            columns=[
-                PluginSearchResultColumn(
-                    title='Type',
-                    column_class='text-nowrap',
+        ret = [
+            PluginSearchResult(
+                category='containers',
+                title='Containers and Container Templates',
+                search_types=[
+                    'container',
+                    'containertemplate',
+                ],
+                columns=[
+                    PluginSearchResultColumn(
+                        title='Type',
+                        column_class='text-nowrap',
+                    ),
+                    PluginSearchResultColumn(
+                        title='Project',
+                        overflow=True,
+                    ),
+                    PluginSearchResultColumn(
+                        title='Container',
+                        overflow=True,
+                        highlight=True,
+                    ),
+                    PluginSearchResultColumn(
+                        title='Description',
+                        overflow=True,
+                        highlight=True,
+                    ),
+                ],
+                rows=self._get_container_search_results(
+                    container_items, user, **kwargs
                 ),
-                PluginSearchResultColumn(
-                    title='Project',
-                    overflow=True,
+                table_class='kiosc-container-search-table',
+            ),
+            PluginSearchResult(
+                category='logs',
+                title='Containers Logs',
+                search_types=[
+                    'containerlogentry',
+                ],
+                columns=[
+                    PluginSearchResultColumn(
+                        title='Datetime',
+                        column_class='text-nowrap',
+                    ),
+                    PluginSearchResultColumn(
+                        title='Project',
+                        overflow=True,
+                    ),
+                    PluginSearchResultColumn(
+                        title='Container',
+                        overflow=True,
+                        highlight=True,
+                    ),
+                    PluginSearchResultColumn(
+                        title='Text',
+                        overflow=True,
+                        highlight=True,
+                    ),
+                ],
+                rows=self._get_log_search_results(
+                    search_terms, log_items, user, **kwargs
                 ),
-                PluginSearchResultColumn(
-                    title='Container',
-                    overflow=True,
-                    highlight=True,
-                ),
-                PluginSearchResultColumn(
-                    title='Description',
-                    overflow=True,
-                    highlight=True,
-                ),
-            ],
-            rows=rows,
-            table_class='kiosc-containers-search-table',
-        )
-        return [ret]
+                table_class='kiosc-log-search-table',
+            ),
+        ]
+        return ret

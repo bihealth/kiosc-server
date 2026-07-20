@@ -1,8 +1,5 @@
 """
 Production Configurations
-
-- Use WhiteNoise for serving static files
-- Use Redis for cache
 """
 
 import logging
@@ -18,11 +15,6 @@ SECRET_KEY = env('DJANGO_SECRET_KEY')
 # This ensures that Django will be able to detect a secure connection
 # properly on Heroku.
 SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
-
-# Use Whitenoise to serve static files
-# See: https://whitenoise.readthedocs.io/
-WHITENOISE_MIDDLEWARE = ['whitenoise.middleware.WhiteNoiseMiddleware']
-MIDDLEWARE = WHITENOISE_MIDDLEWARE + MIDDLEWARE
 
 # SECURITY CONFIGURATION
 # ------------------------------------------------------------------------------
@@ -44,48 +36,8 @@ CSRF_COOKIE_SECURE = True
 CSRF_COOKIE_HTTPONLY = True
 X_FRAME_OPTIONS = 'DENY'
 
-INSTALLED_APPS.insert(0, 'daphne')
-
-# Static Assets
-# ------------------------
-STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
-
 # Add optonal custom directory for static includes at deployment stage
 # STATICFILES_DIRS += env.list('CUSTOM_STATIC_DIR', default=[])
-
-# TEMPLATE CONFIGURATION
-# ------------------------------------------------------------------------------
-TEMPLATES[0]['OPTIONS']['loaders'] = [
-    (
-        'django.template.loaders.cached.Loader',
-        [
-            'django.template.loaders.filesystem.Loader',
-            'django.template.loaders.app_directories.Loader',
-        ],
-    )
-]
-
-# DATABASE CONFIGURATION
-# ------------------------------------------------------------------------------
-# Use the Heroku-style specification
-# Raises ImproperlyConfigured exception if DATABASE_URL not in os.environ
-DATABASES['default'] = env.db('DATABASE_URL')
-
-# CACHING
-# ------------------------------------------------------------------------------
-
-# Heroku URL does not pass the DB number, so we parse it in
-# http://niwinz.github.io/django-redis/latest/#_memcached_exceptions_behavior
-CACHES = {
-    'default': {
-        'BACKEND': 'django_redis.cache.RedisCache',
-        'LOCATION': REDIS_LOCATION,
-        'OPTIONS': {
-            'CLIENT_CLASS': 'django_redis.client.DefaultClient',
-            'IGNORE_EXCEPTIONS': True,  # mimics memcache behavior
-        },
-    }
-}
 
 # Logging
 # ------------------------------------------------------------------------------
@@ -105,10 +57,6 @@ LOGGING['loggers']['django.security.DisallowedHost'] = {
 }
 
 
-# Custom Admin URL, use {% url 'admin:index' %}
-ADMIN_URL = env('DJANGO_ADMIN_URL', default='admin')
-
-
 # EMAIL CONFIGURATION
 # ------------------------------------------------------------------------------
 EMAIL_URL = env.email_url('EMAIL_URL', 'smtp://0.0.0.0')
@@ -118,11 +66,3 @@ EMAIL_PORT = EMAIL_URL['EMAIL_PORT']
 EMAIL_BACKEND = EMAIL_URL['EMAIL_BACKEND']
 EMAIL_HOST_USER = EMAIL_URL['EMAIL_HOST_USER']
 EMAIL_HOST_PASSWORD = EMAIL_URL['EMAIL_HOST_PASSWORD']
-
-
-# Local App Settings
-# ------------------------------------------------------------------------------
-
-
-# Plugin settings
-ENABLED_BACKEND_PLUGINS = ['timeline_backend']

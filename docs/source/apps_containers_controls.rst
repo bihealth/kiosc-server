@@ -8,8 +8,9 @@ Access & Controls
 Access (via Proxy)
 ------------------
 
-The web application running inside of the container can be accessed
-by clicking the blue button with the eye icon.
+The web application running inside of the container can be accessed by clicking
+the blue button with the eye icon. If the container is in state INITIAL, EXITED,
+or TERMINATED, accessing it will try to automatically start.
 
 .. image:: figures/apps/containers/proxy_running.png
   :alt: Proxy button when container is running
@@ -17,11 +18,10 @@ by clicking the blue button with the eye icon.
 Controls
 --------
 
-The ``Controls`` dropdown menu (cog icon) comprises
-multiple actions that can be issued on a container,
-displayed depending on the state the container is currently in.
-In the details page this menu is presented by the cog icon + ``Controls``,
-while in the list this is presented by the cog icon only.
+The ``Controls`` dropdown menu (cog icon) comprises multiple actions that can
+be issued on a container, displayed depending on the state the container is
+currently in. In the details page this menu is presented by the cog icon +
+``Controls``, while in the list this is presented by the cog icon only.
 
 The ``Controls`` button on the details page:
 
@@ -60,24 +60,6 @@ Stop a running Docker container. If the container is not running, this action ha
 Internally, a ``docker stop`` is performed.
 
 The state should be **exited** when performed successfully.
-
-Pause
-^^^^^
-
-Pause a running Docker container.
-
-Internally, a ``docker pause`` is performed.
-
-The state should be **paused** when performed successfully.
-
-Unpause
-^^^^^^^
-
-Unpause a paused Docker container.
-
-A ``docker unpause`` is performed.
-
-The state should be **running** when performed successfully.
 
 Reset
 ^^^^^

@@ -52,12 +52,14 @@ class TunnelConsumer(WebsocketConsumer):
     server from a web app.
     """
 
-    debug = False
+    debug = settings.DEBUG
 
     def connect(self):
         """Upon connect, create internal web socket to tunnel target."""
         # Get DockerApp information for querying the port information.
+        print('CONNECTING TO TUNNEL CONSUMER')
         user = self.scope['user']
+        print(self.scope)
         container = Container.objects.get(
             sodar_uuid=self.scope['url_route']['kwargs']['container'],
         )
@@ -68,7 +70,14 @@ class TunnelConsumer(WebsocketConsumer):
         # Create web socket for writing data from inernal web socket to original client.
         def on_message(ws, message):
             """Forward any data from the client web socket to the orignal client."""
+            logger.debug('TunnelConsumer MESSAGE: %s', message)
             self.send(message)
+
+        def on_error(ws, err):
+            logger.debug('TunnelConsumer ERROR: %s', err)
+
+        def on_close(ws, code, msg):
+            logger.debug('TunnelConsumer CLOSED: %s (%s)', code, msg)
 
         websocket.enableTrace(self.debug)
 
@@ -83,12 +92,13 @@ class TunnelConsumer(WebsocketConsumer):
                 container.host_port,
                 self.scope['url_route']['kwargs']['path'],
             )
+        ws_url += '?' + self.scope['query_string'].decode('utf8')
 
-        self.ws = websocket.WebSocketApp(ws_url, on_message=on_message)
+        self.ws = websocket.WebSocketApp(ws_url, on_message=on_message, on_error=on_error, on_close=on_close)
 
         # Kick off thread copying data from internal web socket to the original client.
         thread = threading.Thread(
-            target=self.ws.run_forever, args=(), daemon=True
+            target=self.ws.run_forever, args=(), kwargs={'suppress_origin': True}, daemon=True
         )
         thread.start()
         self.accept()

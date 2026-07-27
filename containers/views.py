@@ -4,6 +4,7 @@ from ipaddress import ip_address
 from typing import AsyncGenerator, Optional
 from urllib3.exceptions import NewConnectionError, MaxRetryError
 from urllib3.response import is_fp_closed
+from urllib.parse import quote
 from wsgiref.util import FileWrapper
 
 from django.conf import settings
@@ -648,7 +649,7 @@ class KioscProxyView(ProxyView):
     rewrite = ((r'^/container/proxy/(?P<container>[a-f0-9-]+)/', '/'),)
     suppress_empty_body = True
 
-    def dispatch(self, request, path):
+    def dispatch(self, request, path, container):
         """Override the dispatch method.
 
         This avoids a warning about Django needing asynchronous iterators
@@ -660,8 +661,12 @@ class KioscProxyView(ProxyView):
 
         redirect_to = self._format_path_to_redirect(request)
         if redirect_to:
+            print('REDIRECT TO')
+            print(redirect_to)
             return redirect(redirect_to)
 
+        # print(path)
+        # path = reverse('containers:proxy', kwargs={'container': container, 'path': path})
         try:
             proxy_response = self._created_proxy_response(request, path)
         except MaxRetryError as ex:
@@ -717,6 +722,45 @@ class KioscProxyView(ProxyView):
             if cookie_dict:
                 response.set_cookie(**cookie_dict)
 
+        print('UNNUNUNN')
+        print('we are requesting', path, 'with method', request.method)
+        print('with headers', self.request_headers)
+        if redirect := response.headers.get('Location'):
+            redirect = redirect.replace(request.get_host(), '')
+            response.headers['Location'] = redirect
+
+        for k, v in response.headers.items():
+            v = v.replace('/jupyter-in-kiosc', reverse('containers:proxy', kwargs={'container': container, 'path': 'jupyter-in-kiosc'}))
+            v = v.replace('%2Fjupyter-in-kiosc', quote(reverse('containers:proxy', kwargs={'container': container, 'path': 'jupyter-in-kiosc'}), safe=''))
+            response.headers[k] = v
+
+        print('new response headers', response.headers)
+        print('eNCODING', response.charset)
+
+        # # print('query', request.QUERY_STRING)
+        try:
+            # print('body', response.content)
+            # print('quoted', quote(reverse('containers:proxy', kwargs={'container': container, 'path': 'jupyter-in-kiosc'})), safe='')
+            response.content = (
+                response.content.decode(response.charset)
+                .replace('/jupyter-in-kiosc', reverse('containers:proxy', kwargs={'container': container, 'path': 'jupyter-in-kiosc'}))
+                .replace('%2Fjupyter-in-kiosc', quote(reverse('containers:proxy', kwargs={'container': container, 'path': 'jupyter-in-kiosc'}), safe=''))
+                .encode(response.charset)
+            )
+            if response.headers.get('Content-Length'):
+                response.headers['Content-Length'] = len(response.content)
+            # print('new body', response.content)
+        except Exception as ex:
+            print('exception replacing body:', ex)
+        try:
+            print('GET', response.GET)
+        except Exception as ex:
+            print('NO GET')
+        try:
+            print('POST', response.POST)
+        except Exception as ex:
+            print('NO POST')
+
         logger.debug('Response cookies: %s', response.cookies)
 
         logger.debug('RESPONSE RETURNED: %s', response)
@@ -743,7 +787,7 @@ class ReverseProxyView(
             return self.handle_no_permission()
 
         container = self.get_object()
-        kwargs.pop('container')
+        # kwargs.pop('container')
 
         # We don't need to track all accesses. First, Kiosc will pass a
         # Kiosc-Preflight header when doing automated checks. Second, we don't

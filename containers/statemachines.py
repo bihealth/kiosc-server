@@ -613,7 +613,7 @@ class ContainerMachine(StateMachine):
             'containers:proxy',
             kwargs={
                 'container': self.container.sodar_uuid,
-                'path': self.container.container_path or '',
+                'path': self.container.get_path(),
             },
         )
 

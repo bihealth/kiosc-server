@@ -18,6 +18,7 @@ import socket
 
 from django.conf import settings
 from django.db import connection
+from django.urls import reverse
 from .models import Container
 
 from containers.models import (
@@ -57,15 +58,30 @@ class TunnelConsumer(WebsocketConsumer):
     def connect(self):
         """Upon connect, create internal web socket to tunnel target."""
         # Get DockerApp information for querying the port information.
-        print('CONNECTING TO TUNNEL CONSUMER')
         user = self.scope['user']
-        print(self.scope)
         container = Container.objects.get(
             sodar_uuid=self.scope['url_route']['kwargs']['container'],
         )
         if not user.has_perm('containers.view_container', container.project):
             self.close(code=4403, reason='Forbidden')
             return
+
+        # HACK: some servers, such as Jupyter, use absolute URLs. We set up a
+        # convention: if the container_path starts with the absolute URL of
+        # the container proxy, we forward the absolute path as is to the app.
+        # The app must then be set up with this absolute base URL.
+        # See https://github.com/bihealth/kiosc-server/issues/271
+        path = self.scope['url_route']['kwargs']['path']
+        if container.container_path.startswith(
+            reverse(
+                'containers:proxy',
+                kwargs={'container': container.sodar_uuid, 'path': ''},
+            )
+        ):
+            path = reverse(
+                'containers:proxy',
+                kwargs={'container': container.sodar_uuid, 'path': path},
+            )[1:]
 
         # Create web socket for writing data from inernal web socket to original client.
         def on_message(ws, message):
@@ -85,20 +101,26 @@ class TunnelConsumer(WebsocketConsumer):
             ws_url = 'ws://%s:%d/%s' % (
                 container.container_id[:12],
                 container.container_port,
-                self.scope['url_route']['kwargs']['path'],
+                path,
             )
         else:
             ws_url = 'ws://localhost:%d/%s' % (
                 container.host_port,
-                self.scope['url_route']['kwargs']['path'],
+                path,
             )
-        ws_url += '?' + self.scope['query_string'].decode('utf8')
+        if query_string := self.scope['query_string']:
+            ws_url += '?' + query_string.decode('utf8')
 
-        self.ws = websocket.WebSocketApp(ws_url, on_message=on_message, on_error=on_error, on_close=on_close)
+        self.ws = websocket.WebSocketApp(
+            ws_url, on_message=on_message, on_error=on_error, on_close=on_close
+        )
 
         # Kick off thread copying data from internal web socket to the original client.
         thread = threading.Thread(
-            target=self.ws.run_forever, args=(), kwargs={'suppress_origin': True}, daemon=True
+            target=self.ws.run_forever,
+            args=(),
+            kwargs={'suppress_origin': True},
+            daemon=True,
         )
         thread.start()
         self.accept()

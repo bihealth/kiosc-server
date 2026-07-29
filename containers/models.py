@@ -475,6 +475,15 @@ class Container(models.Model):
             'containers:detail', kwargs={'container': self.sodar_uuid}
         )
 
+    def get_path(self):
+        return self.container_path.replace(
+            reverse(
+                'containers:proxy',
+                kwargs={'container': self.sodar_uuid, 'path': ''},
+            ),
+            '',
+        )
+
     def get_date_created(self):
         return localtime(self.date_created).strftime('%Y-%m-%d %H:%M')
 

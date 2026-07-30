@@ -535,7 +535,7 @@ class ContainerMachine(StateMachine):
                 stream=True,
                 decode=True,
             ):
-                pull_log = {'text': line.get('status')}
+                pull_log = {'text': line.get('status', line.get('error'))}
                 if (line_id := line.get('id')) and (
                     line_progress := line.get('progressDetail')
                 ):
@@ -563,7 +563,7 @@ class ContainerMachine(StateMachine):
                         )
                         self.job.add_log_entry(pull_log['status'])
                 else:
-                    pull_log_status = line.get('status')
+                    pull_log_status = line.get('status', line.get('error'))
                     pull_log = {'status': pull_log_status}
                     self.container.log_entries.create(
                         text=pull_log_status + '\n',

@@ -17,6 +17,11 @@ Current
 - Start container on demand when accessed in state INITIAL, EXITED, or TERMINATED (#268)
 - Failing to access a container will redirect to the container details rather than to the HTTP referer (#268)
 
+Fixed
+-----
+
+- Fix parsing of errors in Docker pull logs (#274)
+
 v0.6.1 (2026-07-09)
 ===================
 

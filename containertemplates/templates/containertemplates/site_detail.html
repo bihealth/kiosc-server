@@ -3,6 +3,7 @@
 {% load rules %}
 {% load projectroles_common_tags %}
 {% load crispy_forms_filters %}
+{% load martortags %}
 
 {% block title %}
   Site-wide Container Template - {{ object.title }}
@@ -25,7 +26,7 @@
     <div class="card-header"><h4>Description</h4></div>
     <div class="card-body">
       <p class="card-text mb-3">
-        {{ object.description|default:"<em class='text-muted'>No description.</em>" }}
+        {{ object.description|safe_markdown|default:"<em class='text-muted'>No description.</em>" }}
       </p>
     </div>
   </div>

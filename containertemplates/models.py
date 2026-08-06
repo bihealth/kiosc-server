@@ -6,6 +6,9 @@ from django.db import models
 from django.db.models import JSONField, Q, QuerySet
 from django.urls import reverse
 from django.utils.timezone import localtime
+
+from martor.models import MartorField
+
 from projectroles.models import Project
 
 
@@ -22,8 +25,8 @@ class ContainerTemplateBase(models.Model):
     )
 
     #: Description of the template
-    description = models.TextField(
-        help_text='Description of the container template.',
+    description = MartorField(
+        help_text='Description of the container template (Markdown supported).',
         blank=True,
         null=True,
     )

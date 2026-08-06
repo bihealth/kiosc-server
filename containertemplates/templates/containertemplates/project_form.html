@@ -1,8 +1,15 @@
 {# Projectroles dependency #}
 {% extends 'projectroles/project_base.html' %}
 {% load rules %}
+{% load static %}
 {% load projectroles_common_tags %}
 {% load crispy_forms_filters %}
+
+{% block css %}
+  {{ block.super }}
+  <link href="{% static 'plugins/css/ace.min.css' %}" type="text/css" media="all" rel="stylesheet" />
+  <link href="{% static 'martor/css/martor.bootstrap.min.css' %}" type="text/css" media="all" rel="stylesheet" />
+{% endblock %}
 
 {% block title %}
   {% if object.pk %}Update{% else %}Create{% endif %} Container
@@ -34,3 +41,19 @@
 </div>
 
 {% endblock projectroles_extend %}
+
+{% block javascript %}
+  {{ block.super }}
+
+  {# Martor dependencies #}
+  <script type="text/javascript" src="{% static 'plugins/js/ace.js' %}"></script>
+  <script type="text/javascript" src="{% static 'plugins/js/mode-markdown.js' %}"></script>
+  <script type="text/javascript" src="{% static 'plugins/js/ext-language_tools.js' %}"></script>
+  <script type="text/javascript" src="{% static 'plugins/js/theme-github.js' %}"></script>
+  <script type="text/javascript" src="{% static 'plugins/js/typo.js' %}"></script>
+  <script type="text/javascript" src="{% static 'plugins/js/spellcheck.js' %}"></script>
+  <script type="text/javascript" src="{% static 'plugins/js/highlight.min.js' %}"></script>
+  <script type="text/javascript" src="{% static 'plugins/js/emojis.min.js' %}"></script>
+  <script type="text/javascript" src="{% static 'martor/js/martor.bootstrap.min.js' %}"></script>
+
+{% endblock javascript %}

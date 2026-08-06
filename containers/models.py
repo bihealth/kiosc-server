@@ -13,6 +13,8 @@ from django.urls import reverse
 from django.utils import timezone
 from django.utils.timezone import localtime
 
+from martor.models import MartorField
+
 from config.settings.base import (
     KIOSC_CONTAINER_MAX_LOG_LINES,
     KIOSC_CONTAINER_DEFAULT_LOG_LINES,
@@ -441,8 +443,8 @@ class Container(models.Model):
     )
 
     #: Description of the container
-    description = models.TextField(
-        help_text='Description of the container.',
+    description = MartorField(
+        help_text='Description of the container (Markdown supported).',
         blank=True,
         null=True,
     )

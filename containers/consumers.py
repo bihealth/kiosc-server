@@ -19,15 +19,16 @@ import socket
 from django.conf import settings
 from django.db import connection
 from django.urls import reverse
-from .models import Container
 
 from containers.models import (
+    Container,
     STATE_INITIAL,
     STATE_PULLING,
     STATE_DELETED,
     STATE_TERMINATED,
     STATE_CREATED,
     STATE_FAILED,
+    ABSOLUTE_PATH_PROXY_PREFIX,
 )
 from containers.statemachines import connect_docker
 
@@ -66,22 +67,22 @@ class TunnelConsumer(WebsocketConsumer):
             self.close(code=4403, reason='Forbidden')
             return
 
-        # HACK: some servers, such as Jupyter, use absolute URLs. We set up a
-        # convention: if the container_path starts with the absolute URL of
-        # the container proxy, we forward the absolute path as is to the app.
+        # HACK: some servers, such as Jupyter, use absolute URLs. That means
+        # that they need to be passed the full path (everything after the
+        # server's FQDN). We set up a convention: if the container_path starts
+        # with the magic value __KIOSC_URL_PREFIX__, we forward the absolute
+        # path to the app. It's as if __KIOSC_URL_PREFIX__ were replaced with
+        # the path to the container proxy (/containers/proxy/<container_uuid>/).
         # The app must then be set up with this absolute base URL.
+        # Note that the same magic value can also used in the container
+        # environment variables, where it means exactly the path to the proxy.
         # See https://github.com/bihealth/kiosc-server/issues/271
         path = self.scope['url_route']['kwargs']['path']
-        if container.container_path.startswith(
-            reverse(
-                'containers:proxy',
-                kwargs={'container': container.sodar_uuid, 'path': ''},
-            )
-        ):
+        if container.container_path.startswith(ABSOLUTE_PATH_PROXY_PREFIX):
             path = reverse(
                 'containers:proxy',
                 kwargs={'container': container.sodar_uuid, 'path': path},
-            )[1:]
+            ).lstrip('/')  # remove the initial slash
 
         # Create web socket for writing data from inernal web socket to original client.
         def on_message(ws, message):

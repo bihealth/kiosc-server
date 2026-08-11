@@ -158,6 +158,10 @@ PROCESS_CHOICES = [
 #: Keyword used to hide secret environment variables
 MASKED_KEYWORD = '<masked>'
 
+#: Magic prefix used in containers which need to be forwarded the absolute
+#: path (everything after the server host), such as Jupyter
+ABSOLUTE_PATH_PROXY_PREFIX = '__KIOSC_URL_PREFIX__'
+
 
 class JobModelMessageContextManagerMixin(JobModelMessageMixin):
     @contextlib.contextmanager
@@ -476,13 +480,7 @@ class Container(models.Model):
         )
 
     def get_path(self):
-        return self.container_path.replace(
-            reverse(
-                'containers:proxy',
-                kwargs={'container': self.sodar_uuid, 'path': ''},
-            ),
-            '',
-        )
+        return self.container_path.replace(ABSOLUTE_PATH_PROXY_PREFIX, '')
 
     def get_date_created(self):
         return localtime(self.date_created).strftime('%Y-%m-%d %H:%M')

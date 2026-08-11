@@ -23,9 +23,71 @@ from containers.tests.factories import (
 )
 
 
-class TestReverseProxyView(
-    UITestBase,
-):
+class TestContainerCreateView(UITestBase):
+    def test_container_form_markdown(self):
+        """Test the markdown input field in ContainerCreateView form UI"""
+        self.login_and_redirect(
+            self.superuser,
+            reverse(
+                'containers:create',
+                kwargs={
+                    'project': str(self.project.sodar_uuid),
+                },
+            ),
+        )
+        bold_btn = self.selenium.find_element(
+            By.CSS_SELECTOR, '#div_id_description .markdown-bold'
+        )
+        bold_btn.click()
+        input = self.selenium.find_element(
+            By.CSS_SELECTOR, '#div_id_description .ace_text-input'
+        )
+        input.send_keys('hello world')
+        content = self.selenium.find_element(
+            By.CSS_SELECTOR, '#div_id_description .ace_content'
+        )
+        self.assertEqual(content.text, ' **hello world** ')
+        WebDriverWait(self.selenium, self.wait_time).until(
+            ec.text_to_be_present_in_element_attribute(
+                (By.CSS_SELECTOR, '#div_id_description .martor-preview'),
+                'innerHTML',
+                '<p><strong>hello world</strong> </p>',
+            )
+        )
+
+
+class TestContainerDetailView(UITestBase):
+    def setUp(self):
+        super().setUp()
+        self.container = ContainerFactory(
+            project=self.project,
+            description='**hello**',
+            repository='sample-app-server',
+            tag='testing',
+            container_port=80,
+            host_port=14809,
+        )
+
+    def test_container_detail_markdown(self):
+        """Test the markdown field in ContainerDetailView UI"""
+        self.login_and_redirect(
+            self.superuser,
+            reverse(
+                'containers:detail',
+                kwargs={
+                    'container': str(self.container.sodar_uuid),
+                },
+            ),
+        )
+        content = self.selenium.find_element(
+            By.CSS_SELECTOR, '#kiosc-container-detail-description'
+        )
+        self.assertIn(
+            '<p><strong>hello</strong></p>', content.get_attribute('innerHTML')
+        )
+
+
+class TestReverseProxyView(UITestBase):
     def setUp(self):
         super().setUp()
         self.cli = connect_docker()

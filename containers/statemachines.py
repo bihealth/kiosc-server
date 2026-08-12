@@ -33,6 +33,7 @@ from containers.models import (
     ACTION_PAUSE,
     ACTION_UNPAUSE,
     ACTION_DELETE,
+    ABSOLUTE_PATH_PROXY_PREFIX,
 )
 
 logger = logging.getLogger(__name__)
@@ -613,14 +614,13 @@ class ContainerMachine(StateMachine):
             'containers:proxy',
             kwargs={
                 'container': self.container.sodar_uuid,
-                'path': self.container.get_path(),
             },
         )
 
         for key, value in environment.items():
-            if isinstance(value, str) and '__KIOSC_URL_PREFIX__' in value:
+            if isinstance(value, str) and ABSOLUTE_PATH_PROXY_PREFIX in value:
                 environment[key] = value.replace(
-                    '__KIOSC_URL_PREFIX__', url_prefix
+                    ABSOLUTE_PATH_PROXY_PREFIX, url_prefix
                 )
 
         environment.update(
@@ -630,6 +630,26 @@ class ContainerMachine(StateMachine):
                 'DESCRIPTION': self.container.description or '',
             }
         )
+
+        # Command
+        if self.container.command:
+            container_command = shlex.split(
+                self.container.command.replace(
+                    ABSOLUTE_PATH_PROXY_PREFIX,
+                    url_prefix,
+                )
+            )
+        else:
+            container_command = []
+            # The 'Cmd' field is always a list, even when the JSON notation
+            # is not used in the Dockerfile.
+            for element in image_details['Config']['Cmd']:
+                container_command.append(
+                    element.replace(
+                        ABSOLUTE_PATH_PROXY_PREFIX,
+                        url_prefix,
+                    )
+                )
 
         # Volume
         if volume_name := str(self.container.volume_name):
@@ -650,11 +670,7 @@ class ContainerMachine(StateMachine):
             detach=True,
             image=image_details['RepoTags'][0],
             environment=environment,
-            command=(
-                shlex.split(self.container.command)
-                if self.container.command
-                else None
-            ),
+            command=container_command,
             ports=[self.container.container_port],
             host_config=self.cli.create_host_config(
                 ulimits=[

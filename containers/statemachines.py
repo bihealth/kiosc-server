@@ -614,6 +614,7 @@ class ContainerMachine(StateMachine):
             'containers:proxy',
             kwargs={
                 'container': self.container.sodar_uuid,
+                'path': '',
             },
         )
 
@@ -630,26 +631,6 @@ class ContainerMachine(StateMachine):
                 'DESCRIPTION': self.container.description or '',
             }
         )
-
-        # Command
-        if self.container.command:
-            container_command = shlex.split(
-                self.container.command.replace(
-                    ABSOLUTE_PATH_PROXY_PREFIX,
-                    url_prefix,
-                )
-            )
-        else:
-            container_command = []
-            # The 'Cmd' field is always a list, even when the JSON notation
-            # is not used in the Dockerfile.
-            for element in image_details['Config']['Cmd']:
-                container_command.append(
-                    element.replace(
-                        ABSOLUTE_PATH_PROXY_PREFIX,
-                        url_prefix,
-                    )
-                )
 
         # Volume
         if volume_name := str(self.container.volume_name):
@@ -670,7 +651,11 @@ class ContainerMachine(StateMachine):
             detach=True,
             image=image_details['RepoTags'][0],
             environment=environment,
-            command=container_command,
+            command=(
+                shlex.split(self.container.command)
+                if self.container.command
+                else None
+            ),
             ports=[self.container.container_port],
             host_config=self.cli.create_host_config(
                 ulimits=[

@@ -480,7 +480,9 @@ class Container(models.Model):
         )
 
     def get_path(self):
-        return self.container_path.replace(ABSOLUTE_PATH_PROXY_PREFIX, '')
+        return self.container_path.replace(
+            ABSOLUTE_PATH_PROXY_PREFIX, ''
+        ).rstrip('/')
 
     def get_date_created(self):
         return localtime(self.date_created).strftime('%Y-%m-%d %H:%M')

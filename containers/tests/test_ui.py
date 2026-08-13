@@ -6,7 +6,6 @@ from selenium.webdriver.common.by import By
 from selenium.webdriver.support import expected_conditions as ec
 from selenium.webdriver.support.ui import WebDriverWait
 
-from django.urls import reverse
 
 from containers.models import (
     Container,
@@ -98,6 +97,7 @@ class TestReverseProxyView(UITestBase):
             tag='testing',
             container_port=80,
             host_port=14809,
+            container_id=None,
         )
 
     def tearDown(self):
@@ -124,29 +124,7 @@ class TestReverseProxyView(UITestBase):
         container_task(job_id=bg_job.pk)
         self.container.refresh_from_db()
         self.assertEqual(self.container.state, STATE_RUNNING)
-        self.login_and_redirect(
-            self.superuser,
-            reverse(
-                'containers:detail',
-                kwargs={
-                    'container': str(self.container.sodar_uuid),
-                },
-            ),
-        )
-        btn = self.selenium.find_element(
-            By.XPATH, '//a[@data-original-title="Open app"]'
-        )
-        # Selenium opens the link in a new tab
-        # https://www.selenium.dev/documentation/webdriver/interactions/windows/
-        original_window_handle = self.selenium.current_window_handle
-        btn.click()
-        WebDriverWait(self.selenium, self.wait_time).until(
-            ec.number_of_windows_to_be(2)
-        )
-        new_window_handle = (
-            set(self.selenium.window_handles) - {original_window_handle}
-        ).pop()
-        self.selenium.switch_to.window(new_window_handle)
+        self.login_and_redirect_to_container(self.superuser, self.container)
         lobby_elem = self.selenium.find_element(By.ID, 'kiosc-lobby-text')
         self.assertIn('Check the logs for more info', lobby_elem.text)
 

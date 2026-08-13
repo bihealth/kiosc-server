@@ -4,9 +4,13 @@ import dateutil.parser
 from pathlib import Path
 import uuid
 
+from selenium.webdriver.common.by import By
+from selenium.webdriver.support import expected_conditions as ec
+from selenium.webdriver.support.ui import WebDriverWait
+
 from django.conf import settings
 from django.contrib.auth import get_user_model
-from django.test import LiveServerTestCase
+from channels.testing import ChannelsLiveServerTestCase
 from test_plus.test import TestCase
 from django.urls import reverse
 from django.utils import dateformat
@@ -54,13 +58,18 @@ APP_NAME = 'containers'
 
 
 def build_testdata_container(cli, dockerfile_name):
-    dockerfile_path = (
-        Path(__file__).parent / 'testdata' / (dockerfile_name + '.Dockerfile')
+    build_path = Path(__file__).parent / 'testdata'
+    stream = cli.build(
+        path=str(build_path),
+        dockerfile=dockerfile_name + '.Dockerfile',
+        tag=dockerfile_name + ':testing',
+        decode=True,
     )
-    with open(dockerfile_path, 'rb') as f:
-        stream = cli.build(fileobj=f, tag=dockerfile_name + ':testing')
     # Block until building is done
-    _ = list(stream)
+    for s in stream:
+        if 'error' in s:
+            print(s['error'])
+            print(s.get('errorDetail', ''))
 
 
 class TestContainerCreationMixin:
@@ -179,7 +188,7 @@ class UITestBase(
     UITestMixin,
     LiveUserMixin,
     TestContainerCreationMixin,
-    LiveServerTestCase,
+    ChannelsLiveServerTestCase,
 ):
     """Test base class for UI tests providing one project and a superuser."""
 
@@ -217,6 +226,31 @@ class UITestBase(
 
     def tearDown(self):
         self.selenium.quit()
+
+    def login_and_redirect_to_container(self, user, container):
+        self.login_and_redirect(
+            user,
+            reverse(
+                'containers:detail',
+                kwargs={
+                    'container': str(container.sodar_uuid),
+                },
+            ),
+        )
+        btn = self.selenium.find_element(
+            By.XPATH, '//a[@data-original-title="Open app"]'
+        )
+        # Selenium opens the link in a new tab
+        # https://www.selenium.dev/documentation/webdriver/interactions/windows/
+        original_window_handle = self.selenium.current_window_handle
+        btn.click()
+        WebDriverWait(self.selenium, self.wait_time).until(
+            ec.number_of_windows_to_be(2)
+        )
+        new_window_handle = (
+            set(self.selenium.window_handles) - {original_window_handle}
+        ).pop()
+        self.selenium.switch_to.window(new_window_handle)
 
 
 class ContainersAPIViewTestBase(APIViewTestBase):

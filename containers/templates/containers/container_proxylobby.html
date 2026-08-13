@@ -141,7 +141,7 @@
                 dataType: 'json',
                 success: function(data) {
                     if (data["state"] === "running" || data["state"] === "pulling") {
-                        window.location.replace("{% url 'containers:proxy' container=object.sodar_uuid path=object.path %}");
+                        window.location.replace("{% url 'containers:proxy' container=object.sodar_uuid path=object.get_path %}");
                     } else {
                         $("#body").addClass("bg-danger")
                         $("#iconLoading").addClass("d-none")

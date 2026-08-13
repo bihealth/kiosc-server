@@ -370,6 +370,9 @@ This is not recommended when the data is large, as it leads to heavy containers.
     # Use a miniconda base image
     FROM continuumio/miniconda3:24.9.2-0
 
+    # Set the default base_url for Jupyter
+    ENV JUPYTER_BASE_URL=""
+
     # Create a regular user and work under the /app directory
     # (running the notebook as root is not recommended)
     RUN useradd -r -m -d /app jupyter
@@ -377,42 +380,43 @@ This is not recommended when the data is large, as it leads to heavy containers.
     WORKDIR /app
 
     # Import the conda environment from a yaml file
-    # (assuming that you previously ran `conda env export > my_conda_env.yaml`)
-    COPY ./my_conda_env.yaml ./
-    RUN conda env create -f my_conda_env.yaml
+    # (assuming that you previously ran `conda env export > environment.yaml`)
+    COPY ./environment.yaml ./
+    RUN conda env create -f environment.yaml -n my_conda_env
 
     # Add the data and notebook files to the image
-    COPY ./my_data_file.h5ad ./
+    COPY ./my_data_file.tsv ./
     COPY ./my_notebook.ipynb ./
 
     # Run CMD from the default conda environment
-    # (replace `my_conda_env` with the name of your environment)
     ENTRYPOINT ["conda", "run", "--no-capture-output", "-n", "my_conda_env"]
+
+    # Configure the exposed port
+    EXPOSE ["8888"]
 
     # Run Jupyter with the appropriate arguments for Kiosc
     # (replace `my_notebook.ipynb` with the path to your notebook)
-    CMD [
-        "jupyter",
-        "notebook",
-        "--ip=0.0.0.0",
-        "--port=8888",
-        "--no-browser",
-        "--ServerApp.base_url=__KIOSC_URL_PREFIX__",
-        "--ServerApp.allow_origin='*'",
-        "--ServerApp.allow_remote_access=true",
-        "--ServerApp.allow_unauthenticated_access=true"
-        "--ServerApp.disable_check_xsrf=true",
-        "--ServerApp.token=''",
-        "--ServerApp.trust_xheaders=true",
+    CMD [ \
+        "/bin/bash", "-c", \
+        "jupyter notebook \
+            --ip=0.0.0.0 \
+            --port=8888 \
+            --no-browser \
+            --ServerApp.base_url=$JUPYTER_BASE_URL \
+            --ServerApp.allow_origin='*' \
+            --ServerApp.allow_remote_access=true \
+            --ServerApp.allow_unauthenticated_access=true \
+            --ServerApp.disable_check_xsrf=true \
+            --ServerApp.token='' \
+            --ServerApp.trust_xheaders=true" \
     ]
 
 Your mileage may vary, but this should be a reasonable starting point. Note
 that the command line flags for the jupyter notebook command are all required.
-Do not replace ``__KIOSC_URL_PREFIX__``: it is a special string which will
-be interpreted by Kiosc and replaced with the full path of the proxy to the
-container. This is needed because the Jupyter server uses absolute paths for its
-redirects and static files. Using the special string lets the Kiosc proxy know
-that it should forward the absolute path, instead of the realtive one. After
+``$JUPYTER_BASE_URL`` is an environment variable which stands for the full
+path of the proxy to the container. This is needed because the Jupyter server
+uses absolute paths for its redirects and static files. Using the environment
+variable lets Jupyter know the correct URL at which it should listen. After
 building the container, you can push it to the Kiosc registry (see the commands
 below). A container will be automatically created in Kiosc with your container's
 name as title. To build and push the container you can use these commands, after
@@ -426,3 +430,18 @@ replacing the values between ``<angle brackets>`` with appropriate values.
     # Push it to Kiosc
     docker login <kiosc_url>
     docker push <kiosc url>/<project uuid>/<image name>:<image version>
+
+You can of course also create the container manually, if you push your image to
+a different container registry available on the internet. After creating the
+container in Kiosc, you must click on "Update container" and modify some
+properties. Refer to the following table:
+
+==================  ==================================================================
+**Container Port**  ``8888``
+**Container Path**  ``__KIOSC_URL_PREFIX__/notebooks/my_notebook.ipynb``
+**Environment**     ``{"JUPYTER_BASE_URL": "__KIOSC_URL_PREFIX__"``
+==================  ==================================================================
+
+Do not replace ``__KIOSC_URL_PREFIX__``: it is a special string that tells the
+Kiosc proxy to forward the full absolute path to this container, instead of the
+relative one.

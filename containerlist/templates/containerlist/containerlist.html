@@ -38,8 +38,8 @@
         {% has_perm "containers.view_container" request.user container.project as can_view_container %}
         {% if can_view_container %}
           <tr>
-            <td><a href="{% url 'containers:detail' container=container.sodar_uuid %}">{{ container.project.full_title }}</a></td>
-            <td>{{ container.title }}</td>
+            <td><a href="{% url 'projectroles:detail' project=container.project.sodar_uuid %}">{{ container.project.full_title }}</a></td>
+            <td><a href="{% url 'containers:detail' container=container.sodar_uuid %}">{{ container.title }}</a></td>
             <td>{{ container.get_repos_full }}</td>
             {% if network_mode == "host" %}
               <td>{{ container.host_port }}</td>

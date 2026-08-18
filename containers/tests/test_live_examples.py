@@ -111,7 +111,11 @@ class TestLiveCellXGene(UITestBase):
             container_port=8050,
             host_port=13124,
             container_id=None,
-            command='cellxgene launch https://github.com/chanzuckerberg/cellxgene/raw/refs/heads/main/example-dataset/pbmc3k.h5ad -p 8050 --host 0.0.0.0 --verbose',
+            command='cellxgene launch '
+            'https://github.com/chanzuckerberg/cellxgene/raw/refs/heads/main/example-dataset/pbmc3k.h5ad '
+            '-p 8050 '
+            '--host 0.0.0.0 '
+            '--verbose',
         )
 
     def test_get_umap(self):

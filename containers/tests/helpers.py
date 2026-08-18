@@ -69,8 +69,7 @@ def build_testdata_container(cli, dockerfile_name):
     # Block until building is done
     for s in stream:
         if 'error' in s:
-            print(s['error'])
-            print(s.get('errorDetail', ''))
+            raise RuntimeError(s.get('errorDetail', ''))
 
 
 class TestContainerCreationMixin:

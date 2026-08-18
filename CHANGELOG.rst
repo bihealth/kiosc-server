@@ -7,20 +7,30 @@ Loosely follows the `Keep a Changelog <http://keepachangelog.com/en/1.0.0/>`_ gu
 Current
 =======
 
-- Implement search for log entries from the Docker daemon (#269)
+New Features
+------------
+
+- Jupyter notebooks can now be deployed on Kiosc, as documented in the Usage Cookbook of the docs (#272)
+- Container log entries from the Docker daemon can be searched (#269)
+- Project guests are now allowed to see container logs (#269)
+- Containers are started on demand when accessed in state INITIAL, EXITED, or TERMINATED (#268)
+- Failing to access a container will redirect to the container details rather than to the HTTP referer (#268)
+- Markdown in container description is now supported (#275)
+
+Internal Refactoring
+--------------------
+
 - Add projects keyword for find() model manager method in Container, ContainerTemplateSite, ContainerTemplateProject, ContainerBackgroundJob, ContainerLogEntry (#269)
 - Remove sync_to_async monkey patch (#269)
 - Use whitenoise backend for static files also in development (#269)
 - Reorganize Django settings (#269)
 - Upgrade SODAR Core to v1.4.2 (#269)
-- Allow project guests to see container logs (#269)
-- Start container on demand when accessed in state INITIAL, EXITED, or TERMINATED (#268)
-- Failing to access a container will redirect to the container details rather than to the HTTP referer (#268)
 
-Fixed
+Fixes
 -----
 
 - Fix parsing of errors in Docker pull logs (#274)
+- Fix redirection to actual container_path from ProxyLobby (#272)
 
 v0.6.1 (2026-07-09)
 ===================

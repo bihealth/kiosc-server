@@ -19,7 +19,7 @@
 {% get_django_setting "KIOSC_CONTAINER_DEFAULT_LOG_LINES" as default_log_lines %}
 
 <div class="row sodar-subtitle-container">
-  <h3>Container <small class="text-muted">{{ object.title }}</small></h3>
+  <h3>Container "{{ object.title }}"</h3>
   <div class="ml-auto">
     {% container_controls object request.user display=True %}
     <a role="button" class="btn btn-secondary"

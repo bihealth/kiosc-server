@@ -9,7 +9,6 @@ from selenium.webdriver.support.ui import WebDriverWait
 from containers.models import (
     ABSOLUTE_PATH_PROXY_PREFIX,
 )
-from containers.statemachines import connect_docker
 from containers.tests.helpers import build_testdata_container, UITestBase
 from containers.tests.factories import (
     ContainerFactory,
@@ -21,7 +20,6 @@ class TestLiveJupyter(UITestBase):
 
     def setUp(self):
         super().setUp()
-        self.cli = connect_docker()
         build_testdata_container(self.cli, 'sample-app-jupyter')
         self.container = ContainerFactory(
             project=self.project,
@@ -61,7 +59,6 @@ class TestLiveSeaPiper(UITestBase):
 
     def setUp(self):
         super().setUp()
-        self.cli = connect_docker()
         self.container = ContainerFactory(
             project=self.project,
             repository='sample-app-seapiper',
@@ -91,6 +88,9 @@ class TestLiveSeaPiper(UITestBase):
         ).click()
         table_id = 'DataTables_Table_1'
         WebDriverWait(self.selenium, self.wait_time).until(
+            ec.presence_of_element_located((By.ID, table_id))
+        )
+        WebDriverWait(self.selenium, self.wait_time).until(
             ec.text_to_be_present_in_element((By.ID, table_id), 'ENSG')
         )
         table_el = self.selenium.find_element(By.ID, table_id)
@@ -103,7 +103,6 @@ class TestLiveCellXGene(UITestBase):
 
     def setUp(self):
         super().setUp()
-        self.cli = connect_docker()
         self.container = ContainerFactory(
             project=self.project,
             repository='quay.io/biocontainers/cellxgene',
@@ -123,7 +122,8 @@ class TestLiveCellXGene(UITestBase):
         self.login_and_redirect_to_container(self.superuser, self.container)
         # Enter the dataset name
         input_loc = (By.XPATH, '//input[@data-testid="new-annotation-name"]')
-        WebDriverWait(self.selenium, self.wait_time).until(
+        # This container needs time to be pulled, so we increase the wait_time
+        WebDriverWait(self.selenium, self.wait_time * 3).until(
             ec.element_to_be_clickable(input_loc)
         )
         input_el = self.selenium.find_element(*input_loc)

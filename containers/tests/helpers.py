@@ -24,6 +24,7 @@ from containers.models import (
     STATE_EXITED,
     STATE_PAUSED,
 )
+from containers.statemachines import connect_docker
 from containers.tests.factories import ProjectFactory, ContainerFactory
 from containers.views_api import (
     CONTAINERS_API_MEDIA_TYPE,
@@ -221,6 +222,8 @@ class UITestBase(
         self.role_owner_as = RoleAssignment.objects.create(
             project=self.project, user=self.user, role=self.role_owner
         )
+
+        self.cli = connect_docker()
 
         self.set_up_selenium()
 

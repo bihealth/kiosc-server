@@ -15,7 +15,6 @@ from containers.models import (
     ACTION_RESTART,
     STATE_RUNNING,
 )
-from containers.statemachines import connect_docker
 from containers.tasks import container_task
 from containers.tests.helpers import build_testdata_container, UITestBase
 from containers.tests.factories import (
@@ -44,10 +43,12 @@ class TestContainerCreateView(UITestBase):
             By.CSS_SELECTOR, '#div_id_description .ace_text-input'
         )
         input.send_keys('hello world')
-        content = self.selenium.find_element(
-            By.CSS_SELECTOR, '#div_id_description .ace_content'
+        WebDriverWait(self.selenium, self.wait_time).until(
+            ec.text_to_be_present_in_element(
+                (By.CSS_SELECTOR, '#div_id_description .ace_content'),
+                '**hello world**',
+            )
         )
-        self.assertEqual(content.text, ' **hello world** ')
         WebDriverWait(self.selenium, self.wait_time).until(
             ec.text_to_be_present_in_element_attribute(
                 (By.CSS_SELECTOR, '#div_id_description .martor-preview'),
@@ -91,7 +92,6 @@ class TestContainerDetailView(UITestBase):
 class TestReverseProxyView(UITestBase):
     def setUp(self):
         super().setUp()
-        self.cli = connect_docker()
         build_testdata_container(self.cli, 'sample-app-server')
         self.container = ContainerFactory(
             project=self.project,

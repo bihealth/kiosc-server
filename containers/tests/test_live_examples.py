@@ -1,9 +1,11 @@
-"""Test live container examples from the docs"""
+"""Test live container examples from the cookbook docs"""
 
 import time
 import docker
 
 from selenium.webdriver.common.by import By
+from selenium.webdriver.support import expected_conditions as ec
+from selenium.webdriver.support.ui import WebDriverWait
 
 from containers.models import (
     Container,
@@ -16,9 +18,9 @@ from containers.tests.factories import (
 )
 
 
-class TestLiveJupyter(
-    UITestBase,
-):
+class TestLiveJupyter(UITestBase):
+    """Test a Jupyter notebook example"""
+
     def setUp(self):
         super().setUp()
         self.cli = connect_docker()
@@ -49,11 +51,42 @@ class TestLiveJupyter(
     def test_get_notebook(self):
         """Test Jupyter container for get notebook"""
         self.login_and_redirect_to_container(self.superuser, self.container)
-        time.sleep(10)
-        run_all_button = self.selenium.find_element(
-            By.XPATH,
-            '//jp-button[@data-command="notebook:run-cell-and-select-next"]',
+        run_loc = (By.XPATH, '//div[@id="menu-panel"]//div[text()="Run"]')
+        WebDriverWait(self.selenium, self.wait_time).until(
+            ec.element_to_be_clickable(run_loc)
         )
+        self.selenium.find_element(*run_loc).click()
+        time.sleep(1)
+        run_loc = (By.XPATH, '//div[text()="Run All Cells"]')
+        WebDriverWait(self.selenium, self.wait_time).until(
+            ec.element_to_be_clickable(run_loc)
+        )
+        self.selenium.find_element(*run_loc).click()
+        time.sleep(1)
+        WebDriverWait(self.selenium, self.wait_time).until(
+            ec.presence_of_element_located((By.XPATH, '//div[text()="[1]:"]'))
+        )
+        print('element found')
+
+
+class TestLiveSeaPiper(UITestBase):
+    """Test a Seapiper example"""
+
+    def setUp(self):
+        super().setUp()
+        self.cli = connect_docker()
+        self.container = ContainerFactory(
+            project=self.project,
+            repository='sample-app-seapiper',
+            tag='testing',
+            container_port=8080,
+            host_port=14023,
+            container_id=None,
+        )
+        WebDriverWait(self.selenium, self.wait_time).until(
+            ec.element_to_be_clickable(btn_loc)
+        )
+        run_all_button = self.selenium.find_element(*btn_loc)
         run_all_button.click()
         time.sleep(2)
-        self.selenium.find_element(By.XPATH, '//div[text()="[1]:"]')
+        self.selenium.close()

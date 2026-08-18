@@ -433,8 +433,8 @@ replacing the values between ``<angle brackets>`` with appropriate values.
 
 You can of course also create the container manually, if you push your image to
 a different container registry available on the internet. After creating the
-container in Kiosc, you must click on "Update container" and modify some
-properties. Refer to the following table:
+container in Kiosc, you must click on "Update container" and modify, at a minimum,
+the fields in thefollowing table:
 
 ==================  ==================================================================
 **Container Port**  ``8888``

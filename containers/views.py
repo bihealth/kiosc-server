@@ -721,7 +721,6 @@ class KioscProxyView(ProxyView):
 
         logger.debug('Response cookies: %s', response.cookies)
 
-        logger.debug('RESPONSE RETURNED: %s', response)
         return response
 
 

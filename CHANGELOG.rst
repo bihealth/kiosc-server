@@ -25,12 +25,14 @@ Internal Refactoring
 - Use whitenoise backend for static files also in development (#269)
 - Reorganize Django settings (#269)
 - Upgrade SODAR Core to v1.4.2 (#269)
+- Add live tests for seaPiper, CellXGene, and Jupyter (#272)
 
 Fixes
 -----
 
 - Fix parsing of errors in Docker pull logs (#274)
 - Fix redirection to actual container_path from ProxyLobby (#272)
+- Prune zombie stopped container, not just running ones (#282)
 
 v0.6.1 (2026-07-09)
 ===================

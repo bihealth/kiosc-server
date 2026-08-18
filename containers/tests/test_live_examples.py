@@ -1,14 +1,12 @@
 """Test live container examples from the cookbook docs"""
 
 import time
-import docker
 
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support import expected_conditions as ec
 from selenium.webdriver.support.ui import WebDriverWait
 
 from containers.models import (
-    Container,
     ABSOLUTE_PATH_PROXY_PREFIX,
 )
 from containers.statemachines import connect_docker
@@ -36,17 +34,6 @@ class TestLiveJupyter(UITestBase):
             container_path=ABSOLUTE_PATH_PROXY_PREFIX
             + 'notebooks/my_notebook.ipynb',
         )
-
-    def tearDown(self):
-        for container in Container.objects.all():
-            if container.container_id and not len(container.container_id) < 3:
-                try:
-                    self.cli.remove_container(
-                        container.container_id, force=True, v=True
-                    )
-                except docker.errors.NotFound:
-                    pass
-        super().tearDown()
 
     def test_get_notebook(self):
         """Test Jupyter container for get notebook"""
@@ -84,17 +71,6 @@ class TestLiveSeaPiper(UITestBase):
             container_id=None,
         )
         build_testdata_container(self.cli, 'sample-app-seapiper')
-
-    def tearDown(self):
-        for container in Container.objects.all():
-            if container.container_id and not len(container.container_id) < 3:
-                try:
-                    self.cli.remove_container(
-                        container.container_id, force=True, v=True
-                    )
-                except docker.errors.NotFound:
-                    pass
-        super().tearDown()
 
     def test_select_contrast(self):
         """Test the select input to choose the contrast"""
@@ -137,17 +113,6 @@ class TestLiveCellXGene(UITestBase):
             container_id=None,
             command='cellxgene launch https://github.com/chanzuckerberg/cellxgene/raw/refs/heads/main/example-dataset/pbmc3k.h5ad -p 8050 --host 0.0.0.0 --verbose',
         )
-
-    def tearDown(self):
-        for container in Container.objects.all():
-            if container.container_id and not len(container.container_id) < 3:
-                try:
-                    self.cli.remove_container(
-                        container.container_id, force=True, v=True
-                    )
-                except docker.errors.NotFound:
-                    pass
-        super().tearDown()
 
     def test_get_umap(self):
         """Test that we can see the UMAP plot"""

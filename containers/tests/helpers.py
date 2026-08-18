@@ -3,6 +3,7 @@
 import dateutil.parser
 from pathlib import Path
 import uuid
+import docker
 
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support import expected_conditions as ec
@@ -226,6 +227,15 @@ class UITestBase(
 
     def tearDown(self):
         self.selenium.quit()
+        for container in Container.objects.all():
+            if container.container_id and not len(container.container_id) < 3:
+                try:
+                    self.cli.remove_container(
+                        container.container_id, force=True, v=True
+                    )
+                except docker.errors.NotFound:
+                    pass
+        super().tearDown()
 
     def login_and_redirect_to_container(self, user, container):
         self.login_and_redirect(

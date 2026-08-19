@@ -165,11 +165,12 @@ class TestContainerCrash(TestBase):
         self.container.refresh_from_db()
         self.assertEqual(self.container.state, STATE_DELETED)
         # Test from the daemon (container should not be found)
-        for container in self.cli.containers():
+        for container in self.cli.containers(all=True):
             if container['Id'] == container_id:
                 raise RuntimeError('Container was not deleted successfully')
 
     def test_container_lifecycle(self):
+        """Test a typical container life cycle"""
         self._test_container_start()
         self._test_container_pause()
         self._test_container_unpause()
@@ -178,6 +179,7 @@ class TestContainerCrash(TestBase):
         self._test_container_delete()
 
     def test_container_crash_stop(self):
+        """Simulate a container crash"""
         self._test_container_start()
         self.cli.stop(self.container.container_id)
         self.assertEqual(self.container.state, STATE_RUNNING)
@@ -189,6 +191,7 @@ class TestContainerCrash(TestBase):
         self._test_container_delete(initial=STATE_EXITED)
 
     def test_container_crash_delete(self):
+        """Simulate a container deletion"""
         self._test_container_start()
         self.cli.remove_container(self.container.container_id, force=True)
         self.assertEqual(self.container.state, STATE_RUNNING)

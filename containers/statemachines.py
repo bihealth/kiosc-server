@@ -33,6 +33,7 @@ from containers.models import (
     ACTION_PAUSE,
     ACTION_UNPAUSE,
     ACTION_DELETE,
+    ABSOLUTE_PATH_PROXY_PREFIX,
 )
 
 logger = logging.getLogger(__name__)
@@ -613,14 +614,14 @@ class ContainerMachine(StateMachine):
             'containers:proxy',
             kwargs={
                 'container': self.container.sodar_uuid,
-                'path': self.container.container_path or '',
+                'path': '',
             },
         )
 
         for key, value in environment.items():
-            if isinstance(value, str) and '__KIOSC_URL_PREFIX__' in value:
+            if isinstance(value, str) and ABSOLUTE_PATH_PROXY_PREFIX in value:
                 environment[key] = value.replace(
-                    '__KIOSC_URL_PREFIX__', url_prefix
+                    ABSOLUTE_PATH_PROXY_PREFIX, url_prefix
                 )
 
         environment.update(

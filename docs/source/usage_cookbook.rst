@@ -323,3 +323,125 @@ In addition to the user defined variables, the ``title``, ``description`` and
     $ export TITLE="Some unique title"
     $ export DESCRIPTION="Some description"
     $ export CONTAINER_PORT=8050
+
+Jupyter Notebooks
+^^^^^^^^^^^^^^^^^
+
+.. versionadded:: 0.6.2
+
+.. image:: figures/introduction/cookbook/proxy_jupyter.png
+   :alt: Jupyter notebook proxy
+
+`Jupyter notebooks <https://jupyter.org/>`__ are interactive reports
+that combine code, equations, narrative text, and visualizations. Due to
+the limitations outlined below, we recommend to always try and export
+the notebook to HTML if possible (check out the `relevant docuementation
+<https://jupyterlab.readthedocs.io/en/stable/user/export.html>`__), since
+serving a static HTML file on Kiosc is trivial and safe. If your notebook uses
+interactive widgets, or for some reason cannot be rendered to HTML, you can
+still publish it on Kiosc, but you should be aware of the limitations.
+
+*The resources of the Kiosc server are limited and shared with other users.*
+In particular, you should avoid running notebooks that require a large amount
+of RAM or run very long computations. Instead, use an HPC cluster to process
+the data, export the final results to a file, and only run lightweight
+visualizations tasks in the notebook.
+
+*Anyone who has access to the notebook can execute arbitrary code.* The notebook
+runs in an isolated environment, but security vulnerabilities must be taken into
+account. Therefore, only share the notebook with people you trust, and never
+make it publicly available.
+
+*Containers are killed after a period of inactivity.* In Kiosc, if nobody
+accesses the container for a few days (7 by default), the container will be
+terminated, so that all computations in the notebook may be lost.
+
+If you understand and accept these limitations, here is how to set up a Jupyter
+container for Kiosc. At this time, we do not provide a stock Docker container
+for Jupyter, as each notebook may have different requirements for environments
+and data, and we are still figuring out the most common use cases. Thus, you
+will have to write a custom Dockerfile (please reach out to your friendly
+neighborhood Kiosc admin for help). Here is a template Dockerfile that uses a
+conda environment and copies the data file directly inside the Docker image.
+This is not recommended when the data is large, as it leads to heavy containers.
+
+.. code-block:: dockerfile
+
+    # Use a miniconda base image
+    FROM continuumio/miniconda3:24.9.2-0
+
+    # Set the default base_url for Jupyter
+    ENV JUPYTER_BASE_URL=""
+
+    # Create a regular user and work under the /app directory
+    # (running the notebook as root is not recommended)
+    RUN useradd -r -m -d /app jupyter
+    USER jupyter
+    WORKDIR /app
+
+    # Import the conda environment from a yaml file
+    # (assuming that you previously ran `conda env export > environment.yaml`)
+    COPY ./environment.yaml ./
+    RUN conda env create -f environment.yaml -n my_conda_env
+
+    # Add the data and notebook files to the image
+    COPY ./my_data_file.tsv ./
+    COPY ./my_notebook.ipynb ./
+
+    # Run CMD from the default conda environment
+    ENTRYPOINT ["conda", "run", "--no-capture-output", "-n", "my_conda_env"]
+
+    # Configure the exposed port
+    EXPOSE ["8888"]
+
+    # Run Jupyter with the appropriate arguments for Kiosc
+    # (replace `my_notebook.ipynb` with the path to your notebook)
+    CMD [ \
+        "/bin/bash", "-c", \
+        "jupyter notebook \
+            --ip=0.0.0.0 \
+            --port=8888 \
+            --no-browser \
+            --ServerApp.base_url=$JUPYTER_BASE_URL \
+            --ServerApp.allow_origin='*' \
+            --ServerApp.allow_remote_access=true \
+            --ServerApp.allow_unauthenticated_access=true \
+            --ServerApp.disable_check_xsrf=true \
+            --ServerApp.token='' \
+            --ServerApp.trust_xheaders=true" \
+    ]
+
+Your mileage may vary, but this should be a reasonable starting point. Note
+that the command line flags for the jupyter notebook command are all required.
+``$JUPYTER_BASE_URL`` is an environment variable which stands for the full
+path of the proxy to the container. This is needed because the Jupyter server
+uses absolute paths for its redirects and static files. Using the environment
+variable lets Jupyter know the correct URL at which it should listen. After
+building the container, you can push it to the Kiosc registry (see the commands
+below). A container will be automatically created in Kiosc with your container's
+name as title. To build and push the container you can use these commands, after
+replacing the values between ``<angle brackets>`` with appropriate values.
+
+.. code-block:: bash
+
+    # Build the container
+    docker buildx build -t <kiosc url>/<project uuid>/<image name>:<image version>
+
+    # Push it to Kiosc
+    docker login <kiosc_url>
+    docker push <kiosc url>/<project uuid>/<image name>:<image version>
+
+You can of course also create the container manually, if you push your image to
+a different container registry available on the internet. After creating the
+container in Kiosc, you must click on "Update container" and modify, at a minimum,
+the fields in thefollowing table:
+
+==================  ==================================================================
+**Container Port**  ``8888``
+**Container Path**  ``__KIOSC_URL_PREFIX__/notebooks/my_notebook.ipynb``
+**Environment**     ``{"JUPYTER_BASE_URL": "__KIOSC_URL_PREFIX__"``
+==================  ==================================================================
+
+Do not replace ``__KIOSC_URL_PREFIX__``: it is a special string that tells the
+Kiosc proxy to forward the full absolute path to this container, instead of the
+relative one.

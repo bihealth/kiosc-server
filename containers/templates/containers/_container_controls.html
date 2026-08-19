@@ -10,7 +10,7 @@
 {% has_perm "containers.unpause_container" user container.project as can_unpause_container %}
 
 <div class="btn-group {% if not display %} sodar-list-btn-group {% endif %}">
-  <a href="{% url 'containers:proxy' container=container.sodar_uuid path=container.container_path %}"
+  <a href="{% url 'containers:proxy' container=container.sodar_uuid path=container.get_path %}"
       class="btn btn-primary {% if not display %} sodar-list-dropdown {% endif %}" target="_blank"
       data-toggle="tooltip" data-placement="top" title="Open app">
     <i class="iconify" data-icon="mdi:eye"></i>

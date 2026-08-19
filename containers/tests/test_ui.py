@@ -2,11 +2,12 @@
 
 import docker
 
+from django.urls import reverse
+
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support import expected_conditions as ec
 from selenium.webdriver.support.ui import WebDriverWait
 
-from django.urls import reverse
 
 from containers.models import (
     Container,
@@ -14,7 +15,6 @@ from containers.models import (
     ACTION_RESTART,
     STATE_RUNNING,
 )
-from containers.statemachines import connect_docker
 from containers.tasks import container_task
 from containers.tests.helpers import build_testdata_container, UITestBase
 from containers.tests.factories import (
@@ -43,10 +43,12 @@ class TestContainerCreateView(UITestBase):
             By.CSS_SELECTOR, '#div_id_description .ace_text-input'
         )
         input.send_keys('hello world')
-        content = self.selenium.find_element(
-            By.CSS_SELECTOR, '#div_id_description .ace_content'
+        WebDriverWait(self.selenium, self.wait_time).until(
+            ec.text_to_be_present_in_element(
+                (By.CSS_SELECTOR, '#div_id_description .ace_content'),
+                '**hello world**',
+            )
         )
-        self.assertEqual(content.text, ' **hello world** ')
         WebDriverWait(self.selenium, self.wait_time).until(
             ec.text_to_be_present_in_element_attribute(
                 (By.CSS_SELECTOR, '#div_id_description .martor-preview'),
@@ -90,7 +92,6 @@ class TestContainerDetailView(UITestBase):
 class TestReverseProxyView(UITestBase):
     def setUp(self):
         super().setUp()
-        self.cli = connect_docker()
         build_testdata_container(self.cli, 'sample-app-server')
         self.container = ContainerFactory(
             project=self.project,
@@ -98,6 +99,7 @@ class TestReverseProxyView(UITestBase):
             tag='testing',
             container_port=80,
             host_port=14809,
+            container_id=None,
         )
 
     def tearDown(self):
@@ -124,29 +126,7 @@ class TestReverseProxyView(UITestBase):
         container_task(job_id=bg_job.pk)
         self.container.refresh_from_db()
         self.assertEqual(self.container.state, STATE_RUNNING)
-        self.login_and_redirect(
-            self.superuser,
-            reverse(
-                'containers:detail',
-                kwargs={
-                    'container': str(self.container.sodar_uuid),
-                },
-            ),
-        )
-        btn = self.selenium.find_element(
-            By.XPATH, '//a[@data-original-title="Open app"]'
-        )
-        # Selenium opens the link in a new tab
-        # https://www.selenium.dev/documentation/webdriver/interactions/windows/
-        original_window_handle = self.selenium.current_window_handle
-        btn.click()
-        WebDriverWait(self.selenium, self.wait_time).until(
-            ec.number_of_windows_to_be(2)
-        )
-        new_window_handle = (
-            set(self.selenium.window_handles) - {original_window_handle}
-        ).pop()
-        self.selenium.switch_to.window(new_window_handle)
+        self.login_and_redirect_to_container(self.superuser, self.container)
         lobby_elem = self.selenium.find_element(By.ID, 'kiosc-lobby-text')
         self.assertIn('Check the logs for more info', lobby_elem.text)
 

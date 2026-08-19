@@ -1,5 +1,6 @@
 """Test kioscadmin tasks."""
 
+import time
 from datetime import timedelta
 from unittest import mock
 from unittest.mock import patch, call
@@ -12,10 +13,12 @@ from django.test import override_settings
 from containers.models import (
     STATE_EXITED,
     STATE_RUNNING,
-    ContainerLogEntry,
     STATE_INITIAL,
     ACTION_START,
+    ACTION_STOP,
     PROCESS_PROXY,
+    Container,
+    ContainerLogEntry,
     ContainerBackgroundJob,
 )
 from kioscadmin.tasks import (
@@ -352,7 +355,6 @@ class TestStopInactiveContainers(TestBase):
 
 @override_settings(
     KIOSC_NETWORK_MODE='docker-shared',
-    KIOSC_DOCKER_NETWORK='kiosc-docker-network-testing',
 )
 class TestPruneZombieContainers(TestBase):
     """Tests for ``prune_zombie_containers`` task."""
@@ -362,25 +364,34 @@ class TestPruneZombieContainers(TestBase):
         self.cli = connect_docker()
         # Build the sample container image
         build_testdata_container(self.cli, 'sample-app-logging')
-        # Create the network
-        self.network = self.cli.create_network(
-            settings.KIOSC_DOCKER_NETWORK,
-            driver='bridge',
-            check_duplicate=True,
-        )
-
         self.container = ContainerFactory(
             project=self.project,
             repository='sample-app-logging',
             tag='testing',
             host_port=0,
+            container_id=None,
         )
 
     def tearDown(self):
-        self.cli.remove_network(self.network['Id'])
+        for container in Container.objects.all():
+            if container.container_id and not len(container.container_id) < 3:
+                try:
+                    self.cli.remove_container(
+                        container.container_id, force=True, v=True
+                    )
+                except docker.errors.NotFound:
+                    pass
         super().tearDown()
 
-    def test_prune_zombie_containers(self):
+    @override_settings(
+        KIOSC_DOCKER_NETWORK='kiosc-testing-prune-running',
+    )
+    def test_prune_running_zombie_container(self):
+        """Test pruning a zombie container in STATE_RUNNING"""
+        network = self.cli.create_network(
+            settings.KIOSC_DOCKER_NETWORK,
+            driver='bridge',
+        )
         bg_job = ContainerBackgroundJobFactory(
             user=self.superuser,
             action=ACTION_START,
@@ -388,7 +399,12 @@ class TestPruneZombieContainers(TestBase):
         )
         container_task(job_id=bg_job.pk)
         self.container.refresh_from_db()
-        logs = [log.text for log in ContainerLogEntry.objects.all()]
+        logs = [
+            log.text
+            for log in ContainerLogEntry.objects.filter(
+                container=self.container
+            )
+        ]
         self.assertIn('Container started successfully\n', logs)
         self.assertEqual(self.container.state, STATE_RUNNING)
         container_id = self.container.container_id
@@ -397,7 +413,57 @@ class TestPruneZombieContainers(TestBase):
         self.container.save()
         # Test that pruning the zombies does the job
         prune_zombie_containers()
-        for container in self.cli.containers():
+        for container in self.cli.containers(all=True):
             if container['Id'] == container_id:
                 # Container should not be found
                 raise RuntimeError('Container did not stop successfully')
+        self.cli.remove_network(network['Id'])
+
+    @override_settings(
+        KIOSC_DOCKER_NETWORK='kiosc-testing-prune-exited',
+    )
+    def test_prune_exited_zombie_container(self):
+        """Test pruning a zombie container in STATE_EXITED"""
+        network = self.cli.create_network(
+            settings.KIOSC_DOCKER_NETWORK,
+            driver='bridge',
+        )
+        bg_job = ContainerBackgroundJobFactory(
+            user=self.superuser,
+            action=ACTION_START,
+            container=self.container,
+        )
+        container_task(job_id=bg_job.pk)
+        self.container.refresh_from_db()
+        logs = [
+            log.text
+            for log in ContainerLogEntry.objects.filter(
+                container=self.container
+            )
+        ]
+        self.assertIn('Container started successfully\n', logs)
+        time.sleep(2)  # Wait for cooldown...
+        bg_job = ContainerBackgroundJobFactory(
+            user=self.superuser,
+            action=ACTION_STOP,
+            container=self.container,
+        )
+        container_task(job_id=bg_job.pk)
+        for attempt in range(3):
+            self.container.refresh_from_db()
+            if self.container.state == STATE_EXITED:
+                break
+            time.sleep(2)
+        else:
+            raise RuntimeError("Couldn't stop the container")
+        container_id = self.container.container_id
+        # Artificially cut the tie between kiosc and the container
+        self.container.container_id = None
+        self.container.save()
+        # Test that pruning the zombies does the job
+        prune_zombie_containers()
+        for container in self.cli.containers(all=True):
+            if container['Id'] == container_id:
+                # Container should not be found
+                raise RuntimeError('Container did not stop successfully')
+        self.cli.remove_network(network['Id'])

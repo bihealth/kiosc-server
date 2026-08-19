@@ -123,7 +123,7 @@ def prune_zombie_containers(_self):
         return
 
     cli = connect_docker()
-    for container in cli.containers():
+    for container in cli.containers(all=True):
         container_networks = container['NetworkSettings']['Networks']
         if len(container_networks) > 1 or not container_networks.get(
             settings.KIOSC_DOCKER_NETWORK

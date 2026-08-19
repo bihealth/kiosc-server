@@ -11,8 +11,6 @@ https://docs.djangoproject.com/en/dev/ref/settings/
 import os
 import environ
 
-from projectroles.constants import get_sodar_constants
-
 
 SITE_PACKAGE = 'kiosc'
 

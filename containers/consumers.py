@@ -18,15 +18,17 @@ import socket
 
 from django.conf import settings
 from django.db import connection
-from .models import Container
+from django.urls import reverse
 
 from containers.models import (
+    Container,
     STATE_INITIAL,
     STATE_PULLING,
     STATE_DELETED,
     STATE_TERMINATED,
     STATE_CREATED,
     STATE_FAILED,
+    ABSOLUTE_PATH_PROXY_PREFIX,
 )
 from containers.statemachines import connect_docker
 
@@ -52,7 +54,7 @@ class TunnelConsumer(WebsocketConsumer):
     server from a web app.
     """
 
-    debug = False
+    debug = settings.DEBUG
 
     def connect(self):
         """Upon connect, create internal web socket to tunnel target."""
@@ -65,10 +67,34 @@ class TunnelConsumer(WebsocketConsumer):
             self.close(code=4403, reason='Forbidden')
             return
 
+        # HACK: some servers, such as Jupyter, use absolute URLs. That means
+        # that they need to be passed the full path (everything after the
+        # server's FQDN). We set up a convention: if the container_path starts
+        # with the magic value __KIOSC_URL_PREFIX__, we forward the absolute
+        # path to the app. It's as if __KIOSC_URL_PREFIX__ were replaced with
+        # the path to the container proxy (/containers/proxy/<container_uuid>/).
+        # The app must then be set up with this absolute base URL.
+        # Note that the same magic value can also used in the container
+        # environment variables, where it means exactly the path to the proxy.
+        # See https://github.com/bihealth/kiosc-server/issues/271
+        path = self.scope['url_route']['kwargs']['path']
+        if container.container_path.startswith(ABSOLUTE_PATH_PROXY_PREFIX):
+            path = reverse(
+                'containers:proxy',
+                kwargs={'container': container.sodar_uuid, 'path': path},
+            ).lstrip('/')  # remove the initial slash
+
         # Create web socket for writing data from inernal web socket to original client.
         def on_message(ws, message):
             """Forward any data from the client web socket to the orignal client."""
+            logger.debug('TunnelConsumer MESSAGE: %s', message)
             self.send(message)
+
+        def on_error(ws, err):
+            logger.debug('TunnelConsumer ERROR: %s', err)
+
+        def on_close(ws, code, msg):
+            logger.debug('TunnelConsumer CLOSED: %s (%s)', code, msg)
 
         websocket.enableTrace(self.debug)
 
@@ -76,19 +102,26 @@ class TunnelConsumer(WebsocketConsumer):
             ws_url = 'ws://%s:%d/%s' % (
                 container.container_id[:12],
                 container.container_port,
-                self.scope['url_route']['kwargs']['path'],
+                path,
             )
         else:
             ws_url = 'ws://localhost:%d/%s' % (
                 container.host_port,
-                self.scope['url_route']['kwargs']['path'],
+                path,
             )
+        if query_string := self.scope['query_string']:
+            ws_url += '?' + query_string.decode('utf8')
 
-        self.ws = websocket.WebSocketApp(ws_url, on_message=on_message)
+        self.ws = websocket.WebSocketApp(
+            ws_url, on_message=on_message, on_error=on_error, on_close=on_close
+        )
 
         # Kick off thread copying data from internal web socket to the original client.
         thread = threading.Thread(
-            target=self.ws.run_forever, args=(), daemon=True
+            target=self.ws.run_forever,
+            args=(),
+            kwargs={'suppress_origin': True},
+            daemon=True,
         )
         thread.start()
         self.accept()

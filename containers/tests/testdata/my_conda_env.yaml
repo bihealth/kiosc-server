@@ -1,0 +1,8 @@
+name: my_conda_env
+channels:
+  - conda-forge
+  - nodefaults
+dependencies:
+  - python
+  - pip:
+    - jupyter

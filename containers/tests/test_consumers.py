@@ -410,7 +410,9 @@ class TestContainerWatcherConsumerLive(
         self.assertEqual(initial_state, 'Loading...')
         self.assertEqual(initial_logs, ' Loading...')
 
-        WebDriverWait(state_elem, 10).until(lambda el: el.text != initial_state)
+        WebDriverWait(state_elem, self.wait_time).until(
+            lambda el: el.text != initial_state
+        )
         not_running_state = state_elem.text
         self.assertEqual(
             not_running_state,
@@ -425,7 +427,7 @@ class TestContainerWatcherConsumerLive(
         t.start()
         t.join()
 
-        WebDriverWait(state_elem, 10).until(
+        WebDriverWait(state_elem, self.wait_time).until(
             lambda el: el.text != not_running_state
         )
         not_accepting_state = state_elem.text
@@ -434,8 +436,10 @@ class TestContainerWatcherConsumerLive(
             'The app is not accepting connections; please be patient...',
         )
 
-        # At this point we should see the Django channels logs, but unfortunately
-        # with the InMemoryChannelLayer backend they are not sent (https://channels.readthedocs.io/en/stable/topics/channel_layers.html#in-memory-channel-layer). Thus, we use a mock.
+        # At this point we should see the Django channels logs, but
+        # unfortunately with the InMemoryChannelLayer backend they are not sent,
+        # thus we use a mock.
+        # https://channels.readthedocs.io/en/stable/topics/channel_layers.html#in-memory-channel-layer
         _log_task.assert_has_calls(
             [
                 call('Using cached image for sample-app-logging:testing'),
@@ -446,7 +450,7 @@ class TestContainerWatcherConsumerLive(
             ]
         )
         _log_task.reset_mock()
-        # WebDriverWait(logs_elem, 10).until(lambda el: el.text != '')
+        # WebDriverWait(logs_elem, self.wait_time).until(lambda el: el.text != '')
         # channel_logs = logs_elem.text
         # self.assertIn('Using cached image', channel_logs)
         # self.assertIn('Starting', channel_logs)
@@ -454,7 +458,7 @@ class TestContainerWatcherConsumerLive(
 
         # This container logs an increasing sequence of numbers: we try and
         # detect it.
-        WebDriverWait(logs_elem, 10).until(lambda el: el.text != '')
+        WebDriverWait(logs_elem, self.wait_time).until(lambda el: el.text != '')
         daemon_logs = logs_elem.text
         log_line_count = 1
         for log_line in daemon_logs.split('\n'):
@@ -479,12 +483,12 @@ class TestContainerWatcherConsumerLive(
             ]
         )
         _log_task.reset_mock()
-        # WebDriverWait(logs_elem, 10).until(lambda el: el.text != daemon_logs)
+        # WebDriverWait(logs_elem, self.wait_time).until(lambda el: el.text != daemon_logs)
         # stopped_logs = logs_elem.text
         # self.assertIn('Stopping container succeeded', stopped_logs)
 
         # Finally we check the status update
-        WebDriverWait(state_elem, 10).until(
+        WebDriverWait(state_elem, self.wait_time).until(
             lambda el: el.text != not_accepting_state
         )
         exited_state = state_elem.text
@@ -498,7 +502,9 @@ class TestContainerWatcherConsumerLive(
         t.start()
         t.join()
 
-        WebDriverWait(state_elem, 10).until(lambda el: el.text != exited_state)
+        WebDriverWait(state_elem, self.wait_time).until(
+            lambda el: el.text != exited_state
+        )
         not_accepting_state = state_elem.text
         self.assertEqual(
             not_accepting_state,
@@ -512,6 +518,6 @@ class TestContainerWatcherConsumerLive(
             ]
         )
         _log_task.reset_mock()
-        # WebDriverWait(logs_elem, 10).until(lambda el: el.text != stopped_logs)
+        # WebDriverWait(logs_elem, self.wait_time).until(lambda el: el.text != stopped_logs)
         # restarted_logs = logs_elem.text
         # self.assertIn('Container started successfully', restarted_logs)

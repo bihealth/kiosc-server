@@ -26,6 +26,10 @@ Internal Refactoring
 - Reorganize Django settings (#269)
 - Upgrade SODAR Core to v1.4.2 (#269)
 - Add live tests for seaPiper, CellXGene, and Jupyter (#272)
+- Allow project guests to see container logs (#269)
+- Start container on demand when accessed in state INITIAL, EXITED, or TERMINATED (#268)
+- Failing to access a container will redirect to the container details rather than to the HTTP referer (#268)
+- Environment is now an empty dict by default, instead of None (#229)
 
 Fixes
 -----

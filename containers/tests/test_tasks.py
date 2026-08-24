@@ -115,7 +115,7 @@ class TestContainerTask(TestBase):
             command=self.container1.command or None,
             ports=[self.container1.container_port],
             host_config=None,
-            volumes=['/kiosc'],
+            volumes=[],
         )
         create_host_config.assert_called_once_with(
             ulimits=[
@@ -128,12 +128,7 @@ class TestContainerTask(TestBase):
             port_bindings={
                 self.container1.container_port: self.container1.host_port
             },
-            binds={
-                str(self.container1.volume_name): {
-                    'bind': '/kiosc',
-                    'mode': 'rw',
-                },
-            },
+            binds={},
         )
         create_networking_config.assert_not_called()
         create_endpoint_config.assert_not_called()
@@ -214,7 +209,7 @@ class TestContainerTask(TestBase):
             command=self.container1.command or None,
             ports=[self.container1.container_port],
             host_config=None,
-            volumes=['/kiosc'],
+            volumes=[],
             networking_config={},
         )
         create_host_config.assert_called_once_with(
@@ -225,12 +220,7 @@ class TestContainerTask(TestBase):
                     'Hard': settings.KIOSC_DOCKER_MAX_ULIMIT_NOFILE_HARD,
                 }
             ],
-            binds={
-                str(self.container1.volume_name): {
-                    'bind': '/kiosc',
-                    'mode': 'rw',
-                },
-            },
+            binds={},
         )
         create_networking_config.assert_called_once_with(
             {settings.KIOSC_DOCKER_NETWORK: {}}
@@ -325,7 +315,7 @@ class TestContainerTask(TestBase):
             command=self.container1.command or None,
             ports=[self.container1.container_port],
             host_config=None,
-            volumes=['/kiosc'],
+            volumes=[],
         )
         create_host_config.assert_called_once_with(
             ulimits=[
@@ -338,12 +328,7 @@ class TestContainerTask(TestBase):
             port_bindings={
                 self.container1.container_port: self.container1.host_port
             },
-            binds={
-                str(self.container1.volume_name): {
-                    'bind': '/kiosc',
-                    'mode': 'rw',
-                },
-            },
+            binds={},
         )
         create_networking_config.assert_not_called()
         create_endpoint_config.assert_not_called()
@@ -437,7 +422,7 @@ class TestContainerTask(TestBase):
             command=self.container1.command or None,
             ports=[self.container1.container_port],
             host_config=None,
-            volumes=['/kiosc'],
+            volumes=[],
         )
         create_host_config.assert_called_once_with(
             ulimits=[
@@ -450,12 +435,7 @@ class TestContainerTask(TestBase):
             port_bindings={
                 self.container1.container_port: self.container1.host_port
             },
-            binds={
-                str(self.container1.volume_name): {
-                    'bind': '/kiosc',
-                    'mode': 'rw',
-                },
-            },
+            binds={},
         )
         create_networking_config.assert_not_called()
         create_endpoint_config.assert_not_called()
@@ -603,7 +583,7 @@ class TestContainerTask(TestBase):
             command=self.container1.command or None,
             ports=[self.container1.container_port],
             host_config=None,
-            volumes=['/kiosc'],
+            volumes=[],
         )
         create_host_config.assert_called_once_with(
             ulimits=[
@@ -616,12 +596,7 @@ class TestContainerTask(TestBase):
             port_bindings={
                 self.container1.container_port: self.container1.host_port
             },
-            binds={
-                str(self.container1.volume_name): {
-                    'bind': '/kiosc',
-                    'mode': 'rw',
-                },
-            },
+            binds={},
         )
         create_networking_config.assert_not_called()
         create_endpoint_config.assert_not_called()

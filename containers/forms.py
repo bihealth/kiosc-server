@@ -95,6 +95,7 @@ class ContainerForm(forms.ModelForm):
 ContainerRemoteMountForm = inlineformset_factory(
     Container,
     ContainerRemoteMount,
+    labels={'dest': 'Destination'},
     fields=[
         'volume_name',
         'source',

@@ -10,6 +10,7 @@ import logging
 from docker.types import Ulimit
 from datetime import datetime
 from urllib.parse import urlsplit
+from zoneinfo import ZoneInfo
 
 from asgiref.sync import async_to_sync
 from channels.layers import get_channel_layer
@@ -583,23 +584,33 @@ class ContainerMachine(StateMachine):
         volumes = []
         for remote_mount in self.container.remote_mounts.all():
             volume_name = str(remote_mount.volume_name)
+            volume_path = os.path.join(
+                settings.KIOSC_DOCKER_VOLUMES_DIR, volume_name
+            )
             # Create volume if it doesn't exist
             try:
-                volume = self.cli.inspect_volume(volume_name)
+                self.cli.inspect_volume(volume_name)
             except docker.errors.APIError:
-                volume = self.cli.create_volume(
-                    volume_name, labels={'kiosc.owner': 'kiosc'}
+                self.cli.create_volume(
+                    volume_name,
+                    driver='local',
+                    driver_opts={
+                        'type': 'none',
+                        'o': 'bind',
+                        'device': volume_path,
+                    },
+                    labels={'kiosc.owner': 'kiosc'},
                 )
+                os.makedirs(volume_path, exist_ok=True)
                 remote_mount.dirty = True
             if (
                 remote_mount.dirty or not remote_mount.date_last_update
             ) and remote_mount.source:
-                mountpoint = volume['Mountpoint']
                 self._log_task(
                     f'Downloading data from {remote_mount.source}'
-                    f' to {remote_mount.dest} ({mountpoint})'
+                    f' to {remote_mount.dest} ({volume_path})'
                 )
-                for entry in os.scandir(mountpoint):
+                for entry in os.scandir(volume_path):
                     if entry.is_file() or entry.is_symlink():
                         os.remove(entry)
                     elif entry.is_dir():
@@ -610,7 +621,7 @@ class ContainerMachine(StateMachine):
                 args = [
                     shutil.which('wget'),
                     '-P',
-                    mountpoint,
+                    volume_path,
                     '-r',
                     '-nH',
                     '-np',
@@ -639,15 +650,15 @@ class ContainerMachine(StateMachine):
                     )
                     assert proc.returncode == 0
                 self._log_task(f'Directory listing of {remote_mount.dest}:')
-                for root, dirs, files in os.walk(mountpoint):
+                for root, dirs, files in os.walk(volume_path):
                     for dir in dirs:
-                        os.chmod(os.path.join(root, dir), 0o0777)
                         self._log_task(os.path.join(remote_mount.dest, dir))
                     for file in files:
-                        os.chmod(os.path.join(root, file), 0o0777)
                         self._log_task(os.path.join(remote_mount.dest, file))
             remote_mount.dirty = False
-            remote_mount.date_last_update = datetime.now()
+            remote_mount.date_last_update = datetime.now(
+                tz=ZoneInfo(settings.TIME_ZONE)
+            )
             remote_mount.save()
             binds[volume_name] = {
                 'bind': remote_mount.dest,
@@ -718,7 +729,7 @@ class ContainerMachine(StateMachine):
                 self.container.container_port: self.container.host_port
             }
 
-        binds, volumes = self._setup_volumes(self)
+        binds, volumes = self._setup_volumes()
         options_host_config['binds'] = binds
         options['volumes'] = volumes
 

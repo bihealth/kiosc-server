@@ -244,6 +244,7 @@ TEMPLATES = [
 CRISPY_TEMPLATE_PACK = 'bootstrap4'
 
 # CUSTOM CONTAINER REGISTRY CONFIGURATION
+# ------------------------------------------------------------------------------
 
 # Needs to be increased to allow uploading large images to the regsitry.
 DATA_UPLOAD_MAX_MEMORY_SIZE = env.int(
@@ -265,6 +266,14 @@ KIOSC_CUSTOM_REGISTRY_DOCKER_URL = env.str(
 # configured to use the same token.
 KIOSC_CUSTOM_REGISTRY_NOTIFICATIONS_TOKEN = env.str(
     'KIOSC_CUSTOM_REGISTRY_NOTIFICATIONS_TOKEN', default='PleaseChangeMeToo'
+)
+
+# CONTAINER VOLUMES CONFIGURATION
+# ------------------------------------------------------------------------------
+
+KIOSC_DOCKER_VOLUMES_DIR = env.str(
+    'KIOSC_DOCKER_VOLUMES_DIR',
+    default=str(ROOT_DIR.path('data', 'docker_volumes')),
 )
 
 # STATIC FILE CONFIGURATION

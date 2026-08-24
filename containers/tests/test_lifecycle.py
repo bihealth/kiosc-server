@@ -7,6 +7,7 @@ from django.test import override_settings, tag
 
 from containers.models import (
     Container,
+    ContainerRemoteMount,
     ContainerLogEntry,
     ACTION_START,
     ACTION_STOP,
@@ -222,7 +223,16 @@ class TestContainerVolumes(TestBase):
             repository='sample-app-volume',
             tag='testing',
             host_port=0,
-            # container_id=None,
+            container_id=None,
+        )
+        self.empty_mount = ContainerRemoteMount.objects.create(
+            container=self.container,
+            dest='/kiosc',
+        )
+        self.full_mount = ContainerRemoteMount.objects.create(
+            container=self.container,
+            source='https://commons.wikimedia.org/wiki/File:Big_Buck_Bunny_extract.ogv',
+            dest='/bunny',
         )
 
     @tag('docker-server')
@@ -267,23 +277,32 @@ class TestContainerVolumes(TestBase):
         self.container.refresh_from_db()
         self.assertEqual(self.container.state, STATE_RUNNING)
         # Test from the daemon
-        for container in self.cli.containers():
-            if container['Id'] == self.container.container_id:
-                # for x in self.cli.containers(all=True):
-                #     if x['Id'] == self.container.container_id:
-                #         print(x)
-                self.assertEqual(container['State'], STATE_RUNNING)
-                for mount in container['Mounts']:
-                    if (
-                        mount['Name'] == str(self.container.volume_name)
-                        and mount['Destination'] == '/kiosc'
-                    ):
-                        break
-                else:
-                    raise RuntimeError('Problem in volume mount')
-                break
-        else:
-            raise RuntimeError('Container is not running')
+        container_info = self.cli.inspect_container(self.container.container_id)
+        self.assertEqual(container_info['State']['Status'], STATE_RUNNING)
+        mounts = container_info['Mounts']
+        self.assertEqual(len(mounts), 2)
+        self.assertIn(
+            mounts[0]['Name'],
+            [
+                str(self.full_mount.volume_name),
+                str(self.empty_mount.volume_name),
+            ],
+        )
+        self.assertIn(
+            mounts[0]['Destination'],
+            [self.full_mount.dest, self.empty_mount.dest],
+        )
+        self.assertIn(
+            mounts[1]['Name'],
+            [
+                str(self.full_mount.volume_name),
+                str(self.empty_mount.volume_name),
+            ],
+        )
+        self.assertIn(
+            mounts[1]['Destination'],
+            [self.full_mount.dest, self.empty_mount.dest],
+        )
 
     def test_data_persistence(self):
         """Test data persistence in container-associated volume"""
@@ -320,4 +339,17 @@ class TestContainerVolumes(TestBase):
             container=self.container,
         )
         container_task(job_id=bg_job.pk)
+        self._check_exit_status(self.container, 0)
+
+    def test_data_read(self):
+        """Test that the volume is mounted in the running container"""
+        self.container.command = 'ls /bunny/File:Big_Buck_Bunny_extract.ogv'
+        self.container.save()
+        bg_job = ContainerBackgroundJobFactory(
+            user=self.superuser,
+            action=ACTION_START,
+            container=self.container,
+        )
+        container_task(job_id=bg_job.pk)
+        self.container.refresh_from_db()
         self._check_exit_status(self.container, 0)

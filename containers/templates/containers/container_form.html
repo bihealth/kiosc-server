@@ -58,11 +58,11 @@
     {{ form.environment|as_crispy_field }}
     {{ form.environment_secret_keys|as_crispy_field }}
     <fieldset>
-      <label>Remote mount points</label>
+      <label>Remote mount points</label></br>
       {{ remote_mounts_formset.management_form }}
       {% for mount_form in remote_mounts_formset %}
         {% if remote_mounts_formset.can_delete and mount_form.DELETE %}
-        <div class="kiosc-remote-mount-form mb-3 p-3 border rounded d-flex flex-wrap align-items-center justify-content-between">
+        <div class="kiosc-remote-mount-form mb-3 p-3 border rounded">
         {% else %}
         <div class="kiosc-remote-mount-form d-none">
         {% endif %}
@@ -71,21 +71,23 @@
           {% if remote_mounts_formset.can_delete and mount_form.DELETE %}
             {{ mount_form.source|as_readonly|as_crispy_field }}
             {{ mount_form.dest|as_readonly|as_crispy_field }}
-            {{ mount_form.date_last_update|as_crispy_field }}
-            {{ mount_form.dirty|as_crispy_field }}
-            <div class="form-group">
-              {{ mount_form.DELETE }}
-              <label class="form-check-label">Delete</label>
-              <div class="form-check">
-                <small class="form-text text-muted">Whether this volume should be deleted.</small>
+            <div class="d-flex flex-wrap align-items-end justify-content-start" style="column-gap: 1rem;">
+              {{ mount_form.date_last_update|as_crispy_field }}
+              {{ mount_form.dirty|as_crispy_field }}
+              <div class="form-group">
+                {{ mount_form.DELETE }}
+                <label class="form-check-label">Delete</label>
+                <div class="form-check">
+                  <small class="form-text text-muted">Whether this volume should be deleted.</small>
+                </div>
               </div>
             </div>
           {% else %}
-            {{ mount_form.source|as_crispy_field }}
-            {{ mount_form.dest|as_crispy_field }}
+            <div class="flex-fill mr-3">{{ mount_form.source|as_crispy_field }}</div>
+            <div class="flex-fill mr-3">{{ mount_form.dest|as_crispy_field }}</div>
             {{ mount_form.date_last_update.as_hidden }}
             {{ mount_form.dirty.as_hidden }}
-            <div class="kiosc-dismiss-remote-mount-btn btn btn-primary mb-3">Dismiss this mount</div>
+            <div class="kiosc-dismiss-remote-mount-btn btn btn-primary mb-2">Dismiss this mount</div>
           {% endif %}
         </div>
       {% endfor %}

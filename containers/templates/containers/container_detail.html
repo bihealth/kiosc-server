@@ -221,7 +221,7 @@
               <tbody>
               {% for mount in object.remote_mounts.all %}
                 <tr>
-                  <td class="pr-4">{{ mount.source }}</td>
+                  <td class="pr-4"><a href="{{ mount.source }}">{{ mount.source }}</a></td>
                   <td>{{ mount.dest }}</td>
                 </tr>
               {% endfor %}

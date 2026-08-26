@@ -41,7 +41,22 @@
     {{ form.containertemplateproject }}
     {# Fields #}
     {{ form.title|as_crispy_field }}
-    {{ form.description|as_crispy_field }}
+    <div id="div_id_description" class="form-group">
+      <label for="id_description">{{ form.description.label }}</label>
+      <div>
+        <div class="border rounded pl-3 pr-3">
+          {{ form.description }}
+        </div>
+        {% if form.description.errors %}
+          <div id="id_description_error" class="invalid-feedback">
+            {% for error in form.description.errors %}
+              <p><strong>{{ error }}</strong></p>
+            {% endfor %}
+          </div>
+        {% endif %}
+        <small id="id_description_helptext" class="form-text text-muted">{{ form.description.help_text }}</small>
+      </div>
+    </div>
     {{ form.repository|as_crispy_field }}
     {{ form.tag|as_crispy_field }}
     <details class="mb-3">

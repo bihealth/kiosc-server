@@ -146,7 +146,7 @@ PROJECTROLES_SEARCH_PAGINATION = 10
 
 # UI test settings
 PROJECTROLES_TEST_UI_CHROME_OPTIONS = [
-    # 'headless',
+    'headless',
     'no-sandbox',  # For Gitlab-CI compatibility
     'disable-dev-shm-usage',  # For testing stability
 ]

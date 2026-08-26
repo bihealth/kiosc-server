@@ -214,14 +214,20 @@
             <table>
               <thead>
                 <tr>
-                  <th class="pr-4">Source</th>
+                  <th class="pr-4">URL Source</th>
                   <th>Directory inside the container</th>
                 </tr>
               </thead>
               <tbody>
               {% for mount in object.remote_mounts.all %}
                 <tr>
-                  <td class="pr-4"><a href="{{ mount.source }}">{{ mount.source }}</a></td>
+                  <td class="pr-4">
+                    {% if mount.source %}
+                      <a href="{{ mount.source }}">{{ mount.source }}</a>
+                    {% else %}
+                      <em class='text-muted'>NA</em>
+                    {% endif %}
+                  </td>
                   <td>{{ mount.dest }}</td>
                 </tr>
               {% endfor %}

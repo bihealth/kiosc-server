@@ -16,6 +16,7 @@ from django.test import override_settings
 
 from containers.models import (
     Container,
+    ContainerRemoteMount,
     ContainerBackgroundJob,
     ACTION_START,
     ACTION_STOP,
@@ -148,6 +149,41 @@ class TestContainerCreateView(TestBase):
                 ContainerTemplateSelectorForm,
             )
 
+    def test_post_create_remote_mounts_fail(self):
+        """Test POST with errors adding remote mounts"""
+        # Missing "dest" field, which is required
+        volume_data = {
+            'volume_name': '6f3d16c3-0d0b-4c9b-bdac-007cbd97a586',
+            'source': '1234',
+            'dest': '',
+            'date_last_update': '',
+            'dirty': 'True',
+        }
+        with self.login(self.superuser):
+            response = self.client.post(
+                reverse(
+                    'containers:create',
+                    kwargs={'project': self.project.sodar_uuid},
+                ),
+                self.post_data_min_host
+                | {
+                    'remote_mounts-TOTAL_FORMS': 1,
+                    'remote_mounts-INITIAL_FORMS': 0,
+                }
+                | {f'remote_mounts-0-{k}': v for (k, v) in volume_data.items()},
+            )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(
+            response.context['remote_mounts_formset'].errors,
+            [
+                {
+                    'source': ['Enter a valid URL.'],
+                    'dest': ['This field is required.'],
+                }
+            ],
+        )
+
     @override_settings(KIOSC_NETWORK_MODE='host')
     def test_post_success_min_fields_mode_host(self):
         with self.login(self.superuser):
@@ -156,7 +192,11 @@ class TestContainerCreateView(TestBase):
                     'containers:create',
                     kwargs={'project': self.project.sodar_uuid},
                 ),
-                self.post_data_min_host,
+                self.post_data_min_host
+                | {
+                    'remote_mounts-TOTAL_FORMS': 0,
+                    'remote_mounts-INITIAL_FORMS': 0,
+                },
             )
 
             self.assertEqual(Container.objects.count(), 1)
@@ -189,7 +229,11 @@ class TestContainerCreateView(TestBase):
                     'containers:create',
                     kwargs={'project': self.project.sodar_uuid},
                 ),
-                self.post_data_min_shared,
+                self.post_data_min_shared
+                | {
+                    'remote_mounts-TOTAL_FORMS': 0,
+                    'remote_mounts-INITIAL_FORMS': 0,
+                },
             )
 
             self.assertEqual(Container.objects.count(), 1)
@@ -221,7 +265,11 @@ class TestContainerCreateView(TestBase):
                     'containers:create',
                     kwargs={'project': self.project.sodar_uuid},
                 ),
-                self.post_data_all,
+                self.post_data_all
+                | {
+                    'remote_mounts-TOTAL_FORMS': 0,
+                    'remote_mounts-INITIAL_FORMS': 0,
+                },
             )
 
             self.assertEqual(Container.objects.count(), 1)
@@ -257,7 +305,11 @@ class TestContainerCreateView(TestBase):
                     'containers:create',
                     kwargs={'project': self.project.sodar_uuid},
                 ),
-                self.post_data_all,
+                self.post_data_all
+                | {
+                    'remote_mounts-TOTAL_FORMS': 0,
+                    'remote_mounts-INITIAL_FORMS': 0,
+                },
             )
 
             self.assertEqual(Container.objects.count(), 1)
@@ -465,6 +517,169 @@ class TestContainerUpdateView(TestBase):
 
             self.assertEqual(response.status_code, 404)
 
+    def test_get_remote_mounts_disabled_fields(self):
+        """Test that the appropriate remote mount fields are disabled"""
+        self.container1.registry_user = 'maxmustermann'
+        self.container1.registry_password = 'secretpass123'
+        self.container1.save()
+        ContainerRemoteMount.objects.create(
+            container=self.container1,
+            dest='/kiosc',
+        )
+
+        with self.login(self.superuser):
+            response = self.client.get(
+                reverse(
+                    'containers:update',
+                    kwargs={'container': self.container1.sodar_uuid},
+                )
+            )
+            # Formset for the existing mount
+            existing_formset = response.context['remote_mounts_formset'][0]
+            self.assertTrue(
+                existing_formset['volume_name'].field.widget.is_hidden
+            )
+            self.assertTrue(
+                'readonly' in existing_formset['source'].field.widget.attrs
+            )
+            self.assertTrue(
+                'readonly' in existing_formset['dest'].field.widget.attrs
+            )
+            self.assertTrue(
+                'disabled'
+                in existing_formset['date_last_update'].field.widget.attrs
+            )
+            self.assertFalse(
+                'readonly' in existing_formset['dirty'].field.widget.attrs
+            )
+            # Formset for new mounts
+            new_formset = response.context['remote_mounts_formset'][1]
+            self.assertTrue(new_formset['volume_name'].field.widget.is_hidden)
+            self.assertFalse(
+                'readonly' in new_formset['source'].field.widget.attrs
+            )
+            self.assertFalse(
+                'readonly' in new_formset['dest'].field.widget.attrs
+            )
+            self.assertTrue(
+                'disabled' in new_formset['date_last_update'].field.widget.attrs
+            )
+
+    def test_post_create_remote_mounts(self):
+        """Test POST adding remote mounts"""
+        volume_data = {
+            'volume_name': '6f3d16c3-0d0b-4c9b-bdac-007cbd97a586',
+            'source': '',
+            'dest': '/kiosc',
+            'date_last_update': '',
+            'dirty': 'True',
+        }
+        with self.login(self.superuser):
+            response = self.client.post(
+                reverse(
+                    'containers:update',
+                    kwargs={'container': self.container1.sodar_uuid},
+                ),
+                self.post_data_host
+                | {
+                    'remote_mounts-TOTAL_FORMS': 1,
+                    'remote_mounts-INITIAL_FORMS': 0,
+                }
+                | {f'remote_mounts-0-{k}': v for (k, v) in volume_data.items()},
+            )
+
+            # Get updated object
+            self.container1.refresh_from_db()
+            self.assertRedirects(
+                response,
+                reverse(
+                    'containers:detail',
+                    kwargs={'container': self.container1.sodar_uuid},
+                ),
+            )
+            # Assert updated properties
+            self.assertEqual(self.container1.remote_mounts.count(), 1)
+            result = model_to_dict(
+                self.container1.remote_mounts.get(
+                    volume_name=volume_data['volume_name']
+                ),
+                fields=volume_data.keys(),
+            )
+            self.assertDictEqual(
+                {k: (str(v) if v else '') for (k, v) in result.items()},
+                volume_data,
+            )
+
+    def test_post_update_remote_mounts(self):
+        """Test POST with existing remote mounts"""
+        volume_object = ContainerRemoteMount.objects.create(
+            container=self.container1, dest='/kiosc'
+        )
+        existing_volume = {
+            'id': str(volume_object.id),
+            'volume_name': str(volume_object.volume_name),
+            'source': '',
+            'dest': '/dead/beef',
+            'date_last_update': '',
+            'dirty': 'True',
+        }
+        new_volume = {
+            'volume_name': 'e38e2fd1-3841-490e-adcc-874c596f33ce',
+            'source': 'http://www.example.com',
+            'dest': '/dead/beef',
+            'date_last_update': '',
+            'dirty': 'True',
+        }
+        with self.login(self.superuser):
+            response = self.client.post(
+                reverse(
+                    'containers:update',
+                    kwargs={'container': self.container1.sodar_uuid},
+                ),
+                self.post_data_host
+                | {
+                    'remote_mounts-TOTAL_FORMS': 2,
+                    'remote_mounts-INITIAL_FORMS': 1,
+                }
+                | {
+                    f'remote_mounts-0-{k}': v
+                    for (k, v) in existing_volume.items()
+                }
+                | {f'remote_mounts-1-{k}': v for (k, v) in new_volume.items()},
+            )
+
+            # Get updated object
+            self.container1.refresh_from_db()
+            self.assertRedirects(
+                response,
+                reverse(
+                    'containers:detail',
+                    kwargs={'container': self.container1.sodar_uuid},
+                ),
+            )
+            # Assert updated properties
+            self.assertEqual(self.container1.remote_mounts.count(), 2)
+            result1 = model_to_dict(
+                self.container1.remote_mounts.get(
+                    volume_name=existing_volume['volume_name']
+                ),
+                fields=existing_volume.keys(),
+            )
+            self.assertDictEqual(
+                {k: (str(v) if v else '') for (k, v) in result1.items()},
+                existing_volume,
+            )
+            result2 = model_to_dict(
+                self.container1.remote_mounts.get(
+                    volume_name=new_volume['volume_name']
+                ),
+                fields=new_volume.keys(),
+            )
+            self.assertDictEqual(
+                {k: (str(v) if v else '') for (k, v) in result2.items()},
+                new_volume,
+            )
+
     @override_settings(KIOSC_NETWORK_MODE='host')
     def test_post_success_updated_initial_mode_host(self):
         with self.login(self.superuser):
@@ -473,7 +688,11 @@ class TestContainerUpdateView(TestBase):
                     'containers:update',
                     kwargs={'container': self.container1.sodar_uuid},
                 ),
-                self.post_data_host,
+                self.post_data_host
+                | {
+                    'remote_mounts-TOTAL_FORMS': 0,
+                    'remote_mounts-INITIAL_FORMS': 0,
+                },
             )
 
             # Get updated object
@@ -529,7 +748,11 @@ class TestContainerUpdateView(TestBase):
                     'containers:update',
                     kwargs={'container': self.container1.sodar_uuid},
                 ),
-                self.post_data_host,
+                self.post_data_host
+                | {
+                    'remote_mounts-TOTAL_FORMS': 0,
+                    'remote_mounts-INITIAL_FORMS': 0,
+                },
             )
 
             # Get updated object
@@ -559,7 +782,11 @@ class TestContainerUpdateView(TestBase):
                     'containers:update',
                     kwargs={'container': self.container1.sodar_uuid},
                 ),
-                self.post_data_shared,
+                self.post_data_shared
+                | {
+                    'remote_mounts-TOTAL_FORMS': 0,
+                    'remote_mounts-INITIAL_FORMS': 0,
+                },
             )
 
             # Get updated object
@@ -594,7 +821,11 @@ class TestContainerUpdateView(TestBase):
                     'containers:update',
                     kwargs={'container': self.container1.sodar_uuid},
                 ),
-                self.post_data_host,
+                self.post_data_host
+                | {
+                    'remote_mounts-TOTAL_FORMS': 0,
+                    'remote_mounts-INITIAL_FORMS': 0,
+                },
             )
 
             # Get updated object
@@ -634,7 +865,11 @@ class TestContainerUpdateView(TestBase):
                     'containers:update',
                     kwargs={'container': self.container1.sodar_uuid},
                 ),
-                self.post_data_shared,
+                self.post_data_shared
+                | {
+                    'remote_mounts-TOTAL_FORMS': 0,
+                    'remote_mounts-INITIAL_FORMS': 0,
+                },
             )
 
             # Get updated object
@@ -674,7 +909,11 @@ class TestContainerUpdateView(TestBase):
                     'containers:update',
                     kwargs={'container': self.container1.sodar_uuid},
                 ),
-                self.post_data_host,
+                self.post_data_host
+                | {
+                    'remote_mounts-TOTAL_FORMS': 0,
+                    'remote_mounts-INITIAL_FORMS': 0,
+                },
             )
 
             # Get updated object
@@ -714,7 +953,11 @@ class TestContainerUpdateView(TestBase):
                     'containers:update',
                     kwargs={'container': self.container1.sodar_uuid},
                 ),
-                self.post_data_shared,
+                self.post_data_shared
+                | {
+                    'remote_mounts-TOTAL_FORMS': 0,
+                    'remote_mounts-INITIAL_FORMS': 0,
+                },
             )
 
             # Get updated object
@@ -750,7 +993,11 @@ class TestContainerUpdateView(TestBase):
                     'containers:update',
                     kwargs={'container': self.fake_uuid},
                 ),
-                self.post_data_host,
+                self.post_data_host
+                | {
+                    'remote_mounts-TOTAL_FORMS': 0,
+                    'remote_mounts-INITIAL_FORMS': 0,
+                },
             )
 
             self.assertEqual(response.status_code, 404)

@@ -385,30 +385,6 @@ class ContainerUpdateView(
         # if self.object.state not in (STATE_RUNNING, STATE_PAUSED):
         #     return super().get_success_url()
 
-        container = self.get_object()
-
-        bg_job = BackgroundJob.objects.create(
-            name='Stop container',
-            project=container.project,
-            job_type=ContainerBackgroundJob.spec_name,
-            user=self.request.user,
-        )
-        job = ContainerBackgroundJob.objects.create(
-            action=ACTION_STOP,
-            project=container.project,
-            container=container,
-            bg_job=bg_job,
-        )
-
-        # Schedule task synchronously
-        logger.info(
-            'The container object was updated: we schedule a job to stop '
-            f'the Docker container with id {container.container_id}'
-        )
-        container_task(job_id=job.id)
-        container.refresh_from_db()
-        logger.info('Container stopped after update')
-
         messages.success(
             self.request,
             'Container updated. Please restart it '
@@ -428,6 +404,9 @@ class ContainerUpdateView(
                 remote_mounts_formset.save()
             else:
                 messages.error(
+                    self.request, remote_mounts_formset.non_form_errors()
+                )
+                messages.error(
                     self.request, remote_mounts_formset.get_form_error()
                 )
                 return self.form_invalid(form)
@@ -437,21 +416,26 @@ class ContainerUpdateView(
             messages.error(self.request, f'Could not update mount points: {ex}')
             return self.form_invalid(form)
 
-        timeline = plugin_api.get_backend_api('timeline_backend')
-        if timeline:
-            tl_event = timeline.add_event(
-                project=self.get_project(),
-                app_name=APP_NAME,
-                user=self.request.user,
-                event_name='update_container',
-                description='Update {container}',
-                status_type=timeline.TL_STATUS_OK,
-            )
-            tl_event.add_object(
-                obj=self.object,
-                label='container',
-                name=self.object.get_display_name(),
-            )
+        # We need to delete the container because cli.create_container() is
+        # called in on_pull() from statemachines.
+        bg_job = BackgroundJob.objects.create(
+            name='Update container',
+            project=self.get_project(),
+            job_type=ContainerBackgroundJob.spec_name,
+            user=self.request.user,
+        )
+        job = ContainerBackgroundJob.objects.create(
+            action=ACTION_DELETE,
+            project=self.get_project(),
+            container=self.object,
+            bg_job=bg_job,
+        )
+        # Schedule task synchronously
+        logger.info(
+            'The container object was updated: we schedule a job to {action} '
+            f'the Docker container with id {self.object.container_id}'
+        )
+        container_task(job_id=job.id)
 
         return response
 

@@ -31,7 +31,7 @@ from containers.tests.helpers import TestBase, build_testdata_container
 
 
 @override_settings(KIOSC_DOCKER_ACTION_MIN_DELAY=0)
-class TestContainerCrash(TestBase):
+class TestContainerLifecycle(TestBase):
     def setUp(self):
         super().setUp()
         self.cli = connect_docker()
@@ -44,6 +44,7 @@ class TestContainerCrash(TestBase):
             repository='sample-app-logging',
             tag='testing',
             host_port=0,
+            environment={'ComplexData': {'a': 1, 'b': 2}},
             container_id=None,
         )
 
@@ -208,6 +209,21 @@ class TestContainerCrash(TestBase):
         self.container.state = STATE_EXITED  # But it's actually still running
         self.container.save()
         self._test_container_delete(initial=STATE_EXITED)
+
+    def test_environment_variables(self):
+        """Test that environment variables are serialized as JSON"""
+        self.container.command = '/bin/sh -c "echo My variable: $ComplexData"'
+        self.container.save()
+        bg_job = ContainerBackgroundJobFactory(
+            user=self.superuser,
+            action=ACTION_START,
+            container=self.container,
+        )
+        container_task(job_id=bg_job.pk)
+        time.sleep(1)
+        self.container.refresh_from_db()
+        logs = self.cli.logs(self.container.container_id)
+        self.assertEqual(logs, b'My variable: {"a": 1, "b": 2}\n')
 
 
 @override_settings(KIOSC_DOCKER_ACTION_MIN_DELAY=0)

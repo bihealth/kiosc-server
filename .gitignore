@@ -96,3 +96,5 @@ src/
 */static/iconify/*.json
 */static/iconify/json/*.json
 
+# Kiosc Docker volumes
+data/

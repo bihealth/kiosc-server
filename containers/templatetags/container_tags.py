@@ -90,6 +90,13 @@ def get_container_last_errors(
 
 
 @register.filter
+def as_readonly(item):
+    """Makes a form field read-only"""
+    item.field.widget.attrs['readonly'] = True
+    return item
+
+
+@register.filter
 def get_class(item):
     return item.__class__.__name__
 

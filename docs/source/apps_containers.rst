@@ -18,4 +18,3 @@ Volumes for persistent data storage.
     Create <apps_containers_create>
     Details <apps_containers_details>
     Access & Controls <apps_containers_controls>
-    Volumes <apps_containers_volumes>

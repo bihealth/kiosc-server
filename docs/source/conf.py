@@ -23,7 +23,7 @@ django.setup()
 # -- Project information -----------------------------------------------------
 
 project = "Kiosc"
-copyright = "2021, Berlin Institute of Health"
+copyright = "2019-2026, Berlin Institute of Health"
 author = "Oliver Stolpe"
 
 # The short X.Y version

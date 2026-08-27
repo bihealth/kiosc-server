@@ -52,7 +52,11 @@ from projectroles.views import (
     ProjectPermissionMixin,
 )
 
-from containers.forms import ContainerForm, FileSelectorForm
+from containers.forms import (
+    ContainerForm,
+    ContainerRemoteMountForm,
+    FileSelectorForm,
+)
 from containers.models import (
     Container,
     ContainerBackgroundJob,
@@ -210,6 +214,12 @@ class ContainerCreateView(
         context['containertemplate_form'] = ContainerTemplateSelectorForm(
             auto_id='containertemplate_%s', user=self.request.user
         )
+        if self.request.POST:
+            context['remote_mounts_formset'] = ContainerRemoteMountForm(
+                self.request.POST,
+            )
+        else:
+            context['remote_mounts_formset'] = ContainerRemoteMountForm()
 
         if settings.KIOSC_EMBEDDED_FILES:
             context['files_form'] = FileSelectorForm(project=self.get_project())
@@ -223,7 +233,28 @@ class ContainerCreateView(
         return initial
 
     def form_valid(self, form):
-        response = super().form_valid(form)
+        try:
+            remote_mounts_formset = ContainerRemoteMountForm(
+                self.request.POST,
+            )
+            if remote_mounts_formset.is_valid():
+                # We must save the container object first. This is done in the
+                # form_valid() method of the parent class.
+                response = super().form_valid(form)
+                remote_mounts_formset.instance = self.object
+                remote_mounts_formset.save()
+            else:
+                messages.error(
+                    self.request, remote_mounts_formset.get_form_error()
+                )
+                return self.form_invalid(form)
+        except Exception as ex:
+            # Roll back the form.save()
+            self.object.delete()
+            logger.error(ex)
+            messages.error(self.request, f'Could not update mount points: {ex}')
+            return self.form_invalid(form)
+
         timeline = plugin_api.get_backend_api('timeline_backend')
 
         # Add timeline event
@@ -335,6 +366,15 @@ class ContainerUpdateView(
         context['containertemplate_form'] = ContainerTemplateSelectorForm(
             auto_id='containertemplate_%s', user=self.request.user
         )
+        if self.request.POST:
+            context['remote_mounts_formset'] = ContainerRemoteMountForm(
+                self.request.POST,
+                instance=self.object,
+            )
+        else:
+            context['remote_mounts_formset'] = ContainerRemoteMountForm(
+                instance=self.object,
+            )
 
         if settings.KIOSC_EMBEDDED_FILES:
             context['files_form'] = FileSelectorForm(project=self.get_project())
@@ -345,58 +385,57 @@ class ContainerUpdateView(
         # if self.object.state not in (STATE_RUNNING, STATE_PAUSED):
         #     return super().get_success_url()
 
-        container = self.get_object()
+        messages.success(
+            self.request,
+            'Container updated. Please restart it '
+            'in order for the changes to take effect.',
+        )
 
+        return super().get_success_url()
+
+    def form_valid(self, form):
+        try:
+            context = self.get_context_data()
+            remote_mounts_formset = context['remote_mounts_formset']
+            if remote_mounts_formset.is_valid():
+                # We must save the container object first. This is done in the
+                # form_valid() method of the parent class.
+                response = super().form_valid(form)
+                remote_mounts_formset.save()
+            else:
+                messages.error(
+                    self.request, remote_mounts_formset.non_form_errors()
+                )
+                messages.error(
+                    self.request, remote_mounts_formset.get_form_error()
+                )
+                return self.form_invalid(form)
+        except Exception as ex:
+            # NOTE: we need to roll back the form.save(), but how?
+            logger.error(ex)
+            messages.error(self.request, f'Could not update mount points: {ex}')
+            return self.form_invalid(form)
+
+        # We need to delete the container because cli.create_container() is
+        # called in on_pull() from statemachines.
         bg_job = BackgroundJob.objects.create(
-            name='Delete container',
-            project=container.project,
+            name='Update container',
+            project=self.get_project(),
             job_type=ContainerBackgroundJob.spec_name,
             user=self.request.user,
         )
         job = ContainerBackgroundJob.objects.create(
             action=ACTION_DELETE,
-            project=container.project,
-            container=container,
+            project=self.get_project(),
+            container=self.object,
             bg_job=bg_job,
         )
-
         # Schedule task synchronously
         logger.info(
-            f'The container object was updated, so we schedule a job to delete the Docker container. The container id is {container.container_id}'
+            'The container object was updated: we schedule a job to {action} '
+            f'the Docker container with id {self.object.container_id}'
         )
         container_task(job_id=job.id)
-        container.refresh_from_db()
-        logger.info('Container deleted after update')
-
-        messages.success(
-            self.request,
-            'Container updated. Please restart it in order for the changes to take effect.',
-        )
-
-        return super().get_success_url()
-        # return reverse(
-        #     'containers:detail',
-        #     kwargs={'container': self.object.sodar_uuid},
-        # )
-
-    def form_valid(self, form):
-        response = super().form_valid(form)
-        timeline = plugin_api.get_backend_api('timeline_backend')
-
-        if timeline:
-            tl_event = timeline.add_event(
-                project=self.get_project(),
-                app_name=APP_NAME,
-                user=self.request.user,
-                event_name='update_container',
-                description='Update {container}',
-                status_type=timeline.TL_STATUS_OK,
-            )
-            tl_event.add_object(
-                obj=self.object,
-                label='container',
-                name=self.object.get_display_name(),
-            )
 
         return response
 

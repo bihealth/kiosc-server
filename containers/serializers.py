@@ -19,7 +19,6 @@ class ContainerSerializer(SODARProjectModelSerializer):
             'tag',
             'image_id',
             'container_id',
-            'volume_name',
             'container_ip',
             'container_port',
             'container_path',
@@ -42,7 +41,6 @@ class ContainerSerializer(SODARProjectModelSerializer):
             'date_created',
             'date_modified',
             'project',
-            'volume_name',
         )
 
     def get_extra_kwargs(self):

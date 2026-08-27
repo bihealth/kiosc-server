@@ -2,10 +2,10 @@ import json
 
 from django import forms
 from django.conf import settings
-from django.forms import widgets
+from django.forms import widgets, inlineformset_factory
 from django.urls import reverse
 
-from containers.models import Container, MASKED_KEYWORD
+from containers.models import Container, ContainerRemoteMount, MASKED_KEYWORD
 from filesfolders.models import File
 
 
@@ -66,11 +66,8 @@ class ContainerForm(forms.ModelForm):
         environment = cleaned_data.get('environment', {})
         secret_keys = cleaned_data.get('environment_secret_keys')
 
-        if not environment:
-            return
-
         # Environment must be a dict
-        if not isinstance(environment, dict):
+        if environment and not isinstance(environment, dict):
             self.add_error('environment', 'Environment must be a dictionary!')
             return
 
@@ -93,6 +90,29 @@ class ContainerForm(forms.ModelForm):
             cleaned_data['environment_secret_keys'] = ','.join(secret_keys)
 
         return cleaned_data
+
+
+ContainerRemoteMountForm = inlineformset_factory(
+    Container,
+    ContainerRemoteMount,
+    labels={'dest': 'Destination'},
+    fields=[
+        'volume_name',
+        'source',
+        'dest',
+        'date_last_update',
+        'dirty',
+    ],
+    widgets={
+        'volume_name': forms.HiddenInput(),
+        'date_last_update': forms.DateTimeInput(attrs={'disabled': True}),
+    },
+    absolute_max=20,
+    max_num=10,
+    extra=10,
+    can_delete=True,
+    can_delete_extra=False,
+)
 
 
 class FileSelectorForm(forms.Form):

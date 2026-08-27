@@ -252,7 +252,9 @@ class Container(models.Model):
                     )
                 ),
                 name='%(app_label)s_%(class)s_registry_credentials_not_null_individually',
-                violation_error_message='Registry user and password should either both be null or both be specified, you cannot leave blank only one of them.',
+                violation_error_message='Registry user and password should '
+                'either both be null or both be specified, you cannot '
+                'leave blank only one of them.',
             ),
         ]
 
@@ -289,7 +291,7 @@ class Container(models.Model):
     registry_user = models.CharField(
         max_length=512,
         help_text='The user name for the container registry, '
-        'if it is e.g. a private Gitlab registry.',
+        'if it is e.g. a private GitLab registry.',
         blank=True,
         null=True,
     )
@@ -298,7 +300,7 @@ class Container(models.Model):
     registry_password = models.CharField(
         max_length=512,
         help_text='The password or token for the container registry, '
-        'if it is a private Gitlab registry.',
+        'if it is e.g. a private GitLab registry.',
         blank=True,
         null=True,
     )
@@ -337,14 +339,6 @@ class Container(models.Model):
         help_text='Server port within the container',
         blank=False,
         null=False,
-    )
-
-    #: Name of the Docker volume associated to the container.
-    volume_name = models.UUIDField(
-        default=uuid.uuid4,
-        unique=True,
-        null=True,
-        help_text='Name of the Docker volume associated to the container',
     )
 
     #: The path segment of the container URL.
@@ -390,19 +384,23 @@ class Container(models.Model):
         null=False,
     )
 
-    #: Define the environment variables to use, as an array of dicts with keys "name" and "value".
-    #: This guarantees that the order of environment variable definitions does not change.
+    #: Define the environment variables to use, as a JSON object whose keys are
+    #: the variable names. This guarantees that the order of environment
+    #: variable definitions does not matter.
     environment = JSONField(
-        help_text='The environment variables to use',
+        help_text='The environment variables to use, as a JSON object '
+        'where the keys are the variable names.',
         blank=True,
         null=True,
+        default=dict,
         encoder=DjangoJSONEncoder,
     )
 
     #: List if keys that when defined in ``environment`` are set but no displayed.
     environment_secret_keys = models.CharField(
         max_length=512,
-        help_text='Comma-separated list of keys in the environment that are set but not read (use for tokens/keys).',
+        help_text='Comma-separated list of keys in the environment '
+        'that are set but not read (use for tokens/keys).',
         blank=True,
         null=True,
     )
@@ -598,6 +596,52 @@ class ContainerBackgroundJob(JobModelMessageContextManagerMixin, models.Model):
 
     # Set manager for custom queries
     objects = ContainerBackgroundJobManager()
+
+
+class ContainerRemoteMount(models.Model):
+    """Model for container remote mounts."""
+
+    #: Container to which the volume belongs
+    container = models.ForeignKey(
+        Container,
+        related_name='remote_mounts',
+        blank=False,
+        null=False,
+        on_delete=models.CASCADE,
+    )
+    #: Name of the Docker volume.
+    volume_name = models.UUIDField(
+        default=uuid.uuid4,
+        unique=True,
+        null=True,
+        help_text='Name of the Docker volume associated to the container.',
+    )
+    #: URL of the data to download.
+    source = models.URLField(
+        help_text='URL of the data to download.',
+        blank=True,
+        null=True,
+    )
+    #: Path in the container where the data will be found.
+    dest = models.CharField(
+        max_length=4096,
+        help_text='Directory in the container where the data will be found.',
+        blank=False,
+        null=False,
+    )
+    #: Whether the data should be re-downloaded.
+    dirty = models.BooleanField(
+        help_text='Whether the data should be re-downloaded.',
+        default=True,
+        blank=True,
+        null=False,
+    )
+    #: DateTime of last download
+    date_last_update = models.DateTimeField(
+        help_text='DateTime of the last download.',
+        blank=True,
+        null=True,  # Null allowed only upon creation, before the first download
+    )
 
 
 class ContainerLogEntryManager(models.Manager):

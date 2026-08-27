@@ -210,6 +210,10 @@ in the ``.env`` file, with their default value.
     Enable the feature to upload small files to Kiosc that can be served to the
     Docker containers.
 
+``KIOSC_DOCKER_VOLUMES_DIR=data/docker_volumes``
+    Path where Docker volumes will be saved. Volumes contain data which
+    users download from the internet or generate from within the containers.
+
 ``KIOSC_NETWORK_MODE=docker-shared``
     Can be ``host`` or ``docker-shared``. Indicates whether installation runs
     in a Docker environment or not. When using Kiosc from the Docker compose in

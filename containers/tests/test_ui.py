@@ -11,6 +11,7 @@ from selenium.webdriver.support.ui import WebDriverWait
 
 from containers.models import (
     Container,
+    ContainerRemoteMount,
     ACTION_START,
     ACTION_RESTART,
     STATE_RUNNING,
@@ -57,6 +58,53 @@ class TestContainerCreateView(UITestBase):
             )
         )
 
+    def test_remote_mounts_form(self):
+        """Test the remote mounts inline form"""
+        self.login_and_redirect(
+            self.superuser,
+            reverse(
+                'containers:create',
+                kwargs={
+                    'project': str(self.project.sodar_uuid),
+                },
+            ),
+        )
+        formsets = self.selenium.find_elements(
+            By.CLASS_NAME, 'kiosc-remote-mount-form'
+        )
+        # No formset is visible initially
+        for formset in formsets:
+            self.assertFalse(formset.is_displayed())
+        add_mount_btn = self.selenium.find_element(
+            By.ID, 'kiosc-add-remote-mount-btn'
+        )
+        # The first two formsets become visible
+        add_mount_btn.click()
+        add_mount_btn.click()
+        self.assertTrue(formsets[0].is_displayed())
+        self.assertTrue(formsets[1].is_displayed())
+        for i in range(2, len(formsets)):
+            self.assertFalse(formsets[i].is_displayed())
+        # We write something in the "Destination" field of the first formset
+        formsets[0].find_element(By.ID, 'id_remote_mounts-0-dest').send_keys(
+            '/kiosc'
+        )
+        # We dismiss the first formset
+        self.selenium.find_element(
+            By.CLASS_NAME, 'kiosc-dismiss-remote-mount-btn'
+        ).click()
+        # Now only the second formset is visible
+        self.assertFalse(formsets[0].is_displayed())
+        self.assertTrue(formsets[1].is_displayed())
+        for i in range(2, len(formsets)):
+            self.assertFalse(formsets[i].is_displayed())
+        # We add the first formset back and check that it is clean
+        # (the "Destination" field should be empty)
+        add_mount_btn.click()
+        self.assertEqual(
+            formsets[0].find_element(By.ID, 'id_remote_mounts-0-dest').text, ''
+        )
+
 
 class TestContainerDetailView(UITestBase):
     def setUp(self):
@@ -87,6 +135,42 @@ class TestContainerDetailView(UITestBase):
         self.assertIn(
             '<p><strong>hello</strong></p>', content.get_attribute('innerHTML')
         )
+
+
+class TestContainerUpdateView(UITestBase):
+    def setUp(self):
+        super().setUp()
+        self.container = ContainerFactory(
+            project=self.project,
+            repository='sample-app-volume',
+            tag='testing',
+            container_port=80,
+            host_port=11889,
+        )
+        ContainerRemoteMount.objects.create(
+            container=self.container,
+            source='https://commons.wikimedia.org/wiki/File:Big_Buck_Bunny_extract.ogv',
+            dest='/bunny',
+        )
+
+    def test_remote_mounts_form(self):
+        """Test the remote mounts inline form"""
+        self.login_and_redirect(
+            self.superuser,
+            reverse(
+                'containers:update',
+                kwargs={
+                    'container': str(self.container.sodar_uuid),
+                },
+            ),
+        )
+        formsets = self.selenium.find_elements(
+            By.CLASS_NAME, 'kiosc-remote-mount-form'
+        )
+        # One formset is visible initially
+        self.assertTrue(formsets[0].is_displayed())
+        for i in range(1, len(formsets)):
+            self.assertFalse(formsets[i].is_displayed())
 
 
 class TestReverseProxyView(UITestBase):

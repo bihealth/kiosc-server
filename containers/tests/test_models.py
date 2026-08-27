@@ -13,13 +13,14 @@ from django.test import override_settings, TransactionTestCase
 import containers
 from containers.models import (
     Container,
+    ContainerLogEntry,
+    ContainerRemoteMount,
+    ContainerActionLock,
     STATE_INITIAL,
     LOG_LEVEL_INFO,
-    ContainerLogEntry,
     PROCESS_DOCKER,
     PROCESS_OBJECT,
     ACTION_START,
-    ContainerActionLock,
     MASKED_KEYWORD,
 )
 from containers.tests.factories import (
@@ -60,13 +61,12 @@ class TestContainerModel(TestBase):
             'containertemplateproject': None,
             'heartbeat_url': None,
             'host_port': None,
-            'environment': None,
+            'environment': {},
             'environment_secret_keys': None,
             'image_id': None,
             'project': self.project.pk,
             'registry_user': None,
             'registry_password': None,
-            'volume_name': container.volume_name,
             'id': container.id,
             'sodar_uuid': container.sodar_uuid,
             'max_retries': container.max_retries,
@@ -99,7 +99,6 @@ class TestContainerModel(TestBase):
             'project': self.project.pk,
             'registry_user': None,
             'registry_password': None,
-            'volume_name': container.volume_name,
             'id': container.id,
             'sodar_uuid': container.sodar_uuid,
             'max_retries': container.max_retries,
@@ -121,13 +120,12 @@ class TestContainerModel(TestBase):
             'containertemplateproject': None,
             'heartbeat_url': None,
             'host_port': None,
-            'environment': None,
+            'environment': {},
             'environment_secret_keys': None,
             'image_id': None,
             'project': self.project.pk,
             'registry_user': None,
             'registry_password': None,
-            'volume_name': container.volume_name,
             'id': container.id,
             'sodar_uuid': container.sodar_uuid,
             'max_retries': container.max_retries,
@@ -151,13 +149,12 @@ class TestContainerModel(TestBase):
             'containertemplateproject': self.containertemplateproject1.id,
             'heartbeat_url': None,
             'host_port': None,
-            'environment': None,
+            'environment': {},
             'environment_secret_keys': None,
             'image_id': None,
             'project': self.project.pk,
             'registry_user': None,
             'registry_password': None,
-            'volume_name': container.volume_name,
             'id': container.id,
             'sodar_uuid': container.sodar_uuid,
             'max_retries': container.max_retries,
@@ -198,11 +195,10 @@ class TestContainerModel(TestBase):
             'containertemplateproject': None,
             'heartbeat_url': None,
             'host_port': None,
-            'environment': None,
+            'environment': {},
             'environment_secret_keys': None,
             'image_id': None,
             'project': self.project.pk,
-            'volume_name': container.volume_name,
             'id': container.id,
             'sodar_uuid': container.sodar_uuid,
             'max_retries': container.max_retries,
@@ -452,6 +448,33 @@ class TestContainerLogEntry(TestBase):
             ),
             ContainerLogEntry.objects.get_logs_as_str(),
         )
+
+
+class TestContainerRemoteMount(TestBase):
+    def setUp(self):
+        super().setUp()
+        self.create_one_container()
+
+    def test_remote_mount_creation(self):
+        "Test ContainerRemoteMount creation"
+        mount = ContainerRemoteMount.objects.create(
+            container=self.container1,
+            source='https://dylan.bob/media/complete_discography.mp4',
+            dest='/kiosc/great_bob',
+        )
+        self.assertTrue(mount.dirty)
+        self.assertIsNone(mount.date_last_update)
+        self.assertEqual(self.container1.remote_mounts.count(), 1)
+
+    def test_remote_mount_no_source(self):
+        "Test creation without source"
+        mount = ContainerRemoteMount.objects.create(
+            container=self.container1,
+            dest='/kiosc/bbb',
+        )
+        self.assertTrue(mount.dirty)
+        self.assertIsNone(mount.date_last_update)
+        self.assertEqual(self.container1.remote_mounts.count(), 1)
 
 
 class TestContainerActionLock(TransactionTestCase):

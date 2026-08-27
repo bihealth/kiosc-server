@@ -129,6 +129,39 @@ Further reading
 
 - `<https://docs.docker.com/get-started/introduction/build-and-push-first-image/>`__
 
+Docker volumes
+--------------
+
+Normally, Docker containers are isolated applications and cannot access the
+files on the host. However, just like you can plug an external hard drive into
+your computer, you can also "plug" external data into a Docker container. The
+simplest case is the so-called *bind mount*, where a directory in the host
+machine is made available in the container. This is similar to creating a link:
+modifying the data from the container will also modify them on the host.
+
+In a bind mount, a source path is *mounted* to a target path in the container.
+For example, mounting :file:`~/cat_pictures/` to :file:`/kittens` will take the
+:file:`cat_pictures` directory from your home directory and make it available
+at the path :file:`/kittens` inside the container. The latter path will only
+exists in the container and not in your computer. The advantage of doing this
+is that the data do not have to be part of the Docker image, but can be swapped
+when running the container. For example, the developers of the Docker image
+can specify that the application will read any data inside the :file:`/data`
+directory, so each user can mount their own data at that location.
+
+In practice, you can do a bind mount with the :command:`-v` argument of the
+:command:`docker run` command::
+
+    docker run -v <source>:<destination> container-name
+
+after replacing ``<source>`` and ``<destination>`` with the appropriate paths.
+The :command:`-v` argument can be specified multiple times.
+
+Further reading
+^^^^^^^^^^^^^^^
+
+- `<https://docs.docker.com/engine/storage/bind-mounts/>`__
+
 Conclusion
 ----------
 

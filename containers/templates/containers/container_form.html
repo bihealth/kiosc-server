@@ -4,6 +4,7 @@
 {% load static %}
 {% load projectroles_common_tags %}
 {% load crispy_forms_filters %}
+{% load container_tags %}
 
 {% block css %}
   {{ block.super }}
@@ -30,7 +31,7 @@
     </div>
     {{ containertemplate_form.source }}
   </div>
-  <form method="post" enctype="multipart/form-data">
+  <form id="kiosc-container-form" method="post" enctype="multipart/form-data">
     {% csrf_token %}
     {# Non-field errors #}
     {{ form.non_field_errors }}
@@ -40,18 +41,74 @@
     {{ form.containertemplateproject }}
     {# Fields #}
     {{ form.title|as_crispy_field }}
-    {{ form.description|as_crispy_field }}
+    <div id="div_id_description" class="form-group">
+      <label for="id_description">{{ form.description.label }}</label>
+      <div>
+        <div class="border rounded pl-3 pr-3">
+          {{ form.description }}
+        </div>
+        {% if form.description.errors %}
+          <div id="id_description_error" class="invalid-feedback">
+            {% for error in form.description.errors %}
+              <p><strong>{{ error }}</strong></p>
+            {% endfor %}
+          </div>
+        {% endif %}
+        <small id="id_description_helptext" class="form-text text-muted">{{ form.description.help_text }}</small>
+      </div>
+    </div>
     {{ form.repository|as_crispy_field }}
     {{ form.tag|as_crispy_field }}
-    {{ form.registry_user|as_crispy_field }}
-    {{ form.registry_password|as_crispy_field }}
+    <details class="mb-3">
+      <summary>Do you need authentication to pull the image? (Click to expand)</summary>
+      <div class="pl-4 mt-3">
+        {{ form.registry_user|as_crispy_field }}
+        {{ form.registry_password|as_crispy_field }}
+      </div>
+    </details>
     {{ form.container_port|as_crispy_field }}
     {{ form.container_path|as_crispy_field }}
     {{ form.heartbeat_url|as_crispy_field }}
     {{ form.host_port|as_crispy_field }}
-    {{ form.timeout|as_crispy_field }}
     {{ form.environment|as_crispy_field }}
     {{ form.environment_secret_keys|as_crispy_field }}
+    <fieldset>
+      <label>Remote mount points</label></br>
+      {{ remote_mounts_formset.management_form }}
+      {% for mount_form in remote_mounts_formset %}
+        {% if remote_mounts_formset.can_delete and mount_form.DELETE %}
+        <div class="kiosc-remote-mount-form mb-3 p-3 border rounded">
+        {% else %}
+        <div class="kiosc-remote-mount-form d-none">
+        {% endif %}
+          {{ mount_form.id }}
+          {{ mount_form.volume_name }}
+          {% if remote_mounts_formset.can_delete and mount_form.DELETE %}
+            {{ mount_form.source|as_readonly|as_crispy_field }}
+            {{ mount_form.dest|as_readonly|as_crispy_field }}
+            <div class="d-flex flex-wrap align-items-end justify-content-start" style="column-gap: 1rem;">
+              {{ mount_form.date_last_update|as_crispy_field }}
+              {{ mount_form.dirty|as_crispy_field }}
+              <div class="form-group">
+                {{ mount_form.DELETE }}
+                <label class="form-check-label">Delete</label>
+                <div class="form-check">
+                  <small class="form-text text-muted">Whether this volume should be deleted.</small>
+                </div>
+              </div>
+            </div>
+          {% else %}
+            <div class="flex-fill mr-3">{{ mount_form.source|as_crispy_field }}</div>
+            <div class="flex-fill mr-3">{{ mount_form.dest|as_crispy_field }}</div>
+            {{ mount_form.date_last_update.as_hidden }}
+            {{ mount_form.dirty.as_hidden }}
+            <div class="kiosc-dismiss-remote-mount-btn btn btn-primary mb-2">Dismiss this mount</div>
+          {% endif %}
+        </div>
+      {% endfor %}
+      <div id="kiosc-add-remote-mount-btn" class="btn btn-primary mb-3">Add a remote mount</div>
+    </fieldset>
+    {{ form.timeout|as_crispy_field }}
     {{ form.max_retries|as_crispy_field }}
     {{ form.inactivity_threshold|as_crispy_field }}
     {% if filesfolders_active %}
@@ -140,6 +197,23 @@
           }
       });
   }
+
+  document.getElementById('kiosc-container-form').addEventListener('click', (e) => {
+    if (e.target.id === 'kiosc-add-remote-mount-btn') {
+      nextForm = document.querySelector('.kiosc-remote-mount-form.d-none');
+      if (nextForm) {
+        nextForm.className = "kiosc-remote-mount-form mb-3 p-3 border rounded d-flex flex-wrap align-items-center justify-content-between";
+      } else {
+        alert("You have reached the maximum number of remote mounts.");
+      }
+    } else if (e.target.classList.contains('kiosc-dismiss-remote-mount-btn')) {
+      parentForm = e.target.closest('.kiosc-remote-mount-form');
+      parentForm.className = "kiosc-remote-mount-form d-none";
+      for (let field of parentForm.querySelectorAll('input.form-control')) {
+        field.value = "";
+      }
+    }
+  });
 
   function insertFileUrl() {
       let value = $('#id_file_url').val();

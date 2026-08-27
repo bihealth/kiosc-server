@@ -1,15 +1,22 @@
-from asgiref.sync import async_to_sync
-from channels.layers import get_channel_layer
-
+import os
 import shlex
+import shutil
+import subprocess
 
 import docker
 import docker.errors
 import logging
 
+from docker.types import Ulimit
+from datetime import datetime
+from urllib.parse import urlsplit
+from zoneinfo import ZoneInfo
+
+from asgiref.sync import async_to_sync
+from channels.layers import get_channel_layer
 from django.conf import settings
 from django.urls import reverse
-from docker.types import Ulimit
+
 from statemachine import StateMachine, State
 from statemachine.exceptions import StateMachineError
 
@@ -36,8 +43,10 @@ from containers.models import (
     ABSOLUTE_PATH_PROXY_PREFIX,
 )
 
+
 logger = logging.getLogger(__name__)
 channel_layer = get_channel_layer()
+
 
 # Increase the timeout for communication with Docker daemon.
 APP_NAME = 'containers'
@@ -480,22 +489,7 @@ class ContainerMachine(StateMachine):
             },
         )
 
-    def on_pull(self):
-        # Pulling image
-        self.container.state = STATE_PULLING
-        self.container.container_id = None
-        self.container.save()
-
-        if self.container.repository.startswith(
-            str(self.container.project.sodar_uuid)
-        ):
-            registry = settings.KIOSC_CUSTOM_REGISTRY_DOCKER_URL
-            image_repository = f'{registry}/{self.container.repository}'
-            image_reference = f'{registry}/{self.container.get_repos_full()}'
-        else:
-            image_repository = self.container.repository
-            image_reference = self.container.get_repos_full()
-
+    def _pull_image(self, image_repository, image_reference):
         need_to_pull = True
         for image in self.cli.images(self.container.repository):
             if image_reference in image['RepoTags']:
@@ -586,24 +580,116 @@ class ContainerMachine(StateMachine):
                 f'Using cached image for {self.container.get_repos_full()}'
             )
 
+    def _setup_volumes(self):
+        # Dynamic volumes
+        binds = {}
+        volumes = []
+        for remote_mount in self.container.remote_mounts.all():
+            volume_name = str(remote_mount.volume_name)
+            volume_path = os.path.join(
+                settings.KIOSC_DOCKER_VOLUMES_DIR, volume_name
+            )
+            # Create volume if it doesn't exist
+            try:
+                self.cli.inspect_volume(volume_name)
+            except docker.errors.APIError:
+                self.cli.create_volume(
+                    volume_name,
+                    driver='local',
+                    driver_opts={
+                        'type': 'none',
+                        'o': 'bind',
+                        'device': volume_path,
+                    },
+                    labels={'kiosc.owner': 'kiosc'},
+                )
+                os.makedirs(volume_path, exist_ok=True)
+                remote_mount.dirty = True
+            if (
+                remote_mount.dirty or not remote_mount.date_last_update
+            ) and remote_mount.source:
+                self._log_task(
+                    f'Downloading data from {remote_mount.source}'
+                    f' to {remote_mount.dest} ({volume_path})'
+                )
+                for entry in os.scandir(volume_path):
+                    if entry.is_file() or entry.is_symlink():
+                        os.remove(entry)
+                    elif entry.is_dir():
+                        shutil.rmtree(entry)
+                cut_dirs = (
+                    urlsplit(remote_mount.source).path.rstrip('/').count('/')
+                )
+                args = [
+                    shutil.which('wget'),
+                    '-P',
+                    volume_path,
+                    '-r',
+                    '-nH',
+                    '-np',
+                    '-nv',
+                    f'--cut-dirs={cut_dirs}',
+                    f'--user-agent="Kiosc {settings.ADMINS}"',
+                    remote_mount.source,
+                ]
+                self._log_task(' '.join(args))
+                with subprocess.Popen(
+                    args,
+                    stdout=subprocess.PIPE,
+                    stderr=subprocess.STDOUT,
+                    text=True,
+                    pipesize=1,
+                ) as proc:
+                    for line in proc.stdout:
+                        if line:
+                            self._log_task(line.rstrip('\n'))
+                    out, err = proc.communicate(timeout=5)
+                    if out:
+                        self._log_task(out)
+                    if err:
+                        self._log_task(err)
+                    self._log_task(
+                        f'wget process exited with {proc.returncode}'
+                    )
+                    assert proc.returncode == 0
+                self._log_task(f'Directory listing of {remote_mount.dest}:')
+                for root, dirs, files in os.walk(volume_path):
+                    for dir in dirs:
+                        self._log_task(os.path.join(remote_mount.dest, dir))
+                    for file in files:
+                        self._log_task(os.path.join(remote_mount.dest, file))
+            remote_mount.dirty = False
+            remote_mount.date_last_update = datetime.now(
+                tz=ZoneInfo(settings.TIME_ZONE)
+            )
+            remote_mount.save()
+            binds[volume_name] = {
+                'bind': remote_mount.dest,
+                'mode': 'rw',
+            }
+            volumes.append(remote_mount.dest)
+        return binds, volumes
+
+    def on_pull(self):
+        # Pulling image
+        self.container.state = STATE_PULLING
+        self.container.container_id = None
+        self.container.save()
+
+        if self.container.repository.startswith(
+            str(self.container.project.sodar_uuid)
+        ):
+            registry = settings.KIOSC_CUSTOM_REGISTRY_DOCKER_URL
+            image_repository = f'{registry}/{self.container.repository}'
+            image_reference = f'{registry}/{self.container.get_repos_full()}'
+        else:
+            image_repository = self.container.repository
+            image_reference = self.container.get_repos_full()
+
+        self._pull_image(image_repository, image_reference)
         image_details = self.cli.inspect_image(image_reference)
         self.container.image_id = image_details.get('Id')
         self.container.save()
-
-        options = {}
-        options_host_config = {}
-
-        if settings.KIOSC_NETWORK_MODE == 'docker-shared':
-            options['networking_config'] = self.cli.create_networking_config(
-                {
-                    settings.KIOSC_DOCKER_NETWORK: self.cli.create_endpoint_config()
-                }
-            )
-
-        if settings.KIOSC_NETWORK_MODE == 'host':
-            options_host_config['port_bindings'] = {
-                self.container.container_port: self.container.host_port
-            }
 
         environment = (
             dict(self.container.environment)
@@ -632,17 +718,23 @@ class ContainerMachine(StateMachine):
             }
         )
 
-        # Volume
-        if volume_name := str(self.container.volume_name):
-            kiosc_volume_mountpoint = '/kiosc'
-            self.cli.create_volume(volume_name)
-            options_host_config['binds'] = {
-                volume_name: {
-                    'bind': kiosc_volume_mountpoint,
-                    'mode': 'rw',
-                },
+        options = {}
+        options_host_config = {}
+
+        if settings.KIOSC_NETWORK_MODE == 'docker-shared':
+            options['networking_config'] = self.cli.create_networking_config(
+                {
+                    settings.KIOSC_DOCKER_NETWORK: self.cli.create_endpoint_config()
+                }
+            )
+        elif settings.KIOSC_NETWORK_MODE == 'host':
+            options_host_config['port_bindings'] = {
+                self.container.container_port: self.container.host_port
             }
-            options['volumes'] = [kiosc_volume_mountpoint]
+
+        binds, volumes = self._setup_volumes()
+        options_host_config['binds'] = binds
+        options['volumes'] = volumes
 
         self._log_task('Initializing the container...')
 
@@ -748,6 +840,8 @@ class ContainerMachine(StateMachine):
         # Removing container and erasing container_id
         # NOTE: this will also remove the volumes associated with the container
         # (thanks to the v=True flag in remove_container())
+        # NOTE: We'll need to be careful if we ever implement sharing volumes
+        # across containers.
         try:
             self.cli.remove_container(
                 self.container.container_id, force=True, v=True

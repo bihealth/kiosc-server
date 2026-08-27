@@ -86,3 +86,7 @@ Docker terms
     Docker Registry
         A repository where Docker images can be uploaded to or downloaded from
         using ``docker login``, ``docker push``, and ``docker pull`` commands.
+
+    Docker Volume
+        A directory which contains external data and can be mounted inside a
+        container.

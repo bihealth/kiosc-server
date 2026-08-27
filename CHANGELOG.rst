@@ -11,6 +11,7 @@ New Features
 ------------
 
 - Jupyter notebooks can now be deployed on Kiosc, as documented in the Usage Cookbook of the docs (#272)
+- External data can now be downloaded from a URL before starting the container and mounted to a container path  (#211)
 - Container log entries from the Docker daemon can be searched (#269)
 - Project guests are now allowed to see container logs (#269)
 - Containers are started on demand when accessed in state INITIAL, EXITED, or TERMINATED (#268)
@@ -26,6 +27,10 @@ Internal Refactoring
 - Reorganize Django settings (#269)
 - Upgrade SODAR Core to v1.4.2 (#269)
 - Add live tests for seaPiper, CellXGene, and Jupyter (#272)
+- Allow project guests to see container logs (#269)
+- Start container on demand when accessed in state INITIAL, EXITED, or TERMINATED (#268)
+- Failing to access a container will redirect to the container details rather than to the HTTP referer (#268)
+- Environment is now an empty dict by default, instead of None (#229)
 
 Fixes
 -----
@@ -33,6 +38,7 @@ Fixes
 - Fix parsing of errors in Docker pull logs (#274)
 - Fix redirection to actual container_path from ProxyLobby (#272)
 - Prune zombie stopped container, not just running ones (#282)
+- Serialize environment variables as JSON instead of as Python dictionaries (#290)
 
 v0.6.1 (2026-07-09)
 ===================

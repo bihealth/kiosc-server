@@ -7,6 +7,7 @@ import docker.errors
 from bgjobs.models import BackgroundJob
 from celery.schedules import crontab
 from django.conf import settings
+from django.db import connections
 
 from django.utils import timezone
 
@@ -110,6 +111,7 @@ def stop_inactive_containers(_self):
 
 @app.task(bind=True)
 def poll_docker_status(_self):
+    print(connections.all())
     timeline = plugin_api.get_backend_api('timeline_backend')
     for container in Container.objects.all():
         sync_container_state(container, timeline)

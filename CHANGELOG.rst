@@ -12,6 +12,7 @@ New Features
 
 - Jupyter notebooks can now be deployed on Kiosc, as documented in the Usage Cookbook of the docs (#272)
 - External data can now be downloaded from a URL before starting the container and mounted to a container path  (#211)
+- Added KIOSC_DOCKER_VOLUMES_DIR setting and environment variable (#211)
 - Container log entries from the Docker daemon can be searched (#269)
 - Project guests are now allowed to see container logs (#269)
 - Containers are started on demand when accessed in state INITIAL, EXITED, or TERMINATED (#268)

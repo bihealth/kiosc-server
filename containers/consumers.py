@@ -17,7 +17,7 @@ import urllib3.contrib
 import socket
 
 from django.conf import settings
-from django.db import connection
+from django.db import connection, connections
 from django.urls import reverse
 
 from containers.models import (
@@ -95,6 +95,8 @@ class TunnelConsumer(WebsocketConsumer):
 
         def on_close(ws, code, msg):
             logger.debug('TunnelConsumer CLOSED: %s (%s)', code, msg)
+            print(connections.all())
+            # connection.close()
 
         websocket.enableTrace(self.debug)
 
@@ -446,6 +448,7 @@ class ContainerWatcherConsumer(WebsocketConsumer):
             self.close(code=4403, reason='Forbidden')
             return
         self.accept()
+        print(connections.all())
 
     def disconnect(self, close_code: int):
         """Called upon websocket disconnect events"""

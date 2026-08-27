@@ -1,4 +1,5 @@
 import os
+import json
 import shlex
 import shutil
 import subprocess
@@ -704,9 +705,12 @@ class ContainerMachine(StateMachine):
             },
         )
 
-        for key, value in environment.items():
-            if isinstance(value, str) and ABSOLUTE_PATH_PROXY_PREFIX in value:
-                environment[key] = value.replace(
+        # Sanitize environment
+        for key in environment.keys():
+            if not isinstance(environment[key], str):
+                environment[key] = json.dumps(environment[key])
+            if ABSOLUTE_PATH_PROXY_PREFIX in environment[key]:
+                environment[key] = environment[key].replace(
                     ABSOLUTE_PATH_PROXY_PREFIX, url_prefix
                 )
 

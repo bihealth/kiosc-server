@@ -43,8 +43,10 @@ from containers.models import (
     ABSOLUTE_PATH_PROXY_PREFIX,
 )
 
+
 logger = logging.getLogger(__name__)
 channel_layer = get_channel_layer()
+
 
 # Increase the timeout for communication with Docker daemon.
 APP_NAME = 'containers'
@@ -625,8 +627,9 @@ class ContainerMachine(StateMachine):
                     '-r',
                     '-nH',
                     '-np',
-                    '--cut-dirs',
-                    str(cut_dirs),
+                    '-nv',
+                    f'--cut-dirs={cut_dirs}',
+                    f'--user-agent="Kiosc {settings.ADMINS}"',
                     remote_mount.source,
                 ]
                 self._log_task(' '.join(args))

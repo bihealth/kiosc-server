@@ -59,26 +59,41 @@ In general, images can be downloaded from private registry only after running th
 The fields ``Registry user`` and ``Registry password`` mirror the credentials that you have to ender with ``docker login``.
 Note that after creating the container the credentials will not be visible anymore, but they will be replaced everywhere by a ``<masked>`` token.
 
+Container port
+^^^^^^^^^^^^^^
+
+In this field, enter the port number which the web app listens on.
+
+Container path
+^^^^^^^^^^^^^^
+
+The container path is the folder structure appended to the web address of
+the container.
+
 Environment
 ^^^^^^^^^^^
 
-Environment variables can be specified using a JSON dictionary.
-Top-level keys in the dictionary become the environmental variables visible to the app launched
-in the container::
+You can pass arbitrary environment variables to the app running in the container.
+These variables can be used to specify e.g. a data source or other parameters
+for the app. Enter environment variables as a JSON object: top-level keys in the
+dictionary are the names of the variables visible to the app::
 
     {
         "ID": "My container",
         "LIST": [ "A", "B", "C" ]
     }
 
+In theory, since environment variables are just strings, you should only pass strings as the values of the dictionary.
+However, since it is often convenient to have some structure in an environment variable, Kiosc allows you to enter any valid JSON entity.
+When the variable is passed to the container, the object is automatically serialized as a JSON string.
 Given the above example, two environment variables will be defined: ``ID``
-and ``LIST``.  The contents of ``ID`` will be ``My container``; the contents of
-``LIST`` will be ``[ 'A', 'B', 'C' ]``. Note that the double quotes will be
-changed to single quotes.
+and ``LIST``.  Inside the container, the contents of ``ID`` will be the string ``My container``; the contents of
+``LIST`` will be the string ``[ "A", "B", "C" ]``. Your app is expected to parse the environment variable as JSON and reconstruct a structured object from it.
+For example, if your app is written in Python, you could write ``my_list = json.loads(os.getenv("LIST"))``.
 
-These variables are available to the web app of the container,
-and can be used to specify e.g. a data source or other parameters
-for the container web app.
+.. versionchanged:: 0.6.2
+
+    In earlier versions, the variable was serialized as a Python dictionary instead of a JSON object. This meant that, for example, the double quotes were converted to single quotes.
 
 In addition to the user defined variables, the ``title``, ``description`` and
 ``container_port`` are also exposed as environment variables to the Docker container
@@ -100,11 +115,48 @@ Environment secret keys is a comma-separated list of sensitive keys to environme
 have a corresponding key defined in the JSON dictionary in the ``environment`` field.
 Those variables will be masked when editing them or viewing the details of the container.
 
-Container path
-^^^^^^^^^^^^^^
+Remote mounts
+^^^^^^^^^^^^^
 
-The container path is the folder structure appended to the web address of
-the container.
+.. versionadded:: 0.6.2
+
+.. image:: figures/apps/containers/create_remote_mount.png
+  :alt: Form to create a remote mount
+
+You can tell Kiosc to download data *before* the container even starts. These
+data will still be available if the container is stopped and started again, so
+using a remote mount can make containers start much faster. It can also simplify
+your app, because it can just assume that the data are already available at a
+given path, instead of having to download them.
+
+Click "Add a remote mount", then enter the URL from which you want to download
+data. The files will be downloaded *recursively*, so be careful what you ask
+for. The URL can point to an HTTP, HTTPS, or FTP server. In the "Destination"
+field, enter the directory where the container should find the data. Note that
+this must be a directory name even if you download just one file: the file names
+will be the same as in the original data. When the container starts, you can
+point your app to the destination directory and the data will be already there.
+
+The source URL is actually optional. If left blank, Kiosc will create an empty
+persistent volume at the specified container path. Your app can then use it to
+store data which will survive even if the container exits.
+
+You can create up to 10 mount points by clicking "Add a remote mount" multiple
+times. If you realize you don't need a mount that you already added, click
+"Dismiss this mount" to remove it.
+
+The data are downloaded for the first time when the container starts. To help
+you know exactly what data are available and where they are, you will see a
+directory listing of the "Destination" path in the container logs.
+
+Command
+^^^^^^^
+
+Enter the command that the container should run as soon as it starts.
+
+.. tip::
+
+    You can make use of the environment variables defined above in this command line.
 
 Timeout
 ^^^^^^^

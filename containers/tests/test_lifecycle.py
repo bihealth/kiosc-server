@@ -223,7 +223,7 @@ class TestContainerLifecycle(TestBase):
         time.sleep(1)
         self.container.refresh_from_db()
         logs = self.cli.logs(self.container.container_id)
-        self.assertEqual(logs, b'My env variable: {"a": 1, "b": 2}\n')
+        self.assertEqual(logs, b'My variable: {"a": 1, "b": 2}\n')
 
 
 @override_settings(KIOSC_DOCKER_ACTION_MIN_DELAY=0)

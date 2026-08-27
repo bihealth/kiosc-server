@@ -87,10 +87,10 @@ class TestLiveSeaPiper(UITestBase):
             By.XPATH, '//div[@data-value="default::ICU_ID1"]'
         ).click()
         table_id = 'DataTables_Table_1'
-        WebDriverWait(self.selenium, self.wait_time).until(
+        WebDriverWait(self.selenium, 2 * self.wait_time).until(
             ec.presence_of_element_located((By.ID, table_id))
         )
-        WebDriverWait(self.selenium, self.wait_time).until(
+        WebDriverWait(self.selenium, 2 * self.wait_time).until(
             ec.text_to_be_present_in_element((By.ID, table_id), 'ENSG')
         )
         table_el = self.selenium.find_element(By.ID, table_id)

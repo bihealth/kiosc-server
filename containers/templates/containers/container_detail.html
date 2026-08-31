@@ -46,7 +46,7 @@
   <div class="card">
     <div class="card-header"><h4>Description</h4></div>
     <div id='kiosc-container-detail-description' class="card-body">
-      {{ object.description|safe_markdown|default:"<em class='text-muted'>No description.</em>" }}
+      {{ object.description|default:""|safe_markdown|default:"<em class='text-muted'>No description.</em>" }}
     </div>
   </div>
   {% if can_view_logs %}

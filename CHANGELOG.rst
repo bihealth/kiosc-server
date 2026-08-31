@@ -4,8 +4,8 @@ Kiosc Changelog
 Changelog for the **Kiosc** Django app package.
 Loosely follows the `Keep a Changelog <http://keepachangelog.com/en/1.0.0/>`_ guidelines.
 
-Current
-=======
+v0.6.2 (2026-08-31)
+===================
 
 New Features
 ------------
@@ -26,7 +26,7 @@ Internal Refactoring
 - Remove sync_to_async monkey patch (#269)
 - Use whitenoise backend for static files also in development (#269)
 - Reorganize Django settings (#269)
-- Upgrade SODAR Core to v1.4.2 (#269)
+- Upgrade SODAR Core to v1.4.4 (#269)
 - Add live tests for seaPiper, CellXGene, and Jupyter (#272)
 - Allow project guests to see container logs (#269)
 - Start container on demand when accessed in state INITIAL, EXITED, or TERMINATED (#268)

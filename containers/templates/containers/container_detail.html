@@ -325,7 +325,7 @@
             // Our server returns status 299 when the app is not running, but it redirects the client to the proxy lobby
             try {
               const response = await fetch(
-                "{% url 'containers:proxy' container=object.sodar_uuid path=object.container_path %}",
+                "{% url 'containers:proxy' container=object.sodar_uuid path=object.get_path %}",
                 {
                   "headers": {
                     "Kiosc-Preflight": "1",

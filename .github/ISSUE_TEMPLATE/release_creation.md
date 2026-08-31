@@ -9,18 +9,19 @@ assignees: ''
 
 ## Checks
 
-* [] CHANGELOG.md
-* [] Version number in pyproject.toml
-* [] Documentation
-* [] Tests
-* [] README.md
-* [] Copyright year
-* [] Local instance
+* [ ] CHANGELOG.md
+* [ ] Version number in pyproject.toml
+* [ ] Dependencies updates
+* [ ] Documentation
+* [ ] Tests
+* [ ] README.md
+* [ ] Copyright year
+* [ ] Local instance
 
 ## Tasks
 
-* [] Create tag
-* [] Create release
-* [] Back up database
-* [] Update internal playbooks
-* [] Deploy to production
+* [ ] Create vX.Y.Z tag
+* [ ] Create vX.Y.Z release
+* [ ] Back up database
+* [ ] Update internal playbooks
+* [ ] Deploy to production

@@ -588,12 +588,13 @@ class ContainerMachine(StateMachine):
         for remote_mount in self.container.remote_mounts.all():
             volume_name = str(remote_mount.volume_name)
             volume_path = os.path.join(
-                settings.KIOSC_DOCKER_VOLUMES_DIR, volume_name
+                settings.KIOSC_DOCKER_VOLUMES_DIR, volume_name, '_data'
             )
             # Create volume if it doesn't exist
             try:
                 self.cli.inspect_volume(volume_name)
             except docker.errors.APIError:
+                os.makedirs(volume_path, exist_ok=True)
                 self.cli.create_volume(
                     volume_name,
                     driver='local',
@@ -604,7 +605,6 @@ class ContainerMachine(StateMachine):
                     },
                     labels={'kiosc.owner': 'kiosc'},
                 )
-                os.makedirs(volume_path, exist_ok=True)
                 remote_mount.dirty = True
             if (
                 remote_mount.dirty or not remote_mount.date_last_update

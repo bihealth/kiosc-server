@@ -107,5 +107,5 @@ At a Glance
 
   - Python >=3.11
   - Django 5.2
-  - SODAR Core 1.3
+  - SODAR Core 1.4
   - PostgreSQL >=16

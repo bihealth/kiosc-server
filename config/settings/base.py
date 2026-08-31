@@ -156,7 +156,9 @@ MANAGERS = ADMINS
 # Uses django-environ to accept uri format
 # See: https://docs.djangoproject.com/en/dev/ref/settings/#databases
 # See: https://django-environ.readthedocs.io/en/latest/#supported-types
-DATABASES = {'default': env.db('DATABASE_URL', default='postgres://127.0.0.1:5432')}
+DATABASES = {
+    'default': env.db('DATABASE_URL', default='postgres://127.0.0.1:5432')
+}
 DATABASES['default']['ATOMIC_REQUESTS'] = False
 
 DEFAULT_AUTO_FIELD = 'django.db.models.AutoField'

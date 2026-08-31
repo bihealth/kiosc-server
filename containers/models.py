@@ -618,6 +618,7 @@ class ContainerRemoteMount(models.Model):
     )
     #: URL of the data to download.
     source = models.URLField(
+        max_length=4096,
         help_text='URL of the data to download.',
         blank=True,
         null=True,

@@ -190,8 +190,7 @@ class KioscRegistryNotificationsView(View):
                 repository = event['target']['repository']
                 project_uuid, image = repository.split('/', 1)
                 tag = event['target']['tag']
-                # XXX: Can we assume that the actor has a name field?
-                actor = event['actor']['name']
+                actor = event['actor'].get('name', 'unknown actor')
                 project = Project.objects.get(sodar_uuid=project_uuid)
                 logger.info(
                     f'Registry notifications: user "{actor}" just pushed '

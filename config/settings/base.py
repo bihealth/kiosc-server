@@ -110,6 +110,7 @@ INSTALLED_APPS = DJANGO_APPS + THIRD_PARTY_APPS + LOCAL_APPS
 # ------------------------------------------------------------------------------
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
+    'whitenoise.middleware.WhiteNoiseMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
@@ -289,10 +290,6 @@ STATICFILES_FINDERS = [
     'django.contrib.staticfiles.finders.AppDirectoriesFinder',
 ]
 
-# Use Whitenoise to serve static files
-# See: https://whitenoise.readthedocs.io/
-MIDDLEWARE += ['whitenoise.middleware.WhiteNoiseMiddleware']
-
 
 # MEDIA CONFIGURATION
 # ------------------------------------------------------------------------------
@@ -302,6 +299,8 @@ MEDIA_URL = '/media/'
 # STORAGE CONFIGURATION
 # ------------------------------------------------------------------------------
 # Set django-db-file-storage as the default storage (for filesfolders)
+# Use Whitenoise to serve static files
+# See: https://whitenoise.readthedocs.io/
 STORAGES = {
     'default': {
         'BACKEND': 'db_file_storage.storage.DatabaseFileStorage',

@@ -41,7 +41,7 @@ from revproxy.views import ProxyView
 
 from config.settings.base import KIOSC_CONTAINER_DEFAULT_LOG_LINES
 from bgjobs.models import BackgroundJob
-from timeline.models import TL_STATUS_FAILED, TL_STATUS_OK
+from timeline.models import TL_STATUS_FAILED, TL_STATUS_INFO, TL_STATUS_OK
 from containers.templatetags.container_tags import colorize_state, state_bell
 from filesfolders.models import File, FileData
 from filesfolders.views import storage
@@ -865,6 +865,11 @@ class ReverseProxyView(
             container_task.apply_async(
                 kwargs={'job_id': job.id}, countdown=CELERY_SUBMIT_COUNTDOWN
             )
+            if tl_event:
+                tl_event.set_status(
+                    TL_STATUS_INFO,
+                    'Starting the app in the background',
+                )
             return _proxylobby
 
         elif container.state not in (STATE_RUNNING, STATE_PULLING):
@@ -908,7 +913,7 @@ class ReverseProxyView(
         except MaxRetryError:
             if tl_event:
                 tl_event.set_status(
-                    TL_STATUS_FAILED,
+                    TL_STATUS_INFO,
                     'The app is not ready to take connections, please wait a moment.',
                 )
             # The upstream app in the container is not ready yet

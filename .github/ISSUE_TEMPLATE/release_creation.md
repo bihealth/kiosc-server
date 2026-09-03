@@ -12,6 +12,7 @@ assignees: ''
 * [ ] CHANGELOG.md
 * [ ] Version number in pyproject.toml
 * [ ] Dependencies updates
+* [ ] Stale GitHub branches
 * [ ] Documentation
 * [ ] Tests
 * [ ] README.md
@@ -20,6 +21,7 @@ assignees: ''
 
 ## Tasks
 
+* [ ] Rebase and merge main
 * [ ] Create vX.Y.Z tag
 * [ ] Create vX.Y.Z release
 * [ ] Back up database

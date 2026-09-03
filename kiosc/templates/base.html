@@ -2,3 +2,11 @@
 {# TODO: Extend it as below, copy here and modify, or use your own template #}
 
 {% extends 'projectroles/base_site.html' %}
+
+{% load static %}
+
+{% block head_extend %}
+  {{ block.super }}
+  <link rel="icon" type="image/svg" href="{% static 'images/logo_kiosc_black.svg' %}">
+  <link rel="apple-touch-icon" type="image/svg" href="{% static 'images/logo_kiosc_black.svg' %}">
+{% endblock head_extend %}

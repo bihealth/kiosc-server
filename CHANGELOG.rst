@@ -4,6 +4,14 @@ Kiosc Changelog
 Changelog for the **Kiosc** Django app package.
 Loosely follows the `Keep a Changelog <http://keepachangelog.com/en/1.0.0/>`_ guidelines.
 
+Current
+=======
+
+Fixes
+-----
+
+- Add favicon (#298)
+
 v0.6.2 (2026-08-31)
 ===================
 

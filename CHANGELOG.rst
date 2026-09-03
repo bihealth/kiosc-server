@@ -11,6 +11,9 @@ Fixes
 -----
 
 - Add favicon (#298)
+- Prevent crash when registry actor is empty
+- Fix Martor preview widgets
+- Increase the maximum length of remote mount URLs
 
 v0.6.2 (2026-08-31)
 ===================

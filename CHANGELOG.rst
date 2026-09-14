@@ -14,6 +14,7 @@ Fixes
 - Prevent crash when registry actor is empty
 - Fix Martor preview widgets
 - Increase the maximum length of remote mount URLs
+- Fix spelling of KIOSC_NETWORK_MODE (#300)
 
 v0.6.2 (2026-08-31)
 ===================

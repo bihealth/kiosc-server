@@ -7,7 +7,14 @@ Loosely follows the `Keep a Changelog <http://keepachangelog.com/en/1.0.0/>`_ gu
 Current
 =======
 
-Fixes
+Added
+-----
+
+- Make host_port optional when KIOSC_NETWORK_MODE=='host' (#303)
+  - If no host_port is chosen, a random one will be allocated. If the port is already allocated, the container will fail to start and the logs will prompt the user to set a different host_port.
+  - host_port is now also not constrained to be unique in the database. The reason is that if a container is not running, it doesn't occupy the port, so there can be multiple containers sharing the same host_port, as long as only one of them is running.
+
+Fixed
 -----
 
 - Add favicon (#298)

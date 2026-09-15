@@ -43,10 +43,10 @@ class ContainerSerializer(SODARProjectModelSerializer):
             'project',
         )
 
-    def get_extra_kwargs(self):
-        # Use this instead of ``extra_kwargs`` because of overriding settings in tests
-        extra_kwargs = super().get_extra_kwargs()
-        extra_kwargs['host_port'] = {
-            'required': settings.KIOSC_NETWORK_MODE == 'host'
-        }
-        return extra_kwargs
+    # def get_extra_kwargs(self):
+    #     # Use this instead of ``extra_kwargs`` because of overriding settings in tests
+    #     extra_kwargs = super().get_extra_kwargs()
+    #     extra_kwargs['host_port'] = {
+    #         'required': settings.KIOSC_NETWORK_MODE == 'host'
+    #     }
+    #     return extra_kwargs

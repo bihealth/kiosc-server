@@ -96,7 +96,7 @@ class TestContainerForm(TestBase):
         key = 'host_port'
         self.form_data_min_mode_host.pop(key)
         form = ContainerForm(self.form_data_min_mode_host)
-        self.assertEqual(form.errors[key], ['This field is required.'])
+        self.assertTrue(key not in form.errors)
 
     @override_settings(KIOSC_NETWORK_MODE='host')
     def test_missing_field_title(self):

@@ -14,7 +14,7 @@ class Migration(migrations.Migration):
             name='host_port',
             field=models.IntegerField(
                 blank=True,
-                help_text='Port of the container on the host',
+                help_text='Port of the container on the host (if omitted, a random one will be chosen)',
                 null=True,
             ),
         ),

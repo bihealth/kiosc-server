@@ -56,10 +56,6 @@ class ContainerForm(forms.ModelForm):
         if settings.KIOSC_NETWORK_MODE == 'docker-shared':
             self.fields['host_port'].widget = forms.HiddenInput()
 
-        # Make host port field mandatory in host mode
-        if settings.KIOSC_NETWORK_MODE == 'host':
-            self.fields['host_port'].required = True
-
     def clean(self):
         """Override to check for secret keys in the environment."""
         cleaned_data = super().clean()

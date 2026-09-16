@@ -40,9 +40,8 @@ class TestContainerSerializer(TestCase):
             'tag': 'some tag',
         }
         serializer = ContainerSerializer(data=data)
-        self.assertFalse(serializer.is_valid())
-        self.assertTrue('host_port' in serializer.errors)
-        self.assertEqual(serializer.errors['host_port'][0].code, 'required')
+        self.assertTrue(serializer.is_valid())
+        self.assertFalse('host_port' in serializer.errors)
 
     @override_settings(KIOSC_NETWORK_MODE='host')
     def test_invalid_mode_host_missing_title(self):

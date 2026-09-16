@@ -358,12 +358,16 @@ class Container(models.Model):
         null=True,
     )
 
-    #: The port on the host (to redirect the requests/web socket to).
+    #: The port on the host (to redirect the requests/web socket to). If null,
+    #: a random port will be chosen.
     host_port = models.IntegerField(
-        help_text='Port of the container on the host',
+        help_text=(
+            'Port of the container on the host '
+            '(if omitted, a random one will be chosen)'
+        ),
         blank=True,
         null=True,
-        unique=True,
+        unique=False,
     )
 
     #: The time interval in seconds permitted for any Docker action to be performed.

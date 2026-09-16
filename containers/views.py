@@ -828,22 +828,6 @@ class ReverseProxyView(
             status=299,
         )
 
-        if settings.KIOSC_NETWORK_MODE == 'host':
-            if container.host_port:
-                self.upstream = f'http://localhost:{container.host_port}'
-            else:
-                if tl_event:
-                    tl_event.set_status(
-                        TL_STATUS_FAILED,
-                        'The host port is not set, please update the container.',
-                    )
-                messages.error(request, 'Host port not set.')
-                return _redirect
-        else:
-            self.upstream = (
-                f'http://{container.container_ip}:{container.container_port}'
-            )
-
         if container.state in (
             STATE_CREATED,
             STATE_INITIAL,
@@ -901,6 +885,25 @@ class ReverseProxyView(
                     'path': kwargs['path'],
                 },
             ).lstrip('/')  # remove the initial slash
+
+        if settings.KIOSC_NETWORK_MODE == 'host':
+            if container.host_port:
+                self.upstream = f'http://localhost:{container.host_port}'
+            elif container.state == STATE_PULLING:
+                # Wait for the automatic port allocation, which happens after pulling
+                return _proxylobby
+            else:
+                if tl_event:
+                    tl_event.set_status(
+                        TL_STATUS_FAILED,
+                        'The host port is not set, please update the container.',
+                    )
+                messages.error(request, 'Host port not set.')
+                return _redirect
+        else:
+            self.upstream = (
+                f'http://{container.container_ip}:{container.container_port}'
+            )
 
         try:
             res = super().dispatch(request, *args, **kwargs)

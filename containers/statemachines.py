@@ -453,16 +453,20 @@ class ContainerMachine(StateMachine):
             container_info = self.cli.inspect_container(
                 self.container.container_id
             )
-
+        # Update container state
         if container_info.get('State'):
             self.container.state = container_info.get('State').get('Status')
-
+        # Update container network settings
         self.container.container_ip = (
             container_info.get('NetworkSettings', {})
             .get('Networks', {})
             .get(settings.KIOSC_DOCKER_NETWORK, {})
             .get('IPAddress')
         )
+        if settings.KIOSC_NETWORK_MODE == 'host':
+            if ports := container_info.get('NetworkSettings', {}).get('Ports'):
+                if binds := ports.get(f'{self.container.container_port}/tcp'):
+                    self.container.host_port = binds[0]['HostPort']
         self.container.save()
 
     def _log_task(self, text):
@@ -732,6 +736,11 @@ class ContainerMachine(StateMachine):
                 }
             )
         elif settings.KIOSC_NETWORK_MODE == 'host':
+            # If host_port is None, the Docker daemon will chose a random one,
+            # although we will not know which one until the container is
+            # started. Whenever we start the container, we also call
+            # _update_status(), which will take care of setting the correct
+            # host_port field in the container object.
             options_host_config['port_bindings'] = {
                 self.container.container_port: self.container.host_port
             }
@@ -780,7 +789,16 @@ class ContainerMachine(StateMachine):
     def on_start_pulled(self):
         # Starting container
         self._log_task('Starting...')
-        self.cli.start(self.container.container_id)
+        try:
+            self.cli.start(self.container.container_id)
+        except docker.errors.APIError as ex:
+            # Workaround for https://github.com/moby/libnetwork/pull/1794/files.
+            # Doing docker create with a binding to an already allocated port,
+            # the first docker start fails, but subsequent docker start succeeds
+            # and the port binding is forgotten.
+            if 'port is already allocated' in str(ex):
+                self.on_delete_exited()
+            raise ex
         self._update_status()
         self._log_task('Container started successfully')
 

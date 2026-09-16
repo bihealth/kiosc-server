@@ -1336,13 +1336,7 @@ class TestReverseProxyView(TestBase):
                     },
                 ),
             )
-            self.assertRedirects(
-                response,
-                reverse(
-                    'containers:detail',
-                    kwargs={'container': self.container.sodar_uuid},
-                ),
-            )
+            self.assertEqual(response.status_code, 200)
 
     @override_settings(KIOSC_NETWORK_MODE='host')
     def test_get_with_path(self):

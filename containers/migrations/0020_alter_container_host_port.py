@@ -4,17 +4,18 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
-        ("containers", "0019_alter_containerremotemount_source"),
+        ('containers', '0019_alter_containerremotemount_source'),
     ]
 
     operations = [
         migrations.AlterField(
-            model_name="container",
-            name="host_port",
+            model_name='container',
+            name='host_port',
             field=models.IntegerField(
-                blank=True, help_text="Port of the container on the host", null=True
+                blank=True,
+                help_text='Port of the container on the host',
+                null=True,
             ),
         ),
     ]

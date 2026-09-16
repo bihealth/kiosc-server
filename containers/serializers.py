@@ -1,4 +1,3 @@
-from django.conf import settings
 from projectroles.serializers import SODARProjectModelSerializer
 
 from containers.models import Container
@@ -42,11 +41,3 @@ class ContainerSerializer(SODARProjectModelSerializer):
             'date_modified',
             'project',
         )
-
-    # def get_extra_kwargs(self):
-    #     # Use this instead of ``extra_kwargs`` because of overriding settings in tests
-    #     extra_kwargs = super().get_extra_kwargs()
-    #     extra_kwargs['host_port'] = {
-    #         'required': settings.KIOSC_NETWORK_MODE == 'host'
-    #     }
-    #     return extra_kwargs

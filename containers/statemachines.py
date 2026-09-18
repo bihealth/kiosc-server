@@ -861,7 +861,6 @@ class ContainerMachine(StateMachine):
 
         # Removing container and erasing container_id
         # NOTE: this will also remove the volumes associated with the container
-        # (thanks to the v=True flag in remove_container())
         # NOTE: We'll need to be careful if we ever implement sharing volumes
         # across containers.
         try:
@@ -871,7 +870,12 @@ class ContainerMachine(StateMachine):
         except docker.errors.NotFound:
             # The container doesn't exist, so there is nothing to delete
             logger.warning("Trying to delete container which doesn't exist")
-            pass
+        for mount in self.container.remote_mounts.all():
+            try:
+                self.cli.remove_volume(str(mount.volume_name))
+            except docker.errors.NotFound:
+                # The volume doesn't exist, so there is nothing to delete
+                logger.warning("Trying to delete volume which doesn't exist")
 
     def on_delete_terminated(self):
         self.on_delete_exited()

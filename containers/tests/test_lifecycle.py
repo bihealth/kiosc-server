@@ -385,3 +385,38 @@ class TestContainerVolumes(TestBase):
         container_task(job_id=bg_job.pk)
         self.container.refresh_from_db()
         self.assertEqual(self.container.state, STATE_FAILED)
+
+    def test_volume_delete(self):
+        """Test that volumes are deleted together with the container"""
+        self.container.command = 'ls /bunny/File:Big_Buck_Bunny_extract.ogv'
+        self.container.save()
+        bg_job = ContainerBackgroundJobFactory(
+            user=self.superuser,
+            action=ACTION_START,
+            container=self.container,
+        )
+        container_task(job_id=bg_job.pk)
+        self.container.refresh_from_db()
+        self._check_exit_status(self.container, 0)
+        self.assertEqual(self.container.state, STATE_EXITED)
+        container_id = self.container.container_id
+        volume_ids = [
+            mount.volume_name for mount in self.container.remote_mounts.all()
+        ]
+        for volume_id in volume_ids:
+            volume_dict = self.cli.inspect_volume(str(volume_id))
+            self.assertEqual(volume_dict['Labels']['kiosc.owner'], 'kiosc')
+        bg_job = ContainerBackgroundJobFactory(
+            user=self.superuser,
+            action=ACTION_DELETE,
+            container=self.container,
+        )
+        container_task(job_id=bg_job.pk)
+        # Test from the daemon (container should not be found)
+        for container in self.cli.containers(all=True):
+            if container['Id'] == container_id:
+                raise RuntimeError('Container was not deleted successfully')
+        # Test from the daemon (volumes should not be found)
+        for volume_id in volume_ids:
+            with self.assertRaises(docker.errors.NotFound):
+                self.cli.inspect_volume(str(volume_id))

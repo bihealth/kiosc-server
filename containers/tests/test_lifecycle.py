@@ -3,7 +3,7 @@
 import time
 import docker.errors
 
-from django.test import override_settings, tag
+from django.test import override_settings
 
 from containers.models import (
     Container,
@@ -251,7 +251,6 @@ class TestContainerVolumes(TestBase):
             dest='/bunny',
         )
 
-    @tag('docker-server')
     def tearDown(self):
         for container in Container.objects.all():
             if container.container_id and not len(container.container_id) < 3:
@@ -369,3 +368,20 @@ class TestContainerVolumes(TestBase):
         container_task(job_id=bg_job.pk)
         self.container.refresh_from_db()
         self._check_exit_status(self.container, 0)
+
+    def test_error_downloading_data(self):
+        """Test that wget errors are handled gracefully"""
+        # Create a mount point with the wrong source URL
+        ContainerRemoteMount.objects.create(
+            container=self.container,
+            source='https://location-that-doesnt-exist.th',
+            dest='/fakedata',
+        )
+        bg_job = ContainerBackgroundJobFactory(
+            user=self.superuser,
+            action=ACTION_START,
+            container=self.container,
+        )
+        container_task(job_id=bg_job.pk)
+        self.container.refresh_from_db()
+        self.assertEqual(self.container.state, STATE_FAILED)

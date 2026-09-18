@@ -20,9 +20,15 @@ from projectroles.app_settings import AppSettingAPI
 from projectroles.models import SODAR_CONSTANTS
 from projectroles.plugins import PluginAPI
 
+from timeline.models import (
+    TL_STATUS_FAILED,
+    TL_STATUS_OK,
+)
+
 from containers.models import (
     Container,
     ContainerBackgroundJob,
+    ContainerRemoteMount,
     # STATE_FAILED,
     # STATE_INITIAL,
     # STATE_DELETED,
@@ -116,13 +122,15 @@ def poll_docker_status(_self):
 
 
 @app.task(bind=True)
-def prune_zombie_containers(_self):
+def prune_zombies(_self):
+    """Prune containers and volumes which are not tracked by Kiosc"""
     if settings.KIOSC_NETWORK_MODE != 'docker-shared':
         # Only run in docker-shared mode: we don't want to kill containers which
         # are not our own.
         return
 
     cli = connect_docker()
+    timeline = plugin_api.get_backend_api('timeline_backend')
     for container in cli.containers(all=True):
         container_networks = container['NetworkSettings']['Networks']
         if len(container_networks) > 1 or not container_networks.get(
@@ -133,12 +141,45 @@ def prune_zombie_containers(_self):
             continue
 
         try:
-            container = Container.objects.get(container_id=container['Id'])
+            Container.objects.get(container_id=container['Id'])
         except Container.DoesNotExist:
             logger.warning('Found zombie container: %s', container['Id'])
-            # NOTE: this will also remove the volumes associated with the
-            # container (thanks to the v=True flag in remove_container())
+            if timeline:
+                tl_event = timeline.add_event(
+                    project=None,
+                    app_name=APP_NAME,
+                    user=None,
+                    event_name='kill_zombie_container',
+                    description='Killing zombie container {container["Id"]}',
+                )
             cli.remove_container(container['Id'], force=True, v=True)
+            if timeline:
+                tl_event.set_status(TL_STATUS_OK)
+
+    for volume in cli.volumes()['Volumes']:
+        if not volume['Labels'] or 'kiosc.owner' not in volume['Labels']:
+            # This volume does not belong to Kiosc
+            continue
+        try:
+            ContainerRemoteMount.objects.get(volume_name=volume['Name'])
+        except ContainerRemoteMount.DoesNotExist:
+            logger.warning('Found zombie volume: %s', volume['Name'])
+            if timeline:
+                tl_event = timeline.add_event(
+                    project=None,
+                    app_name=APP_NAME,
+                    user=None,
+                    event_name='kill_zombie_vlume',
+                    description='Killing zombie volume {volume["Name"]}',
+                )
+            try:
+                cli.remove_volume(volume['Name'])
+                if timeline:
+                    tl_event.set_status(TL_STATUS_OK)
+            except docker.errors.APIError as ex:
+                logger.error(ex)
+                if timeline:
+                    tl_event.set_status(TL_STATUS_FAILED, ex)
 
 
 @app.on_after_finalize.connect
@@ -149,5 +190,5 @@ def setup_periodic_tasks(sender, **_kwargs):
         crontab(hour=1, minute=11), sig=stop_inactive_containers.s()
     )
     sender.add_periodic_task(
-        crontab(hour='*', minute=30), sig=prune_zombie_containers.s()
+        crontab(hour='*', minute=30), sig=prune_zombies.s()
     )

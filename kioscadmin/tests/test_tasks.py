@@ -20,11 +20,12 @@ from containers.models import (
     Container,
     ContainerLogEntry,
     ContainerBackgroundJob,
+    ContainerRemoteMount,
 )
 from kioscadmin.tasks import (
     connect_docker,
     stop_inactive_containers,
-    prune_zombie_containers,
+    prune_zombies,
 )
 from containers.tasks import container_task
 
@@ -356,8 +357,8 @@ class TestStopInactiveContainers(TestBase):
 @override_settings(
     KIOSC_NETWORK_MODE='docker-shared',
 )
-class TestPruneZombieContainers(TestBase):
-    """Tests for ``prune_zombie_containers`` task."""
+class TestPruneZombies(TestBase):
+    """Tests for ``prune_zombies`` task."""
 
     def setUp(self):
         super().setUp()
@@ -412,7 +413,7 @@ class TestPruneZombieContainers(TestBase):
         self.container.container_id = None
         self.container.save()
         # Test that pruning the zombies does the job
-        prune_zombie_containers()
+        prune_zombies()
         for container in self.cli.containers(all=True):
             if container['Id'] == container_id:
                 # Container should not be found
@@ -461,9 +462,52 @@ class TestPruneZombieContainers(TestBase):
         self.container.container_id = None
         self.container.save()
         # Test that pruning the zombies does the job
-        prune_zombie_containers()
+        prune_zombies()
         for container in self.cli.containers(all=True):
             if container['Id'] == container_id:
                 # Container should not be found
                 raise RuntimeError('Container did not stop successfully')
+        self.cli.remove_network(network['Id'])
+
+    @override_settings(
+        KIOSC_DOCKER_NETWORK='kiosc-testing-prune-volumes',
+    )
+    def test_prune_volumes(self):
+        """Test pruning zombie volumes"""
+        network = self.cli.create_network(
+            settings.KIOSC_DOCKER_NETWORK,
+            driver='bridge',
+        )
+        mount = ContainerRemoteMount.objects.create(
+            container=self.container,
+            source='https://commons.wikimedia.org/wiki/File:Big_Buck_Bunny_extract.ogv',
+            dest='/bunny',
+        )
+        bg_job = ContainerBackgroundJobFactory(
+            user=self.superuser,
+            action=ACTION_START,
+            container=self.container,
+        )
+        container_task(job_id=bg_job.pk)
+        self.container.refresh_from_db()
+        logs = [
+            log.text
+            for log in ContainerLogEntry.objects.filter(
+                container=self.container
+            )
+        ]
+        self.assertIn('Container started successfully\n', logs)
+        # Artificially cut the tie between kiosc and the volume
+        volume_name = mount.volume_name
+        mount.volume_name = None
+        mount.save()
+        # This should fail because the volume belongs to a non-zombie container
+        with self.assertRaises(docker.errors.APIError):
+            prune_zombies()
+        # Now we kill the container before the volume
+        self.container.container_id = None
+        self.container.save()
+        prune_zombies()
+        with self.assertRaises(docker.errors.NotFound):
+            self.cli.inspect_volume(str(volume_name))
         self.cli.remove_network(network['Id'])

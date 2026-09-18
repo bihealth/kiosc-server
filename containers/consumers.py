@@ -7,6 +7,7 @@ import json
 import logging
 import struct
 from channels.generic.websocket import WebsocketConsumer
+from channels.layers import get_channel_layer
 from datetime import datetime
 import websocket
 import threading
@@ -279,7 +280,8 @@ class ContainerWatcherConsumer(WebsocketConsumer):
                     'type': 'daemon_logs',
                     'text': data.decode('utf-8'),
                 }
-                self.send(json.dumps(msg))
+                self.send_to_self(msg)
+                # self.send(json.dumps(msg))
         except ReadTimeoutError:
             # This is totally normal and prevents the socket from blocking.
             pass
@@ -307,7 +309,8 @@ class ContainerWatcherConsumer(WebsocketConsumer):
             try:
                 # Send a status update immediately
                 msg = self._get_state(self.container, cli)
-                self.send(json.dumps(msg))
+                self.send_to_self(msg)
+                # self.send(json.dumps(msg))
 
                 logs_generator = cli.logs(
                     self.container.container_id,
@@ -331,7 +334,8 @@ class ContainerWatcherConsumer(WebsocketConsumer):
                 while not self.watch_signal.wait(4):
                     # First we send a status update
                     msg = self._get_state(self.container, cli)
-                    self.send(json.dumps(msg))
+                    self.send_to_self(msg)
+                    # self.send(json.dumps(msg))
                     # Then we keep sending logs as long as they keep coming.
                     # If there are no logs within the socket timeout, we go
                     # back and send a status update, then wait for logs, and
@@ -377,7 +381,8 @@ class ContainerWatcherConsumer(WebsocketConsumer):
                         'text': 'Cannot fetch logs '
                         f'(state is {self.container.state}): {ex}\n',
                     }
-                    self.send(json.dumps(msg))
+                    self.send_to_self(msg)
+                    # self.send(json.dumps(msg))
                     break
                 # Actually we also send an empty logs message to clear the
                 # initial "Loading" text.
@@ -385,7 +390,8 @@ class ContainerWatcherConsumer(WebsocketConsumer):
                     'type': 'daemon_logs',
                     'text': '',
                 }
-                self.send(json.dumps(msg))
+                self.send_to_self(msg)
+                # self.send(json.dumps(msg))
                 continue
             except docker.errors.APIError as ex:
                 # This is likely a bug, we quit
@@ -400,7 +406,8 @@ class ContainerWatcherConsumer(WebsocketConsumer):
                     'text': 'Cannot fetch logs '
                     f'(state is {self.container.state}): {ex}\n',
                 }
-                self.send(json.dumps(msg))
+                self.send_to_self(msg)
+                # self.send(json.dumps(msg))
                 break
 
         # Close Django connections to the db from this thread
@@ -485,10 +492,28 @@ class ContainerWatcherConsumer(WebsocketConsumer):
                 'type': 'static_logs',
                 'text': ''.join(str(log_entry) for log_entry in log_batch),
             }
-            self.send(json.dumps(msg))
+            self.send_to_self(msg)
+            # self.send(json.dumps(msg))
         if self.watch_task:
             self._stop_watching()
         self._start_watching(logs_tail)
+
+    def send_to_self(self, msg: dict):
+        async_to_sync(self.channel_layer.group_send)(
+            str(self.container.sodar_uuid),
+            {
+                'type': 'container_plain.message',
+                'text': json.dumps(msg),
+            },
+        )
+
+    def container_plain_message(self, msg: dict):
+        """Send a message as-is
+
+        This is meant to be used from within the consumer. We have to go through
+        the channels layer because apparently websocket.send is not thread-safe.
+        """
+        self.send(msg['text'])
 
     def container_task_message(self, event: dict):
         """Send a real-time message from the statemachine task.

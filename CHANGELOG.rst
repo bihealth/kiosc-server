@@ -7,6 +7,11 @@ Loosely follows the `Keep a Changelog <http://keepachangelog.com/en/1.0.0/>`_ gu
 Current
 =======
 
+General
+-------
+
+- Upgrade SODAR Core to v1.4.5 (#306)
+
 Added
 -----
 

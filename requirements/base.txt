@@ -84,7 +84,7 @@ celery>=5.6.3, <5.7
 django-autocomplete-light>=5.0.0, <5.1
 
 # SODAR Core
-django-sodar-core==1.4.4
+django-sodar-core==1.4.5
 
 # Docker
 docker>=7.2.0, <7.3

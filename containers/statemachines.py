@@ -535,20 +535,32 @@ class ContainerMachine(StateMachine):
                 stream=True,
                 decode=True,
             ):
-                pull_log = {'text': line.get('status', line.get('error'))}
-                if (line_id := line.get('id')) and (
-                    line_progress := line.get('progressDetail')
-                ):
-                    pull_log['id'] = line_id
-                    pull_log['status'] = f'{line_id}: {line.get("status")}'
-                    if line_progress.get('current') and line_progress.get(
-                        'total'
+                if 'error' in line:
+                    self._log_task(line['error'])
+                    raise RuntimeError(line['error'])
+                pull_log_status = line.get(
+                    'status',
+                    json.dumps(line),
+                )
+                if line_id := line.get('id'):
+                    pull_log = {
+                        'id': line_id,
+                        'status': f'{line_id}: {pull_log_status}',
+                        'text': pull_log_status,
+                    }
+                    line_progress = line.get('progressDetail')
+                    if (
+                        line_progress
+                        and line_progress.get('current')
+                        and line_progress.get('total')
                     ):
                         pull_log['status'] += (
                             f' [{line_progress.get("current")}/{line_progress.get("total")}]'
                         )
-                    elif line_progress.get('current') and line_progress.get(
-                        'units'
+                    elif (
+                        line_progress
+                        and line_progress.get('current')
+                        and line_progress.get('units')
                     ):
                         pull_log['status'] += (
                             f' [{line_progress.get("current")}{line_progress.get("units")}]'
@@ -563,7 +575,6 @@ class ContainerMachine(StateMachine):
                         )
                         self.job.add_log_entry(pull_log['status'])
                 else:
-                    pull_log_status = line.get('status', line.get('error'))
                     pull_log = {'status': pull_log_status}
                     self.container.log_entries.create(
                         text=pull_log_status + '\n',

@@ -7,7 +7,6 @@ import json
 import logging
 import struct
 from channels.generic.websocket import WebsocketConsumer
-from channels.layers import get_channel_layer
 from datetime import datetime
 import websocket
 import threading

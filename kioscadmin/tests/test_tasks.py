@@ -502,8 +502,8 @@ class TestPruneZombies(TestBase):
         mount.volume_name = None
         mount.save()
         # This should fail because the volume belongs to a non-zombie container
-        with self.assertRaises(docker.errors.APIError):
-            prune_zombies()
+        prune_zombies()
+        self.assertIsNotNone(self.cli.inspect_volume(str(volume_name)))
         # Now we kill the container before the volume
         self.container.container_id = None
         self.container.save()

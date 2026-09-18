@@ -420,3 +420,27 @@ class TestContainerVolumes(TestBase):
         for volume_id in volume_ids:
             with self.assertRaises(docker.errors.NotFound):
                 self.cli.inspect_volume(str(volume_id))
+
+
+@override_settings(KIOSC_DOCKER_ACTION_MIN_DELAY=0)
+class TestContainerPull(TestBase):
+    def setUp(self):
+        super().setUp()
+        self.cli = connect_docker()
+
+    def test_pull_error(self):
+        """Test errors during container pull"""
+        container = ContainerFactory(
+            project=self.project,
+            repository='not-esisting/totally-fake-repository',
+            tag='latest',
+            host_port=0,
+            container_id=None,
+        )
+        bg_job = ContainerBackgroundJobFactory(
+            user=self.superuser,
+            action=ACTION_START,
+            container=container,
+        )
+        container_task(job_id=bg_job.pk)
+        container.refresh_from_db()

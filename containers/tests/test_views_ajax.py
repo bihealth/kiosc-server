@@ -235,3 +235,18 @@ class TestPluginSearchResultsAjaxView(
         )
         # Getting the checksum of /etc/nginx/conf.d/default.conf
         cli.remove_container(container.container_id, force=True, v=True)
+
+    def test_uuid_in_logs(self):
+        """Test searching a UUID in daemon logs"""
+        # Regression test for https://github.com/bihealth/kiosc-server/issues/305
+        # Before the fix, this would raise a Django exception: "Cannot resolve
+        # keyword 'sodar_uuid' into field."
+        containers, logs = self._get_search_results(
+            self.user_owner_cat,
+            {
+                'terms': '["ac50717b-de8f-43ee-9445-8048aa7564c1"]',
+                'keywords': '{}',
+            },
+        )
+        self.assertEqual(len(containers), 0)
+        self.assertEqual(len(logs), 0)

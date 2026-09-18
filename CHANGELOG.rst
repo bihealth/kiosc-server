@@ -29,6 +29,7 @@ Fixed
 - Increase the maximum length of remote mount URLs
 - Fix spelling of KIOSC_NETWORK_MODE (#300)
 - Remove Docker volumes when their container is removed (#307)
+- Fix crash when searching a UUID in container logs (#308)
 
 v0.6.2 (2026-08-31)
 ===================

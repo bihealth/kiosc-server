@@ -713,10 +713,6 @@ class ContainerLogEntryManager(models.Manager):
         for t in search_terms:
             term_query.add(Q(text__icontains=t), Q.OR)
             term_query.add(Q(process__icontains=t), Q.OR)
-            try:
-                term_query.add(Q(sodar_uuid=uuid.UUID(t)), Q.OR)
-            except ValueError:
-                pass
         return (
             super()
             .get_queryset()

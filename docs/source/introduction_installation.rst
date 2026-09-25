@@ -210,9 +210,18 @@ in the ``.env`` file, with their default value.
     Enable the feature to upload small files to Kiosc that can be served to the
     Docker containers.
 
-``KIOSC_DOCKER_VOLUMES_DIR=data/docker_volumes``
-    Path where Docker volumes will be saved. Volumes contain data which
-    users download from the internet or generate from within the containers.
+``KIOSC_DOCKER_VOLUMES_DIR=/var/lib/docker/volumes``
+    Path where Kiosc will save and look for Docker volumes. Volumes contain
+    data which users download from the internet or generate from within the
+    containers. Note that this refers to the path inside the kiosc-web Docker
+    container.
+
+``KIOSC_DOCKER_VOLUMES_DIR_SOURCE=./volumes/docker``
+    Path in your local machine where the Docker volumes mentioned above will be
+    stored. This path is then bind-mounted to ``KIOSC_DOCKER_VOLUMES_DIR`` in
+    the running kiosc-web container. Note that, in a :ref:`development setup
+    <introduction_development>`, this variable is ignored and the volumes are
+    stored directly at ``KIOSC_DOCKER_VOLUMES_DIR``.
 
 ``KIOSC_NETWORK_MODE=docker-shared``
     Can be ``host`` or ``docker-shared``. Indicates whether installation runs
@@ -422,13 +431,13 @@ You can change the axis settings through the following environment variables.
 ``KIOSC_PROJECTROLES_SEND_EMAIL=0``
     Enable/disable email sending (bool)
 
-``KIOSC_SODAR_EMAIL_SENDER=``
+``KIOSC_EMAIL_SENDER=``
     Sender address to be displayed in sent email (string)
 
-``KIOSC_SODAR_EMAIL_SUBJECT_PREFIX=``
+``KIOSC_EMAIL_SUBJECT_PREFIX=``
     Prefix to be displayed in the subject line of sent email (string)
 
-``KIOSC_SODAR_EMAIL_URL=``
+``KIOSC_EMAIL_URL=``
     URL of the email server along with its protocol, user and password. Email
     server authentication settings will be derived from this URL (string)
 

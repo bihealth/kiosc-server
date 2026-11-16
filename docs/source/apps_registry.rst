@@ -56,14 +56,18 @@ permissions to create containers in that project. For example, suppose
 that alice is the owner of a project titled "RNASeq Pipelines" with ID
 ``4850f861-571e-4416-ae48-65a23012490e`` (the project ID can be found by looking
 at the URL when browsing the project detail page from the Kiosc web interface).
-Then, you would tag the image as follows::
+Then, you would tag the image as follows:
+
+.. code-block:: bash
 
     docker image tag seaPiper:v6.1 kiosc.acme.org/4850f861-571e-4416-ae48-65a23012490e/seaPiper:v6.1
 
 The image name and version can be changed, the important parts are the registry
 name and the project ID.
 
-After tagging the image, you can finally push it to Kiosc::
+After tagging the image, you can finally push it to Kiosc:
+
+.. code-block:: bash
 
     docker push kiosc.acme.org/4850f861-571e-4416-ae48-65a23012490e/seaPiper:v6.1
 

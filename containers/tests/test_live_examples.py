@@ -41,17 +41,14 @@ class TestLiveJupyter(UITestBase):
             ec.element_to_be_clickable(run_loc)
         )
         self.selenium.find_element(*run_loc).click()
-        time.sleep(1)
         run_loc = (By.XPATH, '//div[text()="Run All Cells"]')
         WebDriverWait(self.selenium, self.wait_time).until(
             ec.element_to_be_clickable(run_loc)
         )
         self.selenium.find_element(*run_loc).click()
-        time.sleep(1)
         WebDriverWait(self.selenium, self.wait_time).until(
             ec.presence_of_element_located((By.XPATH, '//div[text()="[1]:"]'))
         )
-        print('element found')
 
 
 class TestLiveSeaPiper(UITestBase):
@@ -135,4 +132,3 @@ class TestLiveCellXGene(UITestBase):
             self.selenium.find_element(By.ID, 'embedding').text,
             'umap: 2638 out of 2638 cells',
         )
-        time.sleep(2)

@@ -226,6 +226,8 @@ class UITestBase(
         self.cli = connect_docker()
 
         self.set_up_selenium()
+        # Increase default selenium wait time
+        self.wait_time = 60
 
     def tearDown(self):
         self.selenium.quit()

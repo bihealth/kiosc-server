@@ -15,10 +15,17 @@ General
 Added
 -----
 
-- Make host_port optional when KIOSC_NETWORK_MODE=='host' (#303)
-  - If no host_port is chosen, a random one will be allocated. If the port is already allocated, the container will fail to start and the logs will prompt the user to set a different host_port.
-  - host_port is now also not constrained to be unique in the database. The reason is that if a container is not running, it doesn't occupy the port, so there can be multiple containers sharing the same host_port, as long as only one of them is running.
+- Make `host_port` optional when `KIOSC_NETWORK_MODE=='host'` (#303)
+  - If no host_port is chosen, a random one will be allocated. If the port is
+    already allocated, the container will fail to start and the logs will prompt
+    the user to set a different host_port.
+  - host_port is now also not constrained to be unique in the database. The
+    reason is that if a container is not running, it doesn't occupy the port, so
+    there can be multiple containers sharing the same host_port, as long as only
+    one of them is running.
 - Prune zombie Docker volumes (#307)
+- Enable login page override (needed in kiosc-ext) (#301)
+- Added redis service to GitHub build workflow (#309)
 
 Fixed
 -----
@@ -27,9 +34,11 @@ Fixed
 - Prevent crash when registry actor is empty
 - Fix Martor preview widgets
 - Increase the maximum length of remote mount URLs
-- Fix spelling of KIOSC_NETWORK_MODE (#300)
+- Fix spelling of `KIOSC_NETWORK_MODE` (#300)
 - Remove Docker volumes when their container is removed (#307)
 - Fix crash when searching a UUID in container logs (#308)
+- Fix usage of django-channels to avoid race conditions in `ContainerWatcher`
+  websocket messages (#309)
 
 v0.6.2 (2026-08-31)
 ===================

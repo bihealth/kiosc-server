@@ -1,7 +1,8 @@
 ---
 name: Release creation
-about: Suggest an idea for this project
-title: 'Release Kiosc vX.Y.Z'
+about: Create a checklist for a new release
+title: Release Kiosc vX.Y.Z
+type: task
 labels: ''
 assignees: ''
 

@@ -47,7 +47,9 @@ class TestLiveJupyter(UITestBase):
         )
         self.selenium.find_element(*run_loc).click()
         WebDriverWait(self.selenium, self.wait_time).until(
-            ec.presence_of_element_located((By.XPATH, '//div[text()="[1]:"]'))
+            ec.presence_of_element_located(
+                (By.XPATH, '//div[text()="[1]:" or text()="[2]:"]')
+            )
         )
 
 

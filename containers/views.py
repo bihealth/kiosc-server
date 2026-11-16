@@ -95,6 +95,7 @@ LOBBY_WAITING_PHRASES = [
     'Just one more second...',
     'This could take a while, go get a coffee...',
     'You can close this page and come back later...',
+    'Days since last incident: 0...',
 ]
 
 

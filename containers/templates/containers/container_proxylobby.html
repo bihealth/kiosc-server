@@ -120,11 +120,14 @@
             <i class="iconify d-none" id="iconFail" style="width:128px; height: 128px" data-icon="mdi:cancel"></i>
             <i class="iconify d-none" id="iconSuccess" style="width:128px; height: 128px" data-icon="mdi:check-decagram"></i>
           </li>
-          <li>
+          <li class="m-3">
             <em><strong id="kiosc-lobby-phrase">{{ waiting_phrases|random }}</strong></em>
           </li>
           <li>
-            <em><strong>Check the <a href="{% url 'containers:detail' container=object.sodar_uuid %}#card-logs">logs</a> for more info.</strong></em>
+            <em><strong>
+              The container has been started {{ object.date_modified | timesince }} ago.
+              Check the <a href="{% url 'containers:detail' container=object.sodar_uuid %}#card-logs">logs</a> for more info.
+            </strong></em>
           </li>
           <li>
             <em><strong>If this takes longer than one hour, contact the container author or the project owner.</strong></em>

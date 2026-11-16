@@ -4,18 +4,18 @@
 django-test-plus==2.4.1
 factory-boy==3.3.3
 
-coverage==7.15.2
+coverage==7.17.3
 django-coverage-plugin==3.2.2
 codacy-coverage==1.3.11
 
 # pytest
-pytest-django==4.12.0
+pytest-django==4.14.0
 
 # Selenium for UI testing
-selenium==4.46.0
+selenium==4.52.0
 
 # ASGI Handler
-daphne==4.2.2
+daphne==4.2.3
 
 # Tblib for tracebacks
 tblib==3.2.2
@@ -24,7 +24,7 @@ tblib==3.2.2
 beautifulsoup4==4.15.0
 
 # Ruff for linting and formatting
-ruff==0.15.22
+ruff==0.17.5
 
 # Mock library for urllib3
 -e git+https://github.com/shipwell/urllib3-mock.git@87a2f7fb8b93fcbe6e1a82fed975eeefed247a7b#egg=urllib3_mock

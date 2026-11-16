@@ -5,4 +5,4 @@
 
 # Sentry (not configured yet)
 # TODO: configure Sentry/GlitchTip
-sentry-sdk==2.66.0
+sentry-sdk==2.75.0

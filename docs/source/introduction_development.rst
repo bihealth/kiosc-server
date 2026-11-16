@@ -60,7 +60,7 @@ First, install the system dependencies.
 The scripts will install the latest Python version officially supported by
 Kiosc. In the rest of the document, we will use ``python3.x`` to denote the
 Python executable, but please replace ``x`` with the correct version (for
-example, use ``python3.13``).
+example, use ``python3.14``).
 
 Create a Python virtual environment and install the required packages.
 

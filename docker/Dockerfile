@@ -39,7 +39,7 @@ RUN apt-get clean autoclean && \
 
 # Create Python virtual environment (KIOSC dependencies conflict with
 # the system packages).
-RUN python3.13 -m venv /venv
+RUN python3.14 -m venv /venv
 ENV PATH=/venv/bin:$PATH
 
 # Install Python dependencies.

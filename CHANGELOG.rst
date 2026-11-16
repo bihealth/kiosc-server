@@ -10,7 +10,13 @@ Current
 General
 -------
 
-- Upgrade SODAR Core to v1.4.5 (#306)
+- Upgrade SODAR Core to v1.5.1 (#313)
+- Upgrade supported Python versions to 3.12-3.14 (#313)
+- Added Redis as a test dependency (#309)
+  - Testing `django-channels` and related websockets would be difficult
+    otherwise, since they don't work with the in-memory channel layer. This
+    means that a Redis instance must be running during tests, in addition to
+    Postgres.
 
 Added
 -----

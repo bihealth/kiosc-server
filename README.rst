@@ -105,7 +105,9 @@ At a Glance
 - License: MIT
 - Dependencies / Tech Stack
 
-  - Python >=3.11
+  - Python >=3.12
   - Django 5.2
-  - SODAR Core 1.4
+  - SODAR Core 1.5
   - PostgreSQL >=16
+  - Redis >=8
+  - Docker

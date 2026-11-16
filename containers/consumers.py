@@ -176,6 +176,8 @@ class ContainerWatcherConsumer(WebsocketConsumer):
     4b. We kill the thread.
     """
 
+    debug = settings.DEBUG
+
     @classmethod
     def _get_state(cls, container: Container, cli: docker.APIClient) -> dict:
         """Returns the state of the container."""
@@ -280,7 +282,6 @@ class ContainerWatcherConsumer(WebsocketConsumer):
                     'text': data.decode('utf-8'),
                 }
                 self.send_to_self(msg)
-                # self.send(json.dumps(msg))
         except ReadTimeoutError:
             # This is totally normal and prevents the socket from blocking.
             pass
@@ -309,7 +310,6 @@ class ContainerWatcherConsumer(WebsocketConsumer):
                 # Send a status update immediately
                 msg = self._get_state(self.container, cli)
                 self.send_to_self(msg)
-                # self.send(json.dumps(msg))
 
                 logs_generator = cli.logs(
                     self.container.container_id,
@@ -334,7 +334,6 @@ class ContainerWatcherConsumer(WebsocketConsumer):
                     # First we send a status update
                     msg = self._get_state(self.container, cli)
                     self.send_to_self(msg)
-                    # self.send(json.dumps(msg))
                     # Then we keep sending logs as long as they keep coming.
                     # If there are no logs within the socket timeout, we go
                     # back and send a status update, then wait for logs, and
@@ -381,7 +380,6 @@ class ContainerWatcherConsumer(WebsocketConsumer):
                         f'(state is {self.container.state}): {ex}\n',
                     }
                     self.send_to_self(msg)
-                    # self.send(json.dumps(msg))
                     break
                 # Actually we also send an empty logs message to clear the
                 # initial "Loading" text.
@@ -390,7 +388,6 @@ class ContainerWatcherConsumer(WebsocketConsumer):
                     'text': '',
                 }
                 self.send_to_self(msg)
-                # self.send(json.dumps(msg))
                 continue
             except docker.errors.APIError as ex:
                 # This is likely a bug, we quit
@@ -406,7 +403,6 @@ class ContainerWatcherConsumer(WebsocketConsumer):
                     f'(state is {self.container.state}): {ex}\n',
                 }
                 self.send_to_self(msg)
-                # self.send(json.dumps(msg))
                 break
 
         # Close Django connections to the db from this thread
@@ -492,7 +488,6 @@ class ContainerWatcherConsumer(WebsocketConsumer):
                 'text': ''.join(str(log_entry) for log_entry in log_batch),
             }
             self.send_to_self(msg)
-            # self.send(json.dumps(msg))
         if self.watch_task:
             self._stop_watching()
         self._start_watching(logs_tail)

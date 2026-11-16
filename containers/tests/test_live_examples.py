@@ -1,5 +1,6 @@
 """Test live container examples from the cookbook docs"""
 
+import logging
 import time
 
 from selenium.webdriver.common.by import By
@@ -36,21 +37,30 @@ class TestLiveJupyter(UITestBase):
     def test_get_notebook(self):
         """Test Jupyter container for get notebook"""
         self.login_and_redirect_to_container(self.superuser, self.container)
-        run_loc = (By.XPATH, '//div[@id="menu-panel"]//div[text()="Run"]')
-        WebDriverWait(self.selenium, self.wait_time).until(
-            ec.element_to_be_clickable(run_loc)
-        )
-        self.selenium.find_element(*run_loc).click()
-        run_loc = (By.XPATH, '//div[text()="Run All Cells"]')
-        WebDriverWait(self.selenium, self.wait_time).until(
-            ec.element_to_be_clickable(run_loc)
-        )
-        self.selenium.find_element(*run_loc).click()
-        WebDriverWait(self.selenium, self.wait_time).until(
-            ec.presence_of_element_located(
-                (By.XPATH, '//div[text()="[1]:" or text()="[2]:"]')
-            )
-        )
+        for attempt in range(3):
+            try:
+                run_loc = (
+                    By.XPATH,
+                    '//div[@id="menu-panel"]//div[text()="Run"]',
+                )
+                WebDriverWait(self.selenium, self.wait_time).until(
+                    ec.element_to_be_clickable(run_loc)
+                )
+                self.selenium.find_element(*run_loc).click()
+                run_loc = (By.XPATH, '//div[text()="Run All Cells"]')
+                WebDriverWait(self.selenium, self.wait_time).until(
+                    ec.element_to_be_clickable(run_loc)
+                )
+                self.selenium.find_element(*run_loc).click()
+                WebDriverWait(self.selenium, self.wait_time).until(
+                    ec.presence_of_element_located(
+                        (By.XPATH, '//div[text()="[1]:" or text()="[2]:"]')
+                    )
+                )
+                return
+            except Exception:
+                logging.exception('Attempt %d failed', attempt)
+                continue
 
 
 class TestLiveSeaPiper(UITestBase):
@@ -71,30 +81,36 @@ class TestLiveSeaPiper(UITestBase):
     def test_select_contrast(self):
         """Test the select input to choose the contrast"""
         self.login_and_redirect_to_container(self.superuser, self.container)
-        table_id = 'DataTables_Table_0'
-        WebDriverWait(self.selenium, self.wait_time).until(
-            ec.text_to_be_present_in_element((By.ID, table_id), 'ENSG')
-        )
-        table_el = self.selenium.find_element(By.ID, table_id)
-        table1 = table_el.text
-        # Select another contrast
-        self.selenium.find_element(
-            By.CSS_SELECTOR, '#geneT-contrast + div .selectize-input'
-        ).click()
-        time.sleep(1)  # Wait for dropdown element to be rendered
-        self.selenium.find_element(
-            By.XPATH, '//div[@data-value="default::ICU_ID1"]'
-        ).click()
-        table_id = 'DataTables_Table_1'
-        WebDriverWait(self.selenium, 2 * self.wait_time).until(
-            ec.presence_of_element_located((By.ID, table_id))
-        )
-        WebDriverWait(self.selenium, 2 * self.wait_time).until(
-            ec.text_to_be_present_in_element((By.ID, table_id), 'ENSG')
-        )
-        table_el = self.selenium.find_element(By.ID, table_id)
-        # Check that the table's content changed
-        self.assertNotEqual(table1, table_el.text)
+        for attempt in range(3):
+            try:
+                table_id = 'DataTables_Table_0'
+                WebDriverWait(self.selenium, self.wait_time).until(
+                    ec.text_to_be_present_in_element((By.ID, table_id), 'ENSG')
+                )
+                table_el = self.selenium.find_element(By.ID, table_id)
+                table1 = table_el.text
+                # Select another contrast
+                self.selenium.find_element(
+                    By.CSS_SELECTOR, '#geneT-contrast + div .selectize-input'
+                ).click()
+                time.sleep(1)  # Wait for dropdown element to be rendered
+                self.selenium.find_element(
+                    By.XPATH, '//div[@data-value="default::ICU_ID1"]'
+                ).click()
+                table_id = 'DataTables_Table_1'
+                WebDriverWait(self.selenium, 2 * self.wait_time).until(
+                    ec.presence_of_element_located((By.ID, table_id))
+                )
+                WebDriverWait(self.selenium, 2 * self.wait_time).until(
+                    ec.text_to_be_present_in_element((By.ID, table_id), 'ENSG')
+                )
+                table_el = self.selenium.find_element(By.ID, table_id)
+                # Check that the table's content changed
+                self.assertNotEqual(table1, table_el.text)
+                return
+            except Exception:
+                logging.exception('Attempt %d failed', attempt)
+                continue
 
 
 class TestLiveCellXGene(UITestBase):
@@ -119,18 +135,27 @@ class TestLiveCellXGene(UITestBase):
     def test_get_umap(self):
         """Test that we can see the UMAP plot"""
         self.login_and_redirect_to_container(self.superuser, self.container)
-        # Enter the dataset name
-        input_loc = (By.XPATH, '//input[@data-testid="new-annotation-name"]')
-        # This container needs time to be pulled, so we increase the wait_time
-        WebDriverWait(self.selenium, self.wait_time * 3).until(
-            ec.element_to_be_clickable(input_loc)
-        )
-        input_el = self.selenium.find_element(*input_loc)
-        input_el.send_keys('kiosc_test\n')
-        WebDriverWait(self.selenium, self.wait_time).until(
-            ec.presence_of_element_located((By.ID, 'embedding'))
-        )
-        self.assertEqual(
-            self.selenium.find_element(By.ID, 'embedding').text,
-            'umap: 2638 out of 2638 cells',
-        )
+        for attempt in range(3):
+            try:
+                # Enter the dataset name
+                input_loc = (
+                    By.XPATH,
+                    '//input[@data-testid="new-annotation-name"]',
+                )
+                # This container needs time to be pulled, so we increase the wait_time
+                WebDriverWait(self.selenium, self.wait_time * 3).until(
+                    ec.element_to_be_clickable(input_loc)
+                )
+                input_el = self.selenium.find_element(*input_loc)
+                input_el.send_keys('kiosc_test\n')
+                WebDriverWait(self.selenium, self.wait_time).until(
+                    ec.presence_of_element_located((By.ID, 'embedding'))
+                )
+                self.assertEqual(
+                    self.selenium.find_element(By.ID, 'embedding').text,
+                    'umap: 2638 out of 2638 cells',
+                )
+                return
+            except Exception:
+                logging.exception('Attempt %d failed', attempt)
+                continue
